@@ -29,7 +29,7 @@ const adminInvoicesLimiter = rateLimit({
  *
  * Query params:
  * - page (default 1)
- * - page_size (default 25)
+ * - pageSize (default 25, canonical) or page_size (legacy, supported for backward compatibility)
  * - email (optional; ILIKE match)
  * - user_id (optional)
  * - invoice_number (optional; ILIKE match)
@@ -40,7 +40,8 @@ router.get('/invoices', requireAdmin, adminInvoicesLimiter, async (req: Request,
   const pool = getPool();
 
   const page = Math.max(1, Number(req.query.page ?? 1) || 1);
-  const pageSize = Math.min(200, Math.max(1, Number(req.query.page_size ?? 25) || 25));
+  // Support both pageSize (canonical) and page_size (legacy) for backward compatibility
+  const pageSize = Math.min(200, Math.max(1, Number(req.query.pageSize ?? req.query.page_size ?? 25) || 25));
   const offset = (page - 1) * pageSize;
 
   const email = typeof req.query.email === 'string' ? req.query.email.trim() : '';

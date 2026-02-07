@@ -90,10 +90,10 @@ export function BillingSection({ }: BillingSectionProps) {
         try {
             const params = new URLSearchParams({
                 page: String(page),
-                page_size: String(pageSize),
+                pageSize: String(pageSize),
             });
 
-            const resp = await apiClient.getAdminTransactions({ page: page, page_size: pageSize });
+            const resp = await apiClient.getAdminTransactions({ page: page, pageSize: pageSize });
             if (resp.ok) {
                 const data = resp.data as { items?: any[] };
                 setTransactions(data?.items ?? []);
@@ -113,7 +113,7 @@ export function BillingSection({ }: BillingSectionProps) {
     const loadInvoices = async () => {
         try {
             // Use BFF route (browser traffic should be BFF-only)
-            const r = await fetch('/api/bff/admin/invoices?page=1&page_size=25', {
+            const r = await fetch('/api/bff/admin/invoices?page=1&pageSize=25', {
                 method: 'GET',
                 headers: {
                     Accept: 'application/json',

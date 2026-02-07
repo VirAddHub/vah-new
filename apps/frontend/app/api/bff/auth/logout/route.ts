@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       });
     } else if (setCookieRaw) {
       // Also check for single Set-Cookie header
-      console.log(`[BFF auth/logout] Forwarding Set-Cookie header to browser`);
+        console.log(`[BFF auth/logout] Forwarding Set-Cookie header to browser`);
       // Handle multiple Set-Cookie headers (they come as comma-separated or array)
       const cookies = Array.isArray(setCookieRaw) ? setCookieRaw : setCookieRaw.split(', ');
       cookies.forEach(cookie => {

@@ -138,54 +138,54 @@ export function DashboardSidebar() {
             <div className="flex h-[calc(100dvh-4rem)] flex-col w-full">
                 {/* Nav area - scrollable if needed */}
                 <nav className="flex-1 overflow-y-auto px-4 py-4">
-                    {/* Main Navigation */}
-                    <div className="mb-4">
-                        <div className="space-y-1">
-                            {/* Mail Inbox */}
-                            <button
+                {/* Main Navigation */}
+                <div className="mb-4">
+                    <div className="space-y-1">
+                        {/* Mail Inbox */}
+                        <button
                                 onClick={handleMailClick}
-                                className={cn(
-                                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full",
-                                    isMailActive
-                                        ? "bg-primary/10 text-primary"
-                                        : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-                                )}
-                            >
-                                <Mail className="w-5 h-5" strokeWidth={2} />
-                                Mail Inbox
-                            </button>
-                        </div>
+                            className={cn(
+                                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full",
+                                isMailActive
+                                    ? "bg-primary/10 text-primary"
+                                    : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                            )}
+                        >
+                            <Mail className="w-5 h-5" strokeWidth={2} />
+                            Mail Inbox
+                        </button>
                     </div>
+                </div>
 
-                    {/* Account Section */}
-                    <div className="mt-4 pt-4 border-t border-neutral-200">
-                        <div className="px-3 mb-2">
-                            <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                                Account
-                            </h3>
-                        </div>
-                        <div className="space-y-1">
-                            {accountNavItems.map((item) => {
-                                const Icon = item.icon;
-                                const active = isActive(item.href);
+                {/* Account Section */}
+                <div className="mt-4 pt-4 border-t border-neutral-200">
+                    <div className="px-3 mb-2">
+                        <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                            Account
+                        </h3>
+                    </div>
+                    <div className="space-y-1">
+                        {accountNavItems.map((item) => {
+                            const Icon = item.icon;
+                            const active = isActive(item.href);
 
-                                return (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        className={cn(
-                                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                                            active
-                                                ? "bg-primary/10 text-primary"
-                                                : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-                                        )}
-                                    >
-                                        <Icon className="w-5 h-5" strokeWidth={2} />
-                                        {item.label}
-                                    </Link>
-                                );
-                            })}
-                        </div>
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={cn(
+                                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                                        active
+                                            ? "bg-primary/10 text-primary"
+                                            : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                                    )}
+                                >
+                                    <Icon className="w-5 h-5" strokeWidth={2} />
+                                    {item.label}
+                                </Link>
+                            );
+                        })}
+                    </div>
                     </div>
                 </nav>
 
@@ -268,18 +268,18 @@ export function DashboardSidebar() {
     }, [isMobileSidebarOpen]);
 
 
-    return (
-        <>
+        return (
+            <>
             <SidebarContent />
 
             {/* Mobile Sidebar Overlay & Drawer */}
             {isMobile && isMobileSidebarOpen && (
-                <>
-                    <div
-                        className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-                        onClick={() => setIsMobileSidebarOpen(false)}
+                    <>
+                        <div
+                            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                            onClick={() => setIsMobileSidebarOpen(false)}
                         aria-hidden="true"
-                    />
+                        />
                     <div
                         id="mobile-sidebar-drawer"
                         className="fixed left-0 top-0 h-[100dvh] z-50 lg:hidden w-[280px] max-w-[85vw]"
@@ -290,74 +290,74 @@ export function DashboardSidebar() {
                         <div className="flex h-[100dvh] flex-col bg-white shadow-xl">
                             {/* Header - Fixed at top */}
                             <div className="shrink-0 flex items-center justify-between p-6 border-b border-neutral-200">
-                                <h2 className="text-lg font-semibold text-neutral-900">Menu</h2>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setIsMobileSidebarOpen(false)}
-                                    className="h-8 w-8"
+                                    <h2 className="text-lg font-semibold text-neutral-900">Menu</h2>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => setIsMobileSidebarOpen(false)}
+                                        className="h-8 w-8"
                                     aria-label="Close menu"
-                                >
-                                    <X className="h-5 w-5" strokeWidth={2} />
-                                </Button>
-                            </div>
+                                    >
+                                        <X className="h-5 w-5" strokeWidth={2} />
+                                    </Button>
+                                </div>
 
                             {/* Nav area - Scrollable */}
                             <div className="flex-1 overflow-y-auto px-4 py-4">
-                                {/* Main Navigation */}
+                                    {/* Main Navigation */}
                                 <div className="mb-4">
-                                    <div className="space-y-1">
-                                        {/* Mail Inbox */}
-                                        <button
-                                            onClick={() => {
+                                        <div className="space-y-1">
+                                            {/* Mail Inbox */}
+                                            <button
+                                                onClick={() => {
                                                 handleMailClick();
-                                                setIsMobileSidebarOpen(false);
-                                            }}
-                                            className={cn(
-                                                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full",
-                                                isMailActive
-                                                    ? "bg-primary/10 text-primary"
-                                                    : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-                                            )}
-                                        >
-                                            <Mail className="w-5 h-5" strokeWidth={2} />
-                                            Mail Inbox
-                                        </button>
+                                                    setIsMobileSidebarOpen(false);
+                                                }}
+                                                className={cn(
+                                                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full",
+                                                    isMailActive
+                                                        ? "bg-primary/10 text-primary"
+                                                        : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                                                )}
+                                            >
+                                                <Mail className="w-5 h-5" strokeWidth={2} />
+                                                Mail Inbox
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
 
-                                {/* Account Section */}
+                                    {/* Account Section */}
                                 <div className="mt-4 pt-4 border-t border-neutral-200">
-                                    <div className="px-3 mb-2">
-                                        <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                                            Account
-                                        </h3>
-                                    </div>
-                                    <div className="space-y-1">
-                                        {accountNavItems.map((item) => {
-                                            const Icon = item.icon;
-                                            const active = isActive(item.href);
+                                        <div className="px-3 mb-2">
+                                            <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                                Account
+                                            </h3>
+                                        </div>
+                                        <div className="space-y-1">
+                                            {accountNavItems.map((item) => {
+                                                const Icon = item.icon;
+                                                const active = isActive(item.href);
 
-                                            return (
-                                                <Link
-                                                    key={item.href}
-                                                    href={item.href}
-                                                    onClick={() => setIsMobileSidebarOpen(false)}
-                                                    className={cn(
-                                                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                                                        active
-                                                            ? "bg-primary/10 text-primary"
-                                                            : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-                                                    )}
-                                                >
-                                                    <Icon className="w-5 h-5" strokeWidth={2} />
-                                                    {item.label}
-                                                </Link>
-                                            );
-                                        })}
+                                                return (
+                                                    <Link
+                                                        key={item.href}
+                                                        href={item.href}
+                                                        onClick={() => setIsMobileSidebarOpen(false)}
+                                                        className={cn(
+                                                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                                                            active
+                                                                ? "bg-primary/10 text-primary"
+                                                                : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                                                        )}
+                                                    >
+                                                        <Icon className="w-5 h-5" strokeWidth={2} />
+                                                        {item.label}
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
                             {/* Footer with Certificate Download and Sign Out - Pinned to bottom */}
                             <div className="shrink-0 border-t border-neutral-200 bg-white">
@@ -377,11 +377,11 @@ export function DashboardSidebar() {
                                         Sign out
                                     </button>
                                 </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </>
-            )}
-        </>
-    );
+                    </>
+                )}
+            </>
+        );
 }

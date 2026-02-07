@@ -12,7 +12,13 @@ export async function GET(req: NextRequest) {
     const incoming = new URL(req.url);
 
     // forward supported filters + pagination
-    for (const key of ["page", "page_size", "email", "user_id", "invoice_number", "from", "to"]) {
+    // Transform pageSize (frontend) to pageSize (backend canonical) or page_size (backend legacy support)
+    const pageSize = incoming.searchParams.get("pageSize") || incoming.searchParams.get("page_size");
+    if (pageSize) {
+      url.searchParams.set("pageSize", pageSize); // Use canonical pageSize
+    }
+    
+    for (const key of ["page", "email", "user_id", "invoice_number", "from", "to"]) {
       const v = incoming.searchParams.get(key);
       if (v != null && v !== "") url.searchParams.set(key, v);
     }

@@ -22,11 +22,11 @@ export default function DashboardLayout({
                 <div className="flex min-h-[calc(100dvh-4rem)]">
                     {/* Sidebar - Sticky, flush under navbar */}
                     <DashboardSidebar />
-
+                    
                     {/* Main Content */}
-                    <main
-                        id="main-content"
-                        role="main"
+                    <main 
+                        id="main-content" 
+                        role="main" 
                         className="min-w-0 flex-1 w-full overflow-x-hidden"
                     >
                         {/* Top padding inside main content container (not on wrapper) */}

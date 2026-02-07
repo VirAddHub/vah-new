@@ -1041,7 +1041,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
                 const valueH = h(value, FONT.regular, TYPE.small, valueColW);
                 return Math.max(labelH, valueH) + (10 * scale); // Further reduced gap (8px -> 10px scaled)
             };
-            
+
             const verifiedSectionH = 
                 (16 * scale) + // Further reduced gap after title (12px -> 16px scaled)
                 hRow('Registered Office Address', formattedAddr) +
