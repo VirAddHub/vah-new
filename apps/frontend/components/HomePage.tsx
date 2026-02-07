@@ -396,9 +396,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <section className="py-24 lg:py-32 bg-white">
                 <div className="mx-auto max-w-6xl px-6 lg:px-8">
                     {/* CTA Container with Deep Brand Green Background */}
-                    <div className="relative overflow-hidden rounded-[28px] bg-[#064e3b] max-w-4xl mx-auto min-h-[380px] md:min-h-[430px]">
+                    <div className="relative overflow-hidden rounded-[28px] bg-[#064e3b] max-w-4xl mx-auto min-h-[380px] md:min-h-[500px]">
                         {/* LEFT PANEL - Artwork only */}
-                        <div className="absolute inset-y-0 left-0 w-full md:w-[52%]">
+                        <div className="absolute inset-y-0 left-0 w-full md:w-[50%] z-0">
                             {/* Background Image - Only in left panel */}
                             <img
                                 src="/images/Mask-group.jpg"
@@ -411,19 +411,19 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         </div>
 
                         {/* HARD DIVIDER - Transition strip at split point (desktop only) */}
-                        <div className="absolute inset-y-0 left-[52%] hidden md:block w-16 -translate-x-1/2 bg-gradient-to-r from-[#064e3b]/0 to-[#064e3b]/90 z-10" />
+                        <div className="absolute inset-y-0 left-[50%] hidden md:block w-16 -translate-x-1/2 bg-gradient-to-r from-[#064e3b]/0 to-[#064e3b]/90 z-10" />
 
                         {/* RIGHT PANEL - Content only */}
-                        <div className="absolute inset-y-0 right-0 w-full md:w-[48%]">
-                            <div className="relative z-10 h-full flex items-center">
-                                <div className="w-full max-w-[560px] px-6 py-8 md:px-10 md:py-10 text-left">
+                        <div className="absolute inset-y-0 right-0 w-full md:w-[50%] z-20">
+                            <div className="relative z-10 h-full flex items-start">
+                                <div className="w-full max-w-[560px] px-6 py-8 md:px-10 md:pt-12 md:pb-10 text-left">
                                     {/* Headline */}
-                                    <h2 className="text-[44px] md:text-[68px] leading-[0.98] tracking-[-0.02em] font-semibold text-white max-w-[14ch]">
+                                    <h2 className="text-[40px] md:text-[56px] leading-[1.02] tracking-[-0.02em] font-semibold text-white max-w-[16ch]">
                                         Get your official London business address today
                                     </h2>
 
                                     {/* Supporting line */}
-                                    <p className="mt-5 text-[18px] md:text-[24px] leading-[1.35] font-normal text-white/85 max-w-[30ch]">
+                                    <p className="mt-5 text-[18px] md:text-[18px] leading-[1.35] font-normal text-white/85 max-w-[30ch]">
                                         Fully compliant with Companies House & HMRC. Same-day mail scanning.
                                     </p>
 
@@ -443,7 +443,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     )}
 
                                     {/* CTA Buttons Row */}
-                                    <div className="mt-7 flex flex-wrap items-center gap-4">
+                                    <div className="mt-5 flex flex-wrap items-center gap-4">
                                         <Button
                                             onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                             className="inline-flex items-center h-12 px-7 rounded-full text-lg md:text-xl font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
@@ -462,20 +462,20 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     </div>
 
                                     {/* Trust micro-signals */}
-                                    <p className="mt-6 text-sm md:text-base text-white/65 flex flex-wrap gap-x-4 gap-y-2">
+                                    <p className="mt-4 text-sm md:text-base text-white/65 flex flex-wrap gap-x-4 gap-y-2">
                                         No setup fees · No contracts
                                     </p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Overlay Screenshot - Desktop Only, Subtle, No Label */}
-                        <img
+                        {/* Overlay Screenshot - Desktop Only, Subtle, No Label - Temporarily disabled while stabilizing layout */}
+                        {/* <img
                             src="/images/dashboard-overlay.png"
                             alt=""
                             className="hidden lg:block absolute right-[-2rem] top-1/2 -translate-y-1/2 w-[380px] max-w-[75%] rounded-xl shadow-xl z-20 pointer-events-none opacity-90"
                             aria-hidden="true"
-                        />
+                        /> */}
                     </div>
                 </div>
             </section>
