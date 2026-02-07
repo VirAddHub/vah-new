@@ -52,10 +52,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
         >
             {/* HERO - Premium, calm, spacious with subtle depth */}
             <section className="relative bg-gradient-to-b from-white to-neutral-50 border-b border-neutral-200">
-                <div className="mx-auto max-w-7xl px-6 lg:px-8 py-16 lg:py-24">
-                    <div className="max-w-3xl mx-auto">
-                        {/* Content */}
-                        <div>
+                <div className="mx-auto max-w-[1200px] px-6 lg:px-8 py-16 lg:py-24">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+                        {/* LEFT COLUMN - Content */}
+                        <div className="lg:col-span-6 xl:col-span-6 lg:pr-10 text-left">
                             <h1 className="text-4xl lg:text-5xl font-semibold leading-tight text-neutral-900 tracking-tight">
                                 Your <span className="relative inline-block">
                                     Central London
@@ -111,6 +111,15 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <p className="mt-4 text-sm text-neutral-500/80">
                                     UK Companies House & HMRC compliant.
                                 </p>
+                            </div>
+                        </div>
+
+                        {/* RIGHT COLUMN - Image placeholder */}
+                        <div className="lg:col-span-6 xl:col-span-6 lg:pl-2 hidden lg:block">
+                            <div className="relative w-full">
+                                <div className="aspect-[4/3] rounded-2xl border border-border/60 bg-muted/30 flex items-center justify-center">
+                                    <p className="text-sm text-muted-foreground">Image area</p>
+                                </div>
                             </div>
                         </div>
                     </div>
