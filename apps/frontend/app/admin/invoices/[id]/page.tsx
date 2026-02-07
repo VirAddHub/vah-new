@@ -54,7 +54,7 @@ export default function AdminInvoiceDetailPage() {
     const storedUser = localStorage.getItem("vah_user");
 
     if (!t) {
-      router.push("/login");
+      router.push("/admin/login");
       return;
     }
 
@@ -67,7 +67,7 @@ export default function AdminInvoiceDetailPage() {
         }
         setUser(u);
       } catch {
-        router.push("/login");
+        router.push("/admin/login");
         return;
       }
     }

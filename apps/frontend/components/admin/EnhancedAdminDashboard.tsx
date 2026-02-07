@@ -67,7 +67,7 @@ interface AdminDashboardProps {
     onGoBack?: () => void;
 }
 
-type AdminSection = "users" | "mail" | "forwarding" | "billing" | "plans" | "settings" | "blog";
+type AdminSection = "users" | "mail" | "forwarding" | "plans" | "blog" | "settings";
 
 export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboardProps) {
     const router = useRouter();
@@ -179,7 +179,9 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             case "blog":
                 return <BlogSection />;
             default:
-                // Default to users if no section matches
+                // Exhaustiveness check: TypeScript will error if a case is missing
+                const _exhaustive: never = activeSection;
+                // Fallback to users if somehow an invalid section is set
                 return (
                     <AdminUsersTable
                         users={users}

@@ -13,16 +13,16 @@ function AdminPageContent() {
             setShowDashboard(true);
         } else if (isAuthenticated && !isAdmin) {
             // Redirect regular users to their dashboard
-            window.location.href = '/login';
+            window.location.href = '/admin/login';
         } else {
-            // Redirect unauthenticated users to login
-            window.location.href = '/login';
+            // Redirect unauthenticated users to admin login
+            window.location.href = '/admin/login';
         }
     }, [isAuthenticated, isAdmin]);
 
     const handleLogout = async () => {
         await logout();
-        window.location.href = '/login';
+        window.location.href = '/admin/login';
     };
 
     const handleGoBack = () => {

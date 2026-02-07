@@ -15,8 +15,8 @@ export default function AdminDashboardPage() {
         const storedUser = localStorage.getItem('vah_user');
 
         if (!token) {
-            // Not authenticated, redirect to login
-            router.push('/login');
+            // Not authenticated, redirect to admin login
+            router.push('/admin/login');
             return;
         }
 
@@ -32,7 +32,7 @@ export default function AdminDashboardPage() {
                 setUser(userData);
             } catch (e) {
                 console.error('Failed to parse stored user:', e);
-                router.push('/login');
+                router.push('/admin/login');
                 return;
             }
         }
@@ -59,7 +59,7 @@ export default function AdminDashboardPage() {
         localStorage.removeItem('vah_jwt');
         localStorage.removeItem('vah_user');
         document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        router.push('/login');
+        router.push('/admin/login');
     };
 
     const handleNavigate = (page: string) => {
