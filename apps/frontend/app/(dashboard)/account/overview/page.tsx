@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CreditCard, MapPin, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 import { REGISTERED_OFFICE_ADDRESS } from '@/lib/config/address';
+import { EmailChangeCard } from '@/components/account/EmailChangeCard';
 
 /**
  * Premium Account Overview Page
@@ -213,6 +214,11 @@ export default function AccountOverviewPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Email Address Card */}
+            <div className="mb-6">
+                <EmailChangeCard />
+            </div>
 
             {/* Business Address Card */}
             <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
