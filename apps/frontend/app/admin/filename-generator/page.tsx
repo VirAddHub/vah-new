@@ -98,7 +98,11 @@ export default function FilenameGeneratorPage() {
       if (data.ok && data.data) {
         setSearchResults(data.data);
       } else {
-        setError(data.error || data.message || 'Search failed');
+        // TypeScript: data is { ok: false; error?: string; message?: string }
+        const errorMessage = data.ok === false 
+          ? (data.error || data.message || 'Search failed')
+          : 'Search failed';
+        setError(errorMessage);
         setSearchResults([]);
       }
     } catch (err) {
