@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Loader2, Search, Clipboard, ClipboardCheck, Users, Truck, FileText, Settings, Package } from "lucide-react";
+import { Loader2, Search, Clipboard, ClipboardCheck, Users, Truck, FileText, Package } from "lucide-react";
 import { AdminHeader } from "@/components/admin/parts/AdminHeader";
 
 type AdminUserHit = {
@@ -31,25 +31,35 @@ type SearchResponse =
 const PLAN_STATUS_CLASSES: Record<string, string> = {
   active: "bg-emerald-50 text-emerald-700 border border-emerald-200",
   pending_payment: "bg-amber-50 text-amber-800 border border-amber-200",
-  cancelled: "bg-red-50 text-red-700 border border-red-200",
-  expired: "bg-gray-50 text-gray-700 border border-gray-200",
+  cancelled: "bg-rose-50 text-rose-700 border border-rose-200",
+  trialing: "bg-sky-50 text-sky-700 border border-sky-200",
 };
 
-const KYC_STATUS_CLASSES: Record<string, string> = {
+const KYC_CLASSES: Record<string, string> = {
   approved: "bg-emerald-50 text-emerald-700 border border-emerald-200",
   verified: "bg-emerald-50 text-emerald-700 border border-emerald-200",
   pending: "bg-amber-50 text-amber-800 border border-amber-200",
-  rejected: "bg-red-50 text-red-700 border border-red-200",
-  "not_started": "bg-gray-50 text-gray-700 border border-gray-200",
+  rejected: "bg-rose-50 text-rose-700 border border-rose-200",
+};
+
+const todayString = () => {
+  const date = new Date();
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const yy = String(date.getFullYear()).slice(-2);
+  return `${dd}-${mm}-${yy}`;
 };
 
 export default function FilenameGeneratorPage() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<AdminUserHit[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<AdminUserHit[]>([]);
+  const [selectedUser, setSelectedUser] = useState<AdminUserHit | null>(null);
+  const [tag, setTag] = useState("");
+  const [date, setDate] = useState(todayString());
+  const [copied, setCopied] = useState(false);
 
   // Check authentication
   useEffect(() => {
@@ -74,73 +84,97 @@ export default function FilenameGeneratorPage() {
     }
   }, [router]);
 
+  useEffect(() => {
+    setDate(todayString());
+    setTag("");
+  }, [selectedUser?.id]);
+
+  const sanitizedTag = useMemo(() => {
+    return tag.trim().replace(/\s+/g, "");
+  }, [tag]);
+
+  const generatedFilename = useMemo(() => {
+    if (!selectedUser || !date.trim() || !sanitizedTag) return "";
+    return `user${selectedUser.id}_${date}_${sanitizedTag}.pdf`;
+  }, [selectedUser, date, sanitizedTag]);
+
   const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      setError(null);
+    if (!query.trim()) {
+      setError("Enter a name, company or email");
+      setResults([]);
+      setSelectedUser(null);
       return;
     }
 
-    setIsSearching(true);
+    setLoading(true);
     setError(null);
+    setResults([]);
+    setSelectedUser(null);
 
     try {
-      const response = await fetch(`/api/admin/users/search?q=${encodeURIComponent(searchQuery)}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-        credentials: 'include',
-      });
+      const res = await fetch(
+        `/api/bff/admin/users/search?q=${encodeURIComponent(query.trim())}`,
+        {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        }
+      );
 
-      const data: SearchResponse = await response.json();
+      const json: SearchResponse = await res.json();
 
-      if (data.ok && data.data) {
-        setSearchResults(data.data);
+      if (!res.ok || json.ok === false) {
+        const message =
+          json.ok === false
+            ? ('error' in json ? json.error : undefined) || ('message' in json ? json.message : undefined) || "Search failed"
+            : "Search failed";
+        setError(message);
+        return;
+      }
+
+      if (json.ok === true) {
+        const data = json.data ?? [];
+        setResults(data);
+
+        if (data.length === 1) {
+          setSelectedUser(data[0]);
+        }
+
+        if (data.length === 0) {
+          setError("No users found for that search.");
+        }
       } else {
-        // TypeScript: data is { ok: false; error?: string; message?: string }
-        const errorMessage = data.ok === false 
-          ? (data.error || data.message || 'Search failed')
-          : 'Search failed';
-        setError(errorMessage);
-        setSearchResults([]);
+        setError("Search failed");
+        setResults([]);
       }
     } catch (err) {
       console.error("[filename-generator] search error", err);
-      setError('Failed to search users');
-      setSearchResults([]);
+      setError("Something went wrong while searching.");
     } finally {
-      setIsSearching(false);
+      setLoading(false);
     }
   };
 
-  const handleCopy = async (userId: number) => {
-    try {
-      await navigator.clipboard.writeText(String(userId));
-      setCopiedId(userId);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
+  const handleCopy = async () => {
+    if (!generatedFilename) return;
+    await navigator.clipboard.writeText(generatedFilename);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
   };
 
-  const generateFilename = (user: AdminUserHit): string => {
-    const parts: string[] = [];
+  const handleLogout = () => {
+    localStorage.removeItem('vah_jwt');
+    localStorage.removeItem('vah_user');
+    document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    router.push('/admin/login');
+  };
 
-    if (user.company_name) {
-      parts.push(user.company_name.replace(/[^a-zA-Z0-9]/g, '_'));
+  const handleNavigate = (page: string) => {
+    if (page === 'home') {
+      router.push('/');
+    } else {
+      router.push(`/${page}`);
     }
-
-    if (user.first_name && user.last_name) {
-      parts.push(`${user.first_name}_${user.last_name}`.replace(/[^a-zA-Z0-9]/g, '_'));
-    } else if (user.email) {
-      const emailPart = user.email.split('@')[0];
-      parts.push(emailPart.replace(/[^a-zA-Z0-9]/g, '_'));
-    }
-
-    parts.push(String(user.id));
-
-    return parts.join('_').toLowerCase();
   };
 
   const menuItems = [
@@ -149,176 +183,219 @@ export default function FilenameGeneratorPage() {
     { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
     { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
     { id: "blog", label: "Blog", icon: <FileText className="h-4 w-4" /> },
-    { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
   ] as const;
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
       <AdminHeader
-        onNavigate={(page: string) => {
-          if (page === 'dashboard') {
-            router.push('/admin/dashboard');
-          } else {
-            router.push(`/${page}`);
-          }
-        }}
+        onNavigate={handleNavigate}
         menuItems={menuItems}
         activeSection=""
         onSelectSection={(section) => {
-          router.push(`/admin/dashboard?section=${section}`);
+          if (section === 'users') router.push('/admin/dashboard?section=users');
+          else if (section === 'mail') router.push('/admin/dashboard?section=mail');
+          else if (section === 'forwarding') router.push('/admin/dashboard?section=forwarding');
+          else if (section === 'plans') router.push('/admin/dashboard?section=plans');
+          else if (section === 'blog') router.push('/admin/dashboard?section=blog');
+          else router.push('/admin/dashboard');
         }}
-        mobileMenuOpen={false}
-        setMobileMenuOpen={() => {}}
-        onLogout={() => {
-          localStorage.removeItem('vah_jwt');
-          localStorage.removeItem('vah_user');
-          router.push('/admin/login');
-        }}
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+        onLogout={handleLogout}
         onGoInvoices={() => router.push('/admin/invoices')}
         onGoFilenameGenerator={() => router.push('/admin/filename-generator')}
         activePage="filename-generator"
       />
 
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold">Filename Generator</h1>
-            <p className="text-muted-foreground mt-2">
-              Search for users and generate standardized filenames
-            </p>
-          </div>
+      {/* Main Content */}
+      <main id="main-content" role="main" className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-10">
+        <header className="space-y-2">
+          <h1 className="text-3xl font-semibold">Mail filename generator</h1>
+          <p className="text-sm text-muted-foreground">
+            Generate the exact filename format we require before uploading scans.
+          </p>
+          <p className="text-xs text-muted-foreground font-mono bg-muted/60 inline-block px-2 py-1 rounded">
+            user&#123;ID&#125;_&#123;DD-MM-YY&#125;_&#123;TAG&#125;.pdf
+          </p>
+        </header>
 
-          <div className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                placeholder="Search by email, name, or user ID..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch();
-                  }
-                }}
-                className="flex-1"
-              />
-              <Button onClick={handleSearch} disabled={isSearching}>
-                {isSearching ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Searching...
-                  </>
-                ) : (
-                  <>
-                    <Search className="h-4 w-4 mr-2" />
-                    Search
-                  </>
-                )}
-              </Button>
+        <section className="space-y-3">
+          <Label htmlFor="search">Search user</Label>
+          <div className="flex flex-col gap-2 md:flex-row">
+            <Input
+              id="search"
+              placeholder="Search by name, company, or email…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            />
+            <Button
+              onClick={handleSearch}
+              className="md:w-40"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Searching…
+                </>
+              ) : (
+                <>
+                  <Search className="mr-2 h-4 w-4" />
+                  Search
+                </>
+              )}
+            </Button>
+          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          {results.length > 0 && (
+            <div className="divide-y rounded-lg border bg-card shadow-sm">
+              {results.map((user) => {
+                const isActive = selectedUser?.id === user.id;
+                return (
+                  <button
+                    key={user.id}
+                    className={cn(
+                      "flex w-full flex-col items-start gap-1 px-4 py-3 text-left transition hover:bg-accent",
+                      isActive && "bg-accent/60"
+                    )}
+                    onClick={() => setSelectedUser(user)}
+                  >
+                    <span className="text-sm font-medium">
+                      {user.company_name ||
+                        [user.first_name, user.last_name]
+                          .filter(Boolean)
+                          .join(" ") ||
+                        user.email}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      ID {user.id} • {user.email}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {selectedUser && (
+          <section className="space-y-4 rounded-xl border bg-card p-5 shadow-sm">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-lg font-medium">Selected user</h2>
+              <p className="text-sm text-muted-foreground font-mono">
+                user#{selectedUser.id}
+              </p>
             </div>
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                {error}
+            <div className="grid gap-3 text-sm md:grid-cols-2">
+              <div className="space-y-1">
+                <p className="font-medium text-muted-foreground">Name</p>
+                <p>
+                  {[selectedUser.first_name, selectedUser.last_name]
+                    .filter(Boolean)
+                    .join(" ") || "—"}
+                </p>
               </div>
-            )}
+              <div className="space-y-1">
+                <p className="font-medium text-muted-foreground">Email</p>
+                <p className="font-mono text-xs">{selectedUser.email}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="font-medium text-muted-foreground">Company</p>
+                <p>{selectedUser.company_name || "—"}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="font-medium text-muted-foreground">Account status</p>
+                <p>{selectedUser.status || "unknown"}</p>
+              </div>
+            </div>
 
-            {searchResults.length > 0 && (
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Badge
+                variant="outline"
+                className={
+                  PLAN_STATUS_CLASSES[selectedUser.plan_status ?? ""] ??
+                  "bg-slate-100 text-slate-700 border border-slate-200"
+                }
+              >
+                Plan: {selectedUser.plan_status ?? "unknown"}
+              </Badge>
+              <Badge
+                variant="outline"
+                className={
+                  KYC_CLASSES[selectedUser.kyc_status ?? ""] ??
+                  "bg-slate-100 text-slate-700 border border-slate-200"
+                }
+              >
+                KYC: {selectedUser.kyc_status ?? "pending"}
+              </Badge>
+              {selectedUser.status && (
+                <Badge variant="outline">Status: {selectedUser.status}</Badge>
+              )}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <h2 className="text-lg font-semibold">Results ({searchResults.length})</h2>
-                <div className="space-y-2">
-                  {searchResults.map((user) => {
-                    const filename = generateFilename(user);
-                    return (
-                      <div
-                        key={user.id}
-                        className="border rounded-lg p-4 space-y-2 bg-card"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="font-medium">{user.email}</span>
-                              {user.plan_status && (
-                                <Badge
-                                  className={cn(
-                                    "text-xs",
-                                    PLAN_STATUS_CLASSES[user.plan_status] ||
-                                      "bg-gray-50 text-gray-700 border border-gray-200"
-                                  )}
-                                >
-                                  {user.plan_status}
-                                </Badge>
-                              )}
-                              {user.kyc_status && (
-                                <Badge
-                                  className={cn(
-                                    "text-xs",
-                                    KYC_STATUS_CLASSES[user.kyc_status] ||
-                                      "bg-gray-50 text-gray-700 border border-gray-200"
-                                  )}
-                                >
-                                  {user.kyc_status}
-                                </Badge>
-                              )}
-                            </div>
-                            {user.company_name && (
-                              <p className="text-sm text-muted-foreground">
-                                {user.company_name}
-                              </p>
-                            )}
-                            {(user.first_name || user.last_name) && (
-                              <p className="text-sm text-muted-foreground">
-                                {user.first_name} {user.last_name}
-                              </p>
-                            )}
-                            <p className="text-xs text-muted-foreground mt-1">
-                              User ID: {user.id}
-                            </p>
-                          </div>
-                        </div>
+                <Label htmlFor="date">Date segment (DD-MM-YY)</Label>
+                <Input
+                  id="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  placeholder="e.g. 27-11-25"
+                />
+              </div>
 
-                        <div className="border-t pt-2 mt-2">
-                          <Label className="text-sm font-medium mb-1 block">
-                            Generated Filename
-                          </Label>
-                          <div className="flex items-center gap-2">
-                            <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono">
-                              {filename}
-                            </code>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCopy(user.id)}
-                              className="shrink-0"
-                            >
-                              {copiedId === user.id ? (
-                                <>
-                                  <ClipboardCheck className="h-4 w-4 mr-2" />
-                                  Copied!
-                                </>
-                              ) : (
-                                <>
-                                  <Clipboard className="h-4 w-4 mr-2" />
-                                  Copy
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+              <div className="space-y-2">
+                <Label htmlFor="tag">Mail tag</Label>
+                <Input
+                  id="tag"
+                  value={tag}
+                  onChange={(e) => setTag(e.target.value)}
+                  placeholder="HMRC, CompaniesHouse, Bank…"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Spaces will be removed automatically.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label>Generated filename</Label>
+              {generatedFilename ? (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <code className="flex-1 rounded-lg bg-muted px-3 py-2 text-sm">
+                    {generatedFilename}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="sm:w-32"
+                    onClick={handleCopy}
+                  >
+                    {copied ? (
+                      <>
+                        <ClipboardCheck className="mr-2 h-4 w-4" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Clipboard className="mr-2 h-4 w-4" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
                 </div>
-              </div>
-            )}
-
-            {searchQuery && !isSearching && searchResults.length === 0 && !error && (
-              <div className="text-center py-8 text-muted-foreground">
-                No users found matching "{searchQuery}"
-              </div>
-            )}
-          </div>
-        </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Enter both a date and a tag to see the filename.
+                </p>
+              )}
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );
