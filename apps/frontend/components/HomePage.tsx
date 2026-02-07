@@ -396,69 +396,75 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <section className="py-24 lg:py-32 bg-white">
                 <div className="mx-auto max-w-6xl px-6 lg:px-8">
                     {/* CTA Container with Deep Brand Green Background */}
-                    <div className="relative overflow-hidden rounded-2xl bg-[#0b3d2e] max-w-4xl mx-auto">
-                        {/* Background Image - Decorative Texture */}
+                    <div className="relative isolate overflow-hidden rounded-2xl bg-[#0b3d2e] max-w-4xl mx-auto min-h-[320px] md:min-h-[360px]">
+                        {/* Background Image - Positioned on LEFT */}
                         <img
                             src="/images/Mask-group.jpg"
                             alt=""
                             aria-hidden="true"
-                            className="absolute inset-0 w-full h-full object-cover opacity-[0.8] pointer-events-none select-none"
+                            className="absolute inset-y-0 left-0 w-full md:w-[58%] h-full object-cover object-left-bottom opacity-12 md:opacity-20 pointer-events-none select-none"
                         />
 
-                        {/* Brand Green Depth Layer - Removed to show landmarks clearly */}
+                        {/* Gradient Overlay - Left to right fade for readability */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#0b3d2e]/30 via-[#0b3d2e]/70 to-[#0b3d2e]/95" />
 
-                        {/* Content - Right-aligned to show landmarks on left */}
-                        <div className="relative z-10 py-12 lg:py-16 px-6 lg:px-10">
-                            <div className="max-w-2xl mx-auto text-center space-y-5">
-                                {/* Headline - Prominent but compact */}
-                                <h2 className="text-2xl lg:text-3xl font-semibold text-white leading-[1.2] tracking-tight">
-                                    Get your official London business address today
-                                </h2>
+                        {/* Content Grid - Left spacer + Right content */}
+                        <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 min-h-[320px] md:min-h-[360px]">
+                            {/* Left spacer column - Hidden on mobile, visible on desktop */}
+                            <div className="hidden md:block md:col-span-5" />
 
-                                {/* Supporting line - Clearly secondary */}
-                                <p className="text-base lg:text-lg text-white/75 leading-relaxed max-w-xl">
-                                    Fully compliant with Companies House & HMRC. Same-day mail scanning.
-                                </p>
+                            {/* Right content column - All text and CTAs */}
+                            <div className="col-span-1 md:col-span-7 flex items-center">
+                                <div className="relative z-10 w-full max-w-xl ml-auto px-5 py-8 md:px-10 md:py-12 text-left">
+                                    {/* Headline */}
+                                    <h2 className="text-3xl md:text-5xl font-semibold tracking-tight text-white">
+                                        Get your official London business address today
+                                    </h2>
 
-                                {/* CTA Button - Elegant and dominant */}
-                                <div className="flex flex-col items-start gap-3 pt-1">
-                                    <Button
-                                        onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                        size="lg"
-                                        className="h-11 px-7 rounded-xl text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
-                                    >
-                                        Get started
-                                        <ArrowRight className="w-5 h-5 ml-2" />
-                                    </Button>
+                                    {/* Supporting line */}
+                                    <p className="mt-4 text-base md:text-xl text-white/85 leading-relaxed">
+                                        Fully compliant with Companies House & HMRC. Same-day mail scanning.
+                                    </p>
 
-                                    {/* Optional secondary link */}
-                                    <button
-                                        onClick={() => handleNavClick?.("plans")}
-                                        className="text-sm text-white/70 hover:text-white/90 transition-colors"
-                                    >
-                                        View what's included
-                                    </button>
-                                </div>
+                                    {/* Dynamic Pricing */}
+                                    {!pricingError && (
+                                        <div className="mt-4">
+                                            {pricingLoading ? (
+                                                <p className="text-sm md:text-base text-white/50 animate-pulse">
+                                                    Loading pricing...
+                                                </p>
+                                            ) : hasApiData && monthlyPrice > 0 ? (
+                                                <p className="text-sm md:text-base text-white/75">
+                                                    £{Number(monthlyPrice).toFixed(2)} / month · Cancel anytime
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                    )}
 
-                                {/* Dynamic Pricing - Calm and understated */}
-                                {!pricingError && (
-                                    <div className="pt-1">
-                                        {pricingLoading ? (
-                                            <p className="text-sm text-white/50 animate-pulse">
-                                                Loading pricing...
-                                            </p>
-                                        ) : hasApiData && monthlyPrice > 0 ? (
-                                            <p className="text-sm text-white/75">
-                                                £{Number(monthlyPrice).toFixed(2)} / month · Cancel anytime
-                                            </p>
-                                        ) : null}
+                                    {/* CTA Buttons Row */}
+                                    <div className="mt-7 flex flex-wrap items-center gap-3">
+                                        <Button
+                                            onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
+                                            className="inline-flex items-center rounded-full px-6 py-3.5 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
+                                        >
+                                            Get started
+                                            <ArrowRight className="w-5 h-5 ml-2" />
+                                        </Button>
+
+                                        {/* Secondary link */}
+                                        <button
+                                            onClick={() => handleNavClick?.("plans")}
+                                            className="text-sm md:text-base text-white/70 hover:text-white/90 transition-colors"
+                                        >
+                                            View what's included
+                                        </button>
                                     </div>
-                                )}
 
-                                {/* Trust micro-signals - Understated */}
-                                <p className="text-xs text-white/60 pt-1">
-                                    No setup fees · No contracts
-                                </p>
+                                    {/* Trust micro-signals */}
+                                    <p className="mt-6 text-sm text-white/70 flex flex-wrap gap-x-4 gap-y-2">
+                                        No setup fees · No contracts
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
