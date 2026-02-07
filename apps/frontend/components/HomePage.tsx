@@ -392,52 +392,50 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </div>
             </section>
 
-            {/* FINAL CTA - Refined closing prompt */}
+            {/* FINAL CTA - Strict split layout: LEFT = artwork, RIGHT = content */}
             <section className="py-24 lg:py-32 bg-white">
                 <div className="mx-auto max-w-6xl px-6 lg:px-8">
                     {/* CTA Container with Deep Brand Green Background */}
-                    <div className="relative isolate overflow-hidden rounded-2xl bg-[#0b3d2e] max-w-4xl mx-auto min-h-[320px] md:min-h-[360px]">
-                        {/* Background Image - Positioned on LEFT */}
-                        <img
-                            src="/images/Mask-group.jpg"
-                            alt=""
-                            aria-hidden="true"
-                            className="absolute inset-y-0 left-0 w-[64%] md:w-[58%] h-full object-cover object-left-bottom opacity-[0.22] md:opacity-[0.34] pointer-events-none select-none z-0"
-                        />
+                    <div className="relative overflow-hidden rounded-[28px] bg-[#064e3b] max-w-4xl mx-auto min-h-[380px] md:min-h-[430px]">
+                        {/* LEFT PANEL - Artwork only */}
+                        <div className="absolute inset-y-0 left-0 w-full md:w-[52%]">
+                            {/* Background Image - Only in left panel */}
+                            <img
+                                src="/images/Mask-group.jpg"
+                                alt=""
+                                aria-hidden="true"
+                                className="absolute inset-0 h-full w-full object-cover object-[22%_bottom] opacity-[0.18] md:opacity-[0.42] pointer-events-none select-none"
+                            />
+                            {/* Left panel vignette - Subtle darkening on right edge */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#064e3b]/10 via-[#064e3b]/25 to-[#064e3b]/55" />
+                        </div>
 
-                        {/* Gradient Overlay - Softened left to right fade for readability */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#0b3d2e]/20 via-[#0b3d2e]/45 to-[#0b3d2e]/86 z-0" />
+                        {/* HARD DIVIDER - Transition strip at split point (desktop only) */}
+                        <div className="absolute inset-y-0 left-[52%] hidden md:block w-16 -translate-x-1/2 bg-gradient-to-r from-[#064e3b]/0 to-[#064e3b]/90 z-10" />
 
-                        {/* Subtle local glow behind right text for readability */}
-                        <div className="absolute inset-y-0 right-0 w-[58%] bg-[radial-gradient(ellipse_at_center,rgba(11,61,46,0.28)_0%,rgba(11,61,46,0)_70%)] z-0" />
-
-                        {/* Content Grid - Left spacer + Right content */}
-                        <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 min-h-[320px] md:min-h-[360px]">
-                            {/* Left spacer column - Hidden on mobile, visible on desktop */}
-                            <div className="hidden md:block md:col-span-5" />
-
-                            {/* Right content column - All text and CTAs */}
-                            <div className="col-span-1 md:col-span-7 flex items-center">
-                                <div className="relative z-10 w-full max-w-xl ml-auto px-5 py-8 md:px-10 md:py-12 text-left">
+                        {/* RIGHT PANEL - Content only */}
+                        <div className="absolute inset-y-0 right-0 w-full md:w-[48%]">
+                            <div className="relative z-10 h-full flex items-center">
+                                <div className="w-full max-w-[560px] px-6 py-8 md:px-10 md:py-10 text-left">
                                     {/* Headline */}
-                                    <h2 className="text-3xl md:text-5xl font-semibold tracking-tight text-white">
+                                    <h2 className="text-[44px] md:text-[68px] leading-[0.98] tracking-[-0.02em] font-semibold text-white max-w-[14ch]">
                                         Get your official London business address today
                                     </h2>
 
                                     {/* Supporting line */}
-                                    <p className="mt-4 text-base md:text-xl text-white/85 leading-relaxed">
+                                    <p className="mt-5 text-[18px] md:text-[24px] leading-[1.35] font-normal text-white/85 max-w-[30ch]">
                                         Fully compliant with Companies House & HMRC. Same-day mail scanning.
                                     </p>
 
                                     {/* Dynamic Pricing */}
                                     {!pricingError && (
-                                        <div className="mt-4">
+                                        <div className="mt-5">
                                             {pricingLoading ? (
-                                                <p className="text-sm md:text-base text-white/50 animate-pulse">
+                                                <p className="text-base md:text-[20px] text-white/50 animate-pulse">
                                                     Loading pricing...
                                                 </p>
                                             ) : hasApiData && monthlyPrice > 0 ? (
-                                                <p className="text-sm md:text-base text-white/75">
+                                                <p className="text-base md:text-[20px] text-white/75">
                                                     £{Number(monthlyPrice).toFixed(2)} / month · Cancel anytime
                                                 </p>
                                             ) : null}
@@ -445,10 +443,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     )}
 
                                     {/* CTA Buttons Row */}
-                                    <div className="mt-7 flex flex-wrap items-center gap-3">
+                                    <div className="mt-7 flex flex-wrap items-center gap-4">
                                         <Button
                                             onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                            className="inline-flex items-center rounded-full px-6 py-3.5 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
+                                            className="inline-flex items-center h-12 px-7 rounded-full text-lg md:text-xl font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
                                         >
                                             Get started
                                             <ArrowRight className="w-5 h-5 ml-2" />
@@ -457,14 +455,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         {/* Secondary link */}
                                         <button
                                             onClick={() => handleNavClick?.("plans")}
-                                            className="text-sm md:text-base text-white/70 hover:text-white/90 transition-colors"
+                                            className="text-base md:text-lg text-white/75 hover:text-white transition-colors"
                                         >
                                             View what's included
                                         </button>
                                     </div>
 
                                     {/* Trust micro-signals */}
-                                    <p className="mt-6 text-sm text-white/70 flex flex-wrap gap-x-4 gap-y-2">
+                                    <p className="mt-6 text-sm md:text-base text-white/65 flex flex-wrap gap-x-4 gap-y-2">
                                         No setup fees · No contracts
                                     </p>
                                 </div>
