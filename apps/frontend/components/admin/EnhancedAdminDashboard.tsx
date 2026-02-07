@@ -16,7 +16,6 @@ import {
     Users,
     Truck,
     FileText,
-    Settings,
     Package,
     Mail,
 } from "lucide-react";
@@ -35,9 +34,7 @@ const CollaborativeForwardingBoard = dynamic(() => import('@/components/admin/Co
 //     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 // });
 
-const SettingsSection = dynamic(() => import('@/components/admin/SettingsSection').then(mod => ({ default: mod.SettingsSection })), {
-    loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
-});
+// SettingsSection removed - not used
 
 const BlogSection = dynamic(() => import('@/components/admin/BlogSection').then(mod => ({ default: mod.BlogSection })), {
     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
@@ -67,7 +64,7 @@ interface AdminDashboardProps {
     onGoBack?: () => void;
 }
 
-type AdminSection = "users" | "mail" | "forwarding" | "plans" | "blog" | "settings";
+type AdminSection = "users" | "mail" | "forwarding" | "plans" | "blog";
 
 export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboardProps) {
     const router = useRouter();
@@ -138,7 +135,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
         { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
         { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
         { id: "blog", label: "Blog", icon: <FileText className="h-4 w-4" /> },
-        { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
     ] as const;
 
     const handleFiltersChange = useCallback((filters: {
@@ -174,8 +170,6 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
                 return <CollaborativeForwardingBoard />;
             case "plans":
                 return <PlansSection />;
-            case "settings":
-                return <SettingsSection />;
             case "blog":
                 return <BlogSection />;
             default:

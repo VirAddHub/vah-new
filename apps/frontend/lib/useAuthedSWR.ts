@@ -16,7 +16,9 @@ function resolveToken(ctx: ReturnType<typeof useAuth>): string | null {
 
 function makeFetcher(token?: string | null) {
   return async (keyOrTuple: string | readonly [string, any]) => {
-    if (!token) throw new Error("No token");
+    // Allow requests without token when using cookie-based auth
+    // Token is optional - cookies will be sent via credentials: 'include'
+    // if (!token) throw new Error("No token");
 
     // Handle both string keys and [url, params] tuples
     let url: string;
@@ -42,12 +44,19 @@ function makeFetcher(token?: string | null) {
     // This ensures proper cookie forwarding, CSRF handling, and CORS compliance
     const fullUrl = url.startsWith('/') ? url : `/${url}`;
     console.log('[useAuthedSWR] Fetching:', fullUrl);
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Only add Authorization header if token exists (for backward compatibility)
+    // Cookie-based auth works without token via credentials: 'include'
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
     const res = await fetch(fullUrl, {
-      headers: { 
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // Include cookies for session
+      headers,
+      credentials: 'include', // Include cookies for session (required for cookie-based auth)
     });
 
     const contentType = res.headers.get("content-type") || "";
@@ -123,7 +132,9 @@ export function useAuthedSWR<T = any>(
   const auth = useAuth();
   const token = resolveToken(auth);
   const fetcher = useMemo(() => makeFetcher(token), [token]);
-  const gatedKey = token && key ? key : null;
+  // Allow requests even without token (cookie-based auth)
+  // Token is optional - cookies will be sent via credentials: 'include'
+  const gatedKey = key; // Remove token requirement - allow cookie-only auth
 
   return useSWR<T>(gatedKey, fetcher, {
     revalidateOnFocus: true,
