@@ -12,6 +12,7 @@ import {
     Menu,
     X,
     LogOut,
+    Settings,
     type LucideIcon
 } from 'lucide-react';
 import { clearToken } from "@/lib/token-manager";
@@ -61,6 +62,10 @@ const accountNavItems: NavItem[] = [
     { label: 'Addresses', href: '/account/addresses', icon: MapPin },
     { label: 'Verification', href: '/account/verification', icon: ShieldCheck },
     { label: 'Support', href: '/account/support', icon: HelpCircle },
+];
+
+const settingsNavItems: NavItem[] = [
+    { label: 'Settings', href: '/account/settings', icon: Settings },
 ];
 
 export function DashboardSidebar() {
@@ -157,36 +162,69 @@ export function DashboardSidebar() {
                     </div>
                 </div>
 
-                {/* Account Section */}
-                <div className="mt-4 pt-4 border-t border-neutral-200">
-                    <div className="px-3 mb-2">
-                        <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                            Account
-                        </h3>
-                    </div>
-                    <div className="space-y-1">
-                        {accountNavItems.map((item) => {
-                            const Icon = item.icon;
-                            const active = isActive(item.href);
+                                    {/* Account Section */}
+                                <div className="mt-4 pt-4 border-t border-neutral-200">
+                                        <div className="px-3 mb-2">
+                                            <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                                Account
+                                            </h3>
+                                        </div>
+                                        <div className="space-y-1">
+                                            {accountNavItems.map((item) => {
+                                                const Icon = item.icon;
+                                                const active = isActive(item.href);
 
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={cn(
-                                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                                        active
-                                            ? "bg-primary/10 text-primary"
-                                            : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
-                                    )}
-                                >
-                                    <Icon className="w-5 h-5" strokeWidth={2} />
-                                    {item.label}
-                                </Link>
-                            );
-                        })}
-                    </div>
-                    </div>
+                                                return (
+                                                    <Link
+                                                        key={item.href}
+                                                        href={item.href}
+                                                        onClick={() => setIsMobileSidebarOpen(false)}
+                                                        className={cn(
+                                                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                                                            active
+                                                                ? "bg-primary/10 text-primary"
+                                                                : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                                                        )}
+                                                    >
+                                                        <Icon className="w-5 h-5" strokeWidth={2} />
+                                                        {item.label}
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Settings Section */}
+                                    <div className="mt-4 pt-4 border-t border-neutral-200">
+                                        <div className="px-3 mb-2">
+                                            <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                                Settings
+                                            </h3>
+                                        </div>
+                                        <div className="space-y-1">
+                                            {settingsNavItems.map((item) => {
+                                                const Icon = item.icon;
+                                                const active = isActive(item.href);
+
+                                                return (
+                                                    <Link
+                                                        key={item.href}
+                                                        href={item.href}
+                                                        onClick={() => setIsMobileSidebarOpen(false)}
+                                                        className={cn(
+                                                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                                                            active
+                                                                ? "bg-primary/10 text-primary"
+                                                                : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                                                        )}
+                                                    >
+                                                        <Icon className="w-5 h-5" strokeWidth={2} />
+                                                        {item.label}
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                 </nav>
 
                 {/* Certificate Download - Pinned to bottom */}
@@ -335,6 +373,38 @@ export function DashboardSidebar() {
                                         </div>
                                         <div className="space-y-1">
                                             {accountNavItems.map((item) => {
+                                                const Icon = item.icon;
+                                                const active = isActive(item.href);
+
+                                                return (
+                                                    <Link
+                                                        key={item.href}
+                                                        href={item.href}
+                                                        onClick={() => setIsMobileSidebarOpen(false)}
+                                                        className={cn(
+                                                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                                                            active
+                                                                ? "bg-primary/10 text-primary"
+                                                                : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                                                        )}
+                                                    >
+                                                        <Icon className="w-5 h-5" strokeWidth={2} />
+                                                        {item.label}
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Settings Section */}
+                                    <div className="mt-4 pt-4 border-t border-neutral-200">
+                                        <div className="px-3 mb-2">
+                                            <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                                Settings
+                                            </h3>
+                                        </div>
+                                        <div className="space-y-1">
+                                            {settingsNavItems.map((item) => {
                                                 const Icon = item.icon;
                                                 const active = isActive(item.href);
 
