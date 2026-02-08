@@ -227,7 +227,7 @@ export function BlogSection() {
             if (token) headers.Authorization = `Bearer ${token}`;
 
             const response = await fetch(`/api/bff/admin/blog/posts/${editingPost.slug}`, {
-                method: 'PATCH',
+                method: 'PUT',
                 headers,
                 credentials: 'include',
                 body: JSON.stringify({
