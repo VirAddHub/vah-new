@@ -22,11 +22,32 @@ export async function PATCH(request: NextRequest) {
     const backend = getBackendOrigin();
     backendUrl = `${backend}/api/profile/contact`;
 
+    // Fetch CSRF token before making PATCH request
+    const csrfResponse = await fetch(`${backend}/api/csrf`, {
+      method: 'GET',
+      headers: {
+        'Cookie': cookie,
+      },
+      credentials: 'include',
+      cache: 'no-store',
+    });
+
+    let csrfToken: string | null = null;
+    if (csrfResponse.ok) {
+      try {
+        const csrfData = await csrfResponse.json();
+        csrfToken = csrfData.csrfToken || null;
+      } catch (e) {
+        console.error('[BFF profile/contact PATCH] Failed to parse CSRF token response:', e);
+      }
+    }
+
     const response = await fetch(backendUrl, {
       method: 'PATCH',
       headers: {
         'Cookie': cookie,
         'Content-Type': 'application/json',
+        ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       },
       body: JSON.stringify(body),
       cache: 'no-store',
