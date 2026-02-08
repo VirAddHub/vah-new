@@ -98,8 +98,11 @@ export function DashboardSidebar() {
         } finally {
             // Clear client-side tokens (localStorage + CSRF cookie)
             clearToken();
-            // Redirect to login page
-            window.location.href = '/login';
+            // Use replace instead of href to prevent back button issues
+            // Add a small delay to ensure cookies are cleared
+            setTimeout(() => {
+                window.location.replace('/login');
+            }, 100);
         }
     };
 
