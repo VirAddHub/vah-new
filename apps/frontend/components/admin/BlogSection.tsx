@@ -114,12 +114,12 @@ export function BlogSection() {
     // Fetch blog posts with pagination
     // useAuthedSWR handles { ok: true, items: [...], total, page, pageSize } format
     const { data: postsData, error: postsError, mutate: refetchPosts } = useAuthedSWR<{ items: BlogPost[]; total: number; page: number; pageSize: number }>(
-        ['/api/admin/blog/posts', { includeDrafts: 'true', page: String(page), pageSize: String(pageSize) }]
+        ['/api/bff/admin/blog/posts', { includeDrafts: 'true', page: String(page), pageSize: String(pageSize) }]
     );
 
     // Fetch categories/tags
     const { data: categoriesData } = useAuthedSWR<string[]>(
-        '/api/admin/blog/categories'
+        '/api/bff/admin/blog/categories'
     );
 
     // Extract posts and pagination info
@@ -160,7 +160,7 @@ export function BlogSection() {
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
             if (token) headers.Authorization = `Bearer ${token}`;
 
-            const response = await fetch(`${API_BASE}/api/admin/blog/posts`, {
+            const response = await fetch('/api/bff/admin/blog/posts/create', {
                 method: 'POST',
                 headers,
                 credentials: 'include',
@@ -226,8 +226,8 @@ export function BlogSection() {
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
             if (token) headers.Authorization = `Bearer ${token}`;
 
-            const response = await fetch(`${API_BASE}/api/admin/blog/posts/${editingPost.slug}`, {
-                method: 'PUT',
+            const response = await fetch(`/api/bff/admin/blog/posts/${editingPost.slug}`, {
+                method: 'PATCH',
                 headers,
                 credentials: 'include',
                 body: JSON.stringify({
