@@ -287,7 +287,7 @@ export function BlogSection() {
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
             if (token) headers.Authorization = `Bearer ${token}`;
 
-            const response = await fetch(`${API_BASE}/api/admin/blog/posts/${slug}`, {
+            const response = await fetch(`/api/bff/admin/blog/posts/${slug}`, {
                 method: 'DELETE',
                 headers,
                 credentials: 'include'
@@ -472,7 +472,7 @@ export function BlogSection() {
                             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
                             if (token) headers.Authorization = `Bearer ${token}`;
 
-                            fetch(`${API_BASE}/api/admin/blog/posts`, {
+                            fetch('/api/bff/admin/blog/posts/create', {
                                 method: 'POST',
                                 headers,
                                 credentials: 'include',
