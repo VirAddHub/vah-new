@@ -287,6 +287,19 @@ export function BlogSection() {
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
             if (token) headers.Authorization = `Bearer ${token}`;
 
+            // Optimistically remove the post from the UI immediately
+            const previousData = postsData;
+            if (previousData) {
+                refetchPosts(
+                    {
+                        ...previousData,
+                        items: previousData.items.filter(post => post.slug !== slug),
+                        total: Math.max(0, previousData.total - 1)
+                    },
+                    { revalidate: false } // Don't revalidate yet, wait for API response
+                );
+            }
+
             const response = await fetch(`/api/bff/admin/blog/posts/${slug}`, {
                 method: 'DELETE',
                 headers,
@@ -298,12 +311,20 @@ export function BlogSection() {
                 data = await parseJsonSafe(response);
             } catch (err: any) {
                 console.error('[delete-post] Blog request failed with non-JSON response:', err);
+                // Rollback optimistic update
+                if (previousData) {
+                    refetchPosts(previousData, { revalidate: false });
+                }
                 alert(`Failed to delete post: ${err.message || 'Invalid response from server'}`);
                 return;
             }
 
             if (!response.ok || !data?.ok) {
                 console.error('[delete-post] failed', { status: response.status, data });
+                // Rollback optimistic update
+                if (previousData) {
+                    refetchPosts(previousData, { revalidate: false });
+                }
                 alert(`Failed to delete post: ${data?.error || `HTTP ${response.status}`}`);
                 return;
             }
@@ -324,11 +345,34 @@ export function BlogSection() {
                 console.warn('Failed to revalidate blog pages:', revalidateError);
             }
 
+            // Invalidate ALL blog post cache entries (all pages) to ensure dashboard updates
+            const { mutate } = await import('swr');
+            mutate(
+                (key) => {
+                    // Match all blog post queries regardless of pagination
+                    if (typeof key === 'string') {
+                        return key.includes('/api/bff/admin/blog/posts');
+                    }
+                    if (Array.isArray(key) && key.length > 0 && typeof key[0] === 'string') {
+                        return key[0].includes('/api/bff/admin/blog/posts');
+                    }
+                    return false;
+                },
+                undefined,
+                { revalidate: true } // Force revalidation of all matching cache entries
+            );
+
+            // Also revalidate the current page
             await refetchPosts();
+            
             // Show success message
             alert('Blog post deleted successfully!');
         } catch (error) {
             console.error('Error deleting post:', error);
+            // Rollback optimistic update on error
+            if (postsData) {
+                refetchPosts(postsData, { revalidate: false });
+            }
             alert('Failed to delete post. Please try again.');
         }
     };
