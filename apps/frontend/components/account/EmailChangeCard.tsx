@@ -74,7 +74,7 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
         toast({
           title: 'Confirmation email sent',
           description: `Confirmation link sent to ${newEmail}. Your email won't update until you confirm.`,
-          duration: 5000,
+          durationMs: 5000,
         });
 
         onEmailChangeRequested?.();
@@ -113,7 +113,7 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
         toast({
           title: 'Confirmation email resent',
           description: `Confirmation link sent to ${pendingEmail}.`,
-          duration: 5000,
+          durationMs: 5000,
         });
       } else {
         throw new Error(result.error?.message || 'Failed to resend confirmation email.');
