@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Textarea } from "../ui/textarea";
 import { Label } from "../ui/label";
 import { getToken } from '@/lib/token-manager';
+import { mutate } from 'swr';
+import { invalidateBlogCache } from '@/lib/swrCacheUtils';
 import {
     Filter,
     Plus,
@@ -346,7 +348,10 @@ export function BlogSection() {
             }
 
             // Invalidate ALL blog post cache entries (all pages) to ensure dashboard updates
-            const { mutate } = await import('swr');
+            // Use the utility function for admin blog cache, then also invalidate BFF routes
+            invalidateBlogCache();
+            
+            // Also invalidate BFF blog post routes (which use array keys with pagination)
             mutate(
                 (key) => {
                     // Match all blog post queries regardless of pagination
