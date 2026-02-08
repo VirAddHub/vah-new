@@ -178,11 +178,37 @@ export default function FilenameGeneratorPage() {
     setTimeout(() => setCopied(false), 1200);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('vah_jwt');
-    localStorage.removeItem('vah_user');
-    document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    router.push('/admin/login');
+  const handleLogout = async () => {
+    // Prevent multiple logout attempts
+    if ((handleLogout as any).__isLoggingOut) {
+      return;
+    }
+    (handleLogout as any).__isLoggingOut = true;
+
+    try {
+      await fetch('/api/bff/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      localStorage.removeItem('vah_jwt');
+      localStorage.removeItem('vah_user');
+      const isSecure = window.location.protocol === 'https:';
+      const sameSiteValue = isSecure ? 'None' : 'Lax';
+      const secureFlag = isSecure ? '; Secure' : '';
+      document.cookie = `vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=${sameSiteValue}${secureFlag}`;
+      document.cookie = `vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=${sameSiteValue}${secureFlag}`;
+      document.cookie = `vah_role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=${sameSiteValue}${secureFlag}`;
+      document.cookie = `vah_user=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=${sameSiteValue}${secureFlag}`;
+      document.cookie = `vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=${sameSiteValue}${secureFlag}`;
+      window.stop();
+      setTimeout(() => {
+        window.location.replace('/admin/login');
+      }, 200);
+    }
   };
 
   const handleNavigate = (page: string) => {

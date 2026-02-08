@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { EnhancedAdminDashboard } from '@/components/EnhancedAdminDashboard';
+import { clearToken } from '@/lib/token-manager';
 
 export default function AdminDashboardPage() {
     const router = useRouter();
@@ -55,11 +56,47 @@ export default function AdminDashboardPage() {
         return null; // Will redirect
     }
 
-    const handleLogout = () => {
-        localStorage.removeItem('vah_jwt');
-        localStorage.removeItem('vah_user');
-        document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        router.push('/admin/login');
+    const handleLogout = async () => {
+        // Prevent multiple logout attempts
+        if ((handleLogout as any).__isLoggingOut) {
+            return;
+        }
+        (handleLogout as any).__isLoggingOut = true;
+
+        try {
+            // Call logout API endpoint - backend will clear httpOnly cookies
+            await fetch('/api/bff/auth/logout', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+        } catch (error) {
+            console.error('Logout API call failed:', error);
+        } finally {
+            // Clear client-side tokens (localStorage + CSRF cookie)
+            clearToken();
+            // Clear all localStorage items related to auth
+            localStorage.removeItem('vah_jwt');
+            localStorage.removeItem('vah_user');
+            // Force clear cookies client-side as well
+            const isSecure = window.location.protocol === 'https:';
+            const sameSiteValue = isSecure ? 'None' : 'Lax';
+            const secureFlag = isSecure ? '; Secure' : '';
+            document.cookie = `vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=${sameSiteValue}${secureFlag}`;
+            document.cookie = `vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=${sameSiteValue}${secureFlag}`;
+            document.cookie = `vah_role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=${sameSiteValue}${secureFlag}`;
+            document.cookie = `vah_user=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=${sameSiteValue}${secureFlag}`;
+            document.cookie = `vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=${sameSiteValue}${secureFlag}`;
+            
+            // Use replace with a longer delay to ensure everything is cleared
+            // Stop any ongoing requests by navigating immediately
+            window.stop(); // Stop any pending requests
+            setTimeout(() => {
+                window.location.replace('/admin/login');
+            }, 200);
+        }
     };
 
     const handleNavigate = (page: string) => {
