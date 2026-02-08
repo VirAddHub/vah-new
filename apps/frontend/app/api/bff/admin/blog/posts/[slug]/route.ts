@@ -217,7 +217,7 @@ export async function PATCH(
     backendUrl = `${backend}/api/admin/blog/posts/${encodeURIComponent(slug)}`;
 
     const response = await fetch(backendUrl, {
-      method: 'PATCH',
+      method: 'PUT',
       headers: {
         'Cookie': cookie,
         'Content-Type': 'application/json',
