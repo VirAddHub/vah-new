@@ -1,7 +1,7 @@
 'use client';
 
 import { EmailChangeCard } from '@/components/account/EmailChangeCard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ProfileCard } from '@/components/account/ProfileCard';
 import { Settings } from 'lucide-react';
 
 export default function AccountSettingsPage() {
@@ -18,6 +18,11 @@ export default function AccountSettingsPage() {
                 <p className="text-base text-neutral-600 leading-relaxed">
                     Manage your account settings and preferences
                 </p>
+            </div>
+
+            {/* Profile Information Card */}
+            <div className="mb-6">
+                <ProfileCard />
             </div>
 
             {/* Email Change Card */}
