@@ -38,6 +38,12 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
 
     // Handle logout - use proper API endpoint
     const handleLogout = async () => {
+        // Prevent multiple logout attempts
+        if ((handleLogout as any).__isLoggingOut) {
+            return;
+        }
+        (handleLogout as any).__isLoggingOut = true;
+
         try {
             // Call logout API endpoint - backend will clear httpOnly cookies
             await fetch('/api/bff/auth/logout', {
@@ -52,11 +58,22 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
         } finally {
             // Clear client-side tokens (localStorage + CSRF cookie)
             clearToken();
-            // Use replace instead of href to prevent back button issues
-            // Add a small delay to ensure cookies are cleared
+            // Clear all localStorage items related to auth
+            localStorage.removeItem('vah_jwt');
+            localStorage.removeItem('vah_user');
+            // Force clear cookies client-side as well
+            document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
+            document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
+            document.cookie = 'vah_role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
+            document.cookie = 'vah_user=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
+            document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
+            
+            // Use replace with a longer delay to ensure everything is cleared
+            // Stop any ongoing requests by navigating immediately
+            window.stop(); // Stop any pending requests
             setTimeout(() => {
                 window.location.replace('/login');
-            }, 100);
+            }, 200);
         }
     };
 

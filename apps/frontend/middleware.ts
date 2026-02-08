@@ -37,16 +37,21 @@ export function middleware(request: NextRequest) {
   // Check for authentication cookie
   if (isProtectedRoute) {
     const sessionCookie = request.cookies.get('vah_session');
+    // More strict validation - check for empty, null, undefined, or very short values
     const hasValidSession = sessionCookie && 
                            sessionCookie.value !== 'null' && 
                            sessionCookie.value !== 'undefined' && 
-                           sessionCookie.value.length > 10;
+                           sessionCookie.value !== '' &&
+                           sessionCookie.value.trim().length > 10;
 
     if (!hasValidSession) {
-      // Redirect to login with next parameter
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('next', pathname + request.nextUrl.search);
-      return NextResponse.redirect(loginUrl);
+      // Only redirect if not already going to login (prevent redirect loops)
+      if (pathname !== '/login') {
+        // Redirect to login with next parameter
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('next', pathname + request.nextUrl.search);
+        return NextResponse.redirect(loginUrl);
+      }
     }
   }
 
