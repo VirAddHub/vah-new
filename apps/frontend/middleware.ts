@@ -31,8 +31,9 @@ export function middleware(request: NextRequest) {
   // Exceptions: public routes (no auth required)
   const isPublicAccountRoute = pathname === '/account/confirm-email' || pathname.startsWith('/account/confirm-email/');
   const isPublicVerifyRoute = pathname === '/verify-owner' || pathname.startsWith('/verify-owner/');
+  const isPublicEmailChangeRoute = pathname === '/verify-email-change' || pathname.startsWith('/verify-email-change/');
   const PROTECTED_PREFIXES = ['/dashboard', '/account', '/admin'];
-  const isProtectedRoute = !isPublicAccountRoute && !isPublicVerifyRoute && PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix));
+  const isProtectedRoute = !isPublicAccountRoute && !isPublicVerifyRoute && !isPublicEmailChangeRoute && PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix));
 
   // Check for authentication cookie
   if (isProtectedRoute) {
