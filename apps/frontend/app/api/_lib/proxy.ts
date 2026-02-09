@@ -18,7 +18,9 @@ export async function proxy(req: NextRequest, targetPath: string) {
   }
 
   const url = new URL(req.url);
-  const target = `${ORIGIN}${targetPath}${url.search}`;
+  // Normalize ORIGIN to remove trailing /api if present, since targetPath already includes /api
+  const normalizedOrigin = ORIGIN.replace(/\/api\/?$/, '');
+  const target = `${normalizedOrigin}${targetPath}${url.search}`;
 
   // Build outbound request
   const headers = new Headers();
