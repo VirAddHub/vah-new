@@ -18,9 +18,11 @@ export async function proxy(req: NextRequest, targetPath: string) {
   }
 
   const url = new URL(req.url);
-  // Normalize ORIGIN to remove trailing /api if present, since targetPath already includes /api
+  // Normalize ORIGIN to remove trailing /api if present
   const normalizedOrigin = ORIGIN.replace(/\/api\/?$/, '');
-  const target = `${normalizedOrigin}${targetPath}${url.search}`;
+  // Ensure targetPath includes /api prefix (backend routes are mounted at /api/admin/...)
+  const apiPath = targetPath.startsWith('/api/') ? targetPath : `/api${targetPath}`;
+  const target = `${normalizedOrigin}${apiPath}${url.search}`;
 
   // Build outbound request
   const headers = new Headers();
