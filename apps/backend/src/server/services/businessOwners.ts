@@ -59,6 +59,13 @@ export async function createBusinessOwner(
     );
     
     // Send verification email using dedicated business owner verification template
+    // TODO: Future enhancement - Replace with direct Sumsub URL generation
+    // When switching to direct Sumsub links:
+    // 1) Generate Sumsub URL at send-time using createSumsubApplicantForOwner()
+    // 2) Keep token issuance in DB for audit trail (already done above)
+    // 3) On resend, rotate token/session and invalidate previous invite
+    // 4) Add error handling if Sumsub URL generation fails
+    // 5) Keep template variable {{verification_url}} unchanged
     const verifyUrl = `${getAppUrl()}/verify-owner?token=${token}`;
     
     // Fetch company name if not provided
@@ -148,6 +155,7 @@ export async function resendBusinessOwnerInvite(ownerId: number): Promise<string
     }
     
     // Send email using dedicated business owner verification template
+    // TODO: Future enhancement - Replace with direct Sumsub URL generation (see createBusinessOwner for details)
     const verifyUrl = `${getAppUrl()}/verify-owner?token=${token}`;
     const expiryDays = 7;
     const expiresIn = `${expiryDays} day${expiryDays !== 1 ? 's' : ''}`;
