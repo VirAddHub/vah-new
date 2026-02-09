@@ -102,8 +102,8 @@ export async function requestEmailChange(
         );
     }
     
-    // Build confirmation URL
-    const confirmUrl = `${getAppUrl()}/account/confirm-email?token=${token}`;
+    // Build confirmation URL - use public route outside dashboard
+    const confirmUrl = `${getAppUrl()}/verify-email-change?token=${token}`;
     
     // Replies must route to support@virtualaddresshub.co.uk (intentional support workflow)
     // Send verification email to NEW email address
@@ -350,8 +350,8 @@ export async function resendEmailChangeConfirmation(token: string): Promise<{ se
         [newTokenHash, expiresAt, request.id]
     );
     
-    // Build confirmation URL with new token
-    const confirmUrl = `${getAppUrl()}/account/confirm-email?token=${newToken}`;
+    // Build confirmation URL with new token - use public route outside dashboard
+    const confirmUrl = `${getAppUrl()}/verify-email-change?token=${newToken}`;
     
     // Send verification email to new email address
     try {
