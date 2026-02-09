@@ -121,7 +121,7 @@ export async function handleGcWebhook(req: Request, res: Response) {
         break;
 
       case 'mandates.active':
-        // Update subscription with active mandate
+        // Update subscription with active mandate and activate user account
         const mandateUserId = event.links?.customer_metadata?.user_id;
         if (mandateUserId) {
           // UPSERT pattern: ensure subscription exists, update mandate and status
@@ -133,7 +133,15 @@ export async function handleGcWebhook(req: Request, res: Response) {
                   status = 'active',
                   updated_at = NOW()
             `, [mandateUserId, event.links?.mandate]);
-          console.log(`[GoCardless Webhook] Activated mandate for user ${mandateUserId}`);
+          
+          // Activate user account if it's in pending_payment status
+          await pool.query(`
+                UPDATE "user"
+                SET status = 'active', updated_at = $1
+                WHERE id = $2 AND status = 'pending_payment'
+            `, [now, mandateUserId]);
+          
+          console.log(`[GoCardless Webhook] Activated mandate and account for user ${mandateUserId}`);
         }
         break;
 

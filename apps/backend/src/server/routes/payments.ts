@@ -313,13 +313,15 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
 
         if (!gocardlessToken || !appUrl) {
             // GoCardless not configured - skip payment setup for now
+            // In dev/staging, activate account even without payment
             console.log(`[Payment] GoCardless not configured, skipping payment setup for user ${userId}`);
 
             // NOTE: plan_status is only updated via GoCardless webhooks
             // Do not set plan_status here
+            // Activate account since payment is skipped (dev/staging only)
             await pool.query(`
                 UPDATE "user"
-                SET updated_at = $1
+                SET status = 'active', updated_at = $1
                 WHERE id = $2
             `, [Date.now(), userId]);
 
@@ -469,7 +471,7 @@ router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request
         // In live, this will fail if no explicit plan was selected earlier.
         await ensureUserPlanLinked({ pool, userId: Number(userId), cadence: "monthly" });
 
-        // Update user with GoCardless mandate
+        // Update user with GoCardless mandate and activate account
         // NOTE: plan_status is only updated via GoCardless webhooks when subscription.status transitions to 'active'
         await pool.query(`
             UPDATE "user"
@@ -478,6 +480,7 @@ router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request
                 gocardless_customer_id = COALESCE(gocardless_customer_id, $4),
                 subscription_status = 'active',
                 plan_start_date = COALESCE(plan_start_date, $2),
+                status = 'active', -- Activate account after payment succeeds
                 updated_at = $2
             WHERE id = $3
         `, [mandateId, Date.now(), userId, customerId]);

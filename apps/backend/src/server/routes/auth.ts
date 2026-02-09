@@ -391,7 +391,7 @@ router.post("/signup", async (req, res) => {
         business_type, country_of_incorporation, company_number, company_name,
         forward_to_first_name, forward_to_last_name, address_line1, address_line2,
         city, postcode, forward_country, forwarding_address,
-        password, created_at, updated_at, is_admin, role,
+        password, created_at, updated_at, is_admin, role, status,
         billing, price,
         is_sole_controller, additional_controllers_count, controllers_declared_at, owners_pending_info
       ) VALUES (
@@ -399,9 +399,9 @@ router.post("/signup", async (req, res) => {
         $5,$6,$7,$8,
         $9,$10,$11,$12,
         $13,$14,$15,$16,
-        $17,$18,$19,$20,$21,
-        $22,$23,
-        $24,$25,$26,$27
+        $17,$18,$19,$20,$21,$22,
+        $23,$24,
+        $25,$26,$27,$28
       )
       RETURNING id, email, first_name, last_name
     `;
@@ -411,7 +411,7 @@ router.post("/signup", async (req, res) => {
             i.business_type, i.country_of_incorporation, i.company_number ?? null, i.company_name,
             i.forward_to_first_name, i.forward_to_last_name, i.address_line1, i.address_line2 ?? null,
             i.city, i.postcode, i.forward_country, forwardingAddress,
-            hash, now, now, false, 'user',
+            hash, now, now, false, 'user', 'pending_payment', // Set status to 'pending_payment' - will be activated after payment succeeds
             i.billing ?? null, i.price ?? null,
             isSoleController, additionalControllersCount, controllersDeclaredAt, ownersPendingInfo
         ];
