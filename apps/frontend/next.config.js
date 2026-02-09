@@ -49,8 +49,10 @@ const nextConfig = {
     ];
   },
 
-  // Output file tracing root (moved from experimental in Next.js 15)
-  outputFileTracingRoot: path.join(__dirname, '../../'),
+  // Output file tracing root - removed for Vercel deployments
+  // Vercel handles file tracing automatically, and setting this to monorepo root
+  // causes Next.js to trace unnecessary files, slowing down builds significantly
+  // outputFileTracingRoot: path.join(__dirname, '../../'),
 
   // Turbopack configuration (replaces experimental.turbo in Next.js 15)
   turbopack: {
