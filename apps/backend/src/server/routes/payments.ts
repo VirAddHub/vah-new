@@ -8,7 +8,8 @@ import { gcCreateBrfUrl, gcCompleteFlow } from '../../lib/gocardless';
 import { ensureUserPlanLinked } from '../services/plan-linking';
 import { upsertSubscriptionForUser } from '../services/subscription-linking';
 import { upsertGcBillingRequestFlow } from '../db/gcBillingRequestFlow';
-import { sendPlanCancelled, buildAppUrl } from '../../lib/mailer';
+import { sendPlanCancelled, buildAppUrl, sendWelcomeKycEmail } from '../../lib/mailer';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -316,6 +317,13 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
             // In dev/staging, activate account even without payment
             console.log(`[Payment] GoCardless not configured, skipping payment setup for user ${userId}`);
 
+            // Get user details before updating (for welcome email)
+            const userResult = await pool.query(`
+                SELECT email, first_name, last_name, status FROM "user" WHERE id = $1
+            `, [userId]);
+            const user = userResult.rows[0];
+            const wasPendingPayment = user?.status === 'pending_payment';
+
             // NOTE: plan_status is only updated via GoCardless webhooks
             // Do not set plan_status here
             // Activate account since payment is skipped (dev/staging only)
@@ -324,6 +332,27 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
                 SET status = 'active', updated_at = $1
                 WHERE id = $2
             `, [Date.now(), userId]);
+
+            // Send welcome email only if account was just activated (was pending_payment)
+            if (wasPendingPayment && user?.email) {
+                const displayName =
+                    user.first_name?.trim() ||
+                    user.last_name?.trim() ||
+                    (user.email ? user.email.split("@")[0] : "") ||
+                    "there";
+                sendWelcomeKycEmail({
+                    email: user.email,
+                    firstName: displayName,
+                })
+                    .then(() => logger.info('[payments/redirect-flows] welcome_email_sent_skip_payment', { userId }))
+                    .catch((emailError: any) => {
+                        logger.warn('[payments/redirect-flows] welcome_email_failed_nonfatal', {
+                            userId,
+                            ...(process.env.NODE_ENV !== 'production' ? { email: user.email } : {}),
+                            message: emailError?.message || String(emailError),
+                        });
+                    });
+            }
 
             return res.json({
                 ok: true,
@@ -471,6 +500,13 @@ router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request
         // In live, this will fail if no explicit plan was selected earlier.
         await ensureUserPlanLinked({ pool, userId: Number(userId), cadence: "monthly" });
 
+        // Get user details before updating (for welcome email)
+        const userResult = await pool.query(`
+            SELECT email, first_name, last_name, status FROM "user" WHERE id = $1
+        `, [userId]);
+        const user = userResult.rows[0];
+        const wasPendingPayment = user?.status === 'pending_payment';
+
         // Update user with GoCardless mandate and activate account
         // NOTE: plan_status is only updated via GoCardless webhooks when subscription.status transitions to 'active'
         await pool.query(`
@@ -493,6 +529,27 @@ router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request
             mandateId,
             customerId,
         });
+
+        // Send welcome email only if account was just activated (was pending_payment)
+        if (wasPendingPayment && user?.email) {
+            const displayName =
+                user.first_name?.trim() ||
+                user.last_name?.trim() ||
+                (user.email ? user.email.split("@")[0] : "") ||
+                "there";
+            sendWelcomeKycEmail({
+                email: user.email,
+                firstName: displayName,
+            })
+                .then(() => logger.info('[payments/redirect-flows/complete] welcome_email_sent', { userId }))
+                .catch((emailError: any) => {
+                    logger.warn('[payments/redirect-flows/complete] welcome_email_failed_nonfatal', {
+                        userId,
+                        ...(process.env.NODE_ENV !== 'production' ? { email: user.email } : {}),
+                        message: emailError?.message || String(emailError),
+                    });
+                });
+        }
 
         // Mark redirect flow record as completed (best-effort)
         try {

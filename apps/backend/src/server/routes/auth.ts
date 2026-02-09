@@ -437,31 +437,8 @@ router.post("/signup", async (req, res) => {
             );
         }
 
-        // Manual test:
-        // 1) Go to /signup on the frontend and create a brand new user with a fresh email.
-        // 2) Confirm the API returns 201 and the user is logged in.
-        // 3) Check Postmark Activity: a "welcome + KYC" email should be sent to that email,
-        //    using the template with variables {{first_name}} and {{cta_url}}.
-        // 4) Click the link in the email and confirm it lands on the dashboard (with ?next=/dashboard if relevant).
-
-        // Send welcome + KYC email (non-blocking, non-fatal)
-        const displayName =
-            row.first_name?.trim() ||
-            row.last_name?.trim() ||
-            (row.email ? row.email.split("@")[0] : "") ||
-            "there";
-        sendWelcomeKycEmail({
-            email: row.email,
-            firstName: displayName,
-        })
-            .then(() => logger.info('[auth/signup] welcome_email_sent', { userId: row.id }))
-            .catch((emailError: any) => {
-                logger.warn('[auth/signup] welcome_email_failed_nonfatal', {
-                    userId: row.id,
-                    ...(process.env.NODE_ENV !== 'production' ? { email: row.email } : {}),
-                    message: emailError?.message || String(emailError),
-                });
-            });
+        // NOTE: Welcome email is now sent AFTER payment succeeds (in payment completion endpoint)
+        // This ensures users only receive welcome emails when their account is fully activated
 
         // Auto-login after signup (so the user can immediately set up GoCardless mandate)
         const token = generateToken({

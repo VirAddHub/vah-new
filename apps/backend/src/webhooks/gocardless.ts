@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express';
 import { getPool } from '../server/db';
 import { gcVerifyWebhookSignature } from '../lib/gocardless';
+import { sendWelcomeKycEmail } from '../lib/mailer';
+import { logger } from '../lib/logger';
 
 export async function handleGcWebhook(req: Request, res: Response) {
   const raw = (req as any).rawBody || JSON.stringify(req.body);
@@ -124,6 +126,13 @@ export async function handleGcWebhook(req: Request, res: Response) {
         // Update subscription with active mandate and activate user account
         const mandateUserId = event.links?.customer_metadata?.user_id;
         if (mandateUserId) {
+          // Get user details before updating (for welcome email)
+          const userResult = await pool.query(`
+                SELECT email, first_name, last_name, status FROM "user" WHERE id = $1
+            `, [mandateUserId]);
+          const user = userResult.rows[0];
+          const wasPendingPayment = user?.status === 'pending_payment';
+
           // UPSERT pattern: ensure subscription exists, update mandate and status
           await pool.query(`
                 INSERT INTO subscription (user_id, mandate_id, status, updated_at)
@@ -140,6 +149,27 @@ export async function handleGcWebhook(req: Request, res: Response) {
                 SET status = 'active', updated_at = $1
                 WHERE id = $2 AND status = 'pending_payment'
             `, [now, mandateUserId]);
+          
+          // Send welcome email only if account was just activated (was pending_payment)
+          if (wasPendingPayment && user?.email) {
+            const displayName =
+              user.first_name?.trim() ||
+              user.last_name?.trim() ||
+              (user.email ? user.email.split("@")[0] : "") ||
+              "there";
+            sendWelcomeKycEmail({
+              email: user.email,
+              firstName: displayName,
+            })
+              .then(() => logger.info('[GoCardless Webhook] welcome_email_sent', { userId: mandateUserId }))
+              .catch((emailError: any) => {
+                logger.warn('[GoCardless Webhook] welcome_email_failed_nonfatal', {
+                  userId: mandateUserId,
+                  ...(process.env.NODE_ENV !== 'production' ? { email: user.email } : {}),
+                  message: emailError?.message || String(emailError),
+                });
+              });
+          }
           
           console.log(`[GoCardless Webhook] Activated mandate and account for user ${mandateUserId}`);
         }
