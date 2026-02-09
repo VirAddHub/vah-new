@@ -28,6 +28,7 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
 import { UnknownRecord } from './types';
 import { setToken, clearToken, getToken, setStoredUser } from './token-manager';
 import { addCSRFHeader } from './csrf-protection';
+import type { ApiResponse as HttpApiResponse } from './http';
 import type { ApiResponse } from '../types/api';
 import { isOk } from '../types/api';
 
@@ -88,11 +89,11 @@ async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise
             });
         }
 
-        // api() now returns ApiResponse<T> directly (from http.ts wrapper)
-        const result = await api(path, init);
+        // api() now returns HttpApiResponse<T> directly (from http.ts wrapper)
+        const result = await api(path, init) as HttpApiResponse<T>;
 
         // If it's an error response, handle 401
-        if (!result.ok && result.status === 401) {
+        if (!result.ok && 'status' in result && result.status === 401) {
             clearToken();
             // Redirect to login page if we're in the browser
             if (typeof window !== 'undefined') {
@@ -100,10 +101,28 @@ async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise
             }
         }
 
-        // Return the result as-is (it's already in ApiResponse format)
-        return result as ApiResponse<T>;
+        // Convert HttpApiResponse to legacy ApiResponse format (ApiErr)
+        if (result.ok) {
+            return result as ApiResponse<T>;
+        } else {
+            // Convert ApiError (http.ts) to ApiErr (types/api.ts) format
+            const apiErr: ApiResponse<T> = {
+                ok: false,
+                error: ('message' in result ? result.message : 'Request failed') || 'Request failed',
+                status: ('status' in result ? result.status : 500),
+                errorCode: ('code' in result ? result.code : undefined), // string code goes in errorCode
+            };
+            return apiErr;
+        }
     } catch (error: any) {
-        return { ok: false, status: 500, code: 'request_failed', message: error.message };
+        // ApiErr type expects error (required), status (optional), errorCode (optional string)
+        const apiError: ApiResponse<T> = { 
+            ok: false, 
+            error: error.message || 'Request failed',
+            status: 500, 
+            errorCode: 'request_failed'
+        };
+        return apiError;
     }
 }
 
@@ -159,7 +178,7 @@ function coerceUserResponse(resp: ApiResponse<any>): ApiResponse<{ user: User }>
 
     const user = normalizeUserPayload(resp.data);
     if (!user) {
-        return { ok: false, status: 500, code: 'invalid_user_data', message: 'Invalid user data received' };
+        return { ok: false, error: 'Invalid user data received', status: 500, errorCode: 'invalid_user_data' };
     }
 
     return { ok: true, data: { user } };
@@ -169,7 +188,7 @@ export const apiClient = {
     // Always return ApiResponse<{ user: User }>
     async login(email: string, password: string): Promise<ApiResponse<{ user: User }>> {
         if (!email || !password) {
-            return { ok: false, status: 400, code: 'missing_credentials', message: 'Email and password are required' };
+            return { ok: false, error: 'Email and password are required', status: 400, errorCode: 'missing_credentials' };
         }
         const resp = await legacyReq(apiUrl('auth/login'), {
             method: 'POST',
@@ -428,7 +447,7 @@ function normalizeUser(input: any): User {
 
 // REVISED: The API now returns a nested user object, so we adjust the type.
 type LoginOk = { ok: true; data: { token: string; user: User } };
-type Fail = { ok: false; error: string; code?: number };
+type Fail = { ok: false; error: string; errorCode?: string; code?: number };
 
 export const AuthAPI = {
     async login(email: string, password: string): Promise<LoginOk | Fail> {
@@ -440,14 +459,14 @@ export const AuthAPI = {
         if (!result.ok) {
             const errorCode = (result as any)?.code;
             const codeStr = typeof errorCode === 'string' ? errorCode : String(errorCode || 500);
-            return { ok: false, error: (result as any)?.message || (result as any)?.error || 'Login failed', code: codeStr };
+            return { ok: false, error: (result as any)?.message || (result as any)?.error || 'Login failed', errorCode: codeStr };
         }
 
         const token = (result.data as any)?.token;
         const rawUser = (result.data as any)?.user;
 
         if (!token || !rawUser) {
-            return { ok: false, error: 'Invalid response from server', code: 'invalid_response' };
+            return { ok: false, error: 'Invalid response from server', errorCode: 'invalid_response' };
         }
 
         setToken(token);
