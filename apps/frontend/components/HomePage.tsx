@@ -426,7 +426,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 
                                 {/* Subheading */}
                                 <p className="text-lg md:text-xl text-white/90 mb-8 leading-relaxed">
-                                    Everything included for <span className="font-semibold text-[#206039]">£9.99</span> per month.
+                                    Everything included for <span className="font-semibold text-[#206039] !text-[#206039]">£9.99</span> per month.
                                 </p>
                                 
                                 {/* CTA Button */}
