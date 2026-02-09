@@ -259,9 +259,10 @@ router.post("/signup", async (req, res) => {
 
     try {
         // Enforce unique email at app layer (still rely on DB unique index if you have it)
+        // Exclude soft-deleted users to allow email reuse after deletion
         const pool = getPool();
         const exists = await pool.query<{ count: string }>(
-            `SELECT COUNT(*)::int AS count FROM "user" WHERE email = $1`,
+            `SELECT COUNT(*)::int AS count FROM "user" WHERE email = $1 AND deleted_at IS NULL`,
             [email]
         );
         const count = Number(exists.rows[0]?.count ?? 0);
