@@ -79,10 +79,19 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
             });
         }
         
+        // Fetch company name for email template
+        const userResult = await pool.query(
+            'SELECT company_name FROM "user" WHERE id = $1',
+            [userId]
+        );
+        const companyName = userResult.rows[0]?.company_name || null;
+        
         const result = await businessOwnersService.createBusinessOwner(
             userId,
             fullName,
-            email
+            email,
+            'director',
+            companyName
         );
         
         // If this is the first owner added, clear owners_pending_info flag
