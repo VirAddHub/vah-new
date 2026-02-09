@@ -264,7 +264,7 @@ export const apiClient = {
         const data = await parseResponseSafe(resp);
         // Always clear the token on logout, regardless of API response
         clearToken();
-        return { ok: resp.ok, data, code: resp.status } as ApiResponse<{ message: string }>;
+        return { ok: resp.ok, data, status: resp.status } as ApiResponse<{ message: string }>;
     },
 
     async signup(
@@ -465,7 +465,7 @@ export const AuthAPI = {
         const res = await authFetch('auth/whoami', { method: 'GET' });
         const data = await parseResponseSafe(res);
         if (!res.ok || !data?.ok) {
-            return { ok: false, error: data?.message || data?.error || `Auth failed (${res.status})`, code: res.status };
+            return { ok: false, error: data?.message || data?.error || `Auth failed (${res.status})`, code: String(res.status) };
         }
         return { ok: true, data: normalizeUser(data.data) };
     },
