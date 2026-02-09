@@ -115,11 +115,18 @@ export function useSignup() {
             );
 
             if (!signupResponse.ok) {
+                // Extract error details from backend response
+                const errorCode = (signupResponse as any).code || (signupResponse as any).errorCode;
+                const errorMessage = (signupResponse as any).message || (signupResponse as any).error;
+                const error = (signupResponse as any).error;
+                
                 // Handle EMAIL_EXISTS with friendly message
-                if (signupResponse.errorCode === 'EMAIL_EXISTS' || signupResponse.error === 'email_exists') {
-                    throw new Error('An account already exists with this email. Please log in or reset your password.');
+                if (errorCode === 'EMAIL_EXISTS' || error === 'email_exists') {
+                    throw new Error(errorMessage || 'An account already exists with this email address. Please log in or reset your password.');
                 }
-                throw new Error(signupResponse.error || 'Signup failed');
+                
+                // Use backend message if available, otherwise fallback to error or generic message
+                throw new Error(errorMessage || error || 'Signup failed. Please try again.');
             }
 
             console.log('✅ User account created:', signupResponse.data);
