@@ -612,8 +612,10 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
 /**
  * DELETE /api/admin/users/:id
  * Soft delete user (admin only)
+ * Use ?permanent=true to permanently delete (cannot be undone)
  */
 router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) => {
+    const permanent = req.query.permanent === 'true' || req.query.permanent === true;
     const userId = parseInt(req.params.id);
     const adminId = req.user!.id;
     const pool = getPool();
@@ -641,46 +643,82 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
         const nowBigint = TimestampUtils.forTableField('user', 'updated_at');
         const auditTimestamp = TimestampUtils.forTableField('admin_audit', 'created_at');
 
-        // Soft delete - just mark as deleted
-        await pool.query(`
-            UPDATE "user"
-            SET deleted_at = $1, updated_at = $2
-            WHERE id = $3
-        `, [nowTimestamp, nowBigint, userId]);
-
-        // Update subscription status to 'cancelled' when user is soft-deleted
-        const subscriptionUpdateTimestamp = TimestampUtils.forTableField('subscription', 'updated_at');
-        await pool.query(`
-            UPDATE subscription
-            SET status = 'cancelled', updated_at = $1
-            WHERE user_id = $2
-        `, [subscriptionUpdateTimestamp || nowBigint, userId]);
-
-        // Log admin action
-        await pool.query(`
-            INSERT INTO admin_audit (admin_id, action, target_type, target_id, created_at)
-            VALUES ($1, $2, $3, $4, $5)
-        `, [adminId, 'delete_user', 'user', userId, auditTimestamp]);
-
-        // Send account closed email (non-blocking - don't fail if email fails)
-        try {
-            await sendTemplateEmail({
-                to: user.email,
-                templateAlias: Templates.AccountClosed,
-                templateId: 40508752, // Postmark Template ID
-                model: {
-                    firstName: user.first_name,
-                    name: user.name,
-                    email: user.email,
-                    restartLink: buildAppUrl('/pricing'),
-                },
+        if (permanent) {
+            // PERMANENT DELETE - Remove user completely from database
+            // This cannot be undone!
+            
+            // First, delete related records (cascade deletes should handle most, but be explicit)
+            // Delete subscriptions
+            await pool.query(`DELETE FROM subscription WHERE user_id = $1`, [userId]);
+            
+            // Delete business owners
+            await pool.query(`DELETE FROM business_owner WHERE user_id = $1`, [userId]);
+            
+            // Delete mail items (if cascade doesn't work)
+            await pool.query(`DELETE FROM mail_item WHERE user_id = $1`, [userId]);
+            
+            // Delete redirect flows
+            await pool.query(`DELETE FROM gc_redirect_flow WHERE user_id = $1`, [userId]);
+            
+            // Delete admin audit entries for this user
+            await pool.query(`DELETE FROM admin_audit WHERE target_id = $1 AND target_type = 'user'`, [userId]);
+            
+            // Finally, delete the user
+            await pool.query(`DELETE FROM "user" WHERE id = $1`, [userId]);
+            
+            // Log admin action
+            await pool.query(`
+                INSERT INTO admin_audit (admin_id, action, target_type, target_id, created_at)
+                VALUES ($1, $2, $3, $4, $5)
+            `, [adminId, 'permanent_delete_user', 'user', userId, auditTimestamp]);
+            
+            return res.json({
+                ok: true,
+                message: `User ${user.email} has been permanently deleted. This action cannot be undone.`,
+                permanent: true
             });
-        } catch (emailError: any) {
-            // Log email error but don't fail the deletion
-            console.error('[DELETE /api/admin/users/:id] Failed to send account closed email:', emailError);
-        }
+        } else {
+            // SOFT DELETE - just mark as deleted
+            await pool.query(`
+                UPDATE "user"
+                SET deleted_at = $1, updated_at = $2
+                WHERE id = $3
+            `, [nowTimestamp, nowBigint, userId]);
 
-        return res.json({ ok: true });
+            // Update subscription status to 'cancelled' when user is soft-deleted
+            const subscriptionUpdateTimestamp = TimestampUtils.forTableField('subscription', 'updated_at');
+            await pool.query(`
+                UPDATE subscription
+                SET status = 'cancelled', updated_at = $1
+                WHERE user_id = $2
+            `, [subscriptionUpdateTimestamp || nowBigint, userId]);
+
+            // Log admin action
+            await pool.query(`
+                INSERT INTO admin_audit (admin_id, action, target_type, target_id, created_at)
+                VALUES ($1, $2, $3, $4, $5)
+            `, [adminId, 'soft_delete_user', 'user', userId, auditTimestamp]);
+
+            // Send account closed email (non-blocking - don't fail if email fails)
+            try {
+                await sendTemplateEmail({
+                    to: user.email,
+                    templateAlias: Templates.AccountClosed,
+                    templateId: 40508752, // Postmark Template ID
+                    model: {
+                        firstName: user.first_name,
+                        name: user.name,
+                        email: user.email,
+                        restartLink: buildAppUrl('/pricing'),
+                    },
+                });
+            } catch (emailError: any) {
+                // Log email error but don't fail the deletion
+                console.error('[DELETE /api/admin/users/:id] Failed to send account closed email:', emailError);
+            }
+
+            return res.json({ ok: true, permanent: false });
+        }
     } catch (error: any) {
         console.error('[DELETE /api/admin/users/:id] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: error.message });

@@ -159,7 +159,8 @@ const adminApi = {
             '/api/admin/users/stats'
         ),
 
-    deleteUser: (id: string | number) => del<{ deleted: number }>(`/api/admin/users/${id}`),
+    deleteUser: (id: string | number, permanent: boolean = false) => 
+        del<{ deleted: number; permanent?: boolean }>(`/api/admin/users/${id}${permanent ? '?permanent=true' : ''}`),
 
     restoreUser: (
         id: string | number,

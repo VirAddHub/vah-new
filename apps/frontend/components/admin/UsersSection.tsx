@@ -9,6 +9,12 @@ import { Badge } from "../ui/badge";
 import { useToast } from "../ui/use-toast";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
 const PLAN_STATUS_OPTIONS = [
@@ -89,7 +95,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   const [stats, setStats] = useState<{ total: number; active: number; suspended: number; pending: number; deleted: number } | null>(null);
 
   // Delete confirmation state
-  const [deleteModal, setDeleteModal] = useState<null | { id: string | number; email: string }>(null);
+  const [deleteModal, setDeleteModal] = useState<null | { id: string | number; email: string; permanent?: boolean }>(null);
   const [deleteConfirm, setDeleteConfirm] = useState('');
 
   // Restore modal state
@@ -198,7 +204,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   };
 
   // Handle user deletion with double confirmation
-  async function handleDeleteUser(id: string | number) {
+  async function handleDeleteUser(id: string | number, permanent: boolean = false) {
     // First confirmation: Modal with email typing
     if (!deleteModal || !deleteConfirm.trim()) return;
 
@@ -207,20 +213,40 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       return;
     }
 
-    // Second confirmation: Native browser confirm
-    if (!window.confirm('This action cannot be undone. Are you absolutely sure you want to delete this user?')) {
+    // Second confirmation: Native browser confirm with stronger warning for permanent delete
+    const confirmMessage = permanent
+      ? `⚠️ PERMANENT DELETE ⚠️\n\nThis will PERMANENTLY delete user ${deleteModal.email} and ALL their data from the database.\n\nThis action CANNOT be undone. The user and all associated records will be completely removed.\n\nAre you absolutely certain you want to proceed?`
+      : `This will soft-delete user ${deleteModal.email}. They can be restored later.\n\nAre you sure you want to proceed?`;
+
+    if (!window.confirm(confirmMessage)) {
       setDeleteModal(null);
       setDeleteConfirm('');
       return;
     }
 
+    // Third confirmation for permanent delete - require typing "DELETE PERMANENTLY"
+    if (permanent) {
+      const finalConfirm = prompt(`⚠️ FINAL CONFIRMATION ⚠️\n\nType "DELETE PERMANENTLY" (all caps) to confirm permanent deletion of ${deleteModal.email}:\n\nThis will completely remove the user and all data. This cannot be undone.`);
+      if (finalConfirm !== 'DELETE PERMANENTLY') {
+        toast({ title: 'Cancelled', description: 'Permanent delete cancelled. Confirmation text did not match.', variant: 'default' });
+        setDeleteModal(null);
+        setDeleteConfirm('');
+        return;
+      }
+    }
+
     setIsMutating(true);
 
     try {
-      const res = await adminApi.deleteUser(id);
+      const res = await adminApi.deleteUser(id, permanent);
       if (!res.ok) throw new Error('delete_failed');
 
-      toast({ title: 'User deleted', description: `User ${deleteModal.email} has been deleted` });
+      const actionType = permanent ? 'permanently deleted' : 'soft-deleted';
+      toast({ 
+        title: permanent ? '⚠️ User Permanently Deleted' : 'User Deleted', 
+        description: `User ${deleteModal.email} has been ${actionType}${permanent ? '. This cannot be undone.' : '. They can be restored later.'}`,
+        variant: permanent ? 'destructive' : 'default'
+      });
 
       // Refresh data from parent and deleted users
       await Promise.all([
@@ -514,14 +540,37 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                             >
                               KYC
                             </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => setDeleteModal({ id: u.id, email: u.email })}
-                              disabled={isMutating}
-                            >
-                              Delete
-                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  disabled={isMutating}
+                                >
+                                  Delete
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-64">
+                                <DropdownMenuItem
+                                  onClick={() => setDeleteModal({ id: u.id, email: u.email, permanent: false })}
+                                  className="cursor-pointer"
+                                >
+                                  <div className="w-full">
+                                    <div className="font-medium text-gray-900">Soft Delete</div>
+                                    <div className="text-xs text-gray-500 mt-0.5">Can be restored later</div>
+                                  </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setDeleteModal({ id: u.id, email: u.email, permanent: true })}
+                                  className="cursor-pointer text-red-700 focus:text-red-700 focus:bg-red-50"
+                                >
+                                  <div className="w-full">
+                                    <div className="font-bold">⚠️ Permanent Delete</div>
+                                    <div className="text-xs text-red-600 mt-0.5 font-semibold">Cannot be undone!</div>
+                                  </div>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </>
                         )}
                       </div>
@@ -572,30 +621,65 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
       {/* Delete confirmation modal */}
       {deleteModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-card border rounded-2xl p-6 w-full max-w-md">
-            <h3 className="font-semibold text-lg mb-2">Delete user</h3>
-            <p className="text-sm text-muted-foreground">
-              This will soft-delete and anonymize this user. Type the email
-              <span className="font-mono"> {deleteModal.email} </span>
-              to confirm.
-            </p>
-            <input
-              className="mt-4 w-full border rounded px-3 py-2"
-              value={deleteConfirm}
-              onChange={e => setDeleteConfirm(e.target.value)}
-              placeholder={deleteModal.email}
-            />
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className={`bg-card border-2 rounded-2xl p-6 w-full max-w-md ${deleteModal.permanent ? 'border-red-300' : 'border-yellow-200'}`}>
+            <h3 className={`font-semibold text-lg mb-2 ${deleteModal.permanent ? 'text-red-700' : ''}`}>
+              {deleteModal.permanent ? '⚠️ Permanent Delete User' : 'Delete User'}
+            </h3>
+            <div className="space-y-4">
+              {deleteModal.permanent ? (
+                <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4 space-y-2">
+                  <p className="text-sm font-semibold text-red-900">
+                    ⚠️ WARNING: PERMANENT DELETION ⚠️
+                  </p>
+                  <p className="text-sm text-red-800">
+                    This will <strong>PERMANENTLY</strong> delete user <span className="font-mono font-semibold">{deleteModal.email}</span> and <strong>ALL</strong> their data from the database.
+                  </p>
+                  <ul className="text-xs text-red-700 list-disc list-inside space-y-1 ml-2">
+                    <li>User account will be completely removed</li>
+                    <li>All mail items will be deleted</li>
+                    <li>All subscriptions will be deleted</li>
+                    <li>All business owner records will be deleted</li>
+                    <li>This action <strong>CANNOT be undone</strong></li>
+                  </ul>
+                </div>
+              ) : (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-sm text-yellow-900">
+                    This will <strong>soft-delete</strong> user <span className="font-mono">{deleteModal.email}</span>.
+                  </p>
+                  <p className="text-xs text-yellow-800 mt-1">
+                    The user can be restored later. Their data will be hidden but not permanently removed.
+                  </p>
+                </div>
+              )}
+              <p className="text-sm text-muted-foreground">
+                Type the email <span className="font-mono font-semibold">{deleteModal.email}</span> to confirm:
+              </p>
+              <input
+                className="w-full border rounded px-3 py-2"
+                placeholder="Type email to confirm"
+                value={deleteConfirm}
+                onChange={e => setDeleteConfirm(e.target.value)}
+              />
+            </div>
             <div className="flex justify-end gap-2 mt-5">
-              <Button variant="outline" onClick={() => setDeleteModal(null)} disabled={isMutating}>
+              <Button variant="outline" onClick={() => {
+                setDeleteModal(null);
+                setDeleteConfirm('');
+              }} disabled={isMutating}>
                 Cancel
               </Button>
               <Button
-                variant="destructive"
-                onClick={() => deleteConfirm.trim().toLowerCase() === deleteModal.email.toLowerCase() && handleDeleteUser(deleteModal.id)}
+                variant={deleteModal.permanent ? "destructive" : "default"}
+                onClick={() => handleDeleteUser(deleteModal.id, deleteModal.permanent || false)}
                 disabled={isMutating || deleteConfirm.trim().toLowerCase() !== deleteModal.email.toLowerCase()}
+                className={deleteModal.permanent ? "bg-red-600 hover:bg-red-700" : ""}
               >
-                {isMutating ? 'Deleting…' : 'Confirm delete'}
+                {isMutating 
+                  ? (deleteModal.permanent ? 'Permanently Deleting…' : 'Deleting…') 
+                  : (deleteModal.permanent ? '⚠️ Delete Permanently' : 'Soft Delete')
+                }
               </Button>
             </div>
           </div>
