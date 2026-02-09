@@ -344,6 +344,47 @@ router.post("/signup", async (req, res) => {
                 : Math.max(1, i.additionalControllersCount);
         }
 
+        // Validate additional business owners email constraints
+        if (!isSoleController && i.additionalOwners && i.additionalOwners.length > 0) {
+            // Normalize main account email
+            const normalizedMainEmail = email.trim().toLowerCase();
+            
+            // Normalize and validate additional owner emails
+            const normalizedOwnerEmails = i.additionalOwners.map(owner => {
+                const normalized = owner.email.trim().toLowerCase();
+                return { original: owner, normalized };
+            });
+            
+            // Check 1: No owner email matches main account email
+            const matchingMainEmail = normalizedOwnerEmails.find(
+                ({ normalized }) => normalized === normalizedMainEmail
+            );
+            if (matchingMainEmail) {
+                return res.status(400).json({
+                    ok: false,
+                    error: "validation_error",
+                    message: "Additional business owner email cannot be the same as the account holder email.",
+                });
+            }
+            
+            // Check 2: No duplicate emails within additional owners
+            const emailSet = new Set<string>();
+            const duplicateOwner = normalizedOwnerEmails.find(({ normalized }) => {
+                if (emailSet.has(normalized)) {
+                    return true;
+                }
+                emailSet.add(normalized);
+                return false;
+            });
+            if (duplicateOwner) {
+                return res.status(400).json({
+                    ok: false,
+                    error: "validation_error",
+                    message: "Each additional business owner must have a unique email address.",
+                });
+            }
+        }
+
         const insertQuery = `
       INSERT INTO "user" (
         first_name, last_name, email, phone,
@@ -379,35 +420,20 @@ router.post("/signup", async (req, res) => {
         const row = rs.rows[0];
 
         // Create business owners if provided
-        // IMPORTANT: Skip owners with the same email as the main account holder
-        // (they shouldn't receive a business owner verification email)
+        // Validation already performed above - all owners are valid at this point
         if (!isSoleController && i.additionalOwners && i.additionalOwners.length > 0) {
             const { createBusinessOwner } = await import('../services/businessOwners');
             await Promise.allSettled(
-                i.additionalOwners
-                    .filter((owner) => {
-                        // Skip if owner email matches main account email
-                        const ownerEmail = owner.email.trim().toLowerCase();
-                        const mainEmail = row.email.trim().toLowerCase();
-                        if (ownerEmail === mainEmail) {
-                            logger.warn('[auth/signup] skipping_business_owner_same_email_as_main', {
-                                userId: row.id,
-                                ...(process.env.NODE_ENV !== 'production' ? { email: ownerEmail } : {}),
-                            });
-                            return false;
-                        }
-                        return true;
+                i.additionalOwners.map((owner) =>
+                    createBusinessOwner(row.id, owner.fullName, owner.email).catch((error) => {
+                        logger.error('[auth/signup] failed_to_create_business_owner', {
+                            userId: row.id,
+                            // Only log email in dev; avoid PII in prod logs.
+                            ...(process.env.NODE_ENV !== 'production' ? { email: owner.email } : {}),
+                            message: (error as any)?.message ?? String(error),
+                        });
                     })
-                    .map((owner) =>
-                        createBusinessOwner(row.id, owner.fullName, owner.email).catch((error) => {
-                            logger.error('[auth/signup] failed_to_create_business_owner', {
-                                userId: row.id,
-                                // Only log email in dev; avoid PII in prod logs.
-                                ...(process.env.NODE_ENV !== 'production' ? { email: owner.email } : {}),
-                                message: (error as any)?.message ?? String(error),
-                            });
-                        })
-                    )
+                )
             );
         }
 
