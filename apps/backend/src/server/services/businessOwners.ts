@@ -58,6 +58,9 @@ export async function createBusinessOwner(
     );
     
     // Send verification email
+    // NOTE: Currently using EmailChangeVerification template (ID 42716349) which has incorrect wording
+    // ("You recently requested to change the email address" instead of business owner verification message)
+    // TODO: Create dedicated Postmark template for business owner verification with correct messaging
     const verifyUrl = `${getAppUrl()}/verify-owner?token=${token}`;
     
     try {

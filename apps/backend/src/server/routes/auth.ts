@@ -379,19 +379,35 @@ router.post("/signup", async (req, res) => {
         const row = rs.rows[0];
 
         // Create business owners if provided
+        // IMPORTANT: Skip owners with the same email as the main account holder
+        // (they shouldn't receive a business owner verification email)
         if (!isSoleController && i.additionalOwners && i.additionalOwners.length > 0) {
             const { createBusinessOwner } = await import('../services/businessOwners');
             await Promise.allSettled(
-                i.additionalOwners.map((owner) =>
-                    createBusinessOwner(row.id, owner.fullName, owner.email).catch((error) => {
-                        logger.error('[auth/signup] failed_to_create_business_owner', {
-                            userId: row.id,
-                            // Only log email in dev; avoid PII in prod logs.
-                            ...(process.env.NODE_ENV !== 'production' ? { email: owner.email } : {}),
-                            message: (error as any)?.message ?? String(error),
-                        });
+                i.additionalOwners
+                    .filter((owner) => {
+                        // Skip if owner email matches main account email
+                        const ownerEmail = owner.email.trim().toLowerCase();
+                        const mainEmail = row.email.trim().toLowerCase();
+                        if (ownerEmail === mainEmail) {
+                            logger.warn('[auth/signup] skipping_business_owner_same_email_as_main', {
+                                userId: row.id,
+                                ...(process.env.NODE_ENV !== 'production' ? { email: ownerEmail } : {}),
+                            });
+                            return false;
+                        }
+                        return true;
                     })
-                )
+                    .map((owner) =>
+                        createBusinessOwner(row.id, owner.fullName, owner.email).catch((error) => {
+                            logger.error('[auth/signup] failed_to_create_business_owner', {
+                                userId: row.id,
+                                // Only log email in dev; avoid PII in prod logs.
+                                ...(process.env.NODE_ENV !== 'production' ? { email: owner.email } : {}),
+                                message: (error as any)?.message ?? String(error),
+                            });
+                        })
+                    )
             );
         }
 
