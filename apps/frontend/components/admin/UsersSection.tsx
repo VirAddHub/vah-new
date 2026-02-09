@@ -791,9 +791,19 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                   if (!planStatusModal) return;
                   setIsMutating(true);
                   try {
-                    const res = await adminApi.updateUser(planStatusModal.id, {
-                      plan_status: planStatusValue,
-                    });
+                    // Update both plan_status and status to keep them in sync
+                    // If setting to pending_payment, also set status to pending_payment
+                    // If setting to active, also set status to active
+                    const statusValue = planStatusValue === 'pending_payment' ? 'pending_payment' : 
+                                       planStatusValue === 'active' ? 'active' : 
+                                       planStatusValue === 'cancelled' ? 'suspended' : undefined;
+                    
+                    const updatePayload: any = { plan_status: planStatusValue };
+                    if (statusValue) {
+                      updatePayload.status = statusValue;
+                    }
+                    
+                    const res = await adminApi.updateUser(planStatusModal.id, updatePayload);
                     if (!res.ok) {
                       throw new Error(res.error || 'update_failed');
                     }

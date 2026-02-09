@@ -455,6 +455,7 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         is_admin,
         plan_id,
         plan_status,
+        status,
         kyc_status,
         expires_at,
         last_login_at,
@@ -527,12 +528,16 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
                 }
             }
         }
-        // NOTE: plan_status is only updated via GoCardless webhooks when subscription.status transitions to 'active'
-        // Do not allow admin to set plan_status directly - it must be set by webhook handlers
-        // if (typeof plan_status === 'string') {
-        //     updates.push(`plan_status = $${paramIndex++}`);
-        //     values.push(plan_status);
-        // }
+        // Allow admin to update plan_status (e.g., to set pending_payment for users who haven't paid)
+        if (typeof plan_status === 'string') {
+            updates.push(`plan_status = $${paramIndex++}`);
+            values.push(plan_status);
+        }
+        // Allow admin to update main status field
+        if (typeof status === 'string') {
+            updates.push(`status = $${paramIndex++}`);
+            values.push(status);
+        }
         if (typeof kyc_status === 'string') {
             updates.push(`kyc_status = $${paramIndex++}`);
             values.push(kyc_status);
