@@ -80,6 +80,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         }
         
         // Fetch company name for email template
+        const pool = getPool();
         const userResult = await pool.query(
             'SELECT company_name FROM "user" WHERE id = $1',
             [userId]
@@ -95,7 +96,6 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         );
         
         // If this is the first owner added, clear owners_pending_info flag
-        const pool = getPool();
         await pool.query(
             `UPDATE "user" 
              SET owners_pending_info = false

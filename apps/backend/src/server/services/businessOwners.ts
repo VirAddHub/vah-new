@@ -79,8 +79,7 @@ export async function createBusinessOwner(
     }
     
     // Format expiry time (7 days = 7 * 24 * 60 = 10080 minutes)
-    const expiryDays = 7;
-    const expiresIn = `${expiryDays} day${expiryDays !== 1 ? 's' : ''}`;
+    const expiresIn = '7 days';
     
     try {
         await sendTemplateEmail({
@@ -157,8 +156,7 @@ export async function resendBusinessOwnerInvite(ownerId: number): Promise<string
     // Send email using dedicated business owner verification template
     // TODO: Future enhancement - Replace with direct Sumsub URL generation (see createBusinessOwner for details)
     const verifyUrl = `${getAppUrl()}/verify-owner?token=${token}`;
-    const expiryDays = 7;
-    const expiresIn = `${expiryDays} day${expiryDays !== 1 ? 's' : ''}`;
+    const expiresIn = '7 days';
     const companyName = owner.company_name || 'your company';
     
     try {
