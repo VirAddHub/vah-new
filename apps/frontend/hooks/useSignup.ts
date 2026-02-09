@@ -121,7 +121,8 @@ export function useSignup() {
                 const errorMessage = signupResponse.message;
                 
                 // Handle EMAIL_EXISTS with backend message (already user-friendly)
-                if (errorCode === 'EMAIL_EXISTS' || errorCode === 'email_exists') {
+                // errorCode is string | undefined, compare as string
+                if (typeof errorCode === 'string' && (errorCode === 'EMAIL_EXISTS' || errorCode === 'email_exists')) {
                     throw new Error(errorMessage || 'An account already exists with this email address. Please log in or reset your password.');
                 }
                 
