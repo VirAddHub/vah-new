@@ -484,7 +484,7 @@ export const AuthAPI = {
         const res = await authFetch('auth/whoami', { method: 'GET' });
         const data = await parseResponseSafe(res);
         if (!res.ok || !data?.ok) {
-            return { ok: false, error: data?.message || data?.error || `Auth failed (${res.status})`, code: String(res.status) };
+            return { ok: false, error: data?.message || data?.error || `Auth failed (${res.status})`, errorCode: String(res.status) };
         }
         return { ok: true, data: normalizeUser(data.data) };
     },
