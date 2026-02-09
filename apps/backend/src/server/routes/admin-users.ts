@@ -615,7 +615,8 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
  * Use ?permanent=true to permanently delete (cannot be undone)
  */
 router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) => {
-    const permanent = req.query.permanent === 'true' || req.query.permanent === true;
+    const permanentParam = req.query.permanent;
+    const permanent = typeof permanentParam === 'string' && permanentParam.toLowerCase() === 'true';
     const userId = parseInt(req.params.id);
     const adminId = req.user!.id;
     const pool = getPool();
