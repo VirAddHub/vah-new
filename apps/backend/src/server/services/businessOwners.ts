@@ -14,7 +14,8 @@ export async function createBusinessOwner(
     userId: number,
     fullName: string,
     email: string,
-    role: 'director' | 'psc' = 'director'
+    role: 'director' | 'psc' = 'director',
+    companyName?: string
 ): Promise<{ id: number; inviteToken: string }> {
     const pool = getPool();
     
@@ -57,26 +58,35 @@ export async function createBusinessOwner(
         [ownerId, tokenHash, expiresAt]
     );
     
-    // Send verification email
-    // NOTE: Currently using EmailChangeVerification template (ID 42716349) which has incorrect wording
-    // ("You recently requested to change the email address" instead of business owner verification message)
-    // TODO: Create dedicated Postmark template for business owner verification with correct messaging
+    // Send verification email using dedicated business owner verification template
     const verifyUrl = `${getAppUrl()}/verify-owner?token=${token}`;
+    
+    // Fetch company name if not provided
+    let finalCompanyName = companyName;
+    if (!finalCompanyName) {
+        const userResult = await pool.query(
+            'SELECT company_name FROM "user" WHERE id = $1',
+            [userId]
+        );
+        finalCompanyName = userResult.rows[0]?.company_name || 'your company';
+    }
+    
+    // Format expiry time (7 days = 7 * 24 * 60 = 10080 minutes)
+    const expiryDays = 7;
+    const expiresIn = `${expiryDays} day${expiryDays !== 1 ? 's' : ''}`;
     
     try {
         await sendTemplateEmail({
             to: normalisedEmail,
-            templateAlias: Templates.EmailChangeVerification, // TODO: Create dedicated template
+            templateAlias: Templates.BusinessOwnerVerification,
             model: {
-                firstName: fullName.split(' ')[0] || fullName,
-                name: fullName,
-                ctaUrl: verifyUrl,
-                confirmUrl: verifyUrl,
-                expiryMinutes: 7 * 24 * 60, // 7 days in minutes
+                owner_name: fullName,
+                company_name: finalCompanyName,
+                verification_url: verifyUrl,
+                expires_in: expiresIn,
             },
             from: 'support@virtualaddresshub.co.uk',
             replyTo: 'support@virtualaddresshub.co.uk',
-            templateId: 42716349, // TODO: Create dedicated template for owner verification
         });
     } catch (error) {
         console.error('[businessOwners] Failed to send verification email:', error);
@@ -92,9 +102,12 @@ export async function createBusinessOwner(
 export async function resendBusinessOwnerInvite(ownerId: number): Promise<string> {
     const pool = getPool();
     
-    // Get owner details
+    // Get owner details and company name
     const ownerResult = await pool.query(
-        'SELECT id, user_id, full_name, email FROM business_owner WHERE id = $1',
+        `SELECT bo.id, bo.user_id, bo.full_name, bo.email, u.company_name
+         FROM business_owner bo
+         JOIN "user" u ON bo.user_id = u.id
+         WHERE bo.id = $1`,
         [ownerId]
     );
     
@@ -133,23 +146,24 @@ export async function resendBusinessOwnerInvite(ownerId: number): Promise<string
         );
     }
     
-    // Send email
+    // Send email using dedicated business owner verification template
     const verifyUrl = `${getAppUrl()}/verify-owner?token=${token}`;
+    const expiryDays = 7;
+    const expiresIn = `${expiryDays} day${expiryDays !== 1 ? 's' : ''}`;
+    const companyName = owner.company_name || 'your company';
     
     try {
         await sendTemplateEmail({
             to: owner.email,
-            templateAlias: Templates.EmailChangeVerification,
+            templateAlias: Templates.BusinessOwnerVerification,
             model: {
-                firstName: owner.full_name.split(' ')[0] || owner.full_name,
-                name: owner.full_name,
-                ctaUrl: verifyUrl,
-                confirmUrl: verifyUrl,
-                expiryMinutes: 7 * 24 * 60,
+                owner_name: owner.full_name,
+                company_name: companyName,
+                verification_url: verifyUrl,
+                expires_in: expiresIn,
             },
             from: 'support@virtualaddresshub.co.uk',
             replyTo: 'support@virtualaddresshub.co.uk',
-            templateId: 42716349,
         });
     } catch (error) {
         console.error('[businessOwners] Failed to resend verification email:', error);

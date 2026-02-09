@@ -425,7 +425,7 @@ router.post("/signup", async (req, res) => {
             const { createBusinessOwner } = await import('../services/businessOwners');
             await Promise.allSettled(
                 i.additionalOwners.map((owner) =>
-                    createBusinessOwner(row.id, owner.fullName, owner.email).catch((error) => {
+                    createBusinessOwner(row.id, owner.fullName, owner.email, 'director', i.company_name).catch((error) => {
                         logger.error('[auth/signup] failed_to_create_business_owner', {
                             userId: row.id,
                             // Only log email in dev; avoid PII in prod logs.
