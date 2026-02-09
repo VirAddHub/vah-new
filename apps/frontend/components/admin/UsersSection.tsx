@@ -671,7 +671,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 Cancel
               </Button>
               <Button
-                variant={deleteModal.permanent ? "destructive" : "default"}
+                variant={deleteModal.permanent ? "destructive" : "secondary"}
                 onClick={() => handleDeleteUser(deleteModal.id, deleteModal.permanent || false)}
                 disabled={isMutating || deleteConfirm.trim().toLowerCase() !== deleteModal.email.toLowerCase()}
                 className={deleteModal.permanent ? "bg-red-600 hover:bg-red-700" : ""}
