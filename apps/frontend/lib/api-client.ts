@@ -103,7 +103,7 @@ async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise
         // Return the result as-is (it's already in ApiResponse format)
         return result as ApiResponse<T>;
     } catch (error: any) {
-        return { ok: false, error: error.message, code: 500 };
+        return { ok: false, status: 500, code: 'request_failed', message: error.message };
     }
 }
 
@@ -159,7 +159,7 @@ function coerceUserResponse(resp: ApiResponse<any>): ApiResponse<{ user: User }>
 
     const user = normalizeUserPayload(resp.data);
     if (!user) {
-        return { ok: false, error: 'Invalid user data received', code: 500 };
+        return { ok: false, status: 500, code: 'invalid_user_data', message: 'Invalid user data received' };
     }
 
     return { ok: true, data: { user } };
@@ -169,7 +169,7 @@ export const apiClient = {
     // Always return ApiResponse<{ user: User }>
     async login(email: string, password: string): Promise<ApiResponse<{ user: User }>> {
         if (!email || !password) {
-            return { ok: false, error: 'Email and password are required', code: 400 };
+            return { ok: false, status: 400, code: 'missing_credentials', message: 'Email and password are required' };
         }
         const resp = await legacyReq(apiUrl('auth/login'), {
             method: 'POST',
@@ -438,14 +438,16 @@ export const AuthAPI = {
         });
 
         if (!result.ok) {
-            return { ok: false, error: (result as any)?.message || (result as any)?.error || 'Login failed', code: (result as any)?.code || 500 };
+            const errorCode = (result as any)?.code;
+            const codeStr = typeof errorCode === 'string' ? errorCode : String(errorCode || 500);
+            return { ok: false, error: (result as any)?.message || (result as any)?.error || 'Login failed', code: codeStr };
         }
 
         const token = (result.data as any)?.token;
         const rawUser = (result.data as any)?.user;
 
         if (!token || !rawUser) {
-            return { ok: false, error: 'Invalid response from server', code: 500 };
+            return { ok: false, error: 'Invalid response from server', code: 'invalid_response' };
         }
 
         setToken(token);

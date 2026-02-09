@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { apiClient } from '../lib/apiClient';
+import type { ApiError } from '../lib/http';
 
 export interface SignupStep1Data {
     billing: 'monthly' | 'annual';
@@ -115,10 +116,10 @@ export function useSignup() {
             );
 
             if (!signupResponse.ok) {
-                // Extract error details from normalized ApiError response
-                // http.ts normaliseError extracts: code from payload.code || payload.error, message from payload.message || payload.error
-                const errorCode = signupResponse.code;
-                const errorMessage = signupResponse.message;
+                // TypeScript narrows to ApiError after !signupResponse.ok check
+                const error = signupResponse as ApiError;
+                const errorCode = error.code;
+                const errorMessage = error.message;
                 
                 // Handle EMAIL_EXISTS with backend message (already user-friendly)
                 // errorCode is string | undefined, compare as string
