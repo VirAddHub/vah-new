@@ -6,7 +6,8 @@ const ORIGIN = process.env.BACKEND_API_ORIGIN || process.env.NEXT_PUBLIC_BACKEND
 function buildUrl(path: string) {
   // absolute if ORIGIN set, else relative to this frontend origin (vercel proxy or local dev)
   if (!ORIGIN || ORIGIN === "/") return path.startsWith("/") ? path : `/${path}`;
-  const base = ORIGIN.replace(/\/+$/, "");
+  // Normalize ORIGIN to remove trailing /api if present, since path already includes /api
+  const base = ORIGIN.replace(/\/api\/?$/, "").replace(/\/+$/, "");
   const tail = path.startsWith("/") ? path : `/${path}`;
   return `${base}${tail}`;
 }
