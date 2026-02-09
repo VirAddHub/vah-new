@@ -87,6 +87,7 @@ export async function createBusinessOwner(
             },
             from: 'support@virtualaddresshub.co.uk',
             replyTo: 'support@virtualaddresshub.co.uk',
+            templateId: 43428305, // Postmark Template ID
         });
     } catch (error) {
         console.error('[businessOwners] Failed to send verification email:', error);
@@ -164,6 +165,7 @@ export async function resendBusinessOwnerInvite(ownerId: number): Promise<string
             },
             from: 'support@virtualaddresshub.co.uk',
             replyTo: 'support@virtualaddresshub.co.uk',
+            templateId: 43428305, // Postmark Template ID
         });
     } catch (error) {
         console.error('[businessOwners] Failed to resend verification email:', error);

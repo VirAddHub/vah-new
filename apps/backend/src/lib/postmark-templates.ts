@@ -5,7 +5,7 @@ export const Templates = {
     PasswordChanged: "password-changed-confirmation", // pragma: allowlist secret
     EmailChangeVerification: "mail-change-verification", // pragma: allowlist secret - Template ID: 42716349
     EmailChangeNotificationOldAddress: "email-change-notification-old-address", // pragma: allowlist secret - Template ID: 42718936
-    BusinessOwnerVerification: "business-owner-verification", // pragma: allowlist secret - Template ID: TBD (create in Postmark)
+    BusinessOwnerVerification: "business-owner-verification", // pragma: allowlist secret - Template ID: 43428305
 
     // Welcome & onboarding
     Welcome: "welcome-email", // pragma: allowlist secret
