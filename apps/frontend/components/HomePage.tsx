@@ -401,44 +401,18 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </div>
             </section>
 
-            {/* CTA Banner with London Landmarks Background */}
+            {/* Image Section */}
             <section className="py-24 lg:py-32 bg-white">
                 <div className="mx-auto max-w-6xl px-6 lg:px-8">
-                    <div className="relative overflow-hidden rounded-[28px] bg-[#064e3b] min-h-[400px] md:min-h-[500px] flex items-center">
-                        {/* Background Image - Decorative only */}
-                        <img
-                            src="/figma/cta-illustration.png"
+                    <div className="relative w-full">
+                        <Image
+                            src="/images/Mask-group.jpg"
                             alt=""
-                            aria-hidden="true"
-                            className="absolute inset-0 w-full h-full object-cover object-center opacity-60"
+                            width={1200}
+                            height={800}
+                            className="w-full h-auto rounded-[28px] object-cover"
+                            priority
                         />
-                        
-                        {/* Overlay for readability */}
-                        <div className="absolute inset-0 bg-[#0b3d2e]/55" />
-                        
-                        {/* Content Layer */}
-                        <div className="relative z-10 w-full px-6 py-12 md:px-12 md:py-16">
-                            <div className="max-w-2xl">
-                                {/* Heading */}
-                                <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold text-white leading-tight mb-4">
-                                    Get your London business address today
-                                </h2>
-                                
-                                {/* Subheading */}
-                                <p className="text-lg md:text-xl text-white/90 mb-8 leading-relaxed">
-                                    Everything included for <span className="font-semibold text-[#206039] !text-[#206039]">£9.99</span> per month.
-                                </p>
-                                
-                                {/* CTA Button */}
-                                <Button
-                                    onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                    className="inline-flex items-center justify-center h-12 px-8 rounded-full text-base md:text-lg font-semibold bg-[#206039] text-white hover:bg-[#206039]/90 shadow-lg hover:shadow-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-[#064e3b]"
-                                >
-                                    Get your London address
-                                    <ArrowRight className="w-5 h-5 ml-2" />
-                                </Button>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </section>
