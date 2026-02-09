@@ -125,14 +125,14 @@ export function useSignup() {
             console.log('✅ User account created:', signupResponse.data);
 
             // Step 2: Set up payment
-            // IMPORTANT: Call the backend API (not a same-origin Next.js route)
-            // This requires that signup stored a token/cookie.
+            // Use BFF route to ensure CSRF token is handled server-side
+            // This avoids CSRF token timing issues after signup
             const paymentBody: any = {
                 billing_period: step1Data?.billing ?? 'monthly',
             };
             if (step1Data?.plan_id) paymentBody.plan_id = step1Data.plan_id;
 
-            const paymentResp = await apiClient.post<any>('/api/payments/redirect-flows', paymentBody);
+            const paymentResp = await apiClient.post<any>('/api/bff/payments/redirect-flows', paymentBody);
 
             // Ensure paymentResp exists and has the expected shape
             if (!paymentResp) {
