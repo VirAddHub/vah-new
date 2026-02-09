@@ -202,14 +202,17 @@ router.post('/from-onedrive', async (req, res) => {
     // Check user eligibility - determine if mail item should be locked
     // Use entitlement service (subscription.status === 'active') as source of truth
     const entitlement = await isUserEntitled(payload.userId);
-    const isUserActive = !user.status || user.status === 'active';
+    // User is active only if status is explicitly 'active' (not pending_payment, suspended, etc.)
+    const isUserActive = user.status === 'active';
+    // Also check plan_status - if pending_payment, user should not receive mail
+    const isPlanActive = user.plan_status === 'active';
     const isKycApproved =
       user.kyc_status === 'approved' ||
       user.kyc_status === 'verified'; // legacy status label
 
     // Determine if mail item should be locked
-    // Lock if: not entitled (subscription not active) OR user inactive OR KYC not approved
-    const locked = !entitlement.entitled || !isUserActive || !isKycApproved;
+    // Lock if: not entitled (subscription not active) OR user inactive OR plan not active OR KYC not approved
+    const locked = !entitlement.entitled || !isUserActive || !isPlanActive || !isKycApproved;
     let lockedReason: string | null = null;
 
     if (locked) {
