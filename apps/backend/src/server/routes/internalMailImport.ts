@@ -230,6 +230,15 @@ router.post('/from-onedrive', async (req, res) => {
         console.warn('[internalMailImport] user_status_not_active - creating locked mail item', {
           fileName: payload.fileName,
           parsedUserId: payload.userId,
+          userStatus: user.status,
+          userSnapshot,
+        });
+      } else if (!isPlanActive) {
+        lockedReason = 'plan_pending_payment';
+        console.warn('[internalMailImport] plan_status_not_active - creating locked mail item', {
+          fileName: payload.fileName,
+          parsedUserId: payload.userId,
+          planStatus: user.plan_status,
           userSnapshot,
         });
       } else if (!isKycApproved) {
