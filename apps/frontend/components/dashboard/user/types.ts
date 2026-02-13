@@ -4,10 +4,11 @@ export interface MailItem {
   sender_name?: string;
   received_date?: string;
   received_at?: string; // Alternative date field name
+  received_at_ms?: number | string; // Milliseconds timestamp (BIGINT from backend)
   status?: string;
   tag?: string;
   is_read?: boolean;
-  created_at?: string;
+  created_at?: string | number; // Can be string or number (BIGINT from backend)
   scanned_at?: string;
   file_url?: string;
   deleted?: boolean; // Backend uses 'deleted' field for archived status

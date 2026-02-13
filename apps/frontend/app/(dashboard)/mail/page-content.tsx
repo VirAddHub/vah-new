@@ -394,21 +394,74 @@ export default function MailInboxPage() {
     const archivedCount = mailItems.filter((item: MailItem) => item.deleted).length;
     const tagsCount = availableTags.length;
 
-    // Format date - handles multiple date field formats
-    const formatDate = (dateStr: string | undefined) => {
-        if (!dateStr) return '';
+    // Format date - handles multiple date field formats (no time, just date)
+    // Returns format like "9 Feb" (always shows day and month, no year for current year)
+    // Ensures date is always correct by using UTC to avoid timezone issues
+    const formatDate = (dateValue: string | number | undefined): string => {
+        if (dateValue === undefined || dateValue === null) return '';
+        
         try {
-            const date = new Date(dateStr);
+            let date: Date;
+            
+            // Handle received_at_ms (number in milliseconds)
+            if (typeof dateValue === 'number') {
+                // received_at_ms is always in milliseconds (BIGINT from backend)
+                // created_at is also in milliseconds
+                date = new Date(dateValue);
+            } else if (typeof dateValue === 'string') {
+                // Handle string dates (YYYY-MM-DD format from received_date)
+                // Parse as UTC to avoid timezone shifts
+                if (dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    // YYYY-MM-DD format - parse as UTC to avoid timezone issues
+                    const [year, month, day] = dateValue.split('-').map(Number);
+                    date = new Date(Date.UTC(year, month - 1, day));
+                } else {
+                    // ISO string or other format
+                    date = new Date(dateValue);
+                }
+            } else {
+                return '';
+            }
+            
             if (isNaN(date.getTime())) return '';
-            return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            
+            // Use UTC methods to ensure date doesn't change based on timezone
+            // Get current year to decide if we need to show year
+            const currentYear = new Date().getFullYear();
+            const dateYear = date.getUTCFullYear();
+            const dateDay = date.getUTCDate();
+            const dateMonth = date.getUTCMonth();
+            
+            // Format: "9 Feb" if same year, "9 Feb 2024" if different year
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthName = monthNames[dateMonth];
+            
+            if (dateYear === currentYear) {
+                return `${dateDay} ${monthName}`;
+            } else {
+                return `${dateDay} ${monthName} ${dateYear}`;
+            }
         } catch {
             return '';
         }
     };
 
-    // Get the best available date from a mail item
-    const getMailDate = (item: MailItem): string | undefined => {
-        return item.received_date || item.received_at || item.created_at;
+    // Get the best available date from a mail item (prioritizes received_at_ms, then received_date, then created_at)
+    const getMailDate = (item: MailItem): string | number | undefined => {
+        // Priority: received_at_ms (most accurate) > received_date > received_at > created_at
+        if (item.received_at_ms !== undefined && item.received_at_ms !== null) {
+            return item.received_at_ms;
+        }
+        if (item.received_date) {
+            return item.received_date;
+        }
+        if (item.received_at) {
+            return item.received_at;
+        }
+        if (item.created_at !== undefined && item.created_at !== null) {
+            return item.created_at;
+        }
+        return undefined;
     };
 
     // Get mail type icon

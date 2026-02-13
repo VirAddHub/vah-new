@@ -43,9 +43,26 @@ export function MailDetail({
   formatDate,
 }: MailDetailProps) {
   const title = item.sender_name || item.subject || item.tag || 'Mail';
-  const receivedDate = item.received_date || item.received_at || item.created_at;
+  
+  // Get the best available date (prioritizes received_at_ms, then received_date, then created_at)
+  const getMailDate = (item: MailItem): string | number | undefined => {
+    if (item.received_at_ms !== undefined && item.received_at_ms !== null) {
+      return item.received_at_ms;
+    }
+    if (item.received_date) {
+      return item.received_date;
+    }
+    if (item.received_at) {
+      return item.received_at;
+    }
+    if (item.created_at !== undefined && item.created_at !== null) {
+      return item.created_at;
+    }
+    return undefined;
+  };
+  
+  const receivedDate = getMailDate(item);
   const formattedDate = formatDate(receivedDate);
-  const formattedTime = formatTime(receivedDate);
 
   return (
     <div className="bg-background w-full">
@@ -66,7 +83,7 @@ export function MailDetail({
             {title}
           </h1>
           <p className="text-sm text-neutral-500">
-            {formattedDate ? `Received ${formattedDate}${formattedTime && formattedTime !== "—" ? ` at ${formattedTime}` : ''}` : 'Received —'}
+            {formattedDate ? `Received ${formattedDate}` : 'Received —'}
           </p>
         </div>
 
