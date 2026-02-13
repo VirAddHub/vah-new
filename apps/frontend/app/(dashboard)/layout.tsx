@@ -14,7 +14,7 @@ export default function DashboardLayout({
         <DashboardViewProvider>
             <div className="min-h-[100dvh] w-full bg-[#F6F6F7]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                 {/* Sticky navbar at top - stays in document flow */}
-                <div className="sticky top-0 z-50 h-16 bg-white border-b border-neutral-200">
+                <div className="sticky top-0 z-50">
                     <DashboardNavigation />
                 </div>
 

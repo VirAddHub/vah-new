@@ -78,11 +78,10 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
     };
 
     return (
-        <header className="w-full h-full flex items-center">
-            <div className="mx-auto max-w-7xl px-6 lg:px-8 w-full">
-                <div className="flex items-center justify-between h-16">
-                    {/* Mobile Dashboard: Hamburger on LEFT, Logo on RIGHT */}
-
+        <header className="w-full border-b bg-white">
+            <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                {/* Left section: Hamburger (mobile) + Logo */}
+                <div className="flex items-center gap-3 shrink-0">
                     {/* Mobile Hamburger Menu (Dashboard Navigation) */}
                     <button
                         ref={hamburgerRef}
@@ -93,28 +92,21 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
                         <Menu className="h-5 w-5" strokeWidth={2} />
                     </button>
 
-                    {/* Desktop Logo (left side) */}
-                    <div className="hidden md:block">
-                        <VAHLogo onNavigate={onNavigate} size="lg" />
-                    </div>
+                    {/* Logo - Left aligned on both mobile and desktop */}
+                    <VAHLogo onNavigate={onNavigate} size="lg" />
+                </div>
 
-                    {/* Mobile Logo (right side) */}
-                    <div className="md:hidden ml-auto">
-                        <VAHLogo onNavigate={onNavigate} size="lg" />
-                    </div>
-
-                    {/* Desktop Auth - Sign out on desktop (lg+), mobile uses drawer */}
-                    <div className="hidden lg:flex items-center gap-4">
-                        <Button
-                            onClick={handleLogout}
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center gap-2"
-                        >
-                            <LogOut className="h-4 w-4" strokeWidth={2} />
-                            <span>Sign out</span>
-                        </Button>
-                    </div>
+                {/* Right section: Sign out */}
+                <div className="hidden lg:flex items-center gap-4 ml-auto">
+                    <Button
+                        onClick={handleLogout}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                    >
+                        <LogOut className="h-4 w-4" strokeWidth={2} />
+                        <span>Sign out</span>
+                    </Button>
                 </div>
             </div>
         </header>
