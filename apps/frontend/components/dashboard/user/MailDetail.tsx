@@ -22,7 +22,7 @@ interface MailDetailProps {
   mailTypeIcon: (item: MailItem) => React.ComponentType<{ className?: string }>;
   mailStatusMeta: (item: MailItem) => StatusMeta;
   formatTime: (d?: string | number) => string;
-  formatDate: (dateStr: string | undefined) => string;
+  formatDate: (dateValue: string | number | undefined) => string;
 }
 
 export function MailDetail({
