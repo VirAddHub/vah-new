@@ -15,7 +15,7 @@ function resolveToken(ctx: ReturnType<typeof useAuth>): string | null {
 }
 
 function makeFetcher(token?: string | null) {
-  return async (keyOrTuple: string | readonly [string, any]) => {
+  return async (keyOrTuple: string | readonly [string, Record<string, unknown>]) => {
     // Allow requests without token when using cookie-based auth
     // Token is optional - cookies will be sent via credentials: 'include'
     // if (!token) throw new Error("No token");
@@ -74,7 +74,7 @@ function makeFetcher(token?: string | null) {
       throw error;
     }
 
-    let rawData: any;
+    let rawData: unknown;
     try {
       rawData = await res.json();
     } catch (err) {
@@ -91,7 +91,8 @@ function makeFetcher(token?: string | null) {
 
     if (!res.ok) {
       console.error('[useAuthedSWR] Error:', res.status, res.statusText);
-      const error = new Error(rawData?.error ?? rawData?.message ?? `${res.status} ${res.statusText}`);
+      const data = rawData as Record<string, unknown> | null | undefined;
+      const error = new Error(String(data?.error ?? data?.message ?? `${res.status} ${res.statusText}`));
       // @ts-ignore
       error.response = res;
       // @ts-ignore
@@ -99,23 +100,24 @@ function makeFetcher(token?: string | null) {
       throw error;
     }
 
-    console.log('[useAuthedSWR] Raw response:', rawData);
+    const raw = rawData as Record<string, unknown> | null | undefined;
+    console.log('[useAuthedSWR] Raw response:', raw);
 
     // Handle wrapped response format: { ok, items, total } or { ok, data }
-    let data = rawData;
-    if (rawData?.ok === true) {
+    let data: unknown = rawData;
+    if (raw?.ok === true) {
       // If response has { ok: true, items, total } - use items/total directly
-      if (rawData.items !== undefined) {
+      if (raw.items !== undefined) {
         data = {
-          items: rawData.items,
-          total: rawData.total ?? rawData.count ?? 0,
-          page: rawData.page,
-          pageSize: rawData.pageSize,
+          items: raw.items,
+          total: raw.total ?? raw.count ?? 0,
+          page: raw.page,
+          pageSize: raw.pageSize,
         };
       }
       // If response has { ok: true, data } - unwrap the data
-      else if (rawData.data !== undefined) {
-        data = rawData.data;
+      else if (raw.data !== undefined) {
+        data = raw.data;
       }
     }
 
@@ -125,8 +127,8 @@ function makeFetcher(token?: string | null) {
 }
 
 /** Gate requests until token exists; revalidate on focus; don't retry 401s. */
-export function useAuthedSWR<T = any>(
-  key: string | readonly [string, any] | null,
+export function useAuthedSWR<T = unknown>(
+  key: string | readonly [string, Record<string, unknown>] | null,
   config?: SWRConfiguration
 ) {
   const auth = useAuth();
@@ -138,7 +140,7 @@ export function useAuthedSWR<T = any>(
 
   return useSWR<T>(gatedKey, fetcher, {
     revalidateOnFocus: true,
-    shouldRetryOnError: (err: any) => !String(err?.message || "").startsWith("401"),
+    shouldRetryOnError: (err: unknown) => !String((err as Error)?.message || "").startsWith("401"),
     ...config,
   });
 }

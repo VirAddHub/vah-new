@@ -27,20 +27,7 @@ import {
 import { MailItemCard } from "./dashboard/mail/MailItemCard";
 import { useToast } from "./ui/use-toast";
 import { getToken } from '@/lib/token-manager';
-
-interface MailItem {
-    id: string | number;
-    subject?: string;
-    sender_name?: string;
-    received_date?: string;
-    status?: string;
-    tag?: string;
-    is_read?: boolean;
-    created_at?: string;
-    scanned_at?: string;
-    file_url?: string;
-    deleted?: boolean; // Backend uses 'deleted' field
-}
+import type { MailItem } from './dashboard/user/types';
 
 interface MailManagementProps {
     mailItems: MailItem[];
@@ -290,7 +277,7 @@ export function MailManagement({
     }, [onRefresh, toast]);
 
     const renderMailItem = (item: MailItem) => {
-        const title = String((item as any).user_title || item.subject || "Mail item").trim();
+        const title = String(item.user_title ?? item.subject ?? "Mail item").trim();
         const sender = title || "Mail item";
         const subject = "";
 

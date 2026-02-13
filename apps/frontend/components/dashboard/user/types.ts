@@ -15,6 +15,8 @@ export interface MailItem {
   gdpr_expired?: boolean; // GDPR 30-day expiration flag (from backend API)
   // Forwarding fields appear in some payloads
   forwarding_status?: unknown;
+  /** Display title from backend (e.g. mail subject line) */
+  user_title?: string;
 }
 
 export interface DashboardSummaryCounts {

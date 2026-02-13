@@ -55,11 +55,11 @@ export const tokenManager = {
 };
 
 // get user (uses safe JSON)
-export function getStoredUser<T = any>(): T | null {
+export function getStoredUser<T = unknown>(): T | null {
   return null;
 }
 
 // set user
-export function setStoredUser(user: any | null): void {
+export function setStoredUser(user: unknown | null): void {
   // No-op
 }

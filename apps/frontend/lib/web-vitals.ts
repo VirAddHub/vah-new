@@ -52,19 +52,28 @@ function formatMetricValue(name: string, value: number): string {
   }
 }
 
+interface NavigatorConnection {
+  effectiveType?: string;
+  downlink?: number;
+}
+
+interface NavigatorWithHardware extends Navigator {
+  connection?: NavigatorConnection;
+  deviceMemory?: number;
+}
+
 function getConnectionInfo(): string {
-  if ('connection' in navigator) {
-    const conn = (navigator as any).connection;
-    return `${conn.effectiveType || 'unknown'} (${conn.downlink || 'unknown'}Mbps)`;
+  const nav = navigator as NavigatorWithHardware;
+  if (nav.connection) {
+    const conn = nav.connection;
+    return `${conn.effectiveType ?? 'unknown'} (${conn.downlink ?? 'unknown'}Mbps)`;
   }
   return 'unknown';
 }
 
 function getDeviceMemory(): number | undefined {
-  if ('deviceMemory' in navigator) {
-    return (navigator as any).deviceMemory;
-  }
-  return undefined;
+  const nav = navigator as NavigatorWithHardware;
+  return nav.deviceMemory;
 }
 
 async function sendToAnalytics(report: WebVitalsReport): Promise<void> {
@@ -120,9 +129,10 @@ export function reportWebVitals(metric: WebVitalsMetric): void {
   // Send to analytics
   sendToAnalytics(report);
 
-  // Track in localStorage for debugging
+  // Track in localStorage for debugging (not auth; rule targets token storage)
   try {
     const key = `web-vitals-${metric.name}`;
+    // eslint-disable-next-line no-restricted-properties -- web vitals debug history only, not auth tokens
     const history = JSON.parse(localStorage.getItem(key) || '[]');
     history.push({
       value: metric.value,
