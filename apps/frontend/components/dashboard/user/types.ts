@@ -3,6 +3,7 @@ export interface MailItem {
   subject?: string;
   sender_name?: string;
   received_date?: string;
+  received_at?: string; // Alternative date field name
   status?: string;
   tag?: string;
   is_read?: boolean;

@@ -394,15 +394,21 @@ export default function MailInboxPage() {
     const archivedCount = mailItems.filter((item: MailItem) => item.deleted).length;
     const tagsCount = availableTags.length;
 
-    // Format date
+    // Format date - handles multiple date field formats
     const formatDate = (dateStr: string | undefined) => {
         if (!dateStr) return '';
         try {
             const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '';
             return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         } catch {
             return '';
         }
+    };
+
+    // Get the best available date from a mail item
+    const getMailDate = (item: MailItem): string | undefined => {
+        return item.received_date || item.received_at || item.created_at;
     };
 
     // Get mail type icon
@@ -997,6 +1003,7 @@ export default function MailInboxPage() {
                             mailTypeIcon={mailTypeIcon}
                             mailStatusMeta={mailStatusMeta}
                             formatTime={formatTime}
+                            formatDate={formatDate}
                         />
                     </div>
                 </div>
@@ -1078,7 +1085,7 @@ export default function MailInboxPage() {
                                                 {items.map((item) => {
                                                     const Icon = getMailIcon(item);
                                                     const senderName = getSenderName(item);
-                                                    const date = formatDate(item.received_date || item.created_at);
+                                                    const date = formatDate(getMailDate(item));
                                                     const isRead = item.is_read ?? true;
 
                                                     return (
@@ -1193,7 +1200,7 @@ export default function MailInboxPage() {
                         filteredItems.map((item) => {
                             const Icon = getMailIcon(item);
                             const senderName = getSenderName(item);
-                            const date = formatDate(item.received_date || item.created_at);
+                            const date = formatDate(getMailDate(item));
                             const isRead = item.is_read ?? true;
 
                             return (

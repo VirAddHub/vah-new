@@ -22,6 +22,7 @@ interface MailDetailProps {
   mailTypeIcon: (item: MailItem) => React.ComponentType<{ className?: string }>;
   mailStatusMeta: (item: MailItem) => StatusMeta;
   formatTime: (d?: string | number) => string;
+  formatDate: (dateStr: string | undefined) => string;
 }
 
 export function MailDetail({
@@ -39,8 +40,12 @@ export function MailDetail({
   mailTypeIcon,
   mailStatusMeta,
   formatTime,
+  formatDate,
 }: MailDetailProps) {
   const title = item.sender_name || item.subject || item.tag || 'Mail';
+  const receivedDate = item.received_date || item.received_at || item.created_at;
+  const formattedDate = formatDate(receivedDate);
+  const formattedTime = formatTime(receivedDate);
 
   return (
     <div className="bg-background w-full">
@@ -61,7 +66,7 @@ export function MailDetail({
             {title}
           </h1>
           <p className="text-sm text-neutral-500">
-            Received {formatTime(item.created_at)}
+            {formattedDate ? `Received ${formattedDate}${formattedTime && formattedTime !== "—" ? ` at ${formattedTime}` : ''}` : 'Received —'}
           </p>
         </div>
 
