@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 // MonitoringDropdown removed - using Sentry instead
 import { VAHLogo } from "@/components/VAHLogo";
-import { Clipboard, Download, LogOut, Menu, Receipt, X } from "lucide-react";
+import { Clipboard, LogOut, Menu, Receipt, X } from "lucide-react";
 
 type MenuItem = { id: string; label: string; icon: ReactNode };
 
@@ -88,13 +88,6 @@ export function AdminHeader({
           >
             {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </Button>
-
-          {/* Quick Actions - Desktop Only */}
-          <div className="hidden lg:flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="h-8 px-2">
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
 
           {/* Logout Button */}
           <Button
