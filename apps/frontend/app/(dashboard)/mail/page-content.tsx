@@ -1064,7 +1064,6 @@ export default function MailInboxPage() {
                             mailStatusMeta={mailStatusMeta}
                             formatTime={formatTime}
                             formatDate={formatDate}
-                            getTagLabel={getTagLabel}
                         />
                     </div>
                 </div>

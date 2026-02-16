@@ -3,7 +3,6 @@
 import React from 'react';
 import { FileText, X, ArrowLeft, Archive, ArchiveRestore } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import type { MailItem } from './types';
 
 type StatusMeta = { label: string; badgeClass: string };
@@ -24,7 +23,6 @@ interface MailDetailProps {
   mailStatusMeta: (item: MailItem) => StatusMeta;
   formatTime: (d?: string | number) => string;
   formatDate: (dateValue: string | number | undefined) => string;
-  getTagLabel?: (tag: string) => string;
 }
 
 export function MailDetail({
@@ -43,12 +41,9 @@ export function MailDetail({
   mailStatusMeta,
   formatTime,
   formatDate,
-  getTagLabel = (tag) => tag,
 }: MailDetailProps) {
-  const subject = item.subject || item.user_title || 'No subject';
-  const sender = item.sender_name || 'Unknown sender';
+  const title = item.sender_name || item.subject || item.tag || 'Mail';
 
-  // Get the best available date (prioritizes received_at_ms, then received_date, then created_at)
   const getMailDate = (mailItem: MailItem): string | number | undefined => {
     if (mailItem.received_at_ms !== undefined && mailItem.received_at_ms !== null) {
       return mailItem.received_at_ms;
@@ -65,9 +60,7 @@ export function MailDetail({
     return undefined;
   };
 
-  const receivedDate = getMailDate(item);
-  const formattedDate = formatDate(receivedDate);
-  const statusMeta = mailStatusMeta(item);
+  const formattedDate = formatDate(getMailDate(item));
 
   return (
     <div className="bg-background w-full">
@@ -82,32 +75,14 @@ export function MailDetail({
           Back to Inbox
         </button>
 
-        {/* Mail header: subject + metadata block */}
-        <div className="space-y-3 md:space-y-4">
+        {/* Mail title + date only */}
+        <div className="space-y-2 md:space-y-3">
           <h1 className="text-2xl md:text-3xl font-semibold text-neutral-900 leading-tight">
-            {subject}
+            {title}
           </h1>
-
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-neutral-500">
-            <span>
-              <span className="font-medium text-neutral-600">Received:</span>{' '}
-              {formattedDate || '—'}
-            </span>
-            {item.tag && (
-              <Badge variant="secondary" className="font-normal text-neutral-600">
-                {getTagLabel(item.tag)}
-              </Badge>
-            )}
-            {statusMeta.label && (
-              <Badge className={statusMeta.badgeClass}>{statusMeta.label}</Badge>
-            )}
-          </div>
-
-          {sender && (
-            <p className="text-sm text-neutral-600">
-              <span className="font-medium text-neutral-700">From:</span> {sender}
-            </p>
-          )}
+          <p className="text-sm text-neutral-500">
+            {formattedDate ? `Received: ${formattedDate}` : 'Received: —'}
+          </p>
         </div>
 
         {/* Action buttons */}
