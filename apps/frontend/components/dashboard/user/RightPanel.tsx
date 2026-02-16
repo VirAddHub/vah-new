@@ -169,7 +169,7 @@ function ForwardingView({
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-3">
-                      <h3 className="font-medium text-base">Request #{r.id}</h3>
+                      <h3 className="font-medium text-base">Request #{String(r.id)}</h3>
                       <Badge className={getStatusColor(String(r.status ?? ''))}>
                         {String(r.status ?? '')}
                       </Badge>
