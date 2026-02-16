@@ -291,6 +291,23 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       .toUpperCase();
   };
 
+  const formatDate = (dateValue: string | number | undefined): string => {
+    if (dateValue === undefined || dateValue === null) return '';
+    try {
+      const date = typeof dateValue === 'number' ? new Date(dateValue) : new Date(dateValue);
+      if (Number.isNaN(date.getTime())) return '';
+      const currentYear = new Date().getFullYear();
+      const dateYear = date.getUTCFullYear();
+      const dateDay = date.getUTCDate();
+      const dateMonth = date.getUTCMonth();
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthName = monthNames[dateMonth];
+      return dateYear === currentYear ? `${dateDay} ${monthName}` : `${dateDay} ${monthName} ${dateYear}`;
+    } catch {
+      return '';
+    }
+  };
+
   const mailStatusMeta = (item: MailItem) => {
     const raw = (item.status || "").toLowerCase();
     const isForwarded = raw.includes("forward");
@@ -1011,6 +1028,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 mailTypeIcon={mailTypeIcon}
                 mailStatusMeta={mailStatusMeta}
                 formatTime={formatTime}
+                formatDate={formatDate}
                 forwardingRequests={forwardingRequests}
                 onRequestForwarding={handleRequestForwarding}
                 userProfile={userProfile}
@@ -1134,6 +1152,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           mailTypeIcon={mailTypeIcon}
           mailStatusMeta={mailStatusMeta}
           formatTime={formatTime}
+          formatDate={formatDate}
           forwardingRequests={forwardingRequests}
           onRequestForwarding={handleRequestForwarding}
           userProfile={userProfile}

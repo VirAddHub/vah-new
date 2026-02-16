@@ -24,11 +24,12 @@ interface RightPanelProps {
   mailTypeIcon?: (item: MailItem) => React.ComponentType<{ className?: string }>;
   mailStatusMeta?: (item: MailItem) => { label: string; badgeClass: string };
   formatTime?: (d?: string | number) => string;
+  formatDate?: (dateValue: string | number | undefined) => string;
   // Forwarding props
-  forwardingRequests?: any[];
+  forwardingRequests?: unknown[];
   onRequestForwarding?: (mailItem: MailItem) => void;
   // Account props
-  userProfile?: any;
+  userProfile?: unknown;
 }
 
 export function RightPanel({
@@ -45,6 +46,7 @@ export function RightPanel({
   mailTypeIcon,
   mailStatusMeta,
   formatTime,
+  formatDate,
   forwardingRequests = [],
   onRequestForwarding,
   userProfile,
@@ -96,6 +98,7 @@ export function RightPanel({
                   mailTypeIcon={mailTypeIcon || (() => () => null)}
                   mailStatusMeta={mailStatusMeta || (() => ({ label: '', badgeClass: '' }))}
                   formatTime={formatTime || (() => '—')}
+                  formatDate={formatDate || (() => '')}
                 />
               </div>
             )}
@@ -121,7 +124,7 @@ function ForwardingView({
   forwardingRequests, 
   onRequestForwarding 
 }: { 
-  forwardingRequests: any[];
+  forwardingRequests: unknown[];
   onRequestForwarding?: (mailItem: MailItem) => void;
 }) {
   const getStatusColor = (status: string) => {
@@ -142,8 +145,8 @@ function ForwardingView({
     });
   };
 
-  const formatDestination = (request: any) => {
-    const parts = [request.city, request.postal, request.country].filter(Boolean);
+  const formatDestination = (request: Record<string, unknown>) => {
+    const parts = [request.city, request.postal, request.country].filter(Boolean) as string[];
     return parts.join(', ');
   };
 
@@ -159,41 +162,44 @@ function ForwardingView({
           </div>
         ) : (
           <div className="space-y-3">
-            {forwardingRequests.map((request) => (
-              <Card key={request.id} className="border hover:border-primary/30 transition-colors">
+            {forwardingRequests.map((request) => {
+              const r = request as Record<string, unknown>;
+              return (
+              <Card key={String(r.id)} className="border hover:border-primary/30 transition-colors">
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-3">
-                      <h3 className="font-medium text-base">Request #{request.id}</h3>
-                      <Badge className={getStatusColor(request.status)}>
-                        {request.status}
+                      <h3 className="font-medium text-base">Request #{r.id}</h3>
+                      <Badge className={getStatusColor(String(r.status ?? ''))}>
+                        {String(r.status ?? '')}
                       </Badge>
                     </div>
                     <div className="space-y-1 text-sm text-muted-foreground">
                       <p>
-                        <span className="font-medium text-foreground">To:</span> {request.to_name}
+                        <span className="font-medium text-foreground">To:</span> {String(r.to_name ?? '')}
                       </p>
                       <p>
-                        <span className="font-medium text-foreground">Destination:</span> {formatDestination(request)}
+                        <span className="font-medium text-foreground">Destination:</span> {formatDestination(r)}
                       </p>
-                      {request.tracking_number && (
+                      {r.tracking_number != null && (
                         <p>
-                          <span className="font-medium text-foreground">Tracking:</span> {request.tracking_number}
+                          <span className="font-medium text-foreground">Tracking:</span> {String(r.tracking_number)}
                         </p>
                       )}
-                      {request.courier && (
+                      {r.courier != null && (
                         <p>
-                          <span className="font-medium text-foreground">Courier:</span> {request.courier}
+                          <span className="font-medium text-foreground">Courier:</span> {String(r.courier)}
                         </p>
                       )}
                       <p className="text-xs mt-2">
-                        Requested: {formatDate(request.created_at)}
+                        Requested: {formatDate(Number(r.created_at))}
                       </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>
@@ -201,17 +207,18 @@ function ForwardingView({
   );
 }
 
-function AccountView({ userProfile }: { userProfile?: any }) {
+function AccountView({ userProfile }: { userProfile?: unknown }) {
+  const p = userProfile as Record<string, unknown> | null | undefined;
   return (
     <div className="p-4 lg:p-6">
       <div className="space-y-4">
         <div>
           <h3 className="font-semibold mb-2">Account Information</h3>
           <div className="space-y-2 text-sm">
-            <p><span className="font-medium">Email:</span> {userProfile?.email || '—'}</p>
-            <p><span className="font-medium">Name:</span> {userProfile?.first_name} {userProfile?.last_name}</p>
-            {userProfile?.company_name && (
-              <p><span className="font-medium">Company:</span> {userProfile.company_name}</p>
+            <p><span className="font-medium">Email:</span> {(p?.email as string) || '—'}</p>
+            <p><span className="font-medium">Name:</span> {p?.first_name as string} {p?.last_name as string}</p>
+            {p?.company_name && (
+              <p><span className="font-medium">Company:</span> {p.company_name as string}</p>
             )}
           </div>
         </div>

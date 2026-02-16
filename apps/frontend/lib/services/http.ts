@@ -48,12 +48,12 @@ export const apiGet = async (path: string) => {
     return response.data;
 };
 
-export const apiPost = async (path: string, data: any) => {
+export const apiPost = async (path: string, data: unknown) => {
     const response = await http.post(path, data);
     return response.data;
 };
 
-export const apiPatch = async (path: string, data: any) => {
+export const apiPatch = async (path: string, data: unknown) => {
     const response = await http.patch(path, data);
     return response.data;
 };
@@ -76,7 +76,7 @@ export const adminApi = {
         return apiGet(url);
     },
 
-    updateForwardingRequest: (id: number, data: any) => {
+    updateForwardingRequest: (id: number, data: unknown) => {
         return apiPatch(`/api/admin/forwarding/requests/${id}`, data);
     },
 

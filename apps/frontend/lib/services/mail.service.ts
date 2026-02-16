@@ -4,14 +4,14 @@ import { mailApi } from '../apiClient';
 
 export const getMailItems = () => mailApi.list();
 export const getMailItem = (id: string) => mailApi.get(id);
-export const updateMailItem = (id: string, _data: any) => mailApi.get(id);
+export const updateMailItem = (id: string, _data: unknown) => mailApi.get(id);
 export const getScanUrl = async (id: string) => {
     // return an object for legacy callers; prefer mailApi.downloadScan for Blob
     try {
         const blob = await mailApi.downloadScan(id);
         return { ok: true, url: URL.createObjectURL(blob) };
-    } catch (error: any) {
-        return { ok: false, url: '', error: error?.message ?? 'Failed to get scan URL' };
+    } catch (error: unknown) {
+        return { ok: false, url: '', error: (error as Error)?.message ?? 'Failed to get scan URL' };
     }
 };
 

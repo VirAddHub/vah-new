@@ -75,8 +75,12 @@ export const optimisticUpdate = <T>(
   updateFn: (currentData: T | undefined) => T,
   rollbackFn?: () => void
 ) => {
-  // Apply optimistic update
-  mutate(cacheKey as any, updateFn as any, { revalidate: false } as any);
+  // Apply optimistic update (SWR mutate accepts key, mutator, options)
+  mutate(
+    cacheKey as Parameters<typeof mutate>[0],
+    updateFn as (current: T | undefined) => T | undefined,
+    { revalidate: false }
+  );
 
   // Return rollback function
   return () => {
@@ -96,7 +100,7 @@ export const createMutationHandler = <T>(
   mutationFn: () => Promise<T>,
   cacheKeys: string | string[],
   onSuccess?: (data: T) => void,
-  onError?: (error: any) => void
+  onError?: (error: unknown) => void
 ) => {
   return async () => {
     try {

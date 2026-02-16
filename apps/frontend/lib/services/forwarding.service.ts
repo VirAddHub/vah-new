@@ -79,7 +79,7 @@ export const forwardingService = {
     /**
      * Bulk forward multiple mail items
      */
-    async bulkForward(ids: number[]): Promise<{ ok: boolean; forwarded: number[]; errors: any[] }> {
+    async bulkForward(ids: number[]): Promise<{ ok: boolean; forwarded: number[]; errors: unknown[] }> {
         // Use BFF endpoint (api() helper uses /api/bff as base, so path should be /forwarding/requests/bulk)
         const { data } = await api('/forwarding/requests/bulk', {
             method: 'POST',

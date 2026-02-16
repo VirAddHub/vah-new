@@ -43,7 +43,7 @@ export async function jsonFetcher<T>(url: string, init?: RequestInit): Promise<T
         throw error;
     }
 
-    let data: any;
+    let data: unknown;
     try {
         data = await res.json();
     } catch (err) {
@@ -58,7 +58,8 @@ export async function jsonFetcher<T>(url: string, init?: RequestInit): Promise<T
     }
 
     if (!res.ok) {
-        const message = data?.error ?? data?.message ?? res.statusText;
+        const obj = data as Record<string, unknown> | null | undefined;
+        const message = (obj?.error ?? obj?.message ?? res.statusText) as string;
         throw new ApiError(message, res.status, data);
     }
 
@@ -68,7 +69,7 @@ export async function jsonFetcher<T>(url: string, init?: RequestInit): Promise<T
 /**
  * Fetcher that supports both string keys and [url, params] tuple keys
  */
-export async function flexFetcher<T>(key: string | readonly [string, any]): Promise<T> {
+export async function flexFetcher<T>(key: string | readonly [string, Record<string, unknown>]): Promise<T> {
     if (typeof key === 'string') {
         return jsonFetcher<T>(key);
     }
