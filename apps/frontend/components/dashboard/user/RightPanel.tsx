@@ -217,8 +217,8 @@ function AccountView({ userProfile }: { userProfile?: unknown }) {
           <div className="space-y-2 text-sm">
             <p><span className="font-medium">Email:</span> {(p?.email as string) || '—'}</p>
             <p><span className="font-medium">Name:</span> {p?.first_name as string} {p?.last_name as string}</p>
-            {p?.company_name && (
-              <p><span className="font-medium">Company:</span> {p.company_name as string}</p>
+            {(p?.company_name != null) && (
+              <p><span className="font-medium">Company:</span> {String(p.company_name)}</p>
             )}
           </div>
         </div>
