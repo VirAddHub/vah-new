@@ -1,6 +1,6 @@
 "use client";
 
-import useSWR, { SWRConfiguration } from "swr";
+import useSWR, { type SWRConfiguration, type Key, type BareFetcher } from "swr";
 import { useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -133,10 +133,14 @@ export function useAuthedSWR<T = unknown>(
 ) {
   const auth = useAuth();
   const token = resolveToken(auth);
-  const fetcher = useMemo(() => makeFetcher(token), [token]);
+  const fetcher = useMemo(() => {
+    const f = makeFetcher(token);
+    const wrapped: BareFetcher<T> = (keyOrTuple) =>
+      f(keyOrTuple as string | readonly [string, Record<string, unknown>]).then((data) => data as T);
+    return wrapped;
+  }, [token]);
   // Allow requests even without token (cookie-based auth)
-  // Token is optional - cookies will be sent via credentials: 'include'
-  const gatedKey = key; // Remove token requirement - allow cookie-only auth
+  const gatedKey = key as Key;
 
   return useSWR<T>(gatedKey, fetcher, {
     revalidateOnFocus: true,
