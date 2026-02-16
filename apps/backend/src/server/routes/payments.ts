@@ -290,21 +290,22 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
         const interval = String(planRow.rows?.[0]?.interval ?? '');
         const cadenceForSub = interval === 'year' ? 'annual' : 'monthly';
         if (planName) {
+            const subUpdatedAt = Date.now();
             await pool.query(
                 `
                 INSERT INTO subscription (user_id, plan_name, cadence, status, updated_at)
-                VALUES ($1, $2, $3, 'pending', NOW())
+                VALUES ($1, $2, $3, 'pending', $4)
                 ON CONFLICT (user_id) DO UPDATE SET
                   plan_name = EXCLUDED.plan_name,
                   cadence = EXCLUDED.cadence,
-                  updated_at = NOW(),
+                  updated_at = EXCLUDED.updated_at,
                   status = CASE
                     WHEN subscription.status = 'active' THEN subscription.status
                     WHEN subscription.status = 'cancelled' THEN 'pending'
                     ELSE subscription.status
                   END
                 `,
-                [userId, planName, cadenceForSub]
+                [userId, planName, cadenceForSub, subUpdatedAt]
             );
         }
 

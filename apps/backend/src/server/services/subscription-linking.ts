@@ -25,8 +25,6 @@ export async function upsertSubscriptionForUser(opts: {
 }): Promise<void> {
   const { pool, userId } = opts;
   const status = opts.status ?? "active";
-  const now = Date.now();
-  const updatedAt = TimestampUtils.forTableField("subscription", "updated_at") ?? now;
 
   // Resolve plan from user.plan_id
   const planRes = await pool.query(
@@ -50,13 +48,16 @@ export async function upsertSubscriptionForUser(opts: {
   const mandateId = opts.mandateId ?? null;
   const customerId = opts.customerId ?? null;
 
+  // subscription.updated_at is BIGINT (epoch ms), not timestamp
+  const updatedAtMs = TimestampUtils.forTableField("subscription", "updated_at") ?? Date.now();
+
   // UPSERT pattern: exactly one subscription per user (enforced by unique constraint)
   // Never downgrade an already-active subscription when we upsert "pending" during checkout retries.
   // Allow cancelled -> pending for restart flows (when explicitly setting status to 'pending').
   // Precedence: active > cancelled (unless restarting with pending) > anything else.
   const insertSql = `
     INSERT INTO subscription (user_id, plan_name, cadence, status, mandate_id, customer_id, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, NOW())
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
     ON CONFLICT (user_id) DO UPDATE SET
       plan_name = EXCLUDED.plan_name,
       cadence = EXCLUDED.cadence,
@@ -68,9 +69,9 @@ export async function upsertSubscriptionForUser(opts: {
       END,
       mandate_id = COALESCE(EXCLUDED.mandate_id, subscription.mandate_id),
       customer_id = COALESCE(EXCLUDED.customer_id, subscription.customer_id),
-      updated_at = NOW()
+      updated_at = EXCLUDED.updated_at
   `;
 
-  await pool.query(insertSql, [userId, plan.name, cadence, status, mandateId, customerId]);
+  await pool.query(insertSql, [userId, plan.name, cadence, status, mandateId, customerId, updatedAtMs]);
 }
 

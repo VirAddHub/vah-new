@@ -1,6 +1,7 @@
 'use client';
 
-import { X } from 'lucide-react';
+import Link from 'next/link';
+import { X, Settings, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -222,9 +223,27 @@ function AccountView({ userProfile }: { userProfile?: unknown }) {
             )}
           </div>
         </div>
-        <p className="text-sm text-muted-foreground">
-          For full account management, please visit the Account page.
-        </p>
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            To update your details, use the links below:
+          </p>
+          <div className="flex flex-col gap-2">
+            <Link
+              href="/account/settings"
+              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+            >
+              <Settings className="h-4 w-4 shrink-0" />
+              Edit profile &amp; phone (Settings)
+            </Link>
+            <Link
+              href="/account/addresses"
+              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+            >
+              <MapPin className="h-4 w-4 shrink-0" />
+              Edit forwarding address (Addresses)
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
