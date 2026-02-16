@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ArrowLeft, CreditCard, Shield, AlertTriangle, Check } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
+import { cn } from '@/lib/utils';
 import { ScrollToTopButton } from '../ScrollToTopButton';
 import { usePlans } from '@/hooks/usePlans';
 import { FEATURES } from '@/lib/config';
@@ -206,12 +206,24 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                 {error}
                                 {emailAlreadyExists && (
                                     <div className="mt-4 flex flex-wrap items-center gap-3">
-                                        <Button variant="outline" size="sm" asChild>
-                                            <Link href="/login">Sign in</Link>
-                                        </Button>
-                                        <Button variant="outline" size="sm" asChild>
-                                            <Link href="/reset-password">Reset password</Link>
-                                        </Button>
+                                        <Link
+                                            href="/login"
+                                            className={cn(
+                                                'inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium h-9 px-3 text-sm',
+                                                'border border-neutral-200 bg-transparent text-neutral-900 hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-offset-2'
+                                            )}
+                                        >
+                                            Sign in
+                                        </Link>
+                                        <Link
+                                            href="/reset-password"
+                                            className={cn(
+                                                'inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium h-9 px-3 text-sm',
+                                                'border border-neutral-200 bg-transparent text-neutral-900 hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-offset-2'
+                                            )}
+                                        >
+                                            Reset password
+                                        </Link>
                                     </div>
                                 )}
                             </AlertDescription>
