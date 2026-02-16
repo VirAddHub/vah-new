@@ -26,13 +26,21 @@ export function middleware(request: NextRequest) {
   if (pathname === '/dashboard' || pathname === '/dashboard/') {
     return NextResponse.redirect(new URL('/mail', request.url));
   }
+  // Legacy email links: redirect to correct dashboard routes (both are protected)
+  if (pathname === '/support' || pathname === '/support/') {
+    return NextResponse.redirect(new URL('/account/support', request.url));
+  }
+  if (pathname === '/profile' || pathname === '/profile/') {
+    return NextResponse.redirect(new URL('/account/verification', request.url));
+  }
 
   // Protected routes that require authentication
   // Exceptions: public routes (no auth required)
   const isPublicAccountRoute = pathname === '/account/confirm-email' || pathname.startsWith('/account/confirm-email/');
   const isPublicVerifyRoute = pathname === '/verify-owner' || pathname.startsWith('/verify-owner/');
   const isPublicEmailChangeRoute = pathname === '/verify-email-change' || pathname.startsWith('/verify-email-change/');
-  const PROTECTED_PREFIXES = ['/dashboard', '/account', '/admin'];
+  // All dashboard routes (dashboard group redirects /dashboard -> /mail; /mail, /forwarding, etc. are under (dashboard))
+  const PROTECTED_PREFIXES = ['/dashboard', '/account', '/admin', '/mail', '/forwarding', '/billing', '/business-owners'];
   const isProtectedRoute = !isPublicAccountRoute && !isPublicVerifyRoute && !isPublicEmailChangeRoute && PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix));
 
   // Check for authentication cookie

@@ -7,7 +7,7 @@ interface SEOConfig {
   canonical?: string
   ogImage?: string
   noIndex?: boolean
-  structuredData?: any
+  structuredData?: Record<string, unknown>
 }
 
 export function generateMetadata(config: SEOConfig): Metadata {

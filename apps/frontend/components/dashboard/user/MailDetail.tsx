@@ -3,6 +3,7 @@
 import React from 'react';
 import { FileText, X, ArrowLeft, Archive, ArchiveRestore } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import type { MailItem } from './types';
 
 type StatusMeta = { label: string; badgeClass: string };
@@ -23,6 +24,7 @@ interface MailDetailProps {
   mailStatusMeta: (item: MailItem) => StatusMeta;
   formatTime: (d?: string | number) => string;
   formatDate: (dateValue: string | number | undefined) => string;
+  getTagLabel?: (tag: string) => string;
 }
 
 export function MailDetail({
@@ -41,28 +43,31 @@ export function MailDetail({
   mailStatusMeta,
   formatTime,
   formatDate,
+  getTagLabel = (tag) => tag,
 }: MailDetailProps) {
-  const title = item.sender_name || item.subject || item.tag || 'Mail';
-  
+  const subject = item.subject || item.user_title || 'No subject';
+  const sender = item.sender_name || 'Unknown sender';
+
   // Get the best available date (prioritizes received_at_ms, then received_date, then created_at)
-  const getMailDate = (item: MailItem): string | number | undefined => {
-    if (item.received_at_ms !== undefined && item.received_at_ms !== null) {
-      return item.received_at_ms;
+  const getMailDate = (mailItem: MailItem): string | number | undefined => {
+    if (mailItem.received_at_ms !== undefined && mailItem.received_at_ms !== null) {
+      return mailItem.received_at_ms;
     }
-    if (item.received_date) {
-      return item.received_date;
+    if (mailItem.received_date) {
+      return mailItem.received_date;
     }
-    if (item.received_at) {
-      return item.received_at;
+    if (mailItem.received_at) {
+      return mailItem.received_at;
     }
-    if (item.created_at !== undefined && item.created_at !== null) {
-      return item.created_at;
+    if (mailItem.created_at !== undefined && mailItem.created_at !== null) {
+      return mailItem.created_at;
     }
     return undefined;
   };
-  
+
   const receivedDate = getMailDate(item);
   const formattedDate = formatDate(receivedDate);
+  const statusMeta = mailStatusMeta(item);
 
   return (
     <div className="bg-background w-full">
@@ -77,14 +82,32 @@ export function MailDetail({
           Back to Inbox
         </button>
 
-        {/* Mail title */}
-        <div className="space-y-2 md:space-y-3">
+        {/* Mail header: subject + metadata block */}
+        <div className="space-y-3 md:space-y-4">
           <h1 className="text-2xl md:text-3xl font-semibold text-neutral-900 leading-tight">
-            {title}
+            {subject}
           </h1>
-          <p className="text-sm text-neutral-500">
-            {formattedDate ? `Received ${formattedDate}` : 'Received —'}
-          </p>
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-neutral-500">
+            <span>
+              <span className="font-medium text-neutral-600">Received:</span>{' '}
+              {formattedDate || '—'}
+            </span>
+            {item.tag && (
+              <Badge variant="secondary" className="font-normal text-neutral-600">
+                {getTagLabel(item.tag)}
+              </Badge>
+            )}
+            {statusMeta.label && (
+              <Badge className={statusMeta.badgeClass}>{statusMeta.label}</Badge>
+            )}
+          </div>
+
+          {sender && (
+            <p className="text-sm text-neutral-600">
+              <span className="font-medium text-neutral-700">From:</span> {sender}
+            </p>
+          )}
         </div>
 
         {/* Action buttons */}

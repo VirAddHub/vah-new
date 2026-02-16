@@ -3,7 +3,7 @@
  * Used by HeaderWithNav and FooterWithNav wrappers
  */
 
-export function createNavigationHandler(router: any) {
+export function createNavigationHandler(router: { push: (path: string) => void }) {
     return (page: string) => {
         // Scroll to top before navigation
         if (typeof window !== 'undefined') {

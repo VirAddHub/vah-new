@@ -109,7 +109,7 @@ router.post('/tickets', requireAuth, async (req: Request, res: Response) => {
                     firstName: user.first_name,
                     name: user.name,
                     ticket_id: String(ticket.id),
-                    cta_url: buildAppUrl('/support'),
+                    cta_url: buildAppUrl('/account/support'),
                 }).catch((err) => {
                     console.error('[POST /api/support/tickets] email_send_failed_nonfatal', err);
                 });
@@ -165,7 +165,7 @@ router.post('/tickets/:id/close', requireAuth, async (req: Request, res: Respons
                     firstName: user.first_name,
                     name: user.name,
                     ticket_id: String(ticketId),
-                    cta_url: buildAppUrl('/support'),
+                    cta_url: buildAppUrl('/account/support'),
                 }).catch((err) => {
                     console.error('[POST /api/support/tickets/:id/close] email_send_failed_nonfatal', err);
                 });

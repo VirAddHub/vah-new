@@ -983,12 +983,12 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             .stroke();
 
         // ===== SINGLE-PAGE FIT: measure content and auto-tighten if needed =====
-        // IMPORTANT: PDFKit enforces a bottom margin for text flow (page.height - margins.bottom).
-        // If we place footer text at/after that y, PDFKit will push it onto a new page.
-        // So the footer must live inside the content box (above the bottom margin).
+        // IMPORTANT: PDFKit auto-adds a page when content overflows. Footer must fit above
+        // pageInnerBottom (pageHeight - margin) or a blank second page is created.
+        const bottomMargin = (doc as any).page.margins?.bottom ?? 50;
+        const pageInnerBottom = pageHeight - bottomMargin;
         const footerHeight = 110;
-        const pageInnerBottom = pageHeight - ((doc as any).page.margins?.bottom ?? 50);
-        const footerTop = pageHeight - footerHeight; // Position footer at actual bottom of page
+        const footerTop = pageHeight - footerHeight;
         const contentTop = headerBottom + 30;
         const contentBottom = footerTop - 24;
         const availableH = contentBottom - contentTop;
@@ -1215,7 +1215,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             doc.y = footerTop - 18;
         }
 
-        // Footer background - extend to bottom of page
+        // Footer background - extend to bottom of page (single page only)
         doc.save();
         doc.rect(0, footerTop, pageWidth, pageHeight - footerTop).fill(COLORS.footerBg);
         doc.restore();
@@ -1227,30 +1227,31 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             .lineTo(pageWidth, footerTop)
             .stroke();
 
-        // Footer text
+        // Footer text: use compact line step so all content fits above bottom margin (no second page)
         const footerTextX = contentX;
         const footerTextW = contentW;
-        let fy = footerTop + 18;
+        const footerLineStep = 12;
+        let fy = footerTop + 10;
 
         doc.fillColor(COLORS.body)
             .fontSize(TYPE.small)
             .font(FONT.bold)
             .text('VirtualAddressHub Ltd', footerTextX, fy, { width: footerTextW, align: 'center' });
-        fy += chosen.footerLineStep;
+        fy += footerLineStep;
 
         doc.fillColor(COLORS.muted)
             .fontSize(TYPE.small)
             .font(FONT.regular)
             .text(registeredBusinessAddress, footerTextX, fy, { width: footerTextW, align: 'center' });
-        fy += chosen.footerLineStep;
+        fy += footerLineStep;
 
         doc.text('support@virtualaddresshub.co.uk · www.virtualaddresshub.co.uk', footerTextX, fy, { width: footerTextW, align: 'center' });
-        fy += chosen.footerLineStep;
+        fy += footerLineStep;
 
         doc.fillColor('#9CA3AF') // gray-400
             .text('Registered in England', footerTextX, fy, { width: footerTextW, align: 'center' });
 
-        // Finalize PDF
+        // Finalize PDF (single page only - footer fits above pageInnerBottom)
         doc.end();
 
     } catch (error: any) {

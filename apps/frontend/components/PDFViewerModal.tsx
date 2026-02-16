@@ -3,8 +3,10 @@
 import * as React from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, ExternalLink } from "lucide-react";
 import { usePDFPreloader } from "@/hooks/usePDFPreloader";
+import { SCAN_CHECKPOINT_MESSAGE } from "@/lib/scanUrlUtils";
+import { openMailItemInlineNewTab } from "@/lib/openInlineNewTab";
 
 type PDFViewerModalProps = {
     isOpen: boolean;
@@ -66,10 +68,11 @@ export default function PDFViewerModal({
                     return;
                 }
 
-                // Forward httpOnly cookies via credentials
+                // Forward httpOnly cookies via credentials; Accept helps avoid security checkpoint
                 const res = await fetch(url, {
                     credentials: 'include',
                     cache: 'default',
+                    headers: { Accept: 'application/pdf' },
                 });
                 if (!res.ok) {
                     const txt = await safeText(res);
@@ -77,6 +80,10 @@ export default function PDFViewerModal({
                 }
 
                 const ab = await res.arrayBuffer();
+                const { isCheckpointOrHtmlResponse, SCAN_CHECKPOINT_MESSAGE: checkpointMsg } = await import('@/lib/scanUrlUtils');
+                if (isCheckpointOrHtmlResponse(res.headers.get('Content-Type'), ab)) {
+                    throw new Error(checkpointMsg);
+                }
                 const blob = new Blob([ab], { type: 'application/pdf' }); // ✅ force proper MIME
                 const bUrl = URL.createObjectURL(blob);
                 if (!cancelled) {
@@ -120,13 +127,24 @@ export default function PDFViewerModal({
                     )}
                     {error && (
                         <div className="absolute inset-0 grid place-items-center px-4 transition-opacity duration-150">
-                            <div className="text-center">
+                            <div className="text-center max-w-md">
                                 <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
                                     <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                                     </svg>
                                 </div>
                                 <p className="text-sm text-red-600 font-medium">{String(error)}</p>
+                                {error === SCAN_CHECKPOINT_MESSAGE && mailItemId && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="mt-4"
+                                        onClick={() => openMailItemInlineNewTab(mailItemId)}
+                                    >
+                                        <ExternalLink className="h-4 w-4 mr-2" />
+                                        Open in new tab
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     )}

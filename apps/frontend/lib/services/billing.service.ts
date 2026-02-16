@@ -21,7 +21,7 @@ export interface BillingOverview {
         current_plan?: string;
         next_billing_date?: string;
         amount_due?: number;
-        subscription?: any;
+        subscription?: unknown;
     };
 }
 

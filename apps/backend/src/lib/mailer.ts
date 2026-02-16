@@ -283,7 +283,7 @@ export async function sendKycSubmitted({ email, firstName, name, cta_url }: { em
         model: {
             firstName,
             name,
-            profileUrl: cta_url || buildAppUrl('/profile'),
+            profileUrl: cta_url || buildAppUrl('/account/verification'),
         },
     });
 }
@@ -313,7 +313,7 @@ export async function sendKycRejected({ email, firstName, name, reason, cta_url 
             firstName,
             name,
             reason,
-            profileUrl: cta_url || buildAppUrl('/profile'),
+            profileUrl: cta_url || buildAppUrl('/account/verification'),
         },
     });
 }
@@ -328,7 +328,7 @@ export async function sendSupportRequestReceived({ email, firstName, name, ticke
             firstName,
             name,
             ticketId: ticket_id,
-            ctaUrl: cta_url || buildAppUrl('/support'),
+            ctaUrl: cta_url || buildAppUrl('/account/support'),
         },
     });
 }
@@ -342,7 +342,7 @@ export async function sendSupportRequestClosed({ email, firstName, name, ticket_
             firstName,
             name,
             ticketId: ticket_id,
-            ctaUrl: cta_url || buildAppUrl('/support'),
+            ctaUrl: cta_url || buildAppUrl('/account/support'),
         },
     });
 }

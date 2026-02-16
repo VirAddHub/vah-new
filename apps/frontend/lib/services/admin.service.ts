@@ -125,7 +125,7 @@ export const adminService = {
     /**
      * Get forwarding requests (admin only)
      */
-    async getForwardingRequests(): Promise<{ ok: boolean; data: any[] }> {
+    async getForwardingRequests(): Promise<{ ok: boolean; data: unknown[] }> {
         const { data } = await api('/api/admin/forwarding/requests', { method: 'GET' });
         return data;
     },
@@ -133,7 +133,7 @@ export const adminService = {
     /**
      * Update forwarding request (admin only)
      */
-    async updateForwardingRequest(id: number, updates: any): Promise<{ ok: boolean; data: any }> {
+    async updateForwardingRequest(id: number, updates: unknown): Promise<{ ok: boolean; data: unknown }> {
         const { data } = await api(`/api/admin/forwarding/requests/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(updates),
@@ -161,7 +161,7 @@ export const adminService = {
     /**
      * Get plans (admin only)
      */
-    async getPlans(): Promise<{ ok: boolean; data: any[] }> {
+    async getPlans(): Promise<{ ok: boolean; data: unknown[] }> {
         const { data } = await api('/api/admin/plans', { method: 'GET' });
         return data;
     },
@@ -169,7 +169,7 @@ export const adminService = {
     /**
      * Update plan (admin only)
      */
-    async updatePlan(id: number, updates: any): Promise<{ ok: boolean; data: any }> {
+    async updatePlan(id: number, updates: unknown): Promise<{ ok: boolean; data: unknown }> {
         const { data } = await api(`/api/admin/plans/${id}`, {
             method: 'PATCH',
             body: JSON.stringify(updates),
@@ -180,7 +180,7 @@ export const adminService = {
     /**
      * Get audit logs (admin only)
      */
-    async getAuditLogs(params?: { limit?: number; offset?: number }): Promise<{ ok: boolean; data: any[] }> {
+    async getAuditLogs(params?: { limit?: number; offset?: number }): Promise<{ ok: boolean; data: unknown[] }> {
         const queryParams = new URLSearchParams();
         if (params?.limit) queryParams.append('limit', params.limit.toString());
         if (params?.offset) queryParams.append('offset', params.offset.toString());
@@ -192,7 +192,7 @@ export const adminService = {
     /**
      * Get forwarding audit logs (admin only)
      */
-    async getForwardingAuditLogs(): Promise<{ ok: boolean; data: any[] }> {
+    async getForwardingAuditLogs(): Promise<{ ok: boolean; data: unknown[] }> {
         const { data } = await api('/api/admin-forward-audit', { method: 'GET' });
         return data;
     },

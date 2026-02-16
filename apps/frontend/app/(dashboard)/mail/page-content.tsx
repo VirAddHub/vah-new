@@ -890,7 +890,10 @@ export default function MailInboxPage() {
                     credentials: 'include',
                     cache: 'no-store',
                     signal: ctrl.signal,
-                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    headers: {
+                        Accept: 'application/pdf',
+                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    },
                 });
 
                 if (!res.ok) {
@@ -899,6 +902,10 @@ export default function MailInboxPage() {
                 }
 
                 const ab = await res.arrayBuffer();
+                const { isCheckpointOrHtmlResponse, SCAN_CHECKPOINT_MESSAGE: checkpointMsg } = await import('@/lib/scanUrlUtils');
+                if (isCheckpointOrHtmlResponse(res.headers.get('Content-Type'), ab)) {
+                    throw new Error(checkpointMsg);
+                }
                 const blob = new Blob([ab], { type: 'application/pdf' });
                 const bUrl = URL.createObjectURL(blob);
                 if (!cancelled) setMiniViewerUrl(bUrl);
@@ -1057,6 +1064,7 @@ export default function MailInboxPage() {
                             mailStatusMeta={mailStatusMeta}
                             formatTime={formatTime}
                             formatDate={formatDate}
+                            getTagLabel={getTagLabel}
                         />
                     </div>
                 </div>

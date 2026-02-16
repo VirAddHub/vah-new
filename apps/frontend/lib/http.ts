@@ -10,9 +10,11 @@ export type ApiError = { ok: false; status: number; code?: string; message: stri
 export type ApiOk<T> = { ok: true; data: T };
 export type ApiResponse<T> = ApiOk<T> | ApiError;
 
-function normaliseError(status: number, payload: any): ApiError {
-    const code = payload?.code || payload?.error;
-    const message = payload?.message || payload?.error || "Request failed";
+function normaliseError(status: number, payload: unknown): ApiError {
+    const p = payload as Record<string, unknown> | null | undefined;
+    const rawCode = p?.code ?? p?.error;
+    const code = typeof rawCode === 'string' ? rawCode : undefined;
+    const message = (p?.message ?? p?.error ?? "Request failed") as string;
     return { ok: false, status, code, message };
 }
 
@@ -63,7 +65,7 @@ export const api = {
  * Returns null if parsing fails or response is not JSON
  * Note: This consumes the response body, so it can only be called once per response
  */
-export async function safeJson(res: Response): Promise<any> {
+export async function safeJson(res: Response): Promise<unknown> {
     try {
         const contentType = res.headers.get("content-type") || "";
         const text = await res.text();
@@ -87,7 +89,7 @@ export async function safeJson(res: Response): Promise<any> {
  * Throws a clear error if response is not JSON or parsing fails
  * Use this when you expect JSON and want to fail fast with a clear error
  */
-export async function parseJsonSafe(res: Response): Promise<any> {
+export async function parseJsonSafe(res: Response): Promise<unknown> {
     const contentType = res.headers.get('content-type') || '';
 
     if (!contentType.toLowerCase().includes('application/json')) {
