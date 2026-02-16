@@ -2,18 +2,14 @@ import crypto from 'crypto';
 
 // Use a single canonical env var name to avoid deploy confusion.
 // IMPORTANT: do not throw at import time; some environments intentionally run
-// without GoCardless configured.
+// without GoCardless configured. Live API only (sandbox removed).
 function getGcConfig() {
   const accessToken = (process.env.GC_ACCESS_TOKEN ?? process.env.GOCARDLESS_ACCESS_TOKEN)?.trim();
-  const env = ((process.env.GC_ENVIRONMENT ?? process.env.GOCARDLESS_ENV ?? 'sandbox').trim()) as 'sandbox' | 'live';
   const webhookSecret = process.env.GC_WEBHOOK_SECRET?.trim();
   const appUrl = (process.env.APP_URL ?? process.env.APP_BASE_URL)?.trim();
+  const apiBase = 'https://api.gocardless.com';
 
-  const apiBase = env === 'sandbox'
-    ? 'https://api-sandbox.gocardless.com'
-    : 'https://api.gocardless.com';
-
-  return { accessToken, env, webhookSecret, appUrl, apiBase };
+  return { accessToken, webhookSecret, appUrl, apiBase };
 }
 
 export type GcLink = { redirect_url: string; flow_id: string; billing_request_id: string };

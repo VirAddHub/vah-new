@@ -55,6 +55,7 @@ export function useSignup() {
     const [isComplete, setIsComplete] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [emailAlreadyExists, setEmailAlreadyExists] = useState(false);
 
     const goToStep1 = useCallback(() => {
         setCurrentStep(1);
@@ -87,6 +88,7 @@ export function useSignup() {
 
         setIsLoading(true);
         setError(null);
+        setEmailAlreadyExists(false);
 
         try {
             // Step 1: Create user account
@@ -116,19 +118,15 @@ export function useSignup() {
             );
 
             if (!signupResponse.ok) {
-                // TypeScript narrows to ApiError after !signupResponse.ok check
-                const error = signupResponse as ApiError;
-                const errorCode = error.code;
-                const errorMessage = error.message;
-                
-                // Handle EMAIL_EXISTS with backend message (already user-friendly)
-                // errorCode is string | undefined, compare as string
-                if (typeof errorCode === 'string' && (errorCode === 'EMAIL_EXISTS' || errorCode === 'email_exists')) {
-                    throw new Error(errorMessage || 'An account already exists with this email address. Please log in or reset your password.');
+                const err = signupResponse as ApiError & { errorCode?: string; status?: number };
+                const code = err.code ?? err.errorCode;
+                const status = err.status;
+                if (status === 409 && code === 'EMAIL_ALREADY_EXISTS') {
+                    setEmailAlreadyExists(true);
+                    setError('This email is already registered.');
+                    return;
                 }
-                
-                // Use backend message for all errors (already normalized to be user-friendly)
-                throw new Error(errorMessage || 'Signup failed. Please try again.');
+                throw new Error(typeof err.message === 'string' ? err.message : (err as any).error ?? 'Signup failed. Please try again.');
             }
 
             console.log('✅ User account created:', signupResponse.data);
@@ -207,6 +205,7 @@ export function useSignup() {
         setIsComplete(false);
         setIsLoading(false);
         setError(null);
+        setEmailAlreadyExists(false);
     }, []);
 
     return {
@@ -216,6 +215,7 @@ export function useSignup() {
         isComplete,
         isLoading,
         error,
+        emailAlreadyExists,
         goToStep1,
         goToStep2,
         goToStep3,

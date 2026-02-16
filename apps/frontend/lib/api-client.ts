@@ -310,7 +310,8 @@ export const apiClient = {
         additionalOwners?: Array<{ fullName: string; email: string }>,
         ownersPendingInfo?: boolean
     ): Promise<ApiResponse<{ user: User }>> {
-        const resp = await legacyReq(apiUrl('auth/signup'), {
+        // Use BFF so Set-Cookie is set for frontend origin; otherwise redirect-flows gets 401
+        const resp = await legacyReq('/auth/signup', {
             method: 'POST',
             body: JSON.stringify({
                 email,

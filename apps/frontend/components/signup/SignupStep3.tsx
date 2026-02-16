@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { ArrowLeft, CreditCard, Shield, AlertTriangle, Check } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 import { ScrollToTopButton } from '../ScrollToTopButton';
 import { usePlans } from '@/hooks/usePlans';
 import { FEATURES } from '@/lib/config';
@@ -14,10 +16,11 @@ interface SignupStep3Props {
     step2Data?: unknown;
     isLoading?: boolean;
     error?: string | null;
+    emailAlreadyExists?: boolean;
 }
 
 // Payment step - GoCardless Direct Debit only
-export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isLoading = false, error }: SignupStep3Props) {
+export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isLoading = false, error, emailAlreadyExists = false }: SignupStep3Props) {
     const [isProcessing, setIsProcessing] = useState(false);
     const { plans } = usePlans();
 
@@ -199,7 +202,19 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                     {error && (
                         <Alert variant="destructive" className="mb-6">
                             <AlertTriangle className="h-4 w-4" />
-                            <AlertDescription>{error}</AlertDescription>
+                            <AlertDescription>
+                                {error}
+                                {emailAlreadyExists && (
+                                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                                        <Button variant="outline" size="sm" asChild>
+                                            <Link href="/login">Sign in</Link>
+                                        </Button>
+                                        <Button variant="outline" size="sm" asChild>
+                                            <Link href="/reset-password">Reset password</Link>
+                                        </Button>
+                                    </div>
+                                )}
+                            </AlertDescription>
                         </Alert>
                     )}
 

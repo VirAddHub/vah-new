@@ -69,30 +69,31 @@ export function CertificatePreview({
                         </p>
                     </div>
 
-                    {/* Verified details section - Two-column grid */}
-                    <div className="grid grid-cols-[200px_1fr] gap-x-8 gap-y-5 pb-8 mb-10 border-b border-[#e5e7eb]">
-                        {/* Registered Office Address */}
-                        <div className="text-sm font-medium text-[#6b7280]">
-                            Registered Office Address
+                    {/* Verified details section: desktop 2-col (label | value), mobile stacked */}
+                    <div className="space-y-4 pb-8 mb-10 border-b border-[#e5e7eb]">
+                        <div className="flex flex-col md:flex-row md:items-baseline gap-y-1 md:gap-x-8">
+                            <div className="md:w-[200px] md:shrink-0 text-sm font-semibold text-[#374151] leading-snug">
+                                Registered Office Address
+                            </div>
+                            <div className="text-sm text-[#111827] leading-relaxed min-w-0 break-words">
+                                {registeredOfficeAddress}
+                            </div>
                         </div>
-                        <div className="text-sm font-normal text-[#111827]">
-                            {registeredOfficeAddress}
+                        <div className="flex flex-col md:flex-row md:items-baseline gap-y-1 md:gap-x-8">
+                            <div className="md:w-[200px] md:shrink-0 text-sm font-semibold text-[#374151] leading-snug">
+                                Authorised Company
+                            </div>
+                            <div className="text-sm text-[#111827] leading-relaxed min-w-0">
+                                {companyName}
+                            </div>
                         </div>
-
-                        {/* Authorised Company */}
-                        <div className="text-sm font-medium text-[#6b7280]">
-                            Authorised Company
-                        </div>
-                        <div className="text-sm font-normal text-[#111827]">
-                            {companyName}
-                        </div>
-
-                        {/* Date of issue */}
-                        <div className="text-sm font-medium text-[#6b7280]">
-                            Date of issue
-                        </div>
-                        <div className="text-sm font-normal text-[#111827]">
-                            {formattedDate}
+                        <div className="flex flex-col md:flex-row md:items-baseline gap-y-1 md:gap-x-8">
+                            <div className="md:w-[200px] md:shrink-0 text-sm font-semibold text-[#374151] leading-snug">
+                                Date of issue
+                            </div>
+                            <div className="text-sm text-[#111827] leading-relaxed min-w-0">
+                                {formattedDate}
+                            </div>
                         </div>
                     </div>
 

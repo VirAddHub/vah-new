@@ -2,9 +2,9 @@ const fetch = (...args) => import("node-fetch").then(m => m.default(...args));
 
 function baseUrl() {
   if (process.env.GC_API) return process.env.GC_API;
-  return (process.env.GC_ENV || "sandbox") === "live"
-    ? "https://api.gocardless.com"
-    : "https://api-sandbox.gocardless.com";
+  return (process.env.GC_ENV || process.env.GC_ENVIRONMENT || "live") === "sandbox"
+    ? "https://api-sandbox.gocardless.com"
+    : "https://api.gocardless.com";
 }
 
 const VERSION = process.env.GC_VERSION || "2015-07-06";

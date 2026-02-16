@@ -7,7 +7,7 @@ import { BCRYPT_ROUNDS, SESSION_IDLE_TIMEOUT_SECONDS } from "../../config/auth";
 import { sendWelcomeKycEmail } from "../../lib/mailer";
 import { ENV } from "../../env";
 import { upsertSubscriptionForUser } from "../services/subscription-linking";
-import { ok, unauthorized, badRequest, serverError, conflict } from "../lib/apiResponse";
+import { ok, unauthorized, badRequest, serverError } from "../lib/apiResponse";
 import { logger } from "../../lib/logger";
 
 const router = Router();
@@ -250,31 +250,30 @@ router.post("/signup", async (req, res) => {
     }
     const i = parsed.data;
 
-    // Normalize
-    const email = i.email.toLowerCase();
+    const normalizedEmail = String(i.email).trim().toLowerCase();
 
     if (process.env.NODE_ENV !== 'production') {
         logger.debug('[auth/signup] parsed', { billing: i.billing ?? 'unknown' });
     }
 
     try {
-        // Enforce unique email at app layer (still rely on DB unique index if you have it)
-        // Note: Soft-deleted users are included in this check to prevent email reuse
         const pool = getPool();
+        // Enforce unique email at app layer. DB: uniq_users_email_active on LOWER(email) WHERE deleted_at IS NULL (migration 006).
+        // Soft-deleted users included to prevent email reuse
         const exists = await pool.query<{ count: string }>(
-            `SELECT COUNT(*)::int AS count FROM "user" WHERE email = $1`,
-            [email]
+            `SELECT COUNT(*)::int AS count FROM "user" WHERE LOWER(email) = LOWER($1)`,
+            [normalizedEmail]
         );
         const count = Number(exists.rows[0]?.count ?? 0);
 
         if (count > 0) {
-            logger.info('[auth/signup] duplicate_email', { count });
-
+            logger.warn('Signup conflict', { event: 'signup_conflict', reason: 'email_exists', email: normalizedEmail });
             return res.status(409).json({
                 ok: false,
-                code: 'EMAIL_EXISTS',
-                error: "email_exists",
-                message: 'An account already exists with this email address.',
+                error: {
+                    code: 'EMAIL_ALREADY_EXISTS',
+                    message: 'An account with this email already exists. Please sign in or reset your password.',
+                },
             });
         }
 
@@ -346,8 +345,7 @@ router.post("/signup", async (req, res) => {
 
         // Validate additional business owners email constraints
         if (!isSoleController && i.additionalOwners && i.additionalOwners.length > 0) {
-            // Normalize main account email
-            const normalizedMainEmail = email.trim().toLowerCase();
+            const normalizedMainEmail = normalizedEmail;
             
             // Normalize and validate additional owner emails
             const normalizedOwnerEmails = i.additionalOwners.map(owner => {
@@ -407,7 +405,7 @@ router.post("/signup", async (req, res) => {
     `;
 
         const args = [
-            i.first_name, i.last_name, email, i.phone ?? null,
+            i.first_name, i.last_name, normalizedEmail, i.phone ?? null,
             i.business_type, i.country_of_incorporation, i.company_number ?? null, i.company_name,
             i.forward_to_first_name, i.forward_to_last_name, i.address_line1, i.address_line2 ?? null,
             i.city, i.postcode, i.forward_country, forwardingAddress,
@@ -470,15 +468,20 @@ router.post("/signup", async (req, res) => {
             token
         }, 201);
     } catch (err: any) {
-        const m = String(err?.message || "");
-        if (m.includes("duplicate key value") && m.toLowerCase().includes("email")) {
-            // Debug logging: log DB constraint violation
-            logger.info('[auth/signup] duplicate_email_db_constraint', { error: m });
-
-            return conflict(res, 'email_exists', 'An account already exists with this email address.');
+        const m = String(err?.message || '');
+        if (m.includes('duplicate key value') && m.toLowerCase().includes('email')) {
+            const emailForLog = (parsed?.data?.email && String(parsed.data.email).trim().toLowerCase()) || '(unknown)';
+            logger.warn('Signup conflict', { event: 'signup_conflict', reason: 'email_exists', email: emailForLog });
+            return res.status(409).json({
+                ok: false,
+                error: {
+                    code: 'EMAIL_ALREADY_EXISTS',
+                    message: 'An account with this email already exists. Please sign in or reset your password.',
+                },
+            });
         }
-        logger.error("[auth/signup] error", { message: err?.message || String(err) });
-        return serverError(res, "Server error during signup");
+        logger.error('[auth/signup] error', { message: err?.message || String(err) });
+        return serverError(res, 'Server error during signup');
     }
 });
 

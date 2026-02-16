@@ -12,9 +12,17 @@ export type ApiResponse<T> = ApiOk<T> | ApiError;
 
 function normaliseError(status: number, payload: unknown): ApiError {
     const p = payload as Record<string, unknown> | null | undefined;
-    const rawCode = p?.code ?? p?.error;
-    const code = typeof rawCode === 'string' ? rawCode : undefined;
-    const message = (p?.message ?? p?.error ?? "Request failed") as string;
+    const nested = p?.error as Record<string, unknown> | null | undefined;
+    const code =
+        typeof nested?.code === 'string'
+            ? nested.code
+            : typeof p?.code === 'string'
+                ? p.code
+                : undefined;
+    const message =
+        (typeof nested?.message === 'string'
+            ? nested.message
+            : (p?.message ?? (typeof p?.error === 'string' ? p.error : undefined)) ?? 'Request failed') as string;
     return { ok: false, status, code, message };
 }
 

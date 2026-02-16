@@ -832,6 +832,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             text: '#111827',     // gray-900
             body: '#1F2937',     // gray-800
             muted: '#6B7280',    // gray-500/600
+            label: '#374151',    // gray-700 – bold labels in certificate section
             border: '#E5E7EB',   // gray-200
             infoBorder: '#D1D5DB', // gray-300
             footerBg: '#F9FAFB', // gray-50
@@ -1137,10 +1138,10 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         // Format address with line break after SE1
         const formattedAddress = registeredBusinessAddress.replace('SE1 3PH', 'SE1\n3PH');
         
-        // Row 1: Registered Office Address
-        doc.fillColor('#6b7280') // gray-500
-            .fontSize(TYPE.small) // text-sm
-            .font(FONT.bold) // font-medium
+        // Row 1: Registered Office Address (bold label, dark gray #374151)
+        doc.fillColor(COLORS.label)
+            .fontSize(TYPE.small)
+            .font(FONT.bold)
             .text('Registered Office Address', contentX, doc.y, { width: labelColWidth });
         doc.fillColor(COLORS.text) // #111827
             .fontSize(TYPE.small) // text-sm
@@ -1151,10 +1152,10 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             doc.heightOfString(formattedAddress, { width: valueColWidth, lineGap: chosen.lineGap })
         ) + 10; // Further reduced gap (closer spacing, ensure one page)
         
-        // Row 2: Authorised Company
-        doc.fillColor('#6b7280') // gray-500
-            .fontSize(TYPE.small) // text-sm
-            .font(FONT.bold) // font-medium
+        // Row 2: Authorised Company (bold label)
+        doc.fillColor(COLORS.label)
+            .fontSize(TYPE.small)
+            .font(FONT.bold)
             .text('Authorised Company', contentX, doc.y, { width: labelColWidth });
         doc.fillColor(COLORS.text) // #111827
             .fontSize(TYPE.small) // text-sm
@@ -1165,10 +1166,10 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             doc.heightOfString(businessName, { width: valueColWidth })
         ) + 10; // Further reduced gap (closer spacing, ensure one page)
         
-        // Row 3: Date of issue
-        doc.fillColor('#6b7280') // gray-500
-            .fontSize(TYPE.small) // text-sm
-            .font(FONT.bold) // font-medium
+        // Row 3: Date of issue (bold label)
+        doc.fillColor(COLORS.label)
+            .fontSize(TYPE.small)
+            .font(FONT.bold)
             .text('Date of issue', contentX, doc.y, { width: labelColWidth });
         doc.fillColor(COLORS.text) // #111827
             .fontSize(TYPE.small) // text-sm

@@ -149,9 +149,6 @@ export function MailDetail({
           </div>
         </div>
 
-        {/* Subtle divider */}
-        <div className="border-t border-neutral-200" />
-
         {/* PDF Viewer - Embedded container */}
         <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 md:p-6">
           {miniViewerLoading ? (

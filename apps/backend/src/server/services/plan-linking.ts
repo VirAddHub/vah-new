@@ -3,10 +3,10 @@ import { TimestampUtils } from "../../lib/timestamp-utils";
 type PlanRow = { id: number; name: string; slug: string; interval: string };
 
 function isSandboxEnv(): boolean {
-  const env = String(process.env.GC_ENVIRONMENT ?? process.env.GOCARDLESS_ENV ?? "sandbox")
+  const env = String(process.env.GC_ENVIRONMENT ?? process.env.GOCARDLESS_ENV ?? "live")
     .trim()
     .toLowerCase();
-  return env !== "live";
+  return env === "sandbox";
 }
 
 async function resolveDefaultPlan(

@@ -378,13 +378,37 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
             });
         }
 
-        // Create Billing Request Flow and redirect user to GoCardless (Sandbox/Live based on GC_ENVIRONMENT)
-        // GoCardless will redirect back to `${APP_URL}/billing?billing_request_flow_id=BRFxxx`
-        // Trim trailing slashes from APP_URL/APP_BASE_URL
-        const redirectUri = `${String(appUrl).replace(/\/+$/, '')}/billing`;
+        const appUrlTrimmed = String(appUrl).replace(/\/+$/, '');
+        const redirectUri = `${appUrlTrimmed}/billing`;
+
+        // Redirect to GoCardless Billing Request Template (BRT) when configured
+        const monthlyBrtUrl = (process.env.GC_MONTHLY_BRT_URL || '').trim();
+        const annualBrtUrl = (process.env.GC_ANNUAL_BRT_URL || '').trim();
+        const brtUrl = cadence === 'annual' ? annualBrtUrl : monthlyBrtUrl;
+        if (brtUrl) {
+            await upsertSubscriptionForUser({
+                pool,
+                userId: Number(userId),
+                status: 'pending',
+            });
+            await pool.query(
+                `UPDATE "user" SET updated_at = $1 WHERE id = $2`,
+                [Date.now(), userId]
+            );
+            return res.json({
+                ok: true,
+                data: {
+                    redirect_url: brtUrl,
+                    email: user.email,
+                },
+                redirect_url: brtUrl,
+            });
+        }
+
+        // Fallback: create Billing Request Flow via API (when BRT URLs not set)
         const link = await gcCreateBrfUrl(Number(userId), redirectUri, {
-            plan_id: String(chosenPlanId ?? ""),
-            billing_period: cadence
+            plan_id: String(chosenPlanId ?? ''),
+            billing_period: cadence,
         });
 
         // Insert/Upsert BRQ/BRF mapping (used to link webhooks to the correct user)

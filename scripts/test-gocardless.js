@@ -56,8 +56,8 @@ async function testGoCardless() {
 
         console.log('\n🎉 GoCardless integration test completed!');
         console.log('\n📝 Next steps:');
-        console.log('1. Set up your GoCardless sandbox account');
-        console.log('2. Update .env with real sandbox credentials');
+        console.log('1. Set up your GoCardless live account and add GC_ACCESS_TOKEN, GC_WEBHOOK_SECRET');
+        console.log('2. Set GC_MONTHLY_BRT_URL and GC_ANNUAL_BRT_URL for plan redirects (e.g. https://pay.gocardless.com/BRT...)');
         console.log('3. Test the /billing page in your frontend');
         console.log('4. Set up webhook endpoint in GoCardless dashboard');
 

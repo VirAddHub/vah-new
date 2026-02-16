@@ -15,7 +15,7 @@ export const integrations = {
     gocardless: {
         accessToken: process.env.GOCARDLESS_ACCESS_TOKEN,
         webhookSecret: process.env.GOCARDLESS_WEBHOOK_SECRET,
-        environment: process.env.GOCARDLESS_ENV || "sandbox",
+        environment: process.env.GOCARDLESS_ENV || "live",
     } as GoCardlessConfig,
 
     sumsub: {

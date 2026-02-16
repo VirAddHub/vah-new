@@ -21,6 +21,7 @@ export function SignupPage({ onNavigate, initialBilling }: SignupPageProps) {
         isComplete,
         isLoading,
         error,
+        emailAlreadyExists,
         goToStep1,
         goToStep2,
         goToStep3,
@@ -100,6 +101,7 @@ export function SignupPage({ onNavigate, initialBilling }: SignupPageProps) {
                     step2Data={step2Data}
                     isLoading={isLoading}
                     error={error}
+                    emailAlreadyExists={emailAlreadyExists}
                 />
             );
         default:
