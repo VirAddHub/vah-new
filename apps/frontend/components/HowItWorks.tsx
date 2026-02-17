@@ -28,7 +28,7 @@ const steps = [
 
 export default function HowItWorks() {
     return (
-        <section className="w-full bg-background pt-12 pb-8 lg:pt-24 lg:pb-24">
+        <section className="w-full bg-background py-12 lg:pt-24 lg:pb-24">
             <div className="safe-pad mx-auto w-full max-w-[1280px] px-6 sm:px-8 lg:px-12">
                 <header className="mb-6 text-center sm:mb-8 md:mb-10 lg:mb-[60px]">
                     <h2 className="mb-2 text-2xl font-medium text-foreground sm:mb-3 sm:text-3xl md:text-4xl lg:text-[44px] lg:leading-[1.1]">
@@ -39,36 +39,39 @@ export default function HowItWorks() {
                     </p>
                 </header>
 
-                {/* Mobile: compact step list (< lg) */}
+                {/* Mobile: compact step list (< lg) — no number badges, no large icon bubbles */}
                 <div className="lg:hidden">
                     <div className="mx-auto max-w-md px-4">
-                        {steps.map((step, index) => (
-                            <div
-                                key={step.k}
-                                className="relative flex items-start gap-3 py-4"
-                            >
-                                {index < steps.length - 1 && (
+                        {steps.map((step, index) => {
+                            const Icon = step.LucideIcon;
+                            return (
+                                <div
+                                    key={step.k}
+                                    className="relative flex items-start gap-3 py-4"
+                                >
+                                    {index < steps.length - 1 && (
+                                        <span
+                                            aria-hidden="true"
+                                            className="absolute left-[18px] top-12 h-[calc(100%-2.5rem)] w-px bg-zinc-200"
+                                        />
+                                    )}
                                     <span
                                         aria-hidden="true"
-                                        className="absolute left-[18px] top-12 h-[calc(100%-2.5rem)] w-px bg-zinc-200"
-                                    />
-                                )}
-                                <span
-                                    aria-hidden="true"
-                                    className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50"
-                                >
-                                    <step.LucideIcon className="h-4 w-4 text-emerald-700" />
-                                </span>
-                                <div>
-                                    <h3 className="text-[17px] font-semibold leading-6 text-zinc-900">
-                                        {step.title}
-                                    </h3>
-                                    <p className="mt-1 text-sm leading-6 text-zinc-600">
-                                        {step.description}
-                                    </p>
+                                        className="h-9 w-9 shrink-0 rounded-full border border-emerald-100 bg-emerald-50 flex items-center justify-center mt-0.5"
+                                    >
+                                        <Icon className="h-4 w-4 text-emerald-700" />
+                                    </span>
+                                    <div>
+                                        <h3 className="text-[17px] leading-6 font-semibold text-zinc-900">
+                                            {step.title}
+                                        </h3>
+                                        <p className="mt-1 text-sm leading-6 text-zinc-600">
+                                            {step.description}
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
 

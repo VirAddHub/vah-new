@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiClient } from '../lib/apiClient';
+import { useInitialPricing } from '../contexts/PricingContext';
 
 export interface Plan {
     id: string;
@@ -45,18 +46,14 @@ export function usePlans(): UsePlansReturn {
         try {
             setLoading(true);
             setError(null);
-            
-            console.log('[usePlans] Fetching plans from /api/plans...');
+
             const response = await apiClient.get('/api/plans', {
-                // Force fresh data - disable any client-side caching
                 headers: {
                     'Cache-Control': 'no-cache',
                     'Pragma': 'no-cache'
                 }
             });
-            
-            console.log('[usePlans] Response:', response);
-            
+
             if (response.ok && response.data) {
                 // Handle new standardized format: backend returns { ok: true, data: [...] }
                 // apiClient preserves it, so response.data is { ok: true, data: [...] }
@@ -73,23 +70,18 @@ export function usePlans(): UsePlansReturn {
                         // Paginated format: { ok: true, data: { items: [...] } }
                         plansArray = response.data.data.items;
                     } else {
-                        console.error('[usePlans] Unexpected nested format:', response.data);
                         setError('Invalid response format from plans API');
                         return;
                     }
                 } else {
-                    console.error('[usePlans] Unexpected response format:', response.data);
                     setError('Invalid response format from plans API');
                     return;
                 }
-                console.log('[usePlans] Plans loaded:', plansArray);
                 setPlans(plansArray);
             } else {
-                console.error('[usePlans] Failed to load plans:', response);
                 setError('Failed to load pricing plans');
             }
         } catch (err) {
-            console.error('[usePlans] Error loading plans:', err);
             setError('Failed to load pricing plans');
         } finally {
             setLoading(false);
@@ -127,21 +119,22 @@ export function usePlans(): UsePlansReturn {
     };
 }
 
+const FALLBACK_MONTHLY = 9.99;
+const FALLBACK_ANNUAL = 89.99;
+
 /**
- * Hook for getting pricing information with automatic fallbacks
+ * Hook for getting pricing information with automatic fallbacks.
+ * Uses server initialPricing when available so first paint has stable values (no flicker).
  */
 export function usePricing() {
+    const initialPricing = useInitialPricing();
     const { plans, loading, error, getMonthlyPlan, getAnnualPlan } = usePlans();
-    
+
     const monthlyPlan = getMonthlyPlan();
     const annualPlan = getAnnualPlan();
-    
-    // Fallback prices if API fails
-    const fallbackMonthlyPrice = 9.97;
-    const fallbackAnnualPrice = 89.99;
-    
-    const monthlyPrice = monthlyPlan?.price ?? fallbackMonthlyPrice;
-    const annualPrice = annualPlan?.price ?? fallbackAnnualPrice;
+
+    const monthlyPrice = monthlyPlan?.price ?? initialPricing?.monthlyPrice ?? FALLBACK_MONTHLY;
+    const annualPrice = annualPlan?.price ?? initialPricing?.annualPrice ?? FALLBACK_ANNUAL;
     
     const monthlySavingsPct = useMemo(() => {
         if (monthlyPrice <= 0 || annualPrice <= 0) return 0;

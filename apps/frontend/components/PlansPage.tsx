@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import { usePlans } from '@/hooks/usePlans';
+import { usePlans, usePricing } from '@/hooks/usePlans';
+import { formatPrice } from '@/lib/formatPrice';
 import { Button } from './ui/button';
 
 interface PlansPageProps {
@@ -12,25 +12,8 @@ interface PlansPageProps {
 export function PlansPage({ onNavigate }: PlansPageProps) {
     const [isAnnual, setIsAnnual] = useState(false);
 
-    // Use the plans hook for consistent data fetching
-    const { plans, loading, error } = usePlans();
-
-    // Get dynamic pricing from plans data
-    const getPlanPrice = (interval: 'monthly' | 'annual') => {
-        const plan = plans?.find(p => p.interval === (interval === 'annual' ? 'year' : 'month'));
-        if (plan) {
-            return (plan.price_pence / 100).toFixed(2);
-        }
-        return null;
-    };
-
-    const getMonthlyEquivalent = () => {
-        const plan = plans?.find(p => p.interval === 'year');
-        if (plan) {
-            return ((plan.price_pence / 100) / 12).toFixed(2);
-        }
-        return null;
-    };
+    const { loading, error } = usePlans();
+    const { monthlyPrice, annualPrice } = usePricing();
 
     // Handle plan selection
     const handleSelectPlan = () => {
@@ -53,26 +36,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
         'Digital delivery same business day'
     ];
 
-    if (loading) {
-        return (
-            <div className="bg-white">
-                <section className="py-16 lg:py-24">
-                    <div className="mx-auto max-w-4xl px-6 lg:px-8">
-                        <div className="flex items-center justify-center py-12">
-                            <div className="text-center">
-                                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" strokeWidth={2} />
-                                <p className="text-neutral-600">Loading pricing...</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        );
-    }
-
-    const monthlyPrice = getPlanPrice('monthly');
-    const annualPrice = getPlanPrice('annual');
-    const monthlyEquivalent = getMonthlyEquivalent();
+    const displayPrice = isAnnual ? formatPrice(annualPrice, { interval: 'year' }) : formatPrice(monthlyPrice, { interval: 'month' });
 
     return (
         <div className="bg-white">
@@ -132,14 +96,11 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                         </p>
                                     )}
 
-                                    {/* Price */}
+                                    {/* Price - stable from server/context to avoid flicker */}
                                     <div className="mb-8">
                                         <div className="flex items-baseline gap-2 mb-2">
-                                            <span className="text-5xl lg:text-6xl font-semibold text-neutral-900">
-                                                {isAnnual ? (annualPrice ? `£${annualPrice}` : '—') : (monthlyPrice ? `£${monthlyPrice}` : '—')}
-                                            </span>
-                                            <span className="text-xl text-neutral-600">
-                                                {isAnnual ? '/ year' : '/ month'}
+                                            <span className="text-5xl lg:text-6xl font-semibold text-neutral-900 tabular-nums min-w-[140px] inline-block">
+                                                {displayPrice}
                                             </span>
                                         </div>
                                         <div className="inline-block border-b-2 border-primary/20 pb-0.5">
@@ -159,9 +120,9 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                         Get Started
                                     </Button>
 
-                                    <p className="text-sm text-neutral-500">
-                                        {isAnnual 
-                                            ? monthlyEquivalent ? `Equivalent to £${monthlyEquivalent} / month` : ''
+                                    <p className="text-sm text-neutral-500 tabular-nums">
+                                        {isAnnual
+                                            ? `Equivalent to ${formatPrice(annualPrice / 12, { interval: 'month' })}`
                                             : 'Switch to annual anytime and save 2 months'
                                         }
                                     </p>

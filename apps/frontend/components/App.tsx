@@ -25,8 +25,13 @@ import { Footer } from './Footer';
 import { ThemeProvider } from "./ui/theme";
 import { SchemaInjection, SchemaMarkup } from "./seo/SchemaMarkup";
 import { parseBlogHash } from "@/lib/hash-parser";
+import { PricingProvider, type InitialPricing } from '@/contexts/PricingContext';
 
-export function App() {
+interface AppProps {
+  initialPricing?: InitialPricing | null;
+}
+
+export function App({ initialPricing = null }: AppProps) {
   const { currentPage, navigate, goBack } = useNavigation();
   const [signupData, setSignupData] = useState<any>(null);
 
@@ -174,20 +179,22 @@ export function App() {
 
   return (
     <ThemeProvider>
-      {/* SEO Schema Markup */}
-      <SchemaInjection schema={SchemaMarkup.organization} />
-      <SchemaInjection schema={SchemaMarkup.service} />
+      <PricingProvider initialPricing={initialPricing ?? null}>
+        {/* SEO Schema Markup */}
+        <SchemaInjection schema={SchemaMarkup.organization} />
+        <SchemaInjection schema={SchemaMarkup.service} />
 
-      {/* Font Loading */}
-      <FontLoader />
+        {/* Font Loading */}
+        <FontLoader />
 
-      <div className="min-h-screen flex flex-col">
-        <MarketingNavigation onNavigate={navigate} />
-        <main className="flex-1">
-          {renderPage()}
-        </main>
-        {!isDashboardPage && <Footer onNavigate={navigate} />}
-      </div>
+        <div className="min-h-screen flex flex-col">
+          <MarketingNavigation onNavigate={navigate} />
+          <main className="flex-1">
+            {renderPage()}
+          </main>
+          {!isDashboardPage && <Footer onNavigate={navigate} />}
+        </div>
+      </PricingProvider>
     </ThemeProvider>
   );
 }

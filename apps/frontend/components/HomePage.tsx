@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ArrowRight } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { usePricing } from "@/hooks/usePlans";
+import { formatMonthly, formatAnnual } from "@/lib/formatPrice";
 import { Button } from "./ui/button";
 import HowItWorks from "./HowItWorks";
 
@@ -73,8 +74,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             {/* Pricing - No Box */}
                             <div className="mt-10">
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-5xl font-semibold text-neutral-900">£{Number(monthlyPrice).toFixed(2)}</span>
-                                    <span className="text-lg text-neutral-500">/ month</span>
+                                    <span className="text-5xl font-semibold text-neutral-900 tabular-nums min-w-[110px] inline-block">{formatMonthly(monthlyPrice)}</span>
                                 </div>
                                 <div className="mt-3 space-y-2">
                                     <div className="flex items-center gap-2 text-sm text-neutral-600">
@@ -234,8 +234,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         {/* Single card that switches based on toggle */}
                         {billing === "monthly" ? (
                             <div className="w-full max-w-[420px] rounded-3xl bg-primary p-5 lg:p-6 shadow-[0px_2px_20px_rgba(0,0,0,0.2)] flex flex-col">
-                                <div className="text-2xl font-semibold leading-[1.2] text-primary-foreground sm:text-3xl lg:text-4xl">
-                                    £{Number(monthlyPrice).toFixed(2)} <span className="text-base sm:text-lg lg:text-xl text-primary-foreground/70">/ month</span>
+                                <div className="text-2xl font-semibold leading-[1.2] text-primary-foreground sm:text-3xl lg:text-4xl tabular-nums min-w-[110px]">
+                                    {formatMonthly(monthlyPrice)}
                                 </div>
 
                                 <div className="mt-4">
@@ -296,8 +296,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         ) : (
                             <div className="w-full max-w-[420px] rounded-3xl bg-card p-5 lg:p-6 shadow-[0px_2px_20px_rgba(0,0,0,0.1)] flex flex-col border border-border">
                                 <div className="flex items-center justify-between">
-                                    <div className="text-2xl font-semibold leading-[1.2] text-neutral-900 sm:text-3xl lg:text-4xl">
-                                        £{Number(annualPrice).toFixed(2)} <span className="text-base sm:text-lg lg:text-xl text-neutral-600">/ year</span>
+                                    <div className="text-2xl font-semibold leading-[1.2] text-neutral-900 sm:text-3xl lg:text-4xl tabular-nums min-w-[110px]">
+                                        {formatAnnual(annualPrice)}
                                     </div>
                                     <div className="text-xs font-medium text-orange-600 bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400 px-2 py-1 rounded-full">20% Save</div>
                                 </div>
@@ -424,7 +424,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     <div className="mt-5 flex flex-wrap gap-2.5 lg:mt-6">
                                         <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95">ICO registered</span>
                                         <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95">HMRC AML supervised</span>
-                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95">£9.99/month · Cancel anytime</span>
+                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95 tabular-nums">{formatMonthly(monthlyPrice)} · Cancel anytime</span>
                                     </div>
                                 </div>
 
@@ -446,7 +446,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         </Button>
                                     </div>
                                     <p className="mt-3 text-sm text-emerald-100/90">
-                                        Setup takes a few minutes. No setup fees.
+                                        Setup takes a few minutes.
                                     </p>
                                 </div>
                             </div>

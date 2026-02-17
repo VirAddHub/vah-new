@@ -89,7 +89,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
     }
 
     const inquiryTypeLabels: Record<InquiryType, string> = {
-        general: "General Inquire",
+        general: "General enquiry",
         pricing: "Pricing Question",
         technical: "Technical Support",
         billing: "Billing Question",
@@ -192,7 +192,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                                 required
                                                 value={formData.email}
                                                 onChange={handleInputChange}
-                                        placeholder="Typ email"
+                                        placeholder="Type email"
                                         className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#206039]"
                                             />
                                     </div>
@@ -233,7 +233,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 {/* Inquire Type Dropdown */}
                                 <div className="flex flex-col gap-[6px]">
                                     <label htmlFor="inquiryType" className="text-[16px] font-medium text-[#1A1A1A] leading-[1.4] uppercase">
-                                        Inquire type
+                                        Enquiry type
                                     </label>
                                     <div className="relative">
                                         <select
@@ -243,7 +243,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                             onChange={handleInputChange}
                                             className="w-full px-[16px] py-[12px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#206039] appearance-none pr-[40px]"
                                         >
-                                            <option value="general">General Inquire</option>
+                                            <option value="general">General enquiry</option>
                                             <option value="pricing">Pricing Question</option>
                                             <option value="technical">Technical Support</option>
                                             <option value="billing">Billing Question</option>
@@ -264,7 +264,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                             rows={6}
                                             value={formData.message}
                                             onChange={handleInputChange}
-                                        placeholder="Please discrib you inqure in details..."
+                                        placeholder="Please describe your enquiry in detail..."
                                         className="w-full px-[20px] py-[18px] rounded-[20px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#206039] resize-none"
                                         />
                                     </div>
@@ -281,7 +281,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                             Sending...
                                                 </>
                                             ) : (
-                                        'Send Inquiry'
+                                        'Send enquiry'
                                     )}
                                 </button>
 
@@ -311,7 +311,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 onClick={() => window.open("https://wa.me/447000000000", "_blank")}
                                 className="w-[214px] h-[48px] rounded-[36px] border border-[#206039] bg-transparent text-[#206039] text-[16px] font-medium leading-[1.4] hover:bg-[#206039] hover:text-white transition-colors"
                                         >
-                                Chat on whatsapp
+                                Chat on WhatsApp
                             </button>
                                     </div>
 

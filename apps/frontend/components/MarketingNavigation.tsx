@@ -28,6 +28,7 @@ export function MarketingNavigation({ onNavigate }: MarketingNavigationProps) {
         { label: 'Pricing', page: 'pricing' },
         { label: 'Blog', page: 'blog' },
         { label: 'Help Centre', page: 'help' },
+        { label: 'Contact us', page: 'contact' },
     ];
 
     const handleNavClick = (page: string) => {

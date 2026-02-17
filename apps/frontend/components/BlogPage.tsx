@@ -22,6 +22,63 @@ interface BlogPageProps {
     onNavigate?: (page: string, data?: any) => void;
 }
 
+function MobileBlogCard({ post, onNavigate }: { post: BlogPost; onNavigate?: (page: string, data?: any) => void }) {
+    const [imageError, setImageError] = useState(false);
+    const title = post.title?.trim() || "Untitled post";
+    const excerpt = post.excerpt?.trim();
+    const category = post.category?.trim() || "Blog";
+    const hasValidImage = post.imageUrl && !imageError;
+
+    return (
+        <article
+            role="button"
+            tabIndex={0}
+            onClick={() => onNavigate?.("blog-post", { slug: post.slug })}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onNavigate?.("blog-post", { slug: post.slug });
+                }
+            }}
+            className="rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+        >
+            <div className="relative aspect-[16/9] w-full bg-zinc-100">
+                {hasValidImage ? (
+                    <img
+                        src={post.imageUrl}
+                        alt={title}
+                        className="object-cover w-full h-full"
+                        onError={() => setImageError(true)}
+                        decoding="async"
+                    />
+                ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-sm text-zinc-500" aria-hidden="true">
+                        No preview image
+                    </div>
+                )}
+            </div>
+            <div className="p-4">
+                <div className="mb-2 flex flex-wrap gap-2">
+                    <span className="inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700">
+                        {category}
+                    </span>
+                </div>
+                <h2 className="text-xl leading-7 font-semibold text-zinc-900 line-clamp-2">
+                    {title}
+                </h2>
+                {excerpt ? (
+                    <p className="mt-2 text-sm leading-6 text-zinc-600 line-clamp-3">
+                        {excerpt}
+                    </p>
+                ) : null}
+                <div className="mt-3 text-xs text-zinc-500">
+                    {post.dateShort && post.readTime ? `${post.dateShort} · ${post.readTime}` : post.dateLong || post.dateShort || ""}
+                </div>
+            </div>
+        </article>
+    );
+}
+
 export function BlogPage({ onNavigate }: BlogPageProps) {
     const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
     const [loading, setLoading] = useState(true);
@@ -112,8 +169,8 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                             Expert advice, industry insights, and success stories to help you grow your business
                         </p>
                     </div>
-                    {/* Search Bar */}
-                    <div className="flex justify-center">
+                    {/* Search Bar - desktop/tablet only */}
+                    <div className="hidden lg:flex justify-center">
                         <div className="flex items-center gap-[65px] bg-[#F9F9F9] rounded-[87px] px-[34px] py-[14px] w-full max-w-[858px]">
                             <input
                                 type="text"
@@ -159,49 +216,56 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
 
             <div className="bg-white py-[100px] px-20">
                 <div className="max-w-[1280px] mx-auto">
-                    {/* Blog Posts Grid */}
+                    {/* Mobile Blog List (< lg) */}
                     {!loading && !error && gridPosts.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 justify-center">
+                        <div className="lg:hidden mt-6 px-4 space-y-4">
                             {gridPosts.map((post) => (
-                                <div
-                                    key={post.id}
-                                    className="flex flex-col gap-[14px] w-full max-w-[395px] cursor-pointer"
-                                    onClick={() => onNavigate?.('blog-post', { slug: post.slug })}
-                                >
-                                    {/* Image */}
-                                    <div className="relative w-full h-[238px] rounded-[20px] overflow-hidden">
-                                        <ImageWithFallback
-                                            src={post.imageUrl}
-                                            alt={post.title}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                    {/* Content */}
-                                    <div className="flex flex-col gap-[10px]">
-                                        {/* Category Tags */}
-                                        <div className="flex items-center gap-2">
-                                            <div className="bg-[#F9F9F9] rounded-[22px] px-[10px] py-0 flex items-center justify-center h-[34px]">
-                                                <span className="text-xs text-[#666666] leading-[1.4]" style={{ fontFamily: 'Poppins' }}>
-                                                    {post.category || 'Success Stories'}
-                                                </span>
-                                            </div>
-                                            <div className="bg-[#F9F9F9] rounded-[22px] px-[10px] py-0 flex items-center justify-center h-[34px]">
-                                                <span className="text-xs text-[#666666] leading-[1.4]" style={{ fontFamily: 'Poppins' }}>
-                                                    {post.category || 'Success Stories'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        {/* Title */}
-                                        <h3 className="text-2xl font-medium text-[#0F1D07] leading-[1.4] line-clamp-2" style={{ fontFamily: 'Poppins' }}>
-                                            {post.title}
-                                        </h3>
-                                        {/* Description */}
-                                        <p className="text-lg text-[#666666] leading-[1.4] line-clamp-3" style={{ fontFamily: 'Poppins' }}>
-                                            {post.excerpt}
-                                        </p>
-                                    </div>
-                                </div>
+                                <MobileBlogCard key={post.id} post={post} onNavigate={onNavigate} />
                             ))}
+                        </div>
+                    )}
+                    {/* Desktop Blog Grid (lg+) */}
+                    {!loading && !error && gridPosts.length > 0 && (
+                        <div className="hidden lg:block">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 justify-center">
+                                {gridPosts.map((post) => (
+                                    <div
+                                        key={post.id}
+                                        className="flex flex-col gap-[14px] w-full max-w-[395px] cursor-pointer"
+                                        onClick={() => onNavigate?.('blog-post', { slug: post.slug })}
+                                    >
+                                        {/* Image */}
+                                        <div className="relative w-full h-[238px] rounded-[20px] overflow-hidden">
+                                            <ImageWithFallback
+                                                src={post.imageUrl}
+                                                alt={post.title || "Blog post"}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        {/* Content */}
+                                        <div className="flex flex-col gap-[10px]">
+                                            {/* Category Tags */}
+                                            <div className="flex items-center gap-2">
+                                                <div className="bg-[#F9F9F9] rounded-[22px] px-[10px] py-0 flex items-center justify-center h-[34px]">
+                                                    <span className="text-xs text-[#666666] leading-[1.4]" style={{ fontFamily: 'Poppins' }}>
+                                                        {post.category || 'Success Stories'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            {/* Title */}
+                                            <h3 className="text-2xl font-medium text-[#0F1D07] leading-[1.4] line-clamp-2" style={{ fontFamily: 'Poppins' }}>
+                                                {post.title || 'Untitled post'}
+                                            </h3>
+                                            {/* Description */}
+                                            {post.excerpt ? (
+                                                <p className="text-lg text-[#666666] leading-[1.4] line-clamp-3" style={{ fontFamily: 'Poppins' }}>
+                                                    {post.excerpt}
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                     {!loading && !error && gridPosts.length === 0 && (
