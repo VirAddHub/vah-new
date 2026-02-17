@@ -65,7 +65,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
     return (
         <footer
-            className="py-8 lg:py-10 text-neutral-700"
+            className="pt-8 pb-8 text-neutral-700 lg:pt-16 lg:pb-10"
             style={{
                 fontFamily: 'Inter, sans-serif',
             }}

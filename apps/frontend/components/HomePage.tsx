@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { usePricing } from "@/hooks/usePlans";
@@ -368,21 +367,21 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <HowItWorks />
 
             {/* BUILT FOR MODERN UK BUSINESSES */}
-            <section className="w-full bg-background py-24">
-                <div className="safe-pad mx-auto w-full max-w-[1240px] px-6 sm:px-8 lg:px-12">
+            <section className="w-full bg-background pt-8 pb-8 lg:pt-24 lg:pb-24">
+                <div className="mx-auto w-full max-w-none px-4 sm:px-6 lg:max-w-[1240px] lg:px-12">
                     <div className="flex flex-col items-center gap-6 sm:gap-8 md:gap-12 lg:flex-row lg:items-stretch lg:gap-[120px]">
-                        <div className="w-full lg:w-[433px]">
-                            <h2 className="text-2xl font-medium leading-[1.1] text-foreground sm:text-3xl md:text-4xl lg:text-4xl">
+                        <div className="w-full max-w-md lg:max-w-none lg:w-[433px]">
+                            <h2 className="text-[40px] font-semibold leading-[1.05] tracking-[-0.02em] text-zinc-900 sm:text-5xl lg:text-6xl">
                                 Built for Modern UK Businesses
                             </h2>
-                            <p className="mt-3 text-xs leading-[1.4] text-muted-foreground sm:mt-4 sm:text-sm md:text-base lg:mt-5 lg:text-base">
+                            <p className="mt-4 text-base leading-7 text-zinc-600 sm:text-lg lg:mt-5 lg:text-xl">
                                 Designed for founders who want a professional Central London presence without renting office space or publishing their home address.
                             </p>
                         </div>
 
                         <div className="hidden w-px self-stretch bg-border lg:block" />
 
-                        <div className="w-full space-y-1.5 sm:space-y-2 lg:w-[433px]">
+                        <div className="w-full max-w-md mt-8 space-y-3 sm:space-y-4 lg:mt-0 lg:max-w-none lg:w-[433px]">
                             {[
                                 { t: "One clear service.", icon: "/figma/builtfor-icon-1.svg" },
                                 { t: "One predictable price.", icon: "/figma/builtfor-icon-2.svg" },
@@ -390,10 +389,12 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             ].map((x) => (
                                 <div
                                     key={x.t}
-                                    className="flex min-h-[56px] items-center gap-2 rounded-[10px] bg-muted px-4 sm:min-h-[64px] sm:gap-3 sm:px-5 lg:min-h-[72px] lg:gap-[14px] lg:px-[24px]"
+                                    className="flex items-center gap-3.5 rounded-xl border border-zinc-200/80 bg-white/90 px-4 py-3.5 shadow-[0_1px_0_rgba(0,0,0,0.02)] sm:px-5 sm:py-4 lg:min-h-[72px] lg:gap-[14px] lg:px-[24px]"
                                 >
-                                    <img src={x.icon} alt="" aria-hidden="true" className="h-5 w-5 flex-shrink-0 sm:h-6 sm:w-6" />
-                                    <div className="text-xs font-normal leading-[1.1] text-muted-foreground sm:text-sm md:text-base lg:text-base">{x.t}</div>
+                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50" aria-hidden="true">
+                                        <img src={x.icon} alt="" className="h-4 w-4 text-zinc-600" aria-hidden="true" />
+                                    </span>
+                                    <div className="text-[17px] font-medium leading-6 text-zinc-700 lg:text-base">{x.t}</div>
                                 </div>
                             ))}
                         </div>
@@ -401,18 +402,55 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </div>
             </section>
 
-            {/* Image Section */}
-            <section className="py-24 lg:py-32 bg-white">
-                <div className="mx-auto max-w-6xl px-6 lg:px-8">
-                    <div className="relative w-full">
-                        <Image
-                            src="/images/Mask-group.jpg"
-                            alt=""
-                            width={1200}
-                            height={800}
-                            className="w-full h-auto rounded-[28px] object-cover"
-                            priority
-                        />
+            {/* Final CTA — signup + pricing */}
+            <section className="py-12 lg:py-20 bg-white">
+                <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                    <div className="relative overflow-hidden rounded-2xl border border-emerald-200/60 bg-gradient-to-b from-emerald-900 to-emerald-800 text-white shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
+                        <div className="relative px-6 py-8 sm:px-8 sm:py-10 lg:px-12 lg:py-12">
+                            {/* Subtle decorative glows */}
+                            <span aria-hidden="true" className="pointer-events-none absolute -top-20 -right-20 h-40 w-40 rounded-full bg-emerald-400/20 blur-3xl" />
+                            <span aria-hidden="true" className="pointer-events-none absolute -bottom-16 -left-16 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+
+                            <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+                                {/* Left: copy + chips */}
+                                <div className="lg:max-w-3xl">
+                                    <p className="text-sm font-medium text-emerald-100">VirtualAddressHub</p>
+                                    <h2 className="mt-2 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+                                        Get your Central London business address today
+                                    </h2>
+                                    <p className="mt-4 text-base leading-7 text-emerald-50/95 sm:text-lg">
+                                        Stay compliant with Companies House and HMRC, protect your home address, and manage your post online with same-day mail scanning.
+                                    </p>
+                                    <div className="mt-5 flex flex-wrap gap-2.5 lg:mt-6">
+                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95">ICO registered</span>
+                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95">HMRC AML supervised</span>
+                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95">£9.99/month · Cancel anytime</span>
+                                    </div>
+                                </div>
+
+                                {/* Right: actions */}
+                                <div className="lg:ml-8 lg:shrink-0">
+                                    <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:mt-0 lg:flex-col lg:min-w-[220px]">
+                                        <Button
+                                            onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
+                                            className="w-full bg-white text-emerald-900 hover:bg-white/95 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-800"
+                                        >
+                                            Get started now
+                                        </Button>
+                                        <Button
+                                            onClick={() => handleNavClick?.("pricing")}
+                                            variant="outline"
+                                            className="w-full border-white/40 text-white hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-800"
+                                        >
+                                            View pricing
+                                        </Button>
+                                    </div>
+                                    <p className="mt-3 text-sm text-emerald-100/90">
+                                        Setup takes a few minutes. No setup fees.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
