@@ -154,9 +154,6 @@ export function Footer({ onNavigate }: FooterProps) {
                                     Visit Help Centre
                                 </button>
                             </div>
-                            <p className="text-xs text-neutral-500">
-                                Typical response: within 1 business day
-                            </p>
                         </div>
                     </div>
 

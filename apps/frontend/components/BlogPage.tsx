@@ -174,7 +174,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                         <div className="flex items-center gap-[65px] bg-[#F9F9F9] rounded-[87px] px-[34px] py-[14px] w-full max-w-[858px]">
                             <input
                                 type="text"
-                                placeholder="Search for activities, restaurants, coupons"
+                                placeholder="Search articles…"
                                 className="flex-1 bg-transparent border-none outline-none text-base text-[#ADADAD] placeholder:text-[#ADADAD]"
                                 style={{ fontFamily: 'Poppins' }}
                             />
