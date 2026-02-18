@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, Building, MapPin, Eye, EyeOff, Loader2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, User, Building, MapPin, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
-import { Alert, AlertDescription } from '../ui/alert';
 import { ScrollToTopButton } from '../ScrollToTopButton';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Plus, X } from 'lucide-react';
@@ -57,6 +56,47 @@ type CompanySearchResult = {
     addressSnippet?: string;
 };
 
+/** Reusable section card for Step 2: distinct header, accent bar, optional step chip and helper. */
+function SectionCard({
+    title,
+    icon: Icon,
+    stepChip,
+    helper,
+    children,
+}: {
+    title: string;
+    icon: React.ComponentType<{ className?: string }>;
+    stepChip?: string;
+    helper?: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-hidden">
+            <div className="border-l-4 border-l-primary">
+                <div className="px-4 pt-5 pb-2 md:px-6 md:pt-6 md:pb-2">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <Icon className="h-5 w-5 flex-shrink-0 text-neutral-600" />
+                            <h4 className="leading-none font-semibold text-neutral-900">{title}</h4>
+                        </div>
+                        {stepChip && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-600 flex-shrink-0">
+                                {stepChip}
+                            </span>
+                        )}
+                    </div>
+                    {helper && (
+                        <p className="text-sm text-muted-foreground mt-1.5">{helper}</p>
+                    )}
+                </div>
+            </div>
+            <div className="px-4 pb-5 md:px-6 md:pb-6 space-y-4">
+                {children}
+            </div>
+        </div>
+    );
+}
+
 export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
     const [formData, setFormData] = useState<SignupStep2Data>({
         first_name: initialData?.first_name || '',
@@ -83,6 +123,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
 
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [companyMode, setCompanyMode] = useState<'registered' | 'not_registered'>('registered');
 
     // Companies House search state
     const [companySearchResults, setCompanySearchResults] = useState<CompanySearchResult[]>([]);
@@ -121,8 +162,10 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         }
         if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
 
-        // Company Details — Founder Mode: only company name required (user can search or type; number/type/country optional)
-        if (!formData.company_name.trim()) newErrors.company_name = 'Company name is required';
+        // Company Details — registered: optional; not_registered: company name required
+        if (companyMode === 'not_registered' && !formData.company_name.trim()) {
+            newErrors.company_name = 'Company name is required';
+        }
 
         // Forwarding Address — names auto-filled from contact; only address fields validated
         if (!formData.address_line1.trim()) newErrors.address_line1 = 'Address line 1 is required';
@@ -174,8 +217,13 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         }
     };
 
-    // Debounced Companies House search via BFF endpoint
+    // Debounced Companies House search via BFF endpoint (only when "registered" mode)
     useEffect(() => {
+        if (companyMode !== 'registered') {
+            setCompanySearchResults([]);
+            setShowResults(false);
+            return;
+        }
         const query = formData.company_name.trim();
         if (query.length < 2) {
             setCompanySearchResults([]);
@@ -215,7 +263,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
             }
         }, 350);
         return () => clearTimeout(timer);
-    }, [formData.company_name]);
+    }, [formData.company_name, companyMode]);
 
     const handleSelectCompany = async (company: CompanySearchResult) => {
         setFormData(prev => ({
@@ -289,16 +337,10 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                     </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-8">
-                    {/* Contact Information Card */}
-                    <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border">
-                        <div className="px-6 pt-6">
-                            <h4 className="leading-none flex items-center gap-2">
-                                <User className="h-5 w-5" />
-                                Contact Information
-                            </h4>
-                        </div>
-                        <div className="px-6 pb-6 space-y-4">
+                <form onSubmit={handleSubmit} className="bg-neutral-50 rounded-2xl p-4 md:p-6">
+                    <div className="space-y-6 md:space-y-8">
+                    {/* Contact Information */}
+                    <SectionCard title="Contact Information" icon={User} stepChip="Step 2a" helper="We use these to set up your account and for UK AML compliance.">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="first_name" className="flex items-center gap-2">
@@ -400,90 +442,104 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                     <p className="text-sm text-destructive">{errors.phone}</p>
                                 )}
                             </div>
-                        </div>
-                    </div>
+                    </SectionCard>
 
-                    {/* Company Details Card — Founder Mode: company name search only */}
-                    <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border">
-                        <div className="px-6 pt-6">
-                            <h4 className="leading-none flex items-center gap-2">
-                                <Building className="h-5 w-5" />
-                                Company Details
-                            </h4>
-                        </div>
-                        <div className="px-6 pb-6 space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="company_name" className="flex items-center gap-2">
-                                    Company name <span className="text-destructive">*</span>
-                                </Label>
-                                <div className="relative">
-                                    <Input
-                                        id="company_name"
-                                        value={formData.company_name}
-                                        onChange={(e) => updateFormData('company_name', e.target.value)}
-                                        placeholder="Search Companies House…"
-                                        className={`pr-10 ${errors.company_name ? 'border-destructive' : ''}`}
-                                    />
-                                    {isSearchingName && (
-                                        <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                    {/* Company Details — toggle: registered (search) vs not registered (manual name) */}
+                    <SectionCard title="Company Details" icon={Building} stepChip="Step 2b">
+                            <div className="inline-flex rounded-xl border border-neutral-200 bg-neutral-50 p-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setCompanyMode('registered')}
+                                    className={`rounded-lg px-3 py-2 text-sm font-medium transition-all ${companyMode === 'registered' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-600 hover:text-neutral-900'}`}
+                                >
+                                    Registered company
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setCompanyMode('not_registered')}
+                                    className={`rounded-lg px-3 py-2 text-sm font-medium transition-all ${companyMode === 'not_registered' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-600 hover:text-neutral-900'}`}
+                                >
+                                    Not registered yet
+                                </button>
+                            </div>
+
+                            {companyMode === 'registered' ? (
+                                <div className="space-y-2">
+                                    <Label htmlFor="company_name">Find your company (Companies House)</Label>
+                                    <div className="relative">
+                                        <Input
+                                            id="company_name"
+                                            value={formData.company_name}
+                                            onChange={(e) => updateFormData('company_name', e.target.value)}
+                                            placeholder="Start typing your company name…"
+                                            className={`pr-10 ${errors.company_name ? 'border-destructive' : ''}`}
+                                        />
+                                        {isSearchingName && (
+                                            <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                        We&apos;ll fill your company name automatically.
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        No company number yet? Add it later in Verification.
+                                    </p>
+                                    {showResults && companySearchResults.length > 0 && (
+                                        <div className="relative">
+                                            <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-auto">
+                                                {companySearchResults.map((company, index) => (
+                                                    <button
+                                                        key={company.identifier ?? index}
+                                                        type="button"
+                                                        onMouseDown={(e) => e.preventDefault()}
+                                                        onClick={() => handleSelectCompany(company)}
+                                                        className="w-full text-left px-4 py-3 hover:bg-accent border-b last:border-b-0 transition-colors"
+                                                    >
+                                                        <div className="font-medium text-sm">{company.title}</div>
+                                                        <div className="text-xs text-muted-foreground mt-1">
+                                                            {company.regNumber}
+                                                            {company.status && ` • ${company.status}`}
+                                                            {company.addressSnippet && ` • ${company.addressSnippet}`}
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {!isSearchingName && formData.company_name.trim().length >= 2 && companySearchResults.length === 0 && (
+                                        <p className="text-sm text-muted-foreground">
+                                            No companies found. Try a different search term or continue with the name you entered.
+                                        </p>
+                                    )}
+                                    {errors.company_name && (
+                                        <p className="text-sm text-destructive">{errors.company_name}</p>
                                     )}
                                 </div>
-                                <p className="text-sm text-muted-foreground">
-                                    Start typing to search. If your company is not yet registered, you can continue without selecting one.
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                    Don&apos;t have a company number yet? You can add it later in your account verification section.
-                                </p>
-                                {/* Search Results Dropdown */}
-                                {showResults && companySearchResults.length > 0 && (
-                                    <div className="relative">
-                                        <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-auto">
-                                            {companySearchResults.map((company, index) => (
-                                                <button
-                                                    key={company.identifier ?? index}
-                                                    type="button"
-                                                    onMouseDown={(e) => e.preventDefault()}
-                                                    onClick={() => handleSelectCompany(company)}
-                                                    className="w-full text-left px-4 py-3 hover:bg-accent border-b last:border-b-0 transition-colors"
-                                                >
-                                                    <div className="font-medium text-sm">{company.title}</div>
-                                                    <div className="text-xs text-muted-foreground mt-1">
-                                                        {company.regNumber}
-                                                        {company.status && ` • ${company.status}`}
-                                                        {company.addressSnippet && ` • ${company.addressSnippet}`}
-                                                    </div>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                {!isSearchingName && formData.company_name.trim().length >= 2 && companySearchResults.length === 0 && (
+                            ) : (
+                                <div className="space-y-2">
+                                    <Label htmlFor="company_name_manual">Company name</Label>
+                                    <Input
+                                        id="company_name_manual"
+                                        value={formData.company_name}
+                                        onChange={(e) => updateFormData('company_name', e.target.value)}
+                                        placeholder="Enter your company name (can be updated later)"
+                                        className={errors.company_name ? 'border-destructive' : ''}
+                                    />
                                     <p className="text-sm text-muted-foreground">
-                                        No companies found. Try a different search term or continue with the name you entered.
+                                        You can complete Companies House verification later.
                                     </p>
-                                )}
-                                {errors.company_name && (
-                                    <p className="text-sm text-destructive">{errors.company_name}</p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                                    {errors.company_name && (
+                                        <p className="text-sm text-destructive">{errors.company_name}</p>
+                                    )}
+                                </div>
+                            )}
+                    </SectionCard>
 
-                    {/* Forwarding Address Card — manual only; name auto-filled from contact */}
-                    <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border">
-                        <div className="px-6 pt-6">
-                            <h4 className="leading-none flex items-center gap-2">
-                                <MapPin className="h-5 w-5" />
-                                Where shall we send the post?
-                            </h4>
-                        </div>
-                        <div className="px-6 pb-6 space-y-4">
-                            <Alert>
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertDescription>
-                                    Letters only. HMRC & Companies House letters are forwarded free within the UK. Other letters are £2 per item and added to your monthly invoice.
-                                </AlertDescription>
-                            </Alert>
+                    {/* Forwarding Address — manual only; name auto-filled from contact */}
+                    <SectionCard title="Where shall we send the post?" icon={MapPin} stepChip="Step 2c">
+                            <div className="rounded-xl bg-neutral-50 border border-neutral-200 p-3 text-sm text-muted-foreground">
+                                <span className="font-medium text-neutral-700">Letters only.</span> HMRC & Companies House letters are forwarded free within the UK. Other letters are £2 per item and added to your monthly invoice.
+                            </div>
 
                             <div className="space-y-4">
                                 <div className="space-y-2">
@@ -541,18 +597,10 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                     )}
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                    </SectionCard>
 
-                    {/* Company Control Declaration Card */}
-                    <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border">
-                        <div className="px-6 pt-6">
-                            <h4 className="leading-none flex items-center gap-2">
-                                <Building className="h-5 w-5" />
-                                Company Control
-                            </h4>
-                        </div>
-                        <div className="px-6 pb-6 space-y-4">
+                    {/* Company Control */}
+                    <SectionCard title="Company Control" icon={Building} stepChip="Step 2d" helper="We ask this for compliance. Additional owners will need to complete identity verification.">
                             <div className="space-y-3">
                                 <Label className="text-base font-medium">
                                     Are you the only director/controller of this company?
@@ -696,12 +744,11 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                 </div>
                             )}
 
-                            <div className="bg-muted/50 border border-muted rounded-lg p-3">
-                                <p className="text-xs text-muted-foreground">
-                                    We ask this for compliance and account security. Additional owners will need to complete identity verification.
-                                </p>
+                            <div className="rounded-xl bg-neutral-50 border border-neutral-200 p-3 text-sm text-muted-foreground">
+                                We ask this for compliance and account security. Additional owners will need to complete identity verification.
                             </div>
-                        </div>
+                    </SectionCard>
+
                     </div>
 
                     {/* Submit Button */}
