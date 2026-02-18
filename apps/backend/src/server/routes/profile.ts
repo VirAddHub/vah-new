@@ -137,6 +137,7 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
                 ${middleNamesSelect}
                 phone,
                 company_name,
+                companies_house_number,
                 address_line1,
                 address_line2,
                 city,
@@ -482,6 +483,65 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
 });
 
 /**
+ * PATCH /api/profile/company-details
+ * Update Companies House number (and optionally company name) for users who signed up before incorporation.
+ */
+router.patch("/company-details", requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const pool = getPool();
+    const company_number = typeof req.body?.company_number === 'string' ? req.body.company_number.trim() : undefined;
+    const company_name = typeof req.body?.company_name === 'string' ? req.body.company_name.trim() : undefined;
+
+    if (!company_number || company_number.length === 0) {
+        return res.status(400).json({
+            ok: false,
+            error: 'company_number_required',
+            message: 'Company number is required.',
+        });
+    }
+
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    updates.push(`companies_house_number = $${paramIndex++}`);
+    values.push(company_number);
+
+    if (company_name !== undefined && company_name.length > 0) {
+        updates.push(`company_name = $${paramIndex++}`);
+        values.push(company_name);
+    }
+
+    updates.push(`updated_at = $${paramIndex++}`);
+    values.push(Date.now());
+    values.push(userId);
+
+    try {
+        const result = await pool.query(`
+            UPDATE "user"
+            SET ${updates.join(', ')}
+            WHERE id = $${paramIndex}
+            RETURNING id, companies_house_number, company_name
+        `, values);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+
+        return res.json({
+            ok: true,
+            data: {
+                companies_house_number: result.rows[0].companies_house_number,
+                company_name: result.rows[0].company_name,
+            },
+        });
+    } catch (error: any) {
+        logger.error('[PATCH /api/profile/company-details] error', { message: error?.message ?? String(error) });
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
+/**
  * PATCH /api/profile/me (legacy endpoint)
  * Update current user's profile (same as PATCH /api/profile)
  */
@@ -773,12 +833,13 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
     const pool = getPool();
 
     try {
-        // Get user profile data including KYC status
+        // Get user profile data including KYC status and Companies House number
         const result = await pool.query(`
             SELECT
                 first_name,
                 last_name,
                 company_name,
+                companies_house_number,
                 email,
                 created_at,
                 kyc_status
@@ -801,6 +862,17 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
                 message: 'You must complete identity verification (KYC) before accessing your proof of address certificate.',
             });
         }
+
+        // Certificate also requires Companies House number (compliance)
+        const companyNumber = user.companies_house_number?.trim?.() || '';
+        if (!companyNumber) {
+            return res.status(403).json({
+                ok: false,
+                error: 'COMPANY_NUMBER_REQUIRED',
+                message: 'Please add your Companies House number in Account → Verification before downloading your proof of address certificate.',
+            });
+        }
+
         const currentDate = new Date().toLocaleDateString('en-GB', {
             day: 'numeric',
             month: 'long',

@@ -20,12 +20,14 @@ export function CertificateDownload({ profile }: CertificateDownloadProps) {
     const [isCertBusy, setIsCertBusy] = useState(false);
     const { toast } = useToast();
     
-    // Check if KYC is approved (use profile prop instead of fetching)
+    // Certificate requires both KYC approved and Companies House number (compliance)
     const kycStatus = profile?.kyc_status || 'pending';
     const isKycApproved = kycStatus === 'approved' || kycStatus === 'verified';
-    
+    const hasCompanyNumber = ((profile?.companies_house_number || profile?.company_number) ?? '').trim().length > 0;
+    const canDownload = isKycApproved && hasCompanyNumber;
+
     const handleDownloadCertification = async () => {
-        if (isCertBusy || !isKycApproved) return;
+        if (isCertBusy || !canDownload) return;
         setIsCertBusy(true);
 
         try {
@@ -85,7 +87,7 @@ export function CertificateDownload({ profile }: CertificateDownloadProps) {
                 <p className="text-xs font-semibold text-[#374151]">
                     Letter of Certification
                 </p>
-                {isKycApproved ? (
+                {canDownload ? (
                     <>
                         <Button
                             onClick={handleDownloadCertification}
@@ -108,7 +110,7 @@ export function CertificateDownload({ profile }: CertificateDownloadProps) {
                             Use for banks, payment providers and professional contacts.
                         </p>
                     </>
-                ) : (
+                ) : !isKycApproved ? (
                     <div className="rounded-[8px] bg-[#FEF3C7] border border-[#FCD34D] p-3">
                         <div className="flex items-start gap-2">
                             <AlertCircle className="w-4 h-4 text-[#92400E] mt-0.5 flex-shrink-0" />
@@ -118,6 +120,20 @@ export function CertificateDownload({ profile }: CertificateDownloadProps) {
                                 </p>
                                 <p className="text-[10px] text-[#92400E]/80 leading-tight">
                                     Complete identity verification to download your letter.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="rounded-[8px] bg-[#FEF3C7] border border-[#FCD34D] p-3">
+                        <div className="flex items-start gap-2">
+                            <AlertCircle className="w-4 h-4 text-[#92400E] mt-0.5 flex-shrink-0" />
+                            <div className="flex flex-col gap-1">
+                                <p className="text-[11px] font-medium text-[#92400E] leading-tight">
+                                    Companies House number required
+                                </p>
+                                <p className="text-[10px] text-[#92400E]/80 leading-tight">
+                                    Add your Companies House number in Account → Verification to download your letter.
                                 </p>
                             </div>
                         </div>
