@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, Building, MapPin, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, Building, MapPin, Eye, EyeOff, Loader2, AlertTriangle } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
