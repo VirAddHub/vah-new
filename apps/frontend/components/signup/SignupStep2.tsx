@@ -1,14 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, Building, MapPin, Eye, EyeOff, Search, AlertTriangle, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, Building, MapPin, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { ScrollToTopButton } from '../ScrollToTopButton';
-import { AddressFinder } from '../ui/AddressFinder';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Plus, X } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
@@ -84,32 +82,12 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
     });
 
     const [showPassword, setShowPassword] = useState(false);
-    const [isManualEntry, setIsManualEntry] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Companies House search state
     const [companySearchResults, setCompanySearchResults] = useState<CompanySearchResult[]>([]);
     const [showResults, setShowResults] = useState(false);
     const [isSearchingName, setIsSearchingName] = useState(false);
-    const [isVerifyingNumber, setIsVerifyingNumber] = useState(false);
-
-    const businessTypes = [
-        { value: 'limited_company', label: 'Private Limited Company' },
-        { value: 'llp', label: 'Limited Liability Partnership (LLP)' },
-        { value: 'lp', label: 'Limited Partnership (LP)' },
-        { value: 'sole_trader', label: 'Sole Trader' },
-        { value: 'partnership', label: 'Partnership' },
-        { value: 'charity', label: 'Charity' },
-        { value: 'other', label: 'Other' }
-    ];
-
-    const countries = [
-        { value: 'GB', label: 'United Kingdom' },
-        { value: 'IE', label: 'Ireland' },
-        { value: 'US', label: 'United States' },
-        { value: 'CA', label: 'Canada' },
-        { value: 'AU', label: 'Australia' }
-    ];
 
     const updateFormData = (field: keyof SignupStep2Data, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -143,15 +121,10 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         }
         if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
 
-        // Company Details validation
-        if (!formData.business_type) newErrors.business_type = 'Business type is required';
-        if (!formData.country_of_incorporation) newErrors.country_of_incorporation = 'Country of incorporation is required';
-        if (!formData.company_number.trim()) newErrors.company_number = 'Company number is required';
+        // Company Details — Founder Mode: only company name required (user can search or type; number/type/country optional)
         if (!formData.company_name.trim()) newErrors.company_name = 'Company name is required';
 
-        // Forwarding Address validation
-        if (!formData.forward_to_first_name.trim()) newErrors.forward_to_first_name = 'First name is required';
-        if (!formData.forward_to_last_name.trim()) newErrors.forward_to_last_name = 'Last name is required';
+        // Forwarding Address — names auto-filled from contact; only address fields validated
         if (!formData.address_line1.trim()) newErrors.address_line1 = 'Address line 1 is required';
         if (!formData.city.trim()) newErrors.city = 'City is required';
         if (!formData.postcode.trim()) newErrors.postcode = 'Postcode is required';
@@ -185,21 +158,24 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         return Object.keys(newErrors).length === 0;
     };
 
+    const buildPayload = (): SignupStep2Data => ({
+        ...formData,
+        forward_to_first_name: formData.first_name,
+        forward_to_last_name: formData.last_name,
+        company_number: formData.company_number?.trim() || '',
+        business_type: formData.business_type || 'other',
+        country_of_incorporation: formData.country_of_incorporation || 'GB',
+    });
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (validateForm()) {
-            onNext(formData);
+            onNext(buildPayload());
         }
     };
 
-    // Debounced Companies House search via new BFF endpoint
+    // Debounced Companies House search via BFF endpoint
     useEffect(() => {
-        if (isManualEntry) {
-            setCompanySearchResults([]);
-            setShowResults(false);
-            return;
-        }
-
         const query = formData.company_name.trim();
         if (query.length < 2) {
             setCompanySearchResults([]);
@@ -211,21 +187,17 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         const timer = setTimeout(async () => {
             try {
                 const res = await fetch(`/api/bff/company-search?query=${encodeURIComponent(query)}`);
-
                 if (!res.ok) {
-                    console.error('Companies House search error:', res.status);
                     setCompanySearchResults([]);
                     setShowResults(false);
                     return;
                 }
-
                 const json = await res.json();
                 if (!json?.ok || !Array.isArray(json.businesses)) {
                     setCompanySearchResults([]);
                     setShowResults(false);
                     return;
                 }
-
                 const mapped: CompanySearchResult[] = json.businesses.map((b: any) => ({
                     title: b.title,
                     regNumber: b.regNumber,
@@ -233,96 +205,48 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                     status: b.status,
                     addressSnippet: b.addressSnippet,
                 }));
-
                 setCompanySearchResults(mapped);
                 setShowResults(mapped.length > 0);
             } catch (err) {
-                console.error('Companies House search failed:', err);
                 setCompanySearchResults([]);
                 setShowResults(false);
             } finally {
                 setIsSearchingName(false);
             }
         }, 350);
-
         return () => clearTimeout(timer);
-    }, [formData.company_name, isManualEntry]);
+    }, [formData.company_name]);
 
     const handleSelectCompany = async (company: CompanySearchResult) => {
-        updateFormData('company_number', company.regNumber);
-        updateFormData('company_name', company.title);
+        setFormData(prev => ({
+            ...prev,
+            company_name: company.title,
+            company_number: company.regNumber,
+        }));
         setShowResults(false);
         setCompanySearchResults([]);
 
         try {
             const res = await fetch(`/api/bff/company-details?identifier=${encodeURIComponent(company.identifier)}`);
             if (!res.ok) return;
-
             const json = await res.json();
             if (!json?.ok) return;
-
-            const type = json.type as string | undefined;
-            if (type === 'ltd') {
-                updateFormData('business_type', 'limited_company');
-            } else if (type === 'llp') {
-                updateFormData('business_type', 'llp');
-            }
+            const type = (json.type as string | undefined) ?? null;
+            const businessType = type === 'ltd' ? 'limited_company' : type === 'llp' ? 'llp' : 'other';
+            const country = (json.country_of_incorporation as string) || 'GB';
+            setFormData(prev => ({
+                ...prev,
+                business_type: businessType,
+                country_of_incorporation: country,
+            }));
         } catch (err) {
-            console.error('Company details lookup failed:', err);
+            setFormData(prev => ({
+                ...prev,
+                business_type: prev.business_type || 'other',
+                country_of_incorporation: prev.country_of_incorporation || 'GB',
+            }));
         }
     };
-
-    const handleCompaniesHouseSearch = async () => {
-        if (!formData.company_number.trim()) return;
-
-        try {
-            setIsVerifyingNumber(true);
-            const res = await fetch(
-                `/api/bff/company-details?identifier=${encodeURIComponent(formData.company_number.trim())}`
-            );
-
-            if (!res.ok) {
-                setErrors(prev => ({ ...prev, company_number: 'Company not found' }));
-                return;
-            }
-
-            const json = await res.json();
-            if (!json?.ok) {
-                setErrors(prev => ({ ...prev, company_number: 'Company not found' }));
-                return;
-            }
-
-            updateFormData('company_name', json.name ?? '');
-
-            const type = json.type as string | undefined;
-            if (type === 'ltd') {
-                updateFormData('business_type', 'limited_company');
-            } else if (type === 'llp') {
-                updateFormData('business_type', 'llp');
-            }
-
-            setErrors(prev => ({ ...prev, company_number: '' }));
-        } catch (error) {
-            console.error('Companies House lookup failed:', error);
-            setErrors(prev => ({ ...prev, company_number: 'Failed to lookup company' }));
-        } finally {
-            setIsVerifyingNumber(false);
-        }
-    };
-
-    // Auto-verify company number when manually entered (debounced)
-    useEffect(() => {
-        if (!isManualEntry || !formData.company_number.trim()) return;
-
-        const timer = setTimeout(async () => {
-            // Only auto-verify if company number looks valid (8 digits for UK companies)
-            if (formData.company_number.match(/^\d{8}$/)) {
-                await handleCompaniesHouseSearch();
-            }
-        }, 1000); // 1 second delay for manual entry
-
-        return () => clearTimeout(timer);
-    }, [formData.company_number, isManualEntry]);
 
     return (
         <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -479,7 +403,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                         </div>
                     </div>
 
-                    {/* Company Details Card */}
+                    {/* Company Details Card — Founder Mode: company name search only */}
                     <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border">
                         <div className="px-6 pt-6">
                             <h4 className="leading-none flex items-center gap-2">
@@ -488,166 +412,64 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                             </h4>
                         </div>
                         <div className="px-6 pb-6 space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="business_type" className="flex items-center gap-2">
-                                        Business Type <span className="text-destructive">*</span>
-                                    </Label>
-                                    <Select value={formData.business_type} onValueChange={(value) => updateFormData('business_type', value)}>
-                                        <SelectTrigger className={errors.business_type ? 'border-destructive' : ''}>
-                                            <SelectValue placeholder="Select business type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {businessTypes.map((type) => (
-                                                <SelectItem key={type.value} value={type.value}>
-                                                    {type.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.business_type && (
-                                        <p className="text-sm text-destructive">{errors.business_type}</p>
+                            <div className="space-y-2">
+                                <Label htmlFor="company_name" className="flex items-center gap-2">
+                                    Company name <span className="text-destructive">*</span>
+                                </Label>
+                                <div className="relative">
+                                    <Input
+                                        id="company_name"
+                                        value={formData.company_name}
+                                        onChange={(e) => updateFormData('company_name', e.target.value)}
+                                        placeholder="Search Companies House…"
+                                        className={`pr-10 ${errors.company_name ? 'border-destructive' : ''}`}
+                                    />
+                                    {isSearchingName && (
+                                        <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
                                     )}
                                 </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="country_of_incorporation" className="flex items-center gap-2">
-                                        Country of Incorporation <span className="text-destructive">*</span>
-                                    </Label>
-                                    <Select value={formData.country_of_incorporation} onValueChange={(value) => updateFormData('country_of_incorporation', value)}>
-                                        <SelectTrigger className={errors.country_of_incorporation ? 'border-destructive' : ''}>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {countries.map((country) => (
-                                                <SelectItem key={country.value} value={country.value}>
-                                                    {country.label}
-                                                </SelectItem>
+                                <p className="text-sm text-muted-foreground">
+                                    Start typing to search. If your company is not yet registered, you can continue without selecting one.
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    Don&apos;t have a company number yet? You can add it later in your account verification section.
+                                </p>
+                                {/* Search Results Dropdown */}
+                                {showResults && companySearchResults.length > 0 && (
+                                    <div className="relative">
+                                        <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-auto">
+                                            {companySearchResults.map((company, index) => (
+                                                <button
+                                                    key={company.identifier ?? index}
+                                                    type="button"
+                                                    onMouseDown={(e) => e.preventDefault()}
+                                                    onClick={() => handleSelectCompany(company)}
+                                                    className="w-full text-left px-4 py-3 hover:bg-accent border-b last:border-b-0 transition-colors"
+                                                >
+                                                    <div className="font-medium text-sm">{company.title}</div>
+                                                    <div className="text-xs text-muted-foreground mt-1">
+                                                        {company.regNumber}
+                                                        {company.status && ` • ${company.status}`}
+                                                        {company.addressSnippet && ` • ${company.addressSnippet}`}
+                                                    </div>
+                                                </button>
                                             ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.country_of_incorporation && (
-                                        <p className="text-sm text-destructive">{errors.country_of_incorporation}</p>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="flex gap-2">
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            setIsManualEntry(false);
-                                            setShowResults(false);
-                                        }}
-                                        variant={!isManualEntry ? "primary" : "ghost"}
-                                        className="h-8"
-                                    >
-                                        <Search className="h-4 w-4 mr-2" />
-                                        Companies House Search
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            setIsManualEntry(true);
-                                            setShowResults(false);
-                                        }}
-                                        variant={isManualEntry ? "primary" : "ghost"}
-                                        className="h-8"
-                                    >
-                                        Enter Manually
-                                    </Button>
-                                </div>
-
-
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="company_number" className="flex items-center gap-2">
-                                            Company Number <span className="text-destructive">*</span>
-                                        </Label>
-                                        <div className="relative">
-                                            <Input
-                                                id="company_number"
-                                                value={formData.company_number}
-                                                onChange={(e) => updateFormData('company_number', e.target.value)}
-                                                placeholder="12345678"
-                                                className={`flex-1 ${errors.company_number ? 'border-destructive' : ''} ${isManualEntry && isVerifyingNumber ? 'pr-10' : ''}`}
-                                                readOnly={!isManualEntry}
-                                            />
-                                            {isManualEntry && isVerifyingNumber && (
-                                                <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
-                                            )}
                                         </div>
-                                        <p className="text-xs text-muted-foreground">
-                                            {isManualEntry
-                                                ? 'Enter an 8-digit company number and we\'ll automatically verify it'
-                                                : 'Selected from Companies House. You can edit if needed.'
-                                            }
-                                        </p>
-                                        {errors.company_number && (
-                                            <p className="text-sm text-destructive">{errors.company_number}</p>
-                                        )}
                                     </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="company_name" className="flex items-center gap-2">
-                                            Company Name <span className="text-destructive">*</span>
-                                        </Label>
-                                        <div className="relative">
-                                            <Input
-                                                id="company_name"
-                                                value={formData.company_name}
-                                                onChange={(e) => updateFormData('company_name', e.target.value)}
-                                                placeholder="Type company name to search..."
-                                                className={`pr-10 ${errors.company_name ? 'border-destructive' : ''}`}
-                                            />
-                                            {isSearchingName && (
-                                                <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
-                                            )}
-                                        </div>
-
-                                        {/* Search Results Dropdown */}
-                                        {!isManualEntry && showResults && companySearchResults.length > 0 && (
-                                            <div className="relative">
-                                                <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-auto">
-                                                    {companySearchResults.map((company, index) => (
-                                                        <button
-                                                            key={company.identifier ?? index}
-                                                            type="button"
-                                                            onMouseDown={(e) => e.preventDefault()}
-                                                            onClick={() => handleSelectCompany(company)}
-                                                            className="w-full text-left px-4 py-3 hover:bg-accent border-b last:border-b-0 transition-colors"
-                                                        >
-                                                            <div className="font-medium text-sm">{company.title}</div>
-                                                            <div className="text-xs text-muted-foreground mt-1">
-                                                                {company.regNumber}
-                                                                {company.status && ` • ${company.status}`}
-                                                                {company.addressSnippet && ` • ${company.addressSnippet}`}
-                                                            </div>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {!isManualEntry && !isSearchingName && formData.company_name.trim().length >= 2 && companySearchResults.length === 0 && (
-                                            <p className="text-sm text-muted-foreground">
-                                                No companies found. Try a different search term.
-                                            </p>
-                                        )}
-                                        <p className="text-xs text-muted-foreground">
-                                            {!isManualEntry ? 'Start typing to search Companies House. You can edit if needed.' : 'If the name appears incorrect, you can still edit it later.'}
-                                        </p>
-                                        {errors.company_name && (
-                                            <p className="text-sm text-destructive">{errors.company_name}</p>
-                                        )}
-                                    </div>
-                                </div>
+                                )}
+                                {!isSearchingName && formData.company_name.trim().length >= 2 && companySearchResults.length === 0 && (
+                                    <p className="text-sm text-muted-foreground">
+                                        No companies found. Try a different search term or continue with the name you entered.
+                                    </p>
+                                )}
+                                {errors.company_name && (
+                                    <p className="text-sm text-destructive">{errors.company_name}</p>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Forwarding Address Card */}
+                    {/* Forwarding Address Card — manual only; name auto-filled from contact */}
                     <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border">
                         <div className="px-6 pt-6">
                             <h4 className="leading-none flex items-center gap-2">
@@ -659,127 +481,64 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                             <Alert>
                                 <AlertTriangle className="h-4 w-4" />
                                 <AlertDescription>
-                                    <strong>Letters only.</strong> HMRC & Companies House letters are forwarded free of charge. All other mail is £2 per item and added to your monthly bill.
+                                    Letters only. HMRC & Companies House letters are forwarded free within the UK. Other letters are £2 per item and added to your monthly invoice.
                                 </AlertDescription>
                             </Alert>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="forward_to_first_name" className="flex items-center gap-2">
-                                        First Name <span className="text-destructive">*</span>
-                                    </Label>
-                                    <Input
-                                        id="forward_to_first_name"
-                                        value={formData.forward_to_first_name}
-                                        onChange={(e) => updateFormData('forward_to_first_name', e.target.value)}
-                                        autoComplete="given-name"
-                                        className={errors.forward_to_first_name ? 'border-destructive' : ''}
-                                    />
-                                    {errors.forward_to_first_name && (
-                                        <p className="text-sm text-destructive">{errors.forward_to_first_name}</p>
-                                    )}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="forward_to_last_name" className="flex items-center gap-2">
-                                        Last Name <span className="text-destructive">*</span>
-                                    </Label>
-                                    <Input
-                                        id="forward_to_last_name"
-                                        value={formData.forward_to_last_name}
-                                        onChange={(e) => updateFormData('forward_to_last_name', e.target.value)}
-                                        autoComplete="family-name"
-                                        className={errors.forward_to_last_name ? 'border-destructive' : ''}
-                                    />
-                                    {errors.forward_to_last_name && (
-                                        <p className="text-sm text-destructive">{errors.forward_to_last_name}</p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Forwarding Address - Enhanced with Address Completer */}
                             <div className="space-y-4">
-                                <div className="flex items-center gap-2 text-lg font-semibold text-primary">
-                                    <MapPin className="h-5 w-5" />
-                                    Forwarding Address
+                                <div className="space-y-2">
+                                    <Label htmlFor="address_line1" className="flex items-center gap-2">
+                                        Address Line 1 <span className="text-destructive">*</span>
+                                    </Label>
+                                    <Input
+                                        id="address_line1"
+                                        value={formData.address_line1}
+                                        onChange={(e) => updateFormData('address_line1', e.target.value)}
+                                        placeholder="Street address"
+                                        className={errors.address_line1 ? 'border-destructive' : ''}
+                                    />
+                                    {errors.address_line1 && (
+                                        <p className="text-sm text-destructive">{errors.address_line1}</p>
+                                    )}
                                 </div>
-                                <p className="text-sm text-muted-foreground">
-                                    This is where we'll forward your mail. Start by searching for your address, or enter it manually below.
-                                </p>
-
-                                {/* AddressFinder - Primary method */}
-                                <AddressFinder
-                                    onAddressSelect={(address) => {
-                                        console.log('[SignupStep2] Address selected:', address);
-                                        // AddressFinder will automatically populate the fields via outputFields
-                                    }}
-                                    placeholder="Start typing your postcode to find your address..."
-                                    label="Find Your Address"
-                                    required={false}
-                                    className="w-full"
-                                    outputFields={{
-                                        line_1: "#address_line1",
-                                        line_2: "#address_line2",
-                                        post_town: "#city",
-                                        postcode: "#postcode"
-                                    }}
-                                />
-
-                                {/* Manual entry fields - Fallback method */}
-                                <div className="space-y-3 pt-4 border-t border-gray-200">
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <span>Or enter your address manually:</span>
-                                    </div>
-
-                                    <div>
-                                        <Label htmlFor="address_line1" className="text-sm font-medium">
-                                            Address Line 1 *
-                                        </Label>
-                                        <Input
-                                            id="address_line1"
-                                            value={formData.address_line1}
-                                            onChange={(e) => updateFormData('address_line1', e.target.value)}
-                                            placeholder="Enter your address line 1"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <Label htmlFor="address_line2" className="text-sm font-medium">
-                                            Address Line 2
-                                        </Label>
-                                        <Input
-                                            id="address_line2"
-                                            value={formData.address_line2}
-                                            onChange={(e) => updateFormData('address_line2', e.target.value)}
-                                            placeholder="Enter your address line 2 (optional)"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <Label htmlFor="city" className="text-sm font-medium">
-                                            City/Town *
-                                        </Label>
-                                        <Input
-                                            id="city"
-                                            value={formData.city}
-                                            onChange={(e) => updateFormData('city', e.target.value)}
-                                            placeholder="Enter your city or town"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <Label htmlFor="postcode" className="text-sm font-medium">
-                                            Postcode *
-                                        </Label>
-                                        <Input
-                                            id="postcode"
-                                            value={formData.postcode}
-                                            onChange={(e) => updateFormData('postcode', e.target.value)}
-                                            placeholder="Enter your postcode"
-                                            required
-                                        />
-                                    </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="address_line2">Address Line 2 (optional)</Label>
+                                    <Input
+                                        id="address_line2"
+                                        value={formData.address_line2}
+                                        onChange={(e) => updateFormData('address_line2', e.target.value)}
+                                        placeholder="Flat, building, etc."
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="city" className="flex items-center gap-2">
+                                        City / Town <span className="text-destructive">*</span>
+                                    </Label>
+                                    <Input
+                                        id="city"
+                                        value={formData.city}
+                                        onChange={(e) => updateFormData('city', e.target.value)}
+                                        placeholder="City or town"
+                                        className={errors.city ? 'border-destructive' : ''}
+                                    />
+                                    {errors.city && (
+                                        <p className="text-sm text-destructive">{errors.city}</p>
+                                    )}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="postcode" className="flex items-center gap-2">
+                                        Postcode <span className="text-destructive">*</span>
+                                    </Label>
+                                    <Input
+                                        id="postcode"
+                                        value={formData.postcode}
+                                        onChange={(e) => updateFormData('postcode', e.target.value)}
+                                        placeholder="Postcode"
+                                        className={errors.postcode ? 'border-destructive' : ''}
+                                    />
+                                    {errors.postcode && (
+                                        <p className="text-sm text-destructive">{errors.postcode}</p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -950,7 +709,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                         <ScrollToTopButton
                             onClick={() => {
                                 if (validateForm()) {
-                                    onNext(formData);
+                                    onNext(buildPayload());
                                 }
                             }}
                             className="h-10 px-6 min-w-48 inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 rounded-md"
