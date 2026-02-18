@@ -157,20 +157,20 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
     }, [blogPosts]);
 
     return (
-        <div className="min-h-screen bg-white">
-            {/* Hero Section */}
-            <div className="bg-white py-[100px] px-20">
-                <div className="max-w-[1280px] mx-auto">
-                    <div className="flex flex-col items-center gap-[18px] mb-12">
-                        <h1 className="text-[54px] font-semibold text-[#161B1A] leading-[1.2] text-center">
-                            Insights & Resources for Modern Businesses
+        <div className="bg-white">
+            {/* Hero Section — mobile-first, reduced top/bottom space */}
+            <section className="bg-white">
+                <div className="mx-auto max-w-6xl px-6 pt-10 pb-8 sm:pt-14 sm:pb-10 lg:px-8">
+                    <div className="max-w-2xl">
+                        <h1 className="text-[34px] leading-[1.08] tracking-tight font-semibold text-[#161B1A] sm:text-5xl">
+                            Insights &amp; Resources for Modern Businesses
                         </h1>
-                        <p className="text-lg text-[#666666] leading-[1.4] text-center max-w-[746px]">
-                            Expert advice, industry insights, and success stories to help you grow your business
+                        <p className="mt-4 text-base leading-6 text-[#666666] sm:text-lg">
+                            Expert advice, industry insights, and success stories to help you grow your business.
                         </p>
                     </div>
                     {/* Search Bar - desktop/tablet only */}
-                    <div className="hidden lg:flex justify-center">
+                    <div className="hidden lg:flex justify-center mt-6">
                         <div className="flex items-center gap-[65px] bg-[#F9F9F9] rounded-[87px] px-[34px] py-[14px] w-full max-w-[858px]">
                             <input
                                 type="text"
@@ -187,7 +187,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
             {/* Loading State */}
             {loading && (
@@ -214,11 +214,11 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                 </div>
             )}
 
-            <div className="bg-white py-[100px] px-20">
+            <div className="mx-auto max-w-6xl px-6 pb-14 sm:pb-16 lg:px-8">
                 <div className="max-w-[1280px] mx-auto">
                     {/* Mobile Blog List (< lg) */}
                     {!loading && !error && gridPosts.length > 0 && (
-                        <div className="lg:hidden mt-6 px-4 space-y-4">
+                        <div className="lg:hidden mt-8 space-y-4">
                             {gridPosts.map((post) => (
                                 <MobileBlogCard key={post.id} post={post} onNavigate={onNavigate} />
                             ))}
@@ -227,7 +227,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                     {/* Desktop Blog Grid (lg+) */}
                     {!loading && !error && gridPosts.length > 0 && (
                         <div className="hidden lg:block">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 justify-center">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-10 justify-center mt-8 sm:mt-10">
                                 {gridPosts.map((post) => (
                                     <div
                                         key={post.id}

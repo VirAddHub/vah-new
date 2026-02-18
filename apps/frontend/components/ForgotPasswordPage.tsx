@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
-import { ArrowLeft, Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 async function postJson(path: string, body: unknown) {
   const res = await fetch(path, {
@@ -153,12 +153,24 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
 
   const renderEmailStep = () => (
     <>
-      {/* Header */}
-      <div className="text-center mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Reset Your Password</h1>
-        <p className="text-muted-foreground text-base sm:text-lg">
-          Enter your email address and we'll send you instructions to reset your password
-        </p>
+      {/* Header: Back + Title — no overlap */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 mb-6 sm:mb-8">
+        <button
+          type="button"
+          onClick={onGoBack}
+          className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground shadow-sm hover:bg-accent"
+        >
+          <span aria-hidden="true">←</span>
+          Back
+        </button>
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+            Reset Your Password
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Enter your email address and we&apos;ll send you instructions to reset your password
+          </p>
+        </div>
       </div>
 
       {/* Form */}
@@ -230,15 +242,27 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
 
   const renderSentStep = () => (
     <>
-      {/* Success Icon */}
-      <div className="text-center mb-6 sm:mb-8">
-        <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 sm:mb-6">
-          <CheckCircle className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+      {/* Header: Back + Title */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 mb-6 sm:mb-8">
+        <button
+          type="button"
+          onClick={onGoBack}
+          className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground shadow-sm hover:bg-accent"
+        >
+          <span aria-hidden="true">←</span>
+          Back
+        </button>
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+            Check Your Email
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            We&apos;ve sent password reset instructions to your email address
+          </p>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Check Your Email</h1>
-        <p className="text-muted-foreground text-base sm:text-lg">
-          We've sent password reset instructions to your email address
-        </p>
+      </div>
+      <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 sm:mb-6">
+        <CheckCircle className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
       </div>
 
       {/* Instructions */}
@@ -295,12 +319,24 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
 
   const renderResetStep = () => (
     <>
-      {/* Header */}
-      <div className="text-center mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Create New Password</h1>
-        <p className="text-muted-foreground text-base sm:text-lg">
-          Enter a strong new password for your account
-        </p>
+      {/* Header: Back + Title */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 mb-6 sm:mb-8">
+        <button
+          type="button"
+          onClick={onGoBack}
+          className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground shadow-sm hover:bg-accent"
+        >
+          <span aria-hidden="true">←</span>
+          Back
+        </button>
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+            Create New Password
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Enter a strong new password for your account
+          </p>
+        </div>
       </div>
 
       {/* Form */}
@@ -375,16 +411,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <div className="flex items-center justify-center flex-1 p-4 sm:p-6 pb-20">
-        <div className="w-full max-w-md relative">
-          {/* Back Button */}
-          <button
-            onClick={onGoBack}
-            className="absolute top-4 left-4 sm:top-8 sm:left-8 flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200 p-2 rounded-lg z-10"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm font-medium hidden sm:inline">Back</span>
-          </button>
-
+        <div className="w-full max-w-md">
           {/* Main Card */}
           <Card className="p-4 sm:p-6 md:p-8 shadow-lg border-border/50 bg-card/80 backdrop-blur-sm">
             {step === 'email' && renderEmailStep()}

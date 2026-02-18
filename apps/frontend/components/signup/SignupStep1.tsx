@@ -163,7 +163,7 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
 
                             <div className="mt-4">
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-4xl font-extrabold text-primary">
+                                    <span className="text-4xl font-extrabold text-neutral-900">
                                         {billing === 'monthly' ? `£${getPlanPrice('monthly')}/month` : `£${getPlanPrice('annual')}/year`}
                                     </span>
                                 </div>

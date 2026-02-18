@@ -116,7 +116,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                         <p className="font-medium">{planName}</p>
                                         <p className="text-sm text-muted-foreground">{planDescription}</p>
                                     </div>
-                                    <p className="font-medium">
+                                    <p className="font-medium text-neutral-900">
                                         {displayPrice}
                                         <span className="text-sm text-muted-foreground">{priceUnit}</span>
                                     </p>
@@ -124,7 +124,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                 <div className="border-t pt-4">
                                     <div className="flex justify-between items-center font-medium">
                                         <p>Total today</p>
-                                        <p>{displayPrice}</p>
+                                        <p className="text-neutral-900">{displayPrice}</p>
                                     </div>
                                     <p className="text-sm text-muted-foreground mt-1">{totalDescription}</p>
                                 </div>

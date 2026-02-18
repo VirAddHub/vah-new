@@ -56,34 +56,25 @@ type CompanySearchResult = {
     addressSnippet?: string;
 };
 
-/** Reusable section card for Step 2: distinct header, accent bar, optional step chip and helper. */
+/** Reusable section card for Step 2: distinct header, accent bar, optional helper. */
 function SectionCard({
     title,
     icon: Icon,
-    stepChip,
     helper,
     children,
 }: {
     title: string;
     icon: React.ComponentType<{ className?: string }>;
-    stepChip?: string;
     helper?: string;
     children: React.ReactNode;
 }) {
     return (
-        <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-visible">
             <div className="border-l-4 border-l-primary">
                 <div className="px-4 pt-5 pb-2 md:px-6 md:pt-6 md:pb-2">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2 min-w-0">
-                            <Icon className="h-5 w-5 flex-shrink-0 text-neutral-600" />
-                            <h4 className="leading-none font-semibold text-neutral-900">{title}</h4>
-                        </div>
-                        {stepChip && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-neutral-100 border border-neutral-200 text-neutral-600 flex-shrink-0">
-                                {stepChip}
-                            </span>
-                        )}
+                    <div className="flex items-center gap-2">
+                        <Icon className="h-5 w-5 flex-shrink-0 text-neutral-600" />
+                        <h4 className="leading-none font-semibold text-neutral-900">{title}</h4>
                     </div>
                     {helper && (
                         <p className="text-sm text-muted-foreground mt-1.5">{helper}</p>
@@ -124,6 +115,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [companyMode, setCompanyMode] = useState<'registered' | 'not_registered'>('registered');
+    const [showOptionalWorkingName, setShowOptionalWorkingName] = useState(false);
 
     // Companies House search state
     const [companySearchResults, setCompanySearchResults] = useState<CompanySearchResult[]>([]);
@@ -162,10 +154,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         }
         if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
 
-        // Company Details — registered: optional; not_registered: company name required
-        if (companyMode === 'not_registered' && !formData.company_name.trim()) {
-            newErrors.company_name = 'Company name is required';
-        }
+        // Company Details — registered: optional; not_registered: zero required fields
 
         // Forwarding Address — names auto-filled from contact; only address fields validated
         if (!formData.address_line1.trim()) newErrors.address_line1 = 'Address line 1 is required';
@@ -201,14 +190,28 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
         return Object.keys(newErrors).length === 0;
     };
 
-    const buildPayload = (): SignupStep2Data => ({
-        ...formData,
-        forward_to_first_name: formData.first_name,
-        forward_to_last_name: formData.last_name,
-        company_number: formData.company_number?.trim() || '',
-        business_type: formData.business_type || 'other',
-        country_of_incorporation: formData.country_of_incorporation || 'GB',
-    });
+    const buildPayload = (): SignupStep2Data => {
+        const base = {
+            ...formData,
+            forward_to_first_name: formData.first_name,
+            forward_to_last_name: formData.last_name,
+            business_type: formData.business_type || 'other',
+            country_of_incorporation: formData.country_of_incorporation || 'GB',
+        };
+        if (companyMode === 'registered') {
+            return {
+                ...base,
+                company_number: formData.company_number?.trim() || '',
+                company_name: formData.company_name?.trim() || '',
+            };
+        }
+        // not_registered: only send company_name if they entered a working name; no company_number
+        return {
+            ...base,
+            company_number: '',
+            company_name: formData.company_name?.trim() || '',
+        };
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -340,7 +343,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                 <form onSubmit={handleSubmit} className="bg-neutral-50 rounded-2xl p-4 md:p-6">
                     <div className="space-y-6 md:space-y-8">
                     {/* Contact Information */}
-                    <SectionCard title="Contact Information" icon={User} stepChip="Step 2a" helper="We use these to set up your account and for UK AML compliance.">
+                    <SectionCard title="Contact Information" icon={User} helper="We use these to set up your account and for UK AML compliance.">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="first_name" className="flex items-center gap-2">
@@ -445,7 +448,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                     </SectionCard>
 
                     {/* Company Details — toggle: registered (search) vs not registered (manual name) */}
-                    <SectionCard title="Company Details" icon={Building} stepChip="Step 2b">
+                    <SectionCard title="Company Details" icon={Building}>
                             <div className="inline-flex rounded-xl border border-neutral-200 bg-neutral-50 p-1">
                                 <button
                                     type="button"
@@ -456,7 +459,11 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setCompanyMode('not_registered')}
+                                    onClick={() => {
+                                        setCompanyMode('not_registered');
+                                        setShowOptionalWorkingName(false);
+                                        setErrors(prev => ({ ...prev, company_name: '' }));
+                                    }}
                                     className={`rounded-lg px-3 py-2 text-sm font-medium transition-all ${companyMode === 'not_registered' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-600 hover:text-neutral-900'}`}
                                 >
                                     Not registered yet
@@ -477,23 +484,19 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         {isSearchingName && (
                                             <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
                                         )}
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">
-                                        We&apos;ll fill your company name automatically.
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        No company number yet? Add it later in Verification.
-                                    </p>
-                                    {showResults && companySearchResults.length > 0 && (
-                                        <div className="relative">
-                                            <div className="absolute z-10 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-auto">
+                                        {showResults && companySearchResults.length > 0 && (
+                                            <div
+                                                className="absolute left-0 right-0 top-full z-[100] mt-2 rounded-xl border border-neutral-200 bg-white shadow-lg max-h-72 overflow-auto"
+                                                role="listbox"
+                                            >
                                                 {companySearchResults.map((company, index) => (
                                                     <button
                                                         key={company.identifier ?? index}
                                                         type="button"
+                                                        role="option"
                                                         onMouseDown={(e) => e.preventDefault()}
                                                         onClick={() => handleSelectCompany(company)}
-                                                        className="w-full text-left px-4 py-3 hover:bg-accent border-b last:border-b-0 transition-colors"
+                                                        className="w-full text-left px-4 py-3 hover:bg-accent border-b border-neutral-100 last:border-b-0 transition-colors"
                                                     >
                                                         <div className="font-medium text-sm">{company.title}</div>
                                                         <div className="text-xs text-muted-foreground mt-1">
@@ -504,8 +507,14 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                                     </button>
                                                 ))}
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                        We&apos;ll fill your company name automatically.
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        No company number yet? Add it later in Verification.
+                                    </p>
                                     {!isSearchingName && formData.company_name.trim().length >= 2 && companySearchResults.length === 0 && (
                                         <p className="text-sm text-muted-foreground">
                                             No companies found. Try a different search term or continue with the name you entered.
@@ -516,27 +525,36 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                     )}
                                 </div>
                             ) : (
-                                <div className="space-y-2">
-                                    <Label htmlFor="company_name_manual">Company name</Label>
-                                    <Input
-                                        id="company_name_manual"
-                                        value={formData.company_name}
-                                        onChange={(e) => updateFormData('company_name', e.target.value)}
-                                        placeholder="Enter your company name (can be updated later)"
-                                        className={errors.company_name ? 'border-destructive' : ''}
-                                    />
+                                <div className="space-y-3">
+                                    <p className="font-medium text-neutral-900">You can add your company details later</p>
                                     <p className="text-sm text-muted-foreground">
-                                        You can complete Companies House verification later.
+                                        Once your company is registered, add your Companies House details in Verification.
                                     </p>
-                                    {errors.company_name && (
-                                        <p className="text-sm text-destructive">{errors.company_name}</p>
+                                    {!showOptionalWorkingName ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowOptionalWorkingName(true)}
+                                            className="text-sm text-primary hover:text-primary/90 font-medium"
+                                        >
+                                            Add a working name (optional)
+                                        </button>
+                                    ) : (
+                                        <div className="space-y-2 pt-1">
+                                            <Label htmlFor="company_name_manual">Working name (optional)</Label>
+                                            <Input
+                                                id="company_name_manual"
+                                                value={formData.company_name}
+                                                onChange={(e) => updateFormData('company_name', e.target.value)}
+                                                placeholder="e.g. VirtualAddressHub (can be changed later)"
+                                            />
+                                        </div>
                                     )}
                                 </div>
                             )}
                     </SectionCard>
 
                     {/* Forwarding Address — manual only; name auto-filled from contact */}
-                    <SectionCard title="Where shall we send the post?" icon={MapPin} stepChip="Step 2c">
+                    <SectionCard title="Where shall we send the post?" icon={MapPin}>
                             <div className="rounded-xl bg-neutral-50 border border-neutral-200 p-3 text-sm text-muted-foreground">
                                 <span className="font-medium text-neutral-700">Letters only.</span> HMRC & Companies House letters are forwarded free within the UK. Other letters are £2 per item and added to your monthly invoice.
                             </div>
@@ -600,7 +618,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                     </SectionCard>
 
                     {/* Company Control */}
-                    <SectionCard title="Company Control" icon={Building} stepChip="Step 2d" helper="We ask this for compliance. Additional owners will need to complete identity verification.">
+                    <SectionCard title="Company Control" icon={Building} helper="We ask this for compliance. Additional owners will need to complete identity verification.">
                             <div className="space-y-3">
                                 <Label className="text-base font-medium">
                                     Are you the only director/controller of this company?

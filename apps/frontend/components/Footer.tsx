@@ -132,15 +132,31 @@ export function Footer({ onNavigate }: FooterProps) {
                             </div>
                         </div>
 
-                        {/* Contact us - heading is the link */}
-                        <div>
-                            <button
-                                type="button"
-                                onClick={() => handleNavClick('contact')}
-                                className="text-sm font-semibold text-emerald-800 hover:text-emerald-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 rounded-sm transition-colors"
-                            >
-                                Contact us
-                            </button>
+                        {/* Contact us - CTA block */}
+                        <div className="space-y-3">
+                            <p className="text-sm font-semibold text-neutral-900">Contact us</p>
+                            <p className="text-sm text-neutral-600">
+                                Need help or have a question? We&apos;re here.
+                            </p>
+                            <div className="flex flex-col gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => handleNavClick('contact')}
+                                    className="inline-flex w-fit items-center justify-center rounded-xl bg-neutral-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
+                                >
+                                    Contact support
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleNavClick('help')}
+                                    className="inline-flex w-fit text-left text-sm font-medium text-neutral-700 underline-offset-4 hover:underline"
+                                >
+                                    Visit Help Centre
+                                </button>
+                            </div>
+                            <p className="text-xs text-neutral-500">
+                                Typical response: within 1 business day
+                            </p>
                         </div>
                     </div>
 
