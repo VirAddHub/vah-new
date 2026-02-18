@@ -144,6 +144,55 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
     }
   };
 
+  const handleSetupPayment = async () => {
+    setIsLoading('setup');
+    try {
+      const planId = overview?.data?.plan_id || null;
+      const billingPeriod = subscription.billing_period || 'monthly';
+      const response = await fetch('/api/bff/payments/redirect-flows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ plan_id: planId, billing_period: billingPeriod }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || 'Failed to start payment setup');
+      }
+      if (data.data?.alreadyLinked) {
+        toast({ title: 'Already set up', description: 'Your payment method is already linked.' });
+        await mutateOverview();
+        onRefresh?.();
+        return;
+      }
+      if (data.data?.resume && data.data?.redirectFlowId) {
+        window.location.href = `${window.location.origin}/billing?billing_request_flow_id=${encodeURIComponent(data.data.redirectFlowId)}`;
+        return;
+      }
+      const redirectUrl = data.data?.redirect_url || data.redirect_url;
+      if (redirectUrl) {
+        toast({ title: 'Redirecting', description: "You'll be taken to complete payment setup." });
+        window.location.href = redirectUrl;
+        return;
+      }
+      if (data.data?.skip_payment) {
+        toast({ title: 'Payment setup', description: data.data.message || 'Payment setup will be completed later.' });
+        await mutateOverview();
+        onRefresh?.();
+        return;
+      }
+      throw new Error('No redirect URL received');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to open payment setup. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(null);
+    }
+  };
+
   const handleReauthorise = async () => {
     setIsLoading('reauthorise');
     try {
@@ -216,7 +265,7 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
   }
 
   return (
-    <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white w-[408px] h-[208px] flex-shrink-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+    <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white w-full max-w-[408px] flex-shrink-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
       <CardContent className="p-[28px] h-full flex flex-col">
         <div className="flex flex-col gap-[14px] flex-1">
           {/* Header */}
@@ -256,63 +305,77 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
             </span>
           </div>
 
-          {/* Actions (hidden by default, show only when needed) */}
-          {(subscription.status === 'cancelled' || subscription.status === 'past_due' || hasMandate) && (
-            <div className="pt-4 border-t space-y-3">
-              {(subscription.status === 'cancelled' || subscription.status === 'past_due') && (
+          {/* Payment details actions: always show so users can edit / set up payment */}
+          <div className="pt-4 border-t space-y-3">
+            {(subscription.status === 'cancelled' || subscription.status === 'past_due') && (
+              <Button
+                onClick={handleReactivate}
+                disabled={isLoading === 'reactivate'}
+                className="w-full bg-[#206039] text-white hover:bg-[#206039]/90"
+                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+              >
+                {isLoading === 'reactivate' ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Reactivating...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Reactivate subscription
+                  </>
+                )}
+              </Button>
+            )}
+            {subscription.status === 'active' && !hasMandate && (
+              <Button
+                variant="outline"
+                onClick={handleSetupPayment}
+                disabled={isLoading === 'setup'}
+                className="w-full"
+                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+              >
+                {isLoading === 'setup' ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <CreditCard className="h-4 w-4 mr-2" />
+                )}
+                Set up payment method
+              </Button>
+            )}
+            {hasMandate && (
+              <div className="flex flex-wrap gap-3">
                 <Button
-                  onClick={handleReactivate}
-                  disabled={isLoading === 'reactivate'}
-                  className="w-full bg-[#206039] text-white hover:bg-[#206039]/90"
+                  variant="outline"
+                  onClick={handleUpdateBank}
+                  disabled={isLoading === 'update-bank'}
+                  className="flex-1"
                   style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                 >
-                  {isLoading === 'reactivate' ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Reactivating...
-                    </>
+                  {isLoading === 'update-bank' ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Reactivate subscription
-                    </>
+                    <CreditCard className="h-4 w-4 mr-2" />
                   )}
+                  Update bank details
                 </Button>
-              )}
-              {hasMandate && (
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={handleUpdateBank}
-                    disabled={isLoading === 'update-bank'}
-                    className="flex-1"
-                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                  >
-                    {isLoading === 'update-bank' ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <CreditCard className="h-4 w-4 mr-2" />
-                    )}
-                    Update bank
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleReauthorise}
-                    disabled={isLoading === 'reauthorise'}
-                    className="flex-1"
-                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                  >
-                    {isLoading === 'reauthorise' ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <Shield className="h-4 w-4 mr-2" />
-                    )}
-                    Re-authorise
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
+                <Button
+                  variant="outline"
+                  onClick={handleReauthorise}
+                  disabled={isLoading === 'reauthorise'}
+                  className="flex-1"
+                  style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                >
+                  {isLoading === 'reauthorise' ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Shield className="h-4 w-4 mr-2" />
+                  )}
+                  Re-authorise
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

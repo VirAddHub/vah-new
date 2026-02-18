@@ -98,28 +98,28 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
     // Success screen
     if (isSubmitted) {
         return (
-            <div className="min-h-screen bg-[#F6F6F7] py-16 flex items-center justify-center" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                <div className="max-w-2xl mx-auto px-4 text-center">
-                    <h1 className="text-[54px] font-medium text-[#1A1A1A] mb-4">
-                            Message sent — thank you!
-                        </h1>
-                    <p className="text-[18px] text-[#666666] mb-8">
+            <div className="min-w-0 overflow-x-clip bg-zinc-50 pt-20 lg:pt-0 min-h-screen py-16 flex items-center justify-center" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                <div className="max-w-2xl mx-auto w-full px-4 text-center">
+                    <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl lg:text-4xl mb-4">
+                        Message sent — thank you!
+                    </h1>
+                    <p className="text-base text-zinc-600 mb-8">
                         We've received your enquiry. We'll reply within 24 hours.
                     </p>
-                    <div className="flex gap-4 justify-center">
-                            <Button
-                                onClick={() => onNavigate?.("home")}
-                            className="bg-[#206039] text-[#024E40] hover:bg-[#206039]/90 rounded-[30px] px-6"
-                            >
-                                Return Home
-                            </Button>
-                            <Button
-                                variant="outline"
-                                onClick={() => setIsSubmitted(false)}
-                            className="rounded-[30px] px-6"
-                            >
-                                Send Another Message
-                            </Button>
+                    <div className="flex flex-wrap gap-4 justify-center">
+                        <Button
+                            onClick={() => onNavigate?.("home")}
+                            className="bg-emerald-800 text-white hover:bg-emerald-900 rounded-full px-6"
+                        >
+                            Return Home
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsSubmitted(false)}
+                            className="rounded-full px-6"
+                        >
+                            Send Another Message
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -127,24 +127,24 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
     }
 
     return (
-        <div className="w-full bg-[#F6F6F7]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-            <div className="max-w-[1440px] mx-auto px-[220px] py-[80px]">
+        <div className="min-w-0 w-full overflow-x-clip bg-zinc-50 pt-20 lg:pt-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
                 {/* Hero Section */}
-                <div className="flex flex-col items-center gap-[16px] mb-[48px]">
-                    <h1 className="text-[54px] font-medium text-[#1A1A1A] leading-[1.33] text-center">
+                <div className="max-w-2xl">
+                    <h1 className="text-3xl leading-tight font-semibold text-zinc-900 sm:text-4xl lg:text-[44px]">
                         Get in touch
                     </h1>
-                    <p className="text-[18px] font-normal text-[#666666] leading-[1.2] text-center max-w-[1004px]">
+                    <p className="mt-3 text-base leading-7 text-zinc-600">
                         Have questions about our virtual address service? We're here to help.
                     </p>
                 </div>
 
                 {/* Main Content - Form and Contact Cards */}
-                <div className="flex gap-[24px] items-start">
+                <div className="mt-8 grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
                     {/* Left Column - Contact Form */}
-                    <div className="flex-1">
-                        <div className="bg-[#F9F9F9] rounded-[30px] p-[34px]">
-                            <form onSubmit={handleSubmit} className="flex flex-col gap-[20px]">
+                    <div className="min-w-0 lg:col-span-2">
+                        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
+                            <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:gap-5">
                                     {errorMsg && (
                                     <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-600">
                                             {errorMsg}
@@ -164,175 +164,157 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                     />
 
                                 {/* Name Field */}
-                                <div className="flex flex-col gap-[6px]">
-                                    <label htmlFor="name" className="text-[18px] font-medium text-[#1A1A1A] leading-[1.4]">
-                                        Name
-                                            </label>
+                                <div className="flex flex-col gap-1.5">
+                                    <label htmlFor="name" className="text-sm font-medium text-zinc-900">Name</label>
                                     <input
-                                                id="name"
-                                                name="name"
-                                                type="text"
-                                                required
-                                                value={formData.name}
-                                                onChange={handleInputChange}
+                                        id="name"
+                                        name="name"
+                                        type="text"
+                                        required
+                                        value={formData.name}
+                                        onChange={handleInputChange}
                                         placeholder="Name"
-                                        className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#206039]"
-                                            />
-                                        </div>
+                                        className="w-full min-w-0 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                                    />
+                                </div>
 
                                 {/* Email Field */}
-                                <div className="flex flex-col gap-[6px]">
-                                    <label htmlFor="email" className="text-[16px] font-medium text-[#1A1A1A] leading-[1.4]">
-                                        Email
-                                            </label>
+                                <div className="flex flex-col gap-1.5">
+                                    <label htmlFor="email" className="text-sm font-medium text-zinc-900">Email</label>
                                     <input
-                                                id="email"
-                                                name="email"
-                                                type="email"
-                                                required
-                                                value={formData.email}
-                                                onChange={handleInputChange}
+                                        id="email"
+                                        name="email"
+                                        type="email"
+                                        required
+                                        value={formData.email}
+                                        onChange={handleInputChange}
                                         placeholder="Type email"
-                                        className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#206039]"
-                                            />
-                                    </div>
+                                        className="w-full min-w-0 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                                    />
+                                </div>
 
                                 {/* Company Name Field */}
-                                <div className="flex flex-col gap-[6px]">
-                                    <label htmlFor="company" className="text-[16px] font-medium text-[#1A1A1A] leading-[1.4] uppercase">
-                                                Company name
-                                            </label>
+                                <div className="flex flex-col gap-1.5">
+                                    <label htmlFor="company" className="text-sm font-medium text-zinc-900">Company name</label>
                                     <input
-                                                id="company"
-                                                name="company"
-                                                type="text"
-                                                value={formData.company}
-                                                onChange={handleInputChange}
+                                        id="company"
+                                        name="company"
+                                        type="text"
+                                        value={formData.company}
+                                        onChange={handleInputChange}
                                         placeholder="Company name"
-                                        className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#206039]"
+                                        className="w-full min-w-0 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
                                     />
-                                    </div>
+                                </div>
 
                                 {/* Subject Field */}
-                                <div className="flex flex-col gap-[6px]">
-                                    <label htmlFor="subject" className="text-[16px] font-medium text-[#1A1A1A] leading-[1.4] uppercase">
-                                        Subject
-                                        </label>
+                                <div className="flex flex-col gap-1.5">
+                                    <label htmlFor="subject" className="text-sm font-medium text-zinc-900">Subject</label>
                                     <input
-                                            id="subject"
-                                            name="subject"
-                                            type="text"
-                                            required
-                                            value={formData.subject}
-                                            onChange={handleInputChange}
+                                        id="subject"
+                                        name="subject"
+                                        type="text"
+                                        required
+                                        value={formData.subject}
+                                        onChange={handleInputChange}
                                         placeholder="How can we help you"
-                                        className="w-full px-[28px] py-[18px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#206039]"
-                                        />
-                                    </div>
+                                        className="w-full min-w-0 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                                    />
+                                </div>
 
-                                {/* Inquire Type Dropdown */}
-                                <div className="flex flex-col gap-[6px]">
-                                    <label htmlFor="inquiryType" className="text-[16px] font-medium text-[#1A1A1A] leading-[1.4] uppercase">
-                                        Enquiry type
-                                    </label>
+                                {/* Enquiry Type Dropdown */}
+                                <div className="flex flex-col gap-1.5">
+                                    <label htmlFor="inquiryType" className="text-sm font-medium text-zinc-900">Enquiry type</label>
                                     <div className="relative">
                                         <select
                                             id="inquiryType"
                                             name="inquiryType"
                                             value={formData.inquiryType}
                                             onChange={handleInputChange}
-                                            className="w-full px-[16px] py-[12px] rounded-[30px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#206039] appearance-none pr-[40px]"
+                                            className="w-full min-w-0 rounded-xl border border-zinc-300 bg-white px-4 py-3 pr-10 text-base text-zinc-900 appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
                                         >
                                             <option value="general">General enquiry</option>
                                             <option value="pricing">Pricing Question</option>
                                             <option value="technical">Technical Support</option>
                                             <option value="billing">Billing Question</option>
                                         </select>
-                                        <ChevronDown className="absolute right-[16px] top-1/2 -translate-y-1/2 w-4 h-4 text-[#979797] pointer-events-none" />
+                                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
                                     </div>
                                 </div>
 
                                 {/* Description/Message Field */}
-                                <div className="flex flex-col gap-[6px]">
-                                    <label htmlFor="message" className="text-[16px] font-medium text-[#1A1A1A] leading-[1.4]">
-                                        Description
-                                        </label>
+                                <div className="flex flex-col gap-1.5">
+                                    <label htmlFor="message" className="text-sm font-medium text-zinc-900">Description</label>
                                     <textarea
-                                            id="message"
-                                            name="message"
-                                            required
-                                            rows={6}
-                                            value={formData.message}
-                                            onChange={handleInputChange}
+                                        id="message"
+                                        name="message"
+                                        required
+                                        rows={5}
+                                        value={formData.message}
+                                        onChange={handleInputChange}
                                         placeholder="Please describe your enquiry in detail..."
-                                        className="w-full px-[20px] py-[18px] rounded-[20px] bg-white text-[14px] font-normal text-[#979797] leading-[1.4] border-none focus:outline-none focus:ring-2 focus:ring-[#206039] resize-none"
-                                        />
-                                    </div>
+                                        className="min-h-[140px] w-full min-w-0 resize-none rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                                    />
+                                </div>
 
                                 {/* Submit Button */}
                                 <button
-                                            type="submit"
-                                            disabled={isSubmitting}
-                                    className="w-full py-[10px] px-[10px] rounded-[30px] bg-[#206039] text-[#024E40] text-[16px] font-medium leading-[1.4] uppercase hover:bg-[#206039]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                        >
-                                            {isSubmitting ? (
-                                                <>
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-800 px-6 py-3.5 text-base font-semibold text-white hover:bg-emerald-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 disabled:opacity-60 disabled:text-white"
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin" />
                                             Sending...
-                                                </>
-                                            ) : (
+                                        </>
+                                    ) : (
                                         'Send enquiry'
                                     )}
                                 </button>
 
                                 {/* Privacy Text */}
-                                <p className="text-[16px] font-normal text-[#666666] leading-[1.4] text-center">
+                                <p className="mt-4 text-sm leading-6 text-zinc-500">
                                     Your information is private and never shared with third parties.
                                 </p>
                             </form>
                         </div>
                     </div>
 
-                    {/* Right Column - Contact Cards */}
-                    <div className="w-[488px] flex-shrink-0 flex flex-col gap-[24px]">
+                    {/* Right Column - Support Cards (stack on mobile) */}
+                    <div className="min-w-0 space-y-4 lg:col-span-1">
                         {/* WhatsApp Support Card */}
-                        <div className="bg-[#F9F9F9] rounded-[20px] p-[26px_34px] flex flex-col items-end gap-[38px]">
-                            <div className="w-full flex flex-col gap-[14px]">
-                                <div className="flex flex-col gap-[7px]">
-                                    <h3 className="text-[16px] font-medium text-[#1A1A1A] leading-[1.2]">
-                                        WhatsApp Support
-                                    </h3>
-                                    <p className="text-[16px] font-normal text-[#666666] leading-[1.4]">
-                                        Dedicated WhatsApp Business line
-                                    </p>
-                                </div>
+                        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+                            <div className="flex flex-col gap-3">
+                                <h3 className="text-base font-semibold text-zinc-900">WhatsApp Support</h3>
+                                <p className="text-sm leading-6 text-zinc-600 break-words">
+                                    Dedicated WhatsApp Business line
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => window.open("https://wa.me/447000000000", "_blank")}
+                                    className="inline-flex w-full max-w-[214px] items-center justify-center rounded-full border border-emerald-800 bg-transparent px-4 py-3 text-base font-medium text-emerald-800 hover:bg-emerald-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40"
+                                >
+                                    Chat on WhatsApp
+                                </button>
                             </div>
-                            <button
-                                onClick={() => window.open("https://wa.me/447000000000", "_blank")}
-                                className="w-[214px] h-[48px] rounded-[36px] border border-[#206039] bg-transparent text-[#206039] text-[16px] font-medium leading-[1.4] hover:bg-[#206039] hover:text-white transition-colors"
-                                        >
-                                Chat on WhatsApp
-                            </button>
-                                    </div>
+                        </div>
 
                         {/* Email Card */}
-                        <div className="bg-[#F9F9F9] rounded-[20px] p-[26px_34px] flex flex-col items-end gap-[38px]">
-                            <div className="w-full flex flex-col gap-[14px]">
-                                <div className="flex flex-col gap-[7px]">
-                                    <h3 className="text-[16px] font-medium text-[#1A1A1A] leading-[1.2]">
-                                        Email
-                                    </h3>
-                                    <p className="text-[16px] font-normal text-[#666666] leading-[1.4]">
-                                        support@virtualaddresshub.co.uk
-                                    </p>
-                                </div>
+                        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+                            <div className="flex flex-col gap-3">
+                                <h3 className="text-base font-semibold text-zinc-900">Email</h3>
+                                <p className="break-words text-sm leading-6 text-zinc-600">
+                                    support@virtualaddresshub.co.uk
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => (window.location.href = "mailto:support@virtualaddresshub.co.uk")}
+                                    className="inline-flex w-full max-w-[214px] items-center justify-center rounded-full border border-emerald-800 bg-transparent px-4 py-3 text-base font-medium text-emerald-800 hover:bg-emerald-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40"
+                                >
+                                    Send an email
+                                </button>
                             </div>
-                            <button
-                                onClick={() => (window.location.href = "mailto:support@virtualaddresshub.co.uk")}
-                                className="w-[214px] h-[48px] rounded-[36px] border border-[#206039] bg-transparent text-[#206039] text-[16px] font-medium leading-[1.4] hover:bg-[#206039] hover:text-white transition-colors"
-                            >
-                                Send an email
-                            </button>
                         </div>
                     </div>
                 </div>

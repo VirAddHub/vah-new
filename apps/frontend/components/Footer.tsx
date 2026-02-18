@@ -132,17 +132,15 @@ export function Footer({ onNavigate }: FooterProps) {
                             </div>
                         </div>
 
-                        {/* Contact Us */}
+                        {/* Contact us - heading is the link */}
                         <div>
-                            <h3 className="mb-1.5 text-sm font-semibold text-[#206039]">Contact Us</h3>
-                            <div className="space-y-0.5">
-                                <button
-                                    onClick={() => handleNavClick('contact')}
-                                    className="block text-left text-sm font-medium text-neutral-700 hover:text-neutral-900 transition-colors"
-                                >
-                                    Contact us
-                                </button>
-                            </div>
+                            <button
+                                type="button"
+                                onClick={() => handleNavClick('contact')}
+                                className="text-sm font-semibold text-emerald-800 hover:text-emerald-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 rounded-sm transition-colors"
+                            >
+                                Contact us
+                            </button>
                         </div>
                     </div>
 

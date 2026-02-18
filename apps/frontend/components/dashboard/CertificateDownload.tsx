@@ -81,7 +81,10 @@ export function CertificateDownload({ profile }: CertificateDownloadProps) {
 
     return (
         <div className="px-4 pb-6 pt-4 border-t border-[#E5E7EB]">
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
+                <p className="text-xs font-semibold text-[#374151]">
+                    Letter of Certification
+                </p>
                 {isKycApproved ? (
                     <>
                         <Button
@@ -92,17 +95,17 @@ export function CertificateDownload({ profile }: CertificateDownloadProps) {
                             {isCertBusy ? (
                                 <>
                                     <Download className="w-4 h-4 mr-2 animate-pulse" />
-                                    Preparing...
+                                    Preparing…
                                 </>
                             ) : (
                                 <>
                                     <FileText className="w-4 h-4 mr-2" />
-                                    Download Certificate
+                                    Download PDF
                                 </>
                             )}
                         </Button>
-                        <p className="text-[10px] text-[#666666] leading-relaxed text-center">
-                            Letter of Certification (PDF)
+                        <p className="text-[10px] text-[#6b7280] leading-relaxed">
+                            Use for banks, payment providers and professional contacts.
                         </p>
                     </>
                 ) : (
@@ -111,10 +114,10 @@ export function CertificateDownload({ profile }: CertificateDownloadProps) {
                             <AlertCircle className="w-4 h-4 text-[#92400E] mt-0.5 flex-shrink-0" />
                             <div className="flex flex-col gap-1">
                                 <p className="text-[11px] font-medium text-[#92400E] leading-tight">
-                                    Verification Required
+                                    Verification required
                                 </p>
                                 <p className="text-[10px] text-[#92400E]/80 leading-tight">
-                                    Complete identity verification to download your certificate.
+                                    Complete identity verification to download your letter.
                                 </p>
                             </div>
                         </div>

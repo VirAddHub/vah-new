@@ -943,19 +943,21 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   <div className="text-xs text-neutral-500">{businessAddressLine4}</div>
                 </div>
 
-                {/* Primary action */}
+                {/* Letter of Certification */}
                 <div className="space-y-2">
-                  {/* Letter of Certification: single action (generate if needed, then download) */}
+                  <p className="text-xs font-semibold text-[#374151]">
+                    Letter of Certification
+                  </p>
                   <Button
                     type="button"
                     className="w-full"
                     onClick={handleDownloadCertification}
                     disabled={!canUseAddress || isCertBusy}
                   >
-                    {isCertBusy ? "Preparing your letter…" : "Download Letter of Certification (PDF)"}
+                    {isCertBusy ? "Preparing…" : "Download PDF"}
                   </Button>
                   <p className="text-xs text-neutral-500 leading-relaxed">
-                    Use this letter for banks, payment providers, and professional contacts.
+                    Use for banks, payment providers and professional contacts.
                   </p>
                 </div>
 
