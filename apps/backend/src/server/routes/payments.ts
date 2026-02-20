@@ -10,6 +10,8 @@ import { upsertSubscriptionForUser } from '../services/subscription-linking';
 import { upsertGcBillingRequestFlow } from '../db/gcBillingRequestFlow';
 import { sendPlanCancelled, buildAppUrl, sendWelcomeKycEmail } from '../../lib/mailer';
 import { logger } from '../../lib/logger';
+import { getBillingProvider } from '../../config/billing';
+import { createStripeCheckoutSession } from './stripe-checkout';
 
 const router = Router();
 
@@ -35,6 +37,7 @@ router.get('/subscriptions/status', requireAuth, async (req: Request, res: Respo
                 u.plan_status,
                 u.gocardless_customer_id,
                 u.gocardless_mandate_id,
+                u.stripe_customer_id,
                 p.name as plan_name,
                 p.billing_interval as billing_cycle,
                 p.price_pence
@@ -66,6 +69,7 @@ router.get('/subscriptions/status', requireAuth, async (req: Request, res: Respo
             nextPaymentDate = new Date(periodEnd.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
         }
 
+        const hasPaymentMethod = !!(user.gocardless_mandate_id || user.stripe_customer_id);
         return res.json({
             ok: true,
             data: {
@@ -74,7 +78,7 @@ router.get('/subscriptions/status', requireAuth, async (req: Request, res: Respo
                 billing_cycle: user.billing_cycle || 'monthly',
                 next_payment_date: nextPaymentDate,
                 price_pence: user.price_pence || 0,
-                has_payment_method: !!user.gocardless_mandate_id
+                has_payment_method: hasPaymentMethod
             }
         });
     } catch (error: any) {
@@ -156,6 +160,41 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
     const pool = getPool();
 
     try {
+        // Stripe: delegate to Checkout Session when BILLING_PROVIDER=stripe
+        if (getBillingProvider() === 'stripe') {
+            const sub = await pool.query(
+                `SELECT status, stripe_subscription_id FROM subscription WHERE user_id = $1`,
+                [userId]
+            );
+            const subStatus = sub.rows[0]?.status ?? null;
+            const hasStripeSub = !!sub.rows[0]?.stripe_subscription_id;
+            if (hasStripeSub && subStatus === 'active') {
+                return res.json({ ok: true, data: { alreadyLinked: true } });
+            }
+            try {
+                const body = {
+                    plan_id: (req.body as any)?.plan_id ?? (req.body as any)?.planId,
+                    billing_period: (req.body as any)?.billing_period ?? (req.body as any)?.billingPeriod ?? 'monthly',
+                    success_url: (req.body as any)?.success_url,
+                    cancel_url: (req.body as any)?.cancel_url,
+                };
+                const { url } = await createStripeCheckoutSession(Number(userId), body);
+                return res.json({
+                    ok: true,
+                    data: { redirect_url: url },
+                    redirect_url: url,
+                });
+            } catch (e: any) {
+                const msg = (e && e.message) || 'checkout_failed';
+                if (msg === 'stripe_not_configured') return res.status(503).json({ ok: false, error: msg });
+                if (msg === 'missing_price' || msg === 'plan_required' || msg === 'user_email_required') {
+                    return res.status(400).json({ ok: false, error: msg });
+                }
+                if (msg === 'user_not_found') return res.status(404).json({ ok: false, error: msg });
+                return res.status(500).json({ ok: false, error: 'checkout_failed' });
+            }
+        }
+
         console.log('[GC] redirect-flows input', {
             user_id: userId ?? null,
             plan_id: (req.body as any)?.plan_id ?? (req.body as any)?.planId ?? null,

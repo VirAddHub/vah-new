@@ -5,6 +5,8 @@ import { getPool } from '../db';
 import { gcCreateReauthoriseLink, gcCreateUpdateBankLink } from '../../lib/gocardless';
 import { TimestampUtils } from '../../lib/timestamp-utils';
 import { logger } from '../../lib/logger';
+import { getBillingProvider } from '../../config/billing';
+import { getStripe, createStripePortalSession } from '../../lib/stripe';
 
 function redactEmail(email: unknown): string {
   const s = String(email || '');
@@ -161,7 +163,8 @@ export async function getBillingOverview(req: Request, res: Response) {
     // Get user plan_status (for backward compatibility)
     const userResult = await pool.query(`
       SELECT plan_id, plan_status, payment_failed_at, payment_retry_count, payment_grace_until, account_suspended_at,
-             gocardless_mandate_id, gocardless_redirect_flow_id
+             gocardless_mandate_id, gocardless_redirect_flow_id,
+             stripe_customer_id
       FROM "user" WHERE id=$1
     `, [userId]);
     const user = userResult.rows[0];
@@ -324,7 +327,7 @@ export async function getBillingOverview(req: Request, res: Response) {
         grace_period: gracePeriodInfo,
         next_charge_at: sub?.next_charge_at ?? null,
         mandate_status: sub?.mandate_id ? 'active' : 'missing',
-        has_mandate: !!user?.gocardless_mandate_id,
+        has_mandate: !!(user?.gocardless_mandate_id || user?.stripe_customer_id),
         has_redirect_flow: !!user?.gocardless_redirect_flow_id,
         redirect_flow_id: user?.gocardless_redirect_flow_id ?? null,
         // NOTE: This should represent the plan price (not the latest invoice total, which can include forwarding fees).
@@ -563,6 +566,32 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
 export async function postUpdateBank(req: Request, res: Response) {
   try {
     const userId = Number(req.user!.id);
+    if (getBillingProvider() === 'stripe') {
+      const pool = getPool();
+      const userResult = await pool.query(
+        `SELECT stripe_customer_id, email FROM "user" WHERE id = $1`,
+        [userId]
+      );
+      const user = userResult.rows[0];
+      if (!user) return res.status(404).json({ ok: false, error: 'user_not_found' });
+      let customerId = user.stripe_customer_id;
+      if (!customerId) {
+        const stripe = getStripe();
+        if (!stripe) return res.status(503).json({ ok: false, error: 'stripe_not_configured' });
+        const customer = await stripe.customers.create({
+          email: user.email || undefined,
+          metadata: { userId: String(userId) },
+        });
+        customerId = customer.id;
+        await pool.query(
+          `UPDATE "user" SET stripe_customer_id = $1, updated_at = $2 WHERE id = $3`,
+          [customerId, Date.now(), userId]
+        );
+      }
+      const appUrl = (process.env.APP_URL || process.env.APP_BASE_URL || 'https://virtualaddresshub.co.uk').replace(/\/+$/, '');
+      const { url } = await createStripePortalSession(customerId, `${appUrl}/billing`);
+      return res.json({ ok: true, data: { redirect_url: url, url } });
+    }
     const link = await gcCreateUpdateBankLink(userId);
     res.json({ ok: true, data: link });
   } catch (error) {
@@ -574,6 +603,32 @@ export async function postUpdateBank(req: Request, res: Response) {
 export async function postReauthorise(req: Request, res: Response) {
   try {
     const userId = Number(req.user!.id);
+    if (getBillingProvider() === 'stripe') {
+      const pool = getPool();
+      const userResult = await pool.query(
+        `SELECT stripe_customer_id, email FROM "user" WHERE id = $1`,
+        [userId]
+      );
+      const user = userResult.rows[0];
+      if (!user) return res.status(404).json({ ok: false, error: 'user_not_found' });
+      let customerId = user.stripe_customer_id;
+      if (!customerId) {
+        const stripe = getStripe();
+        if (!stripe) return res.status(503).json({ ok: false, error: 'stripe_not_configured' });
+        const customer = await stripe.customers.create({
+          email: user.email || undefined,
+          metadata: { userId: String(userId) },
+        });
+        customerId = customer.id;
+        await pool.query(
+          `UPDATE "user" SET stripe_customer_id = $1, updated_at = $2 WHERE id = $3`,
+          [customerId, Date.now(), userId]
+        );
+      }
+      const appUrl = (process.env.APP_URL || process.env.APP_BASE_URL || 'https://virtualaddresshub.co.uk').replace(/\/+$/, '');
+      const { url } = await createStripePortalSession(customerId, `${appUrl}/billing`);
+      return res.json({ ok: true, data: { redirect_url: url, url } });
+    }
     const link = await gcCreateReauthoriseLink(userId);
     res.json({ ok: true, data: link });
   } catch (error) {

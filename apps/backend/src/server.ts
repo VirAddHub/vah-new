@@ -35,6 +35,8 @@ import sumsubWebhook from "./server/routes/webhooks-sumsub";
 import { postmarkWebhook } from "./server/routes/webhooks-postmark";
 import onedriveWebhook from "./server/routes/webhooks-onedrive";
 import gocardlessWebhook from "./server/routes/webhooks-gocardless";
+import stripeWebhook from "./server/routes/webhooks-stripe";
+import { Router } from "express";
 import profileRouter from "./server/routes/profile";
 import profileEmailChangeRouter from "./server/routes/profileEmailChange";
 import businessOwnersRouter from "./server/routes/businessOwners";
@@ -57,6 +59,7 @@ import { stopSelfTestScheduler } from "./server/routes/ops-selftest";
 import mailRouter from "./server/routes/mail";
 import billingRouter from "./server/routes/billing";
 import paymentsRouter from "./server/routes/payments";
+import stripeCheckoutRouter from "./server/routes/stripe-checkout";
 import adminUsersRouter from "./server/routes/admin-users";
 import adminForwardingRouter from "./server/routes/admin-forwarding";
 import adminForwardingDebugRouter from "./server/routes/admin-forwarding-debug";
@@ -149,17 +152,20 @@ app.use('/api', health);
 // They are secured by provider signatures instead.
 app.post('/api/webhooks-postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
 
-// GoCardless webhook (raw body required for signature verification)
+// Webhooks: GoCardless + Stripe (raw body required for signature verification)
+const webhooksRouter = Router();
+webhooksRouter.use(gocardlessWebhook);
+webhooksRouter.use(stripeWebhook);
 app.use(
     '/api/webhooks',
     express.raw({ type: 'application/json' }),
     ((req: Request & { rawBody?: string }, _res: Response, next: NextFunction) => {
-        if (req.path === '/gocardless') {
+        if (req.path === '/gocardless' || req.path === '/stripe') {
             req.rawBody = req.body?.toString?.('utf8') ?? '';
         }
         next();
     }) satisfies RequestHandler,
-    gocardlessWebhook
+    webhooksRouter
 );
 
 // security + CORS (must be before browser-facing routes)
@@ -493,6 +499,7 @@ async function start() {
     app.use('/api/internal', internalBillingRouter);
     logger.info('[mount] /api/internal mounted');
     app.use('/api/payments', paymentsRouter);
+    app.use('/api/payments/stripe', stripeCheckoutRouter);
     logger.info('[mount] /api/payments mounted');
 
     // Mount safe stubs for integrations until providers are wired

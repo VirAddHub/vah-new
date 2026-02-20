@@ -99,7 +99,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
 
                         <h1 className="mb-2">Complete Your Payment</h1>
                         <p className="text-muted-foreground max-w-2xl mx-auto">
-                            Secure your London address with our trusted payment partner GoCardless. After payment, you'll receive login details
+                            Secure your London address with our trusted payment partner {process.env.NEXT_PUBLIC_BILLING_PROVIDER === 'stripe' ? 'Stripe' : 'GoCardless'}. After payment, you'll receive login details
                             and complete identity verification (KYC) in your dashboard to activate your address.
                         </p>
                     </div>
@@ -146,7 +146,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                             <div className="w-2 h-2 rounded-full bg-white"></div>
                                         </div>
                                         <div>
-                                            <p className="font-medium">Direct Debit via GoCardless</p>
+                                            <p className="font-medium">{process.env.NEXT_PUBLIC_BILLING_PROVIDER === 'stripe' ? 'Card or bank via Stripe' : 'Direct Debit via GoCardless'}</p>
                                             <p className="text-sm text-muted-foreground">Secure, regulated payment processing</p>
                                         </div>
                                     </div>
@@ -178,7 +178,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                     <Alert className="mb-8">
                         <Shield className="h-4 w-4" />
                         <AlertDescription>
-                            <strong>Your payment is secure.</strong> We use GoCardless for Direct Debit processing, which is FCA regulated and PCI DSS compliant. We never store your payment details on our servers.
+                            <strong>Your payment is secure.</strong> We use {process.env.NEXT_PUBLIC_BILLING_PROVIDER === 'stripe' ? 'Stripe' : 'GoCardless'} for payment processing, which is regulated and PCI DSS compliant. We never store your payment details on our servers.
                         </AlertDescription>
                     </Alert>
 
@@ -243,7 +243,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                     {isProcessing || isLoading ? 'Processing...' : `Complete Payment – ${displayPrice}`}
                                 </ScrollToTopButton>
                                 <p className="text-sm text-muted-foreground">
-                                    You&apos;ll be redirected to GoCardless to set up your Direct Debit mandate.
+                                    You&apos;ll be redirected to {process.env.NEXT_PUBLIC_BILLING_PROVIDER === 'stripe' ? 'Stripe' : 'GoCardless'} to set up your payment.
                                 </p>
                             </>
                         ) : (

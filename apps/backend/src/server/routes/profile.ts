@@ -767,19 +767,19 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
 
 /**
  * GET /api/profile/registered-office-address
- * Get the registered office address (gated by compliance)
+ * Get the registered office address (gated: billing active + KYC approved + user active)
  */
 router.get("/registered-office-address", requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
 
     try {
-        // Get user profile data including compliance status
         const result = await pool.query(`
             SELECT
                 kyc_status,
                 ch_verification_status,
-                companies_house_verified
+                companies_house_verified,
+                status as user_status
             FROM "user"
             WHERE id = $1
         `, [userId]);
@@ -790,11 +790,9 @@ router.get("/registered-office-address", requireAuth, async (req: Request, res: 
 
         const user = result.rows[0];
 
-        // Compute identity compliance status
         const { computeIdentityCompliance } = await import('../services/compliance');
         const compliance = await computeIdentityCompliance(user);
 
-        // Gate the address - only return if KYC is approved AND all required owners verified
         const { isKycApproved } = await import('../services/kyc-guards');
         if (!isKycApproved(user.kyc_status)) {
             return res.status(403).json({
@@ -805,7 +803,26 @@ router.get("/registered-office-address", requireAuth, async (req: Request, res: 
             });
         }
 
-        // Return the registered office address
+        if (user.user_status !== 'active') {
+            return res.status(403).json({
+                ok: false,
+                error: 'ACCOUNT_NOT_ACTIVE',
+                message: 'Your account must be active to view your registered office address.',
+                compliance,
+            });
+        }
+
+        const { isUserEntitled } = await import('../services/entitlement');
+        const entitlement = await isUserEntitled(Number(userId));
+        if (!entitlement.entitled) {
+            return res.status(403).json({
+                ok: false,
+                error: 'BILLING_REQUIRED',
+                message: 'An active subscription is required to view and use your registered office address.',
+                compliance,
+            });
+        }
+
         const { REGISTERED_OFFICE_ADDRESS, VAH_ADDRESS_INLINE } = await import('../../config/address');
         return res.json({
             ok: true,
