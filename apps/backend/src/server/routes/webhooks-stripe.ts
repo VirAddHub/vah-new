@@ -60,7 +60,7 @@ async function resolveUserForStripeEvent(
 }
 
 async function resolveUserIdFromInvoice(pool: any, invoice: Stripe.Invoice): Promise<number | null> {
-  return resolveUserForStripeEvent(pool, { id: '', type: '', data: { object: invoice } } as Stripe.Event);
+  return resolveUserForStripeEvent(pool, { id: '', type: '', data: { object: invoice } } as unknown as Stripe.Event);
 }
 
 const EVENTS_REQUIRING_USER = [
