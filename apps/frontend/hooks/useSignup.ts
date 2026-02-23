@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { apiClient } from '../lib/apiClient';
 import type { ApiError } from '../lib/http';
+import { FEATURES } from '../lib/config';
 
 export interface SignupStep1Data {
     billing: 'monthly' | 'annual';
@@ -91,7 +92,6 @@ export function useSignup() {
         setEmailAlreadyExists(false);
 
         try {
-            // Step 1: Create user account
             const signupResponse = await apiClient.signup(
                 step2Data.email,
                 step2Data.password,
@@ -131,64 +131,13 @@ export function useSignup() {
 
             console.log('✅ User account created:', signupResponse.data);
 
-            // Step 2: Set up payment
-            // Use BFF route to ensure CSRF token is handled server-side
-            // This avoids CSRF token timing issues after signup
-            const paymentBody: any = {
-                billing_period: step1Data?.billing ?? 'monthly',
-            };
-            if (step1Data?.plan_id) paymentBody.plan_id = step1Data.plan_id;
-
-            const paymentResp = await apiClient.post<any>('/api/bff/payments/redirect-flows', paymentBody);
-
-            // Ensure paymentResp exists and has the expected shape
-            if (!paymentResp) {
-                throw new Error('Payment setup failed: No response from server');
-            }
-
-            // Handle already linked case
-            if (paymentResp.ok && (paymentResp as any)?.data?.alreadyLinked) {
-                console.log('✅ Payment method already linked');
+            // Account created. Embedded checkout in SignupStep3 will handle
+            // payment separately by fetching a client_secret. If payments are
+            // disabled, mark signup as complete immediately.
+            if (!FEATURES.payments) {
                 setIsComplete(true);
-                return;
+                console.log('✅ Signup completed (payments disabled)');
             }
-
-            // Handle resume case
-            if (paymentResp.ok && (paymentResp as any)?.data?.resume) {
-                const redirectFlowId = (paymentResp as any)?.data?.redirectFlowId;
-                console.log('✅ Resuming payment setup with flow:', redirectFlowId);
-                // Redirect to billing page with flow ID to complete
-                const appUrl = window.location.origin;
-                window.location.href = `${appUrl}/billing?billing_request_flow_id=${encodeURIComponent(redirectFlowId)}`;
-                return;
-            }
-
-            const redirectUrl =
-                (paymentResp as any)?.redirect_url ||
-                (paymentResp as any)?.data?.redirect_url;
-
-            if (paymentResp.ok && redirectUrl) {
-                console.log('✅ Payment setup initiated, redirecting to:', redirectUrl);
-                // Store flag to show welcome message after payment redirect
-                sessionStorage.setItem('show_welcome_after_payment', 'true');
-                window.location.href = redirectUrl;
-                return; // Don't set complete yet, wait for redirect
-            }
-
-            if (paymentResp.ok && (paymentResp as any)?.data?.skip_payment) {
-                // Payment setup was skipped (billing not configured). Only in this case can we "complete" signup.
-                setIsComplete(true);
-                console.log('✅ Signup completed (payment skipped)');
-                return;
-            }
-
-            // If payment setup fails, do NOT mark signup complete (service is not live without a mandate).
-            const errorMsg = (paymentResp as any)?.error?.message ||
-                (paymentResp as any)?.message ||
-                (paymentResp as any)?.error ||
-                'Payment setup failed. Please try again.';
-            throw new Error(errorMsg);
-
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Signup failed';
             setError(errorMessage);

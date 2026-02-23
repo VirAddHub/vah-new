@@ -1,7 +1,9 @@
 /**
- * POST /api/payments/stripe/checkout-session
- * Creates Stripe Checkout Session (subscription mode) and returns URL.
- * Auth required. Used when BILLING_PROVIDER=stripe.
+ * Stripe Checkout routes (subscription mode).
+ *
+ * POST /checkout-session           – redirect-based checkout (returns URL)
+ * POST /checkout-session-embedded  – embedded checkout (returns client_secret)
+ * GET  /session-status             – poll session status after completion
  */
 
 import { Router, Request, Response } from 'express';
@@ -26,24 +28,12 @@ export type CreateStripeCheckoutSessionBody = {
   cancel_url?: string;
 };
 
-/**
- * Create Stripe Checkout Session URL for a user. Used by redirect-flows when BILLING_PROVIDER=stripe.
- */
-export async function createStripeCheckoutSession(
-  userId: number,
-  body: CreateStripeCheckoutSessionBody
-): Promise<{ url: string }> {
-  const billingPeriod = (body.billing_period || 'monthly') === 'annual' ? 'annual' : 'monthly';
-  const planId = body.plan_id != null ? Number(body.plan_id) : null;
-  const { appUrl } = getStripeConfig();
-  const successUrl = (body.success_url || `${appUrl}/billing`).trim();
-  const cancelUrl = (body.cancel_url || `${appUrl}/billing`).trim();
-
+/* ------------------------------------------------------------------ */
+/*  Shared: resolve or create Stripe customer for a user              */
+/* ------------------------------------------------------------------ */
+async function resolveStripeCustomer(userId: number) {
   const stripe = getStripe();
   if (!stripe) throw new Error('stripe_not_configured');
-
-  const priceId = getStripePriceId(billingPeriod);
-  if (!priceId) throw new Error('missing_price');
 
   const pool = getPool();
   const userResult = await pool.query(
@@ -69,8 +59,30 @@ export async function createStripeCheckoutSession(
     logger.info('[stripe] customer_created', { userId, customerId: redactStripeId(customerId) });
   }
 
+  return { stripe, pool, user, email, customerId };
+}
+
+/* ------------------------------------------------------------------ */
+/*  POST /checkout-session  (redirect mode – returns URL)             */
+/* ------------------------------------------------------------------ */
+export async function createStripeCheckoutSession(
+  userId: number,
+  body: CreateStripeCheckoutSessionBody
+): Promise<{ url: string }> {
+  const billingPeriod = (body.billing_period || 'monthly') === 'annual' ? 'annual' : 'monthly';
+  const planId = body.plan_id != null ? Number(body.plan_id) : null;
+  const { appUrl } = getStripeConfig();
+  const successUrl = (body.success_url || `${appUrl}/billing`).trim();
+  const cancelUrl = (body.cancel_url || `${appUrl}/billing`).trim();
+
+  const priceId = getStripePriceId(billingPeriod);
+  if (!priceId) throw new Error('missing_price');
+
+  const { stripe, user, customerId } = await resolveStripeCustomer(userId);
   const effectivePlanId = planId ?? user.plan_id;
   if (effectivePlanId == null) throw new Error('plan_required');
+
+  const meta = { userId: String(userId), planId: String(effectivePlanId), plan_id: String(effectivePlanId), billingPeriod, billing_period: billingPeriod };
 
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
@@ -78,10 +90,8 @@ export async function createStripeCheckoutSession(
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: successUrl,
     cancel_url: cancelUrl,
-    metadata: { userId: String(userId), planId: String(effectivePlanId), plan_id: String(effectivePlanId), billingPeriod: billingPeriod, billing_period: billingPeriod },
-    subscription_data: {
-      metadata: { userId: String(userId), planId: String(effectivePlanId), plan_id: String(effectivePlanId), billingPeriod: billingPeriod },
-    },
+    metadata: meta,
+    subscription_data: { metadata: meta },
   });
 
   const url = session.url ?? null;
@@ -105,6 +115,92 @@ router.post('/checkout-session', requireAuth, async (req: Request, res: Response
     if (msg === 'user_not_found') return res.status(404).json({ ok: false, error: msg });
     return res.status(500).json({ ok: false, error: 'checkout_failed' });
   }
+});
+
+/* ------------------------------------------------------------------ */
+/*  POST /checkout-session-embedded  (ui_mode: "embedded")            */
+/*  Returns { ok, data: { client_secret } }                           */
+/* ------------------------------------------------------------------ */
+router.post('/checkout-session-embedded', requireAuth, async (req: Request, res: Response) => {
+  const userId = Number(req.user!.id);
+  const body = (req.body || {}) as CreateStripeCheckoutSessionBody;
+  const billingPeriod = (body.billing_period || 'monthly') === 'annual' ? 'annual' : 'monthly';
+  const planId = body.plan_id != null ? Number(body.plan_id) : null;
+
+  try {
+    const priceId = getStripePriceId(billingPeriod);
+    if (!priceId) throw new Error('missing_price');
+
+    const { appUrl } = getStripeConfig();
+    const { stripe, user, customerId } = await resolveStripeCustomer(userId);
+    const effectivePlanId = planId ?? user.plan_id;
+    if (effectivePlanId == null) throw new Error('plan_required');
+
+    const meta = { userId: String(userId), planId: String(effectivePlanId), plan_id: String(effectivePlanId), billingPeriod, billing_period: billingPeriod };
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      customer: customerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      ui_mode: 'embedded',
+      return_url: `${appUrl}/signup/payment-return?session_id={CHECKOUT_SESSION_ID}`,
+      metadata: meta,
+      subscription_data: { metadata: meta },
+    });
+
+    logger.info('[stripe] embedded_checkout_created', { userId, sessionId: redactStripeId(session.id) });
+    return res.json({ ok: true, data: { client_secret: session.client_secret } });
+  } catch (e: any) {
+    const msg = (e && e.message) || 'checkout_failed';
+    logger.error('[stripe] embedded_checkout_error', { userId, error: msg });
+    if (msg === 'stripe_not_configured') return res.status(503).json({ ok: false, error: msg });
+    if (msg === 'missing_price' || msg === 'plan_required' || msg === 'user_email_required') {
+      return res.status(400).json({ ok: false, error: msg });
+    }
+    if (msg === 'user_not_found') return res.status(404).json({ ok: false, error: msg });
+    return res.status(500).json({ ok: false, error: 'checkout_failed' });
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/*  GET /session-status?session_id=cs_xxx                             */
+/*  Returns { ok, data: { status, payment_status, customer_email } }  */
+/* ------------------------------------------------------------------ */
+router.get('/session-status', requireAuth, async (req: Request, res: Response) => {
+  const sessionId = req.query.session_id as string;
+  if (!sessionId) {
+    return res.status(400).json({ ok: false, error: 'missing_session_id' });
+  }
+  try {
+    const stripe = getStripe();
+    if (!stripe) throw new Error('stripe_not_configured');
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    return res.json({
+      ok: true,
+      data: {
+        status: session.status,
+        payment_status: session.payment_status,
+        customer_email: session.customer_details?.email ?? null,
+      },
+    });
+  } catch (e: any) {
+    const msg = (e && e.message) || 'session_retrieval_failed';
+    logger.error('[stripe] session_status_error', { sessionId: redactStripeId(sessionId), error: msg });
+    return res.status(500).json({ ok: false, error: 'session_retrieval_failed' });
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/*  GET /publishable-key                                              */
+/*  Returns the publishable key so the frontend can load Stripe.js    */
+/* ------------------------------------------------------------------ */
+router.get('/publishable-key', (_req: Request, res: Response) => {
+  const { publishableKey } = getStripeConfig();
+  if (!publishableKey) {
+    return res.status(503).json({ ok: false, error: 'stripe_not_configured' });
+  }
+  return res.json({ ok: true, data: { publishable_key: publishableKey } });
 });
 
 export default router;

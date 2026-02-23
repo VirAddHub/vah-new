@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Shield, AlertTriangle, Check } from 'lucide-react';
+import { ArrowLeft, CreditCard, Shield, AlertTriangle, Check, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 import { ScrollToTopButton } from '../ScrollToTopButton';
 import { usePlans } from '@/hooks/usePlans';
 import { FEATURES } from '@/lib/config';
+import { loadStripe } from '@stripe/stripe-js';
+import {
+    EmbeddedCheckoutProvider,
+    EmbeddedCheckout,
+} from '@stripe/react-stripe-js';
 
 interface SignupStep3Props {
     onComplete: () => Promise<void>;
@@ -19,53 +24,152 @@ interface SignupStep3Props {
     emailAlreadyExists?: boolean;
 }
 
-// Payment step - Stripe checkout
+let stripePromise: ReturnType<typeof loadStripe> | null = null;
+
+function getStripePromise() {
+    if (!stripePromise) {
+        stripePromise = fetch('/api/bff/payments/stripe/publishable-key', { credentials: 'include' })
+            .then(r => r.json())
+            .then(json => {
+                const key = json?.data?.publishable_key;
+                if (!key) throw new Error('Missing Stripe publishable key');
+                return loadStripe(key);
+            })
+            .catch(() => null);
+    }
+    return stripePromise;
+}
+
 export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isLoading = false, error, emailAlreadyExists = false }: SignupStep3Props) {
     const [isProcessing, setIsProcessing] = useState(false);
+    const [accountCreated, setAccountCreated] = useState(false);
+    const [clientSecret, setClientSecret] = useState<string | null>(null);
+    const [checkoutError, setCheckoutError] = useState<string | null>(null);
     const { plans } = usePlans();
 
-    // Get dynamic pricing from plans data
     const getPlanPrice = (interval: 'monthly' | 'annual') => {
         const plan = plans?.find(p => p.interval === (interval === 'annual' ? 'year' : 'month'));
-        if (plan) {
-            return (plan.price_pence / 100).toFixed(2);
-        }
-        // Fallback to hardcoded prices if plans not loaded
+        if (plan) return (plan.price_pence / 100).toFixed(2);
         return interval === 'annual' ? '89.99' : '9.99';
     };
 
     const getMonthlyEquivalent = () => {
         const plan = plans?.find(p => p.interval === 'year');
-        if (plan) {
-            return ((plan.price_pence / 100) / 12).toFixed(2);
-        }
-        return '7.50'; // Fallback
+        if (plan) return ((plan.price_pence / 100) / 12).toFixed(2);
+        return '7.50';
     };
 
     const isAnnual = billing === 'annual';
     const planName = isAnnual ? 'Annual Plan' : 'Monthly Plan';
-    const planDescription = isAnnual
-        ? 'Annual subscription (2 months free)'
-        : 'Monthly subscription';
-
+    const planDescription = isAnnual ? 'Annual subscription (2 months free)' : 'Monthly subscription';
     const displayPrice = isAnnual ? `£${getPlanPrice('annual')}` : `£${getPlanPrice('monthly')}`;
     const priceUnit = isAnnual ? '/year' : '/month';
     const totalDescription = isAnnual
         ? `£${getPlanPrice('annual')} today for 12 months (≈ £${getMonthlyEquivalent()}/month)`
         : 'Recurring monthly payment';
 
+    const fetchClientSecret = useCallback(async () => {
+        try {
+            const res = await fetch('/api/bff/payments/stripe/checkout-session-embedded', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ billing_period: billing }),
+            });
+            const json = await res.json();
+            if (!res.ok || !json.ok) {
+                throw new Error(json?.error || 'Failed to create checkout session');
+            }
+            return json.data.client_secret as string;
+        } catch (e: any) {
+            setCheckoutError(e.message || 'Failed to initialise payment. Please try again.');
+            return null;
+        }
+    }, [billing]);
+
     const handlePayment = async () => {
         if (isProcessing || isLoading) return;
         setIsProcessing(true);
-        try {
-            // Call the real signup completion (which calls the API + redirects to Stripe)
-            await onComplete();
-        } finally {
-            // If onComplete redirects, this won't matter; if it errors, we must unblock the button.
-            setIsProcessing(false);
+        setCheckoutError(null);
+
+        if (!FEATURES.payments) {
+            try { await onComplete(); } finally { setIsProcessing(false); }
+            return;
         }
+
+        try {
+            // Phase 1: create the account (onComplete calls the signup API)
+            await onComplete();
+            // If onComplete redirected away (old flow), we won't reach here.
+            // For embedded flow, mark account as created.
+            setAccountCreated(true);
+        } catch {
+            // Error is surfaced via the `error` prop from useSignup
+            setIsProcessing(false);
+            return;
+        }
+
+        // Phase 2: fetch embedded checkout client secret
+        const secret = await fetchClientSecret();
+        if (secret) {
+            setClientSecret(secret);
+        }
+        setIsProcessing(false);
     };
 
+    // If the account was already created in a previous attempt but checkout
+    // failed, allow retrying the checkout without re-creating the account.
+    const handleRetryCheckout = async () => {
+        setCheckoutError(null);
+        setIsProcessing(true);
+        const secret = await fetchClientSecret();
+        if (secret) setClientSecret(secret);
+        setIsProcessing(false);
+    };
+
+    // Pre-warm Stripe.js on mount
+    useEffect(() => { if (FEATURES.payments) getStripePromise(); }, []);
+
+    // --- Embedded Checkout view ---
+    if (clientSecret) {
+        const stripe = getStripePromise();
+        return (
+            <main className="flex-1">
+                <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                    <div className="w-full max-w-2xl">
+                        <div className="text-center mb-8">
+                            <div className="flex items-center justify-center gap-2 mb-4">
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">✓</div>
+                                <div className="w-8 h-1 bg-primary rounded-full"></div>
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">✓</div>
+                                <div className="w-8 h-1 bg-primary rounded-full"></div>
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">3</div>
+                            </div>
+                            <h1 className="mb-2">Complete Your Payment</h1>
+                            <p className="text-muted-foreground max-w-lg mx-auto text-sm">
+                                Your account has been created. Enter your payment details below to activate your subscription.
+                            </p>
+                        </div>
+
+                        <div className="bg-card rounded-xl border overflow-hidden">
+                            {stripe && (
+                                <EmbeddedCheckoutProvider stripe={stripe} options={{ clientSecret }}>
+                                    <EmbeddedCheckout className="min-h-[400px]" />
+                                </EmbeddedCheckoutProvider>
+                            )}
+                        </div>
+
+                        <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                            <Shield className="h-3.5 w-3.5" />
+                            <span>Secure payment powered by Stripe</span>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        );
+    }
+
+    // --- Pre-checkout / account creation view ---
     return (
         <main className="flex-1">
             <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -75,31 +179,25 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                         <div className="flex items-center justify-center gap-4 mb-6">
                             <button
                                 onClick={onBack}
-                                className="inline-flex items-center justify-center border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-8 rounded-md gap-1.5 px-3 text-sm font-medium transition-all"
+                                disabled={isProcessing}
+                                className="inline-flex items-center justify-center border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-8 rounded-md gap-1.5 px-3 text-sm font-medium transition-all disabled:opacity-50"
                             >
                                 <ArrowLeft className="h-4 w-4 mr-2" />
                                 Back
                             </button>
 
-                            {/* Progress indicator */}
                             <div className="flex items-center gap-2" aria-label="Step progress">
-                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
-                                    ✓
-                                </div>
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">✓</div>
                                 <div className="w-8 h-1 bg-primary rounded-full"></div>
-                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
-                                    ✓
-                                </div>
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">✓</div>
                                 <div className="w-8 h-1 bg-primary rounded-full"></div>
-                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
-                                    3
-                                </div>
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">3</div>
                             </div>
                         </div>
 
                         <h1 className="mb-2">Complete Your Payment</h1>
                         <p className="text-muted-foreground max-w-2xl mx-auto">
-                            Secure your London address with our trusted payment partner Stripe. After payment, you'll receive login details
+                            Secure your London address with our trusted payment partner Stripe. After payment, you&apos;ll receive login details
                             and complete identity verification (KYC) in your dashboard to activate your address.
                         </p>
                     </div>
@@ -132,7 +230,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                         </div>
                     </div>
 
-                    {/* Payment Method Selection Card */}
+                    {/* Payment Method Card */}
                     <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border mb-8">
                         <div className="px-6 pt-6">
                             <h4 className="leading-none">Payment Method</h4>
@@ -186,23 +284,23 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                         <AlertTriangle className="h-4 w-4" />
                         <AlertDescription>
                             By continuing, you agree to our{' '}
-                            <button className="text-primary hover:underline font-medium">
+                            <Link href="/terms" className="text-primary hover:underline font-medium">
                                 Terms of Service
-                            </button>{' '}
+                            </Link>{' '}
                             and{' '}
-                            <button className="text-primary hover:underline font-medium">
+                            <Link href="/privacy" className="text-primary hover:underline font-medium">
                                 Privacy Policy
-                            </button>
+                            </Link>
                             . You can cancel your subscription at any time.
                         </AlertDescription>
                     </Alert>
 
                     {/* Error Display */}
-                    {error && (
+                    {(error || checkoutError) && (
                         <Alert variant="destructive" className="mb-6">
                             <AlertTriangle className="h-4 w-4" />
                             <AlertDescription>
-                                {error}
+                                {error || checkoutError}
                                 {emailAlreadyExists && (
                                     <div className="mt-4 flex flex-wrap items-center gap-3">
                                         <Link
@@ -225,6 +323,15 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                         </Link>
                                     </div>
                                 )}
+                                {accountCreated && checkoutError && (
+                                    <button
+                                        onClick={handleRetryCheckout}
+                                        disabled={isProcessing}
+                                        className="mt-3 text-sm text-primary hover:underline font-medium"
+                                    >
+                                        Retry payment setup
+                                    </button>
+                                )}
                             </AlertDescription>
                         </Alert>
                     )}
@@ -234,15 +341,24 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                         {FEATURES.payments ? (
                             <>
                                 <ScrollToTopButton
-                                    onClick={handlePayment}
+                                    onClick={accountCreated ? handleRetryCheckout : handlePayment}
                                     disabled={isProcessing || isLoading}
                                     className="h-10 px-6 min-w-64 mb-4 inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 rounded-md disabled:opacity-50 disabled:pointer-events-none"
                                 >
-                                    <CreditCard className="h-4 w-4 mr-2" />
-                                    {isProcessing || isLoading ? 'Processing...' : `Complete Payment – ${displayPrice}`}
+                                    {isProcessing || isLoading ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            {accountCreated ? 'Loading checkout...' : 'Creating account...'}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CreditCard className="h-4 w-4" />
+                                            {`Complete Payment – ${displayPrice}`}
+                                        </>
+                                    )}
                                 </ScrollToTopButton>
                                 <p className="text-sm text-muted-foreground">
-                                    You&apos;ll be redirected to Stripe to complete your payment.
+                                    Payment is handled securely by Stripe — right here on this page.
                                 </p>
                             </>
                         ) : (
@@ -252,7 +368,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                     disabled={isProcessing || isLoading}
                                     className="h-10 px-6 min-w-64 mb-4 inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 rounded-md disabled:opacity-50 disabled:pointer-events-none"
                                 >
-                                    <CreditCard className="h-4 w-4 mr-2" />
+                                    <CreditCard className="h-4 w-4" />
                                     {isProcessing || isLoading ? 'Processing...' : `Complete Signup – ${displayPrice}`}
                                 </ScrollToTopButton>
                                 <p className="text-sm text-muted-foreground">
@@ -265,7 +381,6 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                     {/* What Happens Next Card */}
                     <div className="bg-card border rounded-xl shadow-sm p-6 mt-10 space-y-5">
                         <h3 className="text-lg font-semibold">What happens next</h3>
-
                         <div className="space-y-4">
                             {[
                                 "We'll email you a secure link to your dashboard.",
