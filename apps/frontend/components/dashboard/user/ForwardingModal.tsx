@@ -7,7 +7,7 @@ interface ForwardingModalProps {
     isOpen: boolean;
     mailItem: MailItem | null;
     userProfile: DashboardUserProfile | null;
-    onConfirm: (paymentMethod: 'monthly' | 'gocardless') => Promise<void>;
+    onConfirm: (paymentMethod: 'monthly' | 'stripe') => Promise<void>;
     onClose: () => void;
 }
 

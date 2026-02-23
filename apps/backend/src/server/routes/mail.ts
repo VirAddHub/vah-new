@@ -6,6 +6,7 @@ import { getPool } from '../db';
 import { selectPaged } from '../db-helpers';
 import { extractDrivePathFromSharePointUrl, streamSharePointFileByPath } from '../../services/sharepoint';
 import { logger } from '../../lib/logger';
+import { requireActiveSubscription } from '../../middleware/auth';
 
 const router = Router();
 
@@ -92,9 +93,9 @@ function noConditional(req: Request, res: Response, next: Function) {
     next();
 }
 
-// Apply no-cache and no-conditional middlewares to all mail routes
 router.use(noCache);
 router.use(noConditional);
+router.use(requireActiveSubscription);
 
 /**
  * GET /api/mail-items

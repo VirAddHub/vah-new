@@ -42,7 +42,7 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
             </li>
             <li>Scanned mail and mail-handling information</li>
             <li>Login and security logs</li>
-            <li>Payment/subscription information (via GoCardless)</li>
+            <li>Payment/subscription information (via Stripe)</li>
             <li>Support queries or messages</li>
           </ul>
           <p className="text-muted-foreground">
@@ -149,7 +149,7 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
         <section className="space-y-2">
           <h2 className="text-xl font-semibold">9. Payments</h2>
           <p className="text-muted-foreground">
-            Payments are handled by <strong>GoCardless</strong>, a regulated UK payment provider. We only receive confirmation of payment status — never your full banking information.
+            Payments are handled by <strong>Stripe</strong>, a regulated payment provider. We only receive confirmation of payment status — never your full card or banking information.
           </p>
         </section>
 
@@ -161,7 +161,7 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
               <strong>Sumsub</strong> – identity verification
             </li>
             <li>
-              <strong>GoCardless</strong> – payments
+              <strong>Stripe</strong> – payments
             </li>
             <li>
               <strong>Postmark</strong> – email delivery

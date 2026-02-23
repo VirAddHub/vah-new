@@ -65,7 +65,7 @@ export function TermsPage({ onNavigate }: TermsPageProps) {
           <h2 className="text-xl font-semibold text-foreground">4. Service Activation</h2>
           <p>Activation requires:</p>
           <ul className="list-disc pl-6 space-y-1">
-            <li>Direct Debit setup</li>
+            <li>Payment setup via Stripe</li>
             <li>First payment collected</li>
             <li>Completed KYC</li>
             <li>Compliance approval</li>

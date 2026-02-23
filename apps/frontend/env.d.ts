@@ -4,9 +4,7 @@
 declare namespace NodeJS {
     interface ProcessEnv {
         NEXT_PUBLIC_API_URL?: string;
-        NEXT_PUBLIC_FEATURE_GOCARDLESS?: "true" | "false";
         NEXT_PUBLIC_FEATURE_SUMSUB?: "true" | "false";
-        NEXT_PUBLIC_BILLING_PROVIDER?: "gocardless" | "stripe";
     }
 }
 

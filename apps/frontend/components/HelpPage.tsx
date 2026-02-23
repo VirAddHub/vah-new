@@ -155,7 +155,7 @@ Please note: The address cannot be used for personal post, residential use, reta
     id: "billing-start",
     category: "Pricing & Billing",
     q: "When does my subscription start and billing begin?",
-    a: `Your subscription starts at sign-up once your mandate is set. Billing is monthly via Direct Debit (GoCardless).`,
+    a: `Your subscription starts at sign-up once your payment is confirmed. Billing is monthly via Stripe.`,
   },
   {
     id: "billing-cancel",
@@ -172,10 +172,10 @@ Please note: The address cannot be used for personal post, residential use, reta
     a: (
       <div className="space-y-3">
         <p>
-          You can update your Direct Debit details any time from your dashboard under <strong>Settings → Billing</strong>.
+          You can update your payment details any time from your dashboard under <strong>Settings → Billing</strong>.
         </p>
         <p>
-          Click <strong>Update bank details</strong> and you'll be taken to a secure GoCardless page to confirm your new bank account. Once confirmed, future payments will be taken from the new account automatically.
+          Click <strong>Update payment method</strong> and you'll be taken to a secure Stripe page to update your card or bank details. Once confirmed, future payments will use the new method automatically.
         </p>
       </div>
     ),
@@ -444,7 +444,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           'vah-registered-vs-trading': `A Registered Office is your company's official legal address on Companies House. Government bodies like Companies House and HMRC send official notices there. A Trading Address (or business correspondence address) is where everyday business mail is sent – things like client letters, invoices, contracts, and suppliers. With VirtualAddressHub, you can use our address as: Your Registered Office and Director's Service Address on Companies House, Your business correspondence address for clients and other professional contacts.`,
           'vah-stop-paying': `If you cancel your plan or your payments stop: We stop accepting new mail to your VirtualAddressHub address. Existing scanned items remain in your dashboard for a limited time so you can download anything important. After our retention period, any remaining physical mail is securely destroyed in line with our Mail Handling Policy. If you think you might need the address again in future, contact support before cancelling so we can explain your options.`,
           'mail-forwarding': `Yes—on request from your dashboard: HMRC & Companies House letters: forwarded free within the UK. Other UK letters: £2 per item (covers postage & handling). International forwarding: Royal Mail rate + £3 handling fee.`,
-          'account-payment-method': `You can update your Direct Debit details any time from your dashboard under Settings → Billing. Click Update bank details and you'll be taken to a secure GoCardless page to confirm your new bank account. Once confirmed, future payments will be taken from the new account automatically.`,
+          'account-payment-method': `You can update your payment details any time from your dashboard under Settings → Billing. Click Update payment method and you'll be taken to a secure Stripe page to update your card or bank details. Once confirmed, future payments will use the new method automatically.`,
           'account-invoices': `We generate an invoice for each successful payment. You can view and download your invoices from Dashboard → Billing & Invoices. We also email you a copy of each invoice to the email address on your account.`,
           'account-password-reset': `On the login page, click Forgot your password? and enter the email address linked to your account. We'll send you a secure password reset link. For security reasons, the link expires after 30 minutes – if it expires, just request a new one.`,
           'account-cancel-subscription': `To cancel your subscription, go to Dashboard → Billing → Cancel subscription. We'll stop future billing and your address will remain active until the end of your current paid period. If you have any issues cancelling, just email support@virtualaddresshub.co.uk and we'll help.`,

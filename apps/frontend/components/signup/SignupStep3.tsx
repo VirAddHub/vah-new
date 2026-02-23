@@ -19,7 +19,7 @@ interface SignupStep3Props {
     emailAlreadyExists?: boolean;
 }
 
-// Payment step - GoCardless Direct Debit only
+// Payment step - Stripe checkout
 export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isLoading = false, error, emailAlreadyExists = false }: SignupStep3Props) {
     const [isProcessing, setIsProcessing] = useState(false);
     const { plans } = usePlans();
@@ -58,7 +58,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
         if (isProcessing || isLoading) return;
         setIsProcessing(true);
         try {
-            // Call the real signup completion (which calls the API + redirects to GoCardless)
+            // Call the real signup completion (which calls the API + redirects to Stripe)
             await onComplete();
         } finally {
             // If onComplete redirects, this won't matter; if it errors, we must unblock the button.
@@ -99,7 +99,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
 
                         <h1 className="mb-2">Complete Your Payment</h1>
                         <p className="text-muted-foreground max-w-2xl mx-auto">
-                            Secure your London address with our trusted payment partner {process.env.NEXT_PUBLIC_BILLING_PROVIDER === 'stripe' ? 'Stripe' : 'GoCardless'}. After payment, you'll receive login details
+                            Secure your London address with our trusted payment partner Stripe. After payment, you'll receive login details
                             and complete identity verification (KYC) in your dashboard to activate your address.
                         </p>
                     </div>
@@ -138,7 +138,6 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                             <h4 className="leading-none">Payment Method</h4>
                         </div>
                         <div className="px-6 pb-6">
-                            {/* GoCardless Direct Debit - Only Option */}
                             <div className="p-4 border border-primary ring-2 ring-primary/20 bg-primary/5 rounded-lg">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -146,7 +145,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                             <div className="w-2 h-2 rounded-full bg-white"></div>
                                         </div>
                                         <div>
-                                            <p className="font-medium">{process.env.NEXT_PUBLIC_BILLING_PROVIDER === 'stripe' ? 'Card or bank via Stripe' : 'Direct Debit via GoCardless'}</p>
+                                            <p className="font-medium">Pay securely by card or bank via Stripe</p>
                                             <p className="text-sm text-muted-foreground">Secure, regulated payment processing</p>
                                         </div>
                                     </div>
@@ -155,11 +154,11 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                 <div className="mt-3 ml-7 space-y-2">
                                     <div className="flex items-center gap-2 text-sm text-primary">
                                         <Check className="h-4 w-4" />
-                                        <span>Protected by the Direct Debit Guarantee</span>
+                                        <span>PCI DSS compliant</span>
                                     </div>
                                     <div className="flex items-center gap-2 text-sm text-primary">
                                         <Check className="h-4 w-4" />
-                                        <span>No card fees or hidden charges</span>
+                                        <span>No hidden charges</span>
                                     </div>
                                     <div className="flex items-center gap-2 text-sm text-primary">
                                         <Check className="h-4 w-4" />
@@ -167,7 +166,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                     </div>
                                     <div className="flex items-center gap-2 text-sm text-primary">
                                         <Check className="h-4 w-4" />
-                                        <span>FCA regulated and secure</span>
+                                        <span>Powered by Stripe</span>
                                     </div>
                                 </div>
                             </div>
@@ -178,7 +177,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                     <Alert className="mb-8">
                         <Shield className="h-4 w-4" />
                         <AlertDescription>
-                            <strong>Your payment is secure.</strong> We use {process.env.NEXT_PUBLIC_BILLING_PROVIDER === 'stripe' ? 'Stripe' : 'GoCardless'} for payment processing, which is regulated and PCI DSS compliant. We never store your payment details on our servers.
+                            <strong>Your payment is secure.</strong> We use Stripe for payment processing, which is regulated and PCI DSS compliant. We never store your payment details on our servers.
                         </AlertDescription>
                     </Alert>
 
@@ -243,7 +242,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                     {isProcessing || isLoading ? 'Processing...' : `Complete Payment – ${displayPrice}`}
                                 </ScrollToTopButton>
                                 <p className="text-sm text-muted-foreground">
-                                    You&apos;ll be redirected to {process.env.NEXT_PUBLIC_BILLING_PROVIDER === 'stripe' ? 'Stripe' : 'GoCardless'} to set up your payment.
+                                    You&apos;ll be redirected to Stripe to complete your payment.
                                 </p>
                             </>
                         ) : (

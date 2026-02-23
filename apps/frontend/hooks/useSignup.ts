@@ -169,14 +169,14 @@ export function useSignup() {
 
             if (paymentResp.ok && redirectUrl) {
                 console.log('✅ Payment setup initiated, redirecting to:', redirectUrl);
-                // Store flag to show welcome message after GoCardless redirect
+                // Store flag to show welcome message after payment redirect
                 sessionStorage.setItem('show_welcome_after_payment', 'true');
                 window.location.href = redirectUrl;
                 return; // Don't set complete yet, wait for redirect
             }
 
             if (paymentResp.ok && (paymentResp as any)?.data?.skip_payment) {
-                // Payment setup was skipped (GoCardless not configured). Only in this case can we "complete" signup.
+                // Payment setup was skipped (billing not configured). Only in this case can we "complete" signup.
                 setIsComplete(true);
                 console.log('✅ Signup completed (payment skipped)');
                 return;

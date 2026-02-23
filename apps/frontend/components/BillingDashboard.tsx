@@ -88,7 +88,7 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
       if (response.ok) {
         const data = response.data as { redirect_url?: string };
         setRedirectUrl(data.redirect_url || '');
-        // Redirect to GoCardless
+        // Redirect to Stripe
         if (data.redirect_url) {
           window.open(data.redirect_url, '_blank');
         }
@@ -372,7 +372,7 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-4">
-                A new window should have opened for you to set up your payment method with GoCardless.
+                A new window should have opened for you to set up your payment method with Stripe.
                 If it didn't open, click the button below.
               </p>
               <Button

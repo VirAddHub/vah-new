@@ -181,3 +181,34 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
     }
     next();
 }
+
+/**
+ * Require an active subscription.
+ * Returns 401 if not authenticated, 403 with reason if subscription is not active.
+ * Admin users bypass this check.
+ */
+export function requireActiveSubscription(req: Request, res: Response, next: NextFunction) {
+    if (!req.user?.id) {
+        return res.status(401).json({ ok: false, error: 'unauthenticated' });
+    }
+    if (req.user?.is_admin) {
+        return next();
+    }
+    const pool = getPool();
+    pool.query(
+        `SELECT status FROM subscription WHERE user_id = $1 LIMIT 1`,
+        [req.user.id]
+    ).then(result => {
+        if (result.rows.length === 0 || result.rows[0].status !== 'active') {
+            return res.status(403).json({
+                ok: false,
+                error: 'subscription_required',
+                message: 'An active subscription is required to access this resource.',
+            });
+        }
+        next();
+    }).catch(err => {
+        logger.error('[auth] subscription_check_failed', { message: errorMessage(err) });
+        return res.status(500).json({ ok: false, error: 'internal_error' });
+    });
+}

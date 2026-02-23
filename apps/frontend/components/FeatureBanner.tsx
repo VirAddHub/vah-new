@@ -2,7 +2,7 @@ import { Alert, AlertDescription } from "./ui/alert";
 import { FEATURES } from "../lib/config";
 
 interface FeatureBannerProps {
-  feature: 'gocardless' | 'sumsub';
+  feature: 'sumsub';
   children: React.ReactNode;
 }
 
@@ -12,7 +12,6 @@ export function FeatureBanner({ feature, children }: FeatureBannerProps) {
   }
 
   const messages = {
-    gocardless: "Payments are being set up. You can still view invoices and change plans; card setup will be available shortly.",
     sumsub: "Identity verification will be enabled after our KYC provider is connected."
   };
 

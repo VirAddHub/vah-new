@@ -50,6 +50,7 @@ interface User {
     is_admin?: boolean | 0 | 1;
     role?: string;
     kyc_status?: string;
+    plan_status?: string;
     plan?: string;
     created_at?: string;
     last_login?: string;
@@ -157,6 +158,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     last_name: userData.last_name,
                     is_admin: !!userData.is_admin,
                     role: userData.role === 'admin' ? 'admin' : 'user',
+                    plan_status: userData.plan_status,
+                    kyc_status: userData.kyc_status,
                 };
 
                 // Only log success if we have a valid user with ID

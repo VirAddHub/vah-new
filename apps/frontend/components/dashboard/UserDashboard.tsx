@@ -522,7 +522,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   }, []);
 
   // Forwarding confirmation handler
-  const handleForwardingConfirm = async (paymentMethod: 'monthly' | 'gocardless') => {
+  const handleForwardingConfirm = async (paymentMethod: 'monthly' | 'stripe') => {
     if (!selectedMailForForwarding) return;
 
     try {

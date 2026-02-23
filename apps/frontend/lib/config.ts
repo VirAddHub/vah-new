@@ -12,7 +12,6 @@ export const DASHBOARD_MODE: DashboardMode =
 
 // Feature flags for integrations
 export const FEATURES = {
-  gocardless: process.env.NEXT_PUBLIC_FEATURE_GOCARDLESS === "true",
   sumsub: process.env.NEXT_PUBLIC_FEATURE_SUMSUB === "true",
   payments: process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === "true",
 };

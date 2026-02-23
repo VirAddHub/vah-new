@@ -77,7 +77,6 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
         return;
       }
 
-      // Handle skip payment case (GoCardless not configured)
       if (data.data?.skip_payment) {
         toast({
           title: "Payment setup",
@@ -117,15 +116,13 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
         throw new Error(data.error || 'Failed to create update bank link');
       }
 
-      // Open GoCardless secure flow in new window
       if (data.data?.url || data.data?.redirect_url) {
         window.open(data.data.url || data.data.redirect_url, '_blank', 'noopener,noreferrer');
         toast({
           title: "Done",
-          description: "Check GoCardless in the new tab.",
+          description: "Complete the update in the new tab via Stripe.",
         });
 
-        // Refresh data after action
         await mutateOverview();
         if (onRefresh) {
           await onRefresh();
@@ -208,12 +205,11 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
         throw new Error(data.error || 'Failed to create reauthorization link');
       }
 
-      // Open GoCardless secure flow in new window
       if (data.data?.url || data.data?.redirect_url) {
         window.open(data.data.url || data.data.redirect_url, '_blank', 'noopener,noreferrer');
         toast({
           title: "Done",
-          description: "Check GoCardless in the new tab.",
+          description: "Complete the reauthorisation in the new tab via Stripe.",
         });
 
         // Refresh data after action

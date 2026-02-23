@@ -46,7 +46,7 @@ interface ForwardingConfirmationModalProps {
     onClose: () => void;
     mailItem: any;
     userProfile: any;
-    onConfirm: (paymentMethod: 'monthly' | 'gocardless') => Promise<void>;
+    onConfirm: (paymentMethod: 'monthly' | 'stripe') => Promise<void>;
 }
 
 export function ForwardingConfirmationModal({
@@ -58,7 +58,7 @@ export function ForwardingConfirmationModal({
 }: ForwardingConfirmationModalProps) {
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
-    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'monthly' | 'gocardless' | null>(null);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'monthly' | 'stripe' | null>(null);
     const [userPlan, setUserPlan] = useState<any>(null);
 
     // Determine user's plan type
@@ -72,7 +72,7 @@ export function ForwardingConfirmationModal({
             });
 
             // Auto-select payment method based on plan
-            setSelectedPaymentMethod(hasYearlyPlan ? 'gocardless' : 'monthly');
+            setSelectedPaymentMethod(hasYearlyPlan ? 'stripe' : 'monthly');
         }
     }, [userProfile]);
 
@@ -186,25 +186,25 @@ export function ForwardingConfirmationModal({
                                     ) : (
                                         <div className="space-y-2">
                                             <div
-                                                className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedPaymentMethod === 'gocardless'
+                                                className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedPaymentMethod === 'stripe'
                                                     ? 'border-primary bg-primary/5'
                                                     : 'border-gray-200 hover:border-gray-300'
                                                     }`}
-                                                onClick={() => setSelectedPaymentMethod('gocardless')}
+                                                onClick={() => setSelectedPaymentMethod('stripe')}
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`w-4 h-4 rounded-full border-2 ${selectedPaymentMethod === 'gocardless'
+                                                    <div className={`w-4 h-4 rounded-full border-2 ${selectedPaymentMethod === 'stripe'
                                                         ? 'border-primary bg-primary'
                                                         : 'border-gray-300'
                                                         }`}>
-                                                        {selectedPaymentMethod === 'gocardless' && (
+                                                        {selectedPaymentMethod === 'stripe' && (
                                                             <div className="w-full h-full rounded-full bg-white scale-50"></div>
                                                         )}
                                                     </div>
                                                     <div className="flex-1">
                                                         <div className="flex items-center gap-2">
                                                             <CreditCard className="h-4 w-4" />
-                                                            <span className="font-medium">Pay Now with GoCardless</span>
+                                                            <span className="font-medium">Pay Now via Stripe</span>
                                                         </div>
                                                         <p className="text-sm text-muted-foreground">
                                                             £2.00 will be charged immediately via direct debit
@@ -223,7 +223,7 @@ export function ForwardingConfirmationModal({
                                     </p>
                                     {userPlan?.type === 'yearly' && (
                                         <p className="text-xs text-gray-500 mt-1">
-                                            Since you're on a yearly plan, payment will be processed immediately via GoCardless.
+                                            Since you're on a yearly plan, payment will be processed immediately via Stripe.
                                         </p>
                                     )}
                                 </div>
