@@ -87,11 +87,11 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
 
       if (response.ok) {
         const data = response.data as { redirect_url?: string };
-        setRedirectUrl(data.redirect_url || '');
-        // Redirect to Stripe
         if (data.redirect_url) {
-          window.open(data.redirect_url, '_blank');
+          window.location.href = data.redirect_url;
+          return;
         }
+        setRedirectUrl(data.redirect_url || '');
       } else {
         setError('Failed to create payment method');
       }
@@ -372,15 +372,13 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-4">
-                A new window should have opened for you to set up your payment method with Stripe.
-                If it didn't open, click the button below.
+                Click the button below to continue setting up your payment method with Stripe.
               </p>
               <Button
-                onClick={() => window.open(redirectUrl, '_blank')}
+                onClick={() => { window.location.href = redirectUrl; }}
                 className="flex items-center gap-2"
               >
-                <ExternalLink className="h-4 w-4" />
-                Open Payment Setup
+                Continue Payment Setup
               </Button>
             </CardContent>
           </Card>

@@ -116,20 +116,12 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
         throw new Error(data.error || 'Failed to create update bank link');
       }
 
-      if (data.data?.url || data.data?.redirect_url) {
-        window.open(data.data.url || data.data.redirect_url, '_blank', 'noopener,noreferrer');
-        toast({
-          title: "Done",
-          description: "Complete the update in the new tab via Stripe.",
-        });
-
-        await mutateOverview();
-        if (onRefresh) {
-          await onRefresh();
-        }
-      } else {
-        throw new Error('No redirect URL received');
+      const redirectUrl = data.data?.url || data.data?.redirect_url;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+        return;
       }
+      throw new Error('No redirect URL received');
     } catch (error: any) {
       toast({
         title: "Error",
@@ -205,21 +197,12 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
         throw new Error(data.error || 'Failed to create reauthorization link');
       }
 
-      if (data.data?.url || data.data?.redirect_url) {
-        window.open(data.data.url || data.data.redirect_url, '_blank', 'noopener,noreferrer');
-        toast({
-          title: "Done",
-          description: "Complete the reauthorisation in the new tab via Stripe.",
-        });
-
-        // Refresh data after action
-        await mutateOverview();
-        if (onRefresh) {
-          await onRefresh();
-        }
-      } else {
-        throw new Error('No redirect URL received');
+      const redirectUrl = data.data?.url || data.data?.redirect_url;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+        return;
       }
+      throw new Error('No redirect URL received');
     } catch (error: any) {
       toast({
         title: "Error",
