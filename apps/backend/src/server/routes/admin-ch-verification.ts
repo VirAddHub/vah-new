@@ -5,6 +5,7 @@ import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { sendChVerificationReminder } from '../../lib/mailer';
+import { param } from '../../lib/express-params';
 import fs from 'fs';
 import path from 'path';
 
@@ -166,7 +167,7 @@ router.get('/ch-verification/submissions', requireAdmin, async (req: Request, re
 router.post('/ch-verification/:userId/approve', requireAdmin, async (req: Request, res: Response) => {
     const pool = getPool();
     const adminId = req.user!.id;
-    const userId = parseInt(req.params.userId);
+    const userId = parseInt(param(req, 'userId'), 10);
     const { notes } = req.body ?? {};
 
     if (Number.isNaN(userId)) {
@@ -205,7 +206,7 @@ router.post('/ch-verification/:userId/approve', requireAdmin, async (req: Reques
 router.post('/ch-verification/:userId/reject', requireAdmin, async (req: Request, res: Response) => {
     const pool = getPool();
     const adminId = req.user!.id;
-    const userId = parseInt(req.params.userId);
+    const userId = parseInt(param(req, 'userId'), 10);
     const { reason } = req.body ?? {};
 
     if (Number.isNaN(userId)) {
@@ -248,7 +249,7 @@ router.post('/ch-verification/:userId/reject', requireAdmin, async (req: Request
  */
 router.get('/ch-verification/proof/:userId', requireAdmin, async (req: Request, res: Response) => {
     const pool = getPool();
-    const userId = parseInt(req.params.userId, 10);
+    const userId = parseInt(param(req, 'userId'), 10);
 
     if (Number.isNaN(userId)) {
         return res.status(400).json({ ok: false, error: 'invalid_user_id' });

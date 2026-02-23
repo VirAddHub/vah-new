@@ -4,6 +4,7 @@
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import * as businessOwnersService from '../services/businessOwners';
+import { param } from '../../lib/express-params';
 
 const router = Router();
 
@@ -130,7 +131,7 @@ router.post('/:id/resend', requireAuth, async (req: Request, res: Response) => {
     try {
         const userId = toNumberId(req.user!.id);
         if (!Number.isFinite(userId)) return res.status(401).json({ ok: false, error: 'unauthenticated' });
-        const ownerId = parseInt(req.params.id, 10);
+        const ownerId = parseInt(param(req, 'id'), 10);
         
         if (isNaN(ownerId)) {
             return res.status(400).json({

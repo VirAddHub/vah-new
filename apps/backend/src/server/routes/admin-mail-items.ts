@@ -5,6 +5,7 @@ import { Router, Request, Response } from 'express';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
+import { param } from '../../lib/express-params';
 
 const router = Router();
 
@@ -193,7 +194,7 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
  * Get specific mail item (admin only)
  */
 router.get('/mail-items/:id', requireAdmin, async (req: Request, res: Response) => {
-    const mailId = parseInt(req.params.id);
+    const mailId = parseInt(param(req, 'id'), 10);
     const pool = getPool();
 
     if (!mailId) {
@@ -243,7 +244,7 @@ router.get('/mail-items/:id', requireAdmin, async (req: Request, res: Response) 
  * Update mail item (admin only)
  */
 router.put('/mail-items/:id', requireAdmin, async (req: Request, res: Response) => {
-    const mailId = parseInt(req.params.id);
+    const mailId = parseInt(param(req, 'id'), 10);
     const adminId = req.user!.id;
     const pool = getPool();
 
@@ -334,7 +335,7 @@ router.put('/mail-items/:id', requireAdmin, async (req: Request, res: Response) 
  * Log physical dispatch for mail item (admin only)
  */
 router.post('/mail-items/:id/log-physical-dispatch', requireAdmin, async (req: Request, res: Response) => {
-    const mailId = parseInt(req.params.id);
+    const mailId = parseInt(param(req, 'id'), 10);
     const adminId = req.user!.id;
     const { tracking_number, courier, dispatched_at } = req.body;
     const pool = getPool();
@@ -405,11 +406,11 @@ router.post('/mail-items/:id/log-physical-dispatch', requireAdmin, async (req: R
  * - Prevents duplicate destruction records (UNIQUE constraint on mail_item_id)
  */
 router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const id = param(req, 'id');
     const pool = getPool();
     const adminUser = (req as any).user;
 
-    if (!id || isNaN(parseInt(id))) {
+    if (!id || isNaN(parseInt(id, 10))) {
         return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 

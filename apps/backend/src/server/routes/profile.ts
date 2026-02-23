@@ -9,6 +9,7 @@ import path from 'path';
 import multer, { FileFilterCallback } from 'multer';
 import { fileTypeFromBuffer } from 'file-type';
 import { logger } from '../../lib/logger';
+import { param } from '../../lib/express-params';
 
 const router = Router();
 
@@ -1478,7 +1479,7 @@ router.post("/ch-verification", requireAuth, chVerificationUpload.single('file')
  */
 router.get("/media/ch-verification/:filename", requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
-    const { filename } = req.params;
+    const filename = param(req, 'filename');
     const pool = getPool();
 
     try {

@@ -6,6 +6,7 @@ import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { TimestampUtils } from '../../lib/timestamp-utils';
 import { toDateOrNull, nowMs } from '../helpers/time';
+import { param } from '../../lib/express-params';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { sendTemplateEmail, buildAppUrl } from '../../lib/mailer';
 import { Templates } from '../../lib/postmark-templates';
@@ -410,7 +411,7 @@ router.get('/users/deleted', adminUsersLimiter, requireAdmin, async (req: Reques
  * Get specific user (admin only)
  */
 router.get('/users/:id', requireAdmin, async (req: Request, res: Response) => {
-    const userId = parseInt(req.params.id);
+    const userId = parseInt(param(req, 'id'), 10);
     const pool = getPool();
 
     if (!userId) {
@@ -440,7 +441,7 @@ router.get('/users/:id', requireAdmin, async (req: Request, res: Response) => {
  * Update user (admin only)
  */
 router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => {
-    const userId = parseInt(req.params.id);
+    const userId = parseInt(param(req, 'id'), 10);
     const adminId = req.user!.id;
     const pool = getPool();
 
@@ -622,7 +623,7 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
 router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) => {
     const permanentParam = req.query.permanent;
     const permanent = typeof permanentParam === 'string' && permanentParam.toLowerCase() === 'true';
-    const userId = parseInt(req.params.id);
+    const userId = parseInt(param(req, 'id'), 10);
     const adminId = req.user!.id;
     const pool = getPool();
 
@@ -736,7 +737,7 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
  * Restore soft-deleted user (admin only)
  */
 router.post('/users/:id/restore', requireAdmin, async (req: Request, res: Response) => {
-    const userId = parseInt(req.params.id);
+    const userId = parseInt(param(req, 'id'), 10);
     const adminId = req.user!.id;
     const pool = getPool();
 

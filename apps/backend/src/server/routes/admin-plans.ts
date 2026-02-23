@@ -6,6 +6,7 @@ import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { pricingService } from '../services/pricing';
 import { TimestampUtils } from '../../lib/timestamp-utils';
+import { param } from '../../lib/express-params';
 
 const router = Router();
 
@@ -58,7 +59,7 @@ router.get('/plans', requireAdmin, async (req: Request, res: Response) => {
  * Get specific plan (admin only)
  */
 router.get('/plans/:id', requireAdmin, async (req: Request, res: Response) => {
-    const planId = parseInt(req.params.id);
+    const planId = parseInt(param(req, 'id'), 10);
     const pool = getPool();
 
     if (!planId) {
@@ -191,7 +192,7 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
         'Expires': '0'
     });
 
-    const planId = parseInt(req.params.id);
+    const planId = parseInt(param(req, 'id'), 10);
     const adminId = req.user?.id;
     const pool = getPool();
 
@@ -470,7 +471,7 @@ router.delete('/plans/:id', requireAdmin, async (req: Request, res: Response) =>
         'Expires': '0'
     });
 
-    const planId = parseInt(req.params.id);
+    const planId = parseInt(param(req, 'id'), 10);
     const pool = getPool();
 
     if (!planId) {

@@ -3,6 +3,7 @@
 
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
+import { param } from '../../lib/express-params';
 import { sendSupportRequestReceived, sendSupportRequestClosed } from '../../lib/mailer';
 import { buildAppUrl } from '../../lib/mailer';
 
@@ -132,7 +133,7 @@ router.post('/tickets', requireAuth, async (req: Request, res: Response) => {
  */
 router.post('/tickets/:id/close', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
-    const ticketId = parseInt(req.params.id);
+    const ticketId = parseInt(param(req, 'id'), 10);
     const pool = getPool();
 
     if (!ticketId) {

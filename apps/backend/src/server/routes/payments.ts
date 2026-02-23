@@ -4,6 +4,7 @@
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { pricingService } from '../services/pricing';
+import { param } from '../../lib/express-params';
 import { gcCreateBrfUrl, gcCompleteFlow } from '../../lib/gocardless';
 import { ensureUserPlanLinked } from '../services/plan-linking';
 import { upsertSubscriptionForUser } from '../services/subscription-linking';
@@ -551,7 +552,7 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
  */
 router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
-    const flowId = req.params.flowId;
+    const flowId = param(req, 'flowId');
     const pool = getPool();
 
     try {

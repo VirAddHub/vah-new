@@ -6,6 +6,7 @@ import { getPool } from '../db';
 import { selectPaged } from '../db-helpers';
 import { createForwardingRequest } from '../../modules/forwarding/forwarding.service';
 import { extractUKPostcode, hasUKPostcode, normalizeUKPostcode, UK_POSTCODE_REGEX } from '../utils/ukPostcode';
+import { param } from '../../lib/express-params';
 
 const router = Router();
 const pool = getPool();
@@ -79,7 +80,7 @@ router.get('/forwarding/requests', requireAuth, async (req: Request, res: Respon
  */
 router.get('/forwarding/requests/:id', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
-    const requestId = parseInt(req.params.id);
+    const requestId = parseInt(param(req, 'id'), 10);
 
     if (!requestId) {
         return res.status(400).json({ ok: false, error: 'invalid_id' });

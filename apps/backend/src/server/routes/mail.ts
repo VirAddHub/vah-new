@@ -7,6 +7,7 @@ import { selectPaged } from '../db-helpers';
 import { extractDrivePathFromSharePointUrl, streamSharePointFileByPath } from '../../services/sharepoint';
 import { logger } from '../../lib/logger';
 import { requireActiveSubscription } from '../../middleware/auth';
+import { param } from '../../lib/express-params';
 
 const router = Router();
 
@@ -149,7 +150,7 @@ router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
  */
 router.get('/mail-items/:id', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
-    const mailId = parseInt(req.params.id);
+    const mailId = parseInt(param(req, 'id'), 10);
     const pool = getPool();
 
     if (!mailId) {
@@ -193,7 +194,7 @@ router.get('/mail-items/:id', requireAuth, async (req: Request, res: Response) =
  */
 router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
-    const mailId = parseInt(req.params.id);
+    const mailId = parseInt(param(req, 'id'), 10);
     const { is_read, subject, tag } = req.body;
     const pool = getPool();
 
@@ -281,7 +282,7 @@ router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response)
  */
 router.post('/mail-items/:id/tag', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
-    const mailId = parseInt(req.params.id);
+    const mailId = parseInt(param(req, 'id'), 10);
     const { tag } = req.body;
     const pool = getPool();
 
@@ -325,7 +326,7 @@ router.post('/mail-items/:id/tag', requireAuth, async (req: Request, res: Respon
  */
 router.delete('/mail-items/:id', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
-    const mailId = parseInt(req.params.id);
+    const mailId = parseInt(param(req, 'id'), 10);
     const pool = getPool();
 
     if (!mailId) {
@@ -362,7 +363,7 @@ router.delete('/mail-items/:id', requireAuth, async (req: Request, res: Response
  */
 router.post('/mail-items/:id/restore', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
-    const mailId = parseInt(req.params.id);
+    const mailId = parseInt(param(req, 'id'), 10);
     const pool = getPool();
 
     if (!mailId) {
@@ -399,7 +400,7 @@ router.post('/mail-items/:id/restore', requireAuth, async (req: Request, res: Re
  */
 router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
+        const id = param(req, 'id');
         const userId = req.user!.id;
         const isAdmin = req.user!.is_admin || false;
 
@@ -458,7 +459,7 @@ router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Re
 router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Response) => {
     try {
         const userId = req.user!.id;
-        const mailId = Number(req.params.id);
+        const mailId = Number(param(req, 'id'));
         const disposition = (String(req.query.disposition || "inline") === "attachment") ? "attachment" : "inline";
 
         // Authorize - get mail item and verify ownership
