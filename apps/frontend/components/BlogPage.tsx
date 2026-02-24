@@ -84,12 +84,11 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Fetch blog posts from API
+    // Fetch blog posts via BFF (same-origin) to avoid CORS and ensure posts load on frontend
     useEffect(() => {
         const fetchBlogPosts = async () => {
             try {
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
-                const response = await fetch(`${apiUrl}/api/blog/posts`);
+                const response = await fetch('/api/bff/blog/list');
 
                 const contentType = response.headers.get("content-type") || "";
                 if (!contentType.toLowerCase().includes("application/json")) {
