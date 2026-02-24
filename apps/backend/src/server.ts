@@ -480,6 +480,8 @@ async function start() {
     app.use('/api/business-owners', businessOwnersRouter); // Mount business owners routes
     app.use('/api', sumsubWebhook);
     app.use('/api', publicPlansRouter);
+    app.use('/api', blogRouter);
+    logger.info('[mount] /api (blog, public) mounted');
     app.use('/api', debugEmailRouter);
 
     // NEW: Mount missing endpoints
@@ -544,8 +546,6 @@ async function start() {
     logger.info('[mount] /api/admin/exports mounted');
     app.use('/api/admin', adminBlogRouter);
     logger.info('[mount] /api/admin (blog) mounted');
-    app.use('/api', blogRouter);
-    logger.info('[mount] /api (blog) mounted');
 
     // Media upload routes
     const adminMediaRouter = require(path.join(routesDir, 'admin-media'));
