@@ -4,6 +4,7 @@ import { useSignup } from '../hooks/useSignup';
 import { SignupStep1 } from './signup/SignupStep1';
 import { SignupStep2 } from './signup/SignupStep2';
 import { SignupStep3 } from './signup/SignupStep3';
+import { FEATURES } from '../lib/config';
 
 interface SignupPageProps {
     onNavigate?: (page: string) => void;
@@ -35,8 +36,10 @@ export function SignupPage({ onNavigate, initialBilling }: SignupPageProps) {
         console.error('SignupPage error:', error);
     }
 
-    // If signup is complete, show success message
-    if (isComplete) {
+    // Only show Welcome when signup is complete AND payment is not required.
+    // When payments are enabled, success is shown on /signup/payment-return after Stripe completes.
+    // Never show Welcome if embedded checkout failed or never mounted.
+    if (isComplete && !FEATURES.payments) {
         return (
             <div className="min-h-screen bg-white flex items-center justify-center p-6">
                 <div className="w-full max-w-2xl text-center">

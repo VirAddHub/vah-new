@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Shield, AlertTriangle, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, CreditCard, Shield, AlertTriangle, Check, Loader2, RotateCcw } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
@@ -130,9 +130,48 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
     // Pre-warm Stripe.js on mount
     useEffect(() => { if (FEATURES.payments) getStripePromise(); }, []);
 
-    // --- Embedded Checkout view ---
+    // --- Embedded Checkout view: stay on Step 3 until Stripe completes. Never show success here. ---
     if (clientSecret) {
         const stripe = getStripePromise();
+        if (!stripe) {
+            return (
+                <main className="flex-1">
+                    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                        <div className="w-full max-w-2xl">
+                            <div className="text-center mb-6">
+                                <h1 className="mb-2">Complete Your Payment</h1>
+                                <p className="text-muted-foreground max-w-lg mx-auto text-sm">
+                                    Your account has been created. Payment setup could not load.
+                                </p>
+                            </div>
+                            <Alert variant="destructive" className="mb-6">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertDescription>
+                                    Payment form could not load. This may be due to a connection issue or missing configuration. Please try again.
+                                </AlertDescription>
+                            </Alert>
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                                <ScrollToTopButton
+                                    onClick={handleRetryCheckout}
+                                    disabled={isProcessing}
+                                    className="h-10 px-6 inline-flex items-center justify-center gap-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-md disabled:opacity-50"
+                                >
+                                    <RotateCcw className="h-4 w-4" />
+                                    Try again
+                                </ScrollToTopButton>
+                                <button
+                                    type="button"
+                                    onClick={onBack}
+                                    className="h-10 px-6 inline-flex items-center justify-center gap-2 text-sm font-medium border border-input bg-background rounded-md hover:bg-accent"
+                                >
+                                    Back
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            );
+        }
         return (
             <main className="flex-1">
                 <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -152,11 +191,9 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                         </div>
 
                         <div className="bg-card rounded-xl border overflow-hidden">
-                            {stripe && (
-                                <EmbeddedCheckoutProvider stripe={stripe} options={{ clientSecret }}>
-                                    <EmbeddedCheckout className="min-h-[400px]" />
-                                </EmbeddedCheckoutProvider>
-                            )}
+                            <EmbeddedCheckoutProvider stripe={stripe} options={{ clientSecret }}>
+                                <EmbeddedCheckout className="min-h-[400px]" />
+                            </EmbeddedCheckoutProvider>
                         </div>
 
                         <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
