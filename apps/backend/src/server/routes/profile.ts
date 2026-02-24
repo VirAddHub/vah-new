@@ -128,6 +128,15 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
 
         const middleNamesSelect = hasMiddleNames ? 'middle_names,' : '';
 
+        // Check if companies_house_number column exists (migration 122 may not have run yet)
+        const hasCompaniesHouseNumber = await pool.query(`
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_schema = 'public' AND table_name = 'user' AND column_name = 'companies_house_number'
+        `).then(r => r.rows.length > 0).catch(() => false);
+
+        const companiesHouseNumberSelect = hasCompaniesHouseNumber ? 'companies_house_number,' : 'NULL::TEXT AS companies_house_number,';
+
         const result = await pool.query(`
             SELECT
                 id,
@@ -138,7 +147,7 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
                 ${middleNamesSelect}
                 phone,
                 company_name,
-                companies_house_number,
+                ${companiesHouseNumberSelect}
                 address_line1,
                 address_line2,
                 city,
