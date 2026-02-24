@@ -482,6 +482,9 @@ async function start() {
     app.use('/api', publicPlansRouter);
     app.use('/api', blogRouter);
     logger.info('[mount] /api (blog, public) mounted');
+    // Public blog cover images (before mail router so unauthenticated requests succeed)
+    app.use('/api', require(path.join(routesDir, 'admin-media')));
+    logger.info('[mount] /api (media/blog, public) mounted');
     app.use('/api', debugEmailRouter);
 
     // NEW: Mount missing endpoints
@@ -547,10 +550,9 @@ async function start() {
     app.use('/api/admin', adminBlogRouter);
     logger.info('[mount] /api/admin (blog) mounted');
 
-    // Media upload routes
+    // Media upload routes (GET /api/media/blog already mounted above for public access)
     const adminMediaRouter = require(path.join(routesDir, 'admin-media'));
     app.use('/api/admin', adminMediaRouter);
-    app.use('/api', adminMediaRouter);
     logger.info('[mount] /api/admin (media) mounted');
     app.use('/api/companies-house', companiesHouseRouter);
     logger.info('[mount] /api/companies-house mounted');
