@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -131,28 +132,26 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F6F6F7] flex flex-col">
-            {/* Back Button */}
-            <div className="absolute top-6 left-6 z-10">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => router.push('/')}
-                    className="flex items-center gap-2 bg-background/90 backdrop-blur-md border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200"
+        <div className="min-h-screen bg-neutral-100 flex flex-col">
+            {/* Back to homepage - top left */}
+            <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10 px-1">
+                <Link
+                    href="/"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
                 >
-                    <ArrowLeft className="h-4 w-4" />
+                    <ArrowLeft className="h-4 w-4 shrink-0" />
                     Back to homepage
-                </Button>
+                </Link>
             </div>
 
-            {/* Main Content */}
-            <div className="flex items-center justify-center flex-1 p-4 pb-20">
-                <div className="w-full max-w-md">
-                    <div className="bg-card rounded-2xl shadow-xl p-8 border border-border">
-                        {/* Header */}
-                        <div className="text-center mb-8">
-                            <h1 className="text-3xl font-bold text-primary mb-2">Login</h1>
-                            <p className="text-muted-foreground">Sign in to your account</p>
+            {/* Centred card */}
+            <div className="flex items-center justify-center flex-1 px-4 sm:px-6 py-12 sm:py-16">
+                <div className="w-full max-w-[420px] sm:max-w-[480px]">
+                    <div className="bg-white rounded-3xl border border-neutral-200 shadow-lg shadow-neutral-200/50 p-6 sm:p-8">
+                        {/* Title & subtitle */}
+                        <div className="mb-6 sm:mb-8">
+                            <h1 className="text-2xl sm:text-3xl font-semibold text-neutral-900">Login</h1>
+                            <p className="mt-1.5 text-neutral-500 text-sm sm:text-base">Sign in to your account</p>
                         </div>
 
                         {/* Success Alert - Email Changed */}
@@ -179,10 +178,10 @@ export default function LoginPage() {
                             </Alert>
                         )}
 
-                        {/* Login Form */}
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Login Form - unchanged behaviour */}
+                        <form onSubmit={handleSubmit} className="space-y-5">
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="email" className="text-neutral-700">Email</Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -191,12 +190,12 @@ export default function LoginPage() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
                                     disabled={loading}
-                                    className="h-11"
+                                    className="h-11 w-full"
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="password" className="text-neutral-700">Password</Label>
                                 <Input
                                     id="password"
                                     type="password"
@@ -205,61 +204,55 @@ export default function LoginPage() {
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
                                     disabled={loading}
-                                    className="h-11"
+                                    className="h-11 w-full"
                                 />
                             </div>
 
                             <Button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full h-11 text-base font-semibold"
+                                className="w-full h-11 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
                             >
                                 {loading ? 'Signing in...' : 'Sign In'}
                             </Button>
+
+                            <p className="text-xs text-neutral-400 text-center">Secure sign in • UK GDPR compliant</p>
                         </form>
 
-                        {/* Footer Links */}
-                        <div className="mt-6 text-center space-y-2">
-                            <button
-                                type="button"
-                                onClick={() => router.push('/signup')}
-                                className="text-sm text-primary hover:underline"
-                            >
-                                Don't have an account? Sign up
-                            </button>
-                            <br />
-                            <button
-                                type="button"
-                                onClick={() => router.push('/reset-password')}
-                                className="text-sm text-primary hover:underline"
-                            >
-                                Forgot your password?
-                            </button>
+                        {/* Forgot password (more prominent) then Sign up */}
+                        <div className="mt-6 space-y-4">
+                            <div className="text-center">
+                                <Link
+                                    href="/reset-password"
+                                    className="text-sm font-medium text-primary hover:underline"
+                                >
+                                    Forgot your password?
+                                </Link>
+                            </div>
+                            <div className="border-t border-neutral-200 pt-4 text-center">
+                                <span className="text-sm text-neutral-500">Don&apos;t have an account? </span>
+                                <Link
+                                    href="/signup"
+                                    className="text-sm font-medium text-primary hover:underline"
+                                >
+                                    Sign up
+                                </Link>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Fixed Footer */}
-            <footer className="fixed bottom-0 left-0 right-0 py-4 px-6 bg-transparent z-10">
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex items-center justify-center md:justify-end gap-3 text-xs text-neutral-500">
-                        <button
-                            type="button"
-                            onClick={() => router.push('/terms')}
-                            className="hover:text-neutral-700 transition-colors"
-                        >
-                            Terms of Service
-                        </button>
-                        <span className="text-neutral-400">·</span>
-                        <button
-                            type="button"
-                            onClick={() => router.push('/privacy')}
-                            className="hover:text-neutral-700 transition-colors"
-                        >
-                            Privacy Policy
-                        </button>
-                    </div>
+            {/* Footer - Terms & Privacy */}
+            <footer className="py-4 px-4 sm:px-6">
+                <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-1 text-xs text-neutral-500">
+                    <Link href="/terms" className="hover:text-neutral-700 transition-colors">
+                        Terms of Service
+                    </Link>
+                    <span className="text-neutral-400" aria-hidden>·</span>
+                    <Link href="/privacy" className="hover:text-neutral-700 transition-colors">
+                        Privacy Policy
+                    </Link>
                 </div>
             </footer>
         </div>
