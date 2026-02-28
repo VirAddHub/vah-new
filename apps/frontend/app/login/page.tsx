@@ -132,129 +132,129 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-neutral-100 flex flex-col">
-            {/* Back to homepage - top left */}
-            <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10 px-1">
-                <Link
-                    href="/"
-                    className="inline-flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
-                >
-                    <ArrowLeft className="h-4 w-4 shrink-0" />
-                    Back to homepage
-                </Link>
-            </div>
+        <div className="min-h-screen bg-zinc-50 flex flex-col">
+            <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 flex flex-col flex-1">
+                {/* Back to homepage - pill, aligned with container */}
+                <div className="pt-4 sm:pt-6 pb-2 z-10">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-700 shadow-sm hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
+                    >
+                        <ArrowLeft className="h-4 w-4 shrink-0" />
+                        Back to homepage
+                    </Link>
+                </div>
 
-            {/* Centred card */}
-            <div className="flex items-center justify-center flex-1 px-4 sm:px-6 py-12 sm:py-16">
-                <div className="w-full max-w-[420px] sm:max-w-[480px]">
-                    <div className="bg-white rounded-3xl border border-neutral-200 shadow-lg shadow-neutral-200/50 p-6 sm:p-8">
-                        {/* Title & subtitle */}
-                        <div className="mb-6 sm:mb-8">
-                            <h1 className="text-2xl sm:text-3xl font-semibold text-neutral-900">Login</h1>
-                            <p className="mt-1.5 text-neutral-500 text-sm sm:text-base">Sign in to your account</p>
-                        </div>
+                {/* Main area - balanced height */}
+                <div className="flex items-center justify-center flex-1 min-h-[calc(100vh-120px)] py-8 sm:py-12">
+                    <div className="w-full max-w-[480px]">
+                        <div className="bg-white rounded-3xl border border-zinc-200 shadow-lg shadow-zinc-200/50 p-6 sm:p-8">
+                            {/* Title & subtitle */}
+                            <div className="mb-6">
+                                <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Login</h1>
+                                <p className="mt-1.5 text-sm text-zinc-500">Sign in to your account</p>
+                            </div>
 
-                        {/* Success Alert - Email Changed */}
-                        {emailChanged && (
-                            <Alert className="mb-6 border-green-500/50 bg-green-50 dark:bg-green-900/20">
-                                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                <AlertDescription className="text-green-800 dark:text-green-200">
-                                    Your email address has been updated successfully. Please log in with your new email address.
-                                </AlertDescription>
-                            </Alert>
-                        )}
+                            {/* Success Alert - Email Changed */}
+                            {emailChanged && (
+                                <Alert className="mb-6 border-green-500/50 bg-green-50 dark:bg-green-900/20">
+                                    <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                    <AlertDescription className="text-green-800 dark:text-green-200">
+                                        Your email address has been updated successfully. Please log in with your new email address.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
 
-                        {/* Error Alert */}
-                        {error && (
-                            <Alert className="mb-6 border-destructive/50 text-destructive">
-                                <AlertDescription className="space-y-2">
-                                    <div className="font-medium">{error}</div>
-                                    {showResetHint && (
-                                        <div className="text-sm text-muted-foreground mt-2">
-                                            Forgot your password? You can reset it below.
-                                        </div>
-                                    )}
-                                </AlertDescription>
-                            </Alert>
-                        )}
+                            {/* Error Alert */}
+                            {error && (
+                                <Alert className="mb-6 border-destructive/50 text-destructive">
+                                    <AlertDescription className="space-y-2">
+                                        <div className="font-medium">{error}</div>
+                                        {showResetHint && (
+                                            <div className="text-sm text-muted-foreground mt-2">
+                                                Forgot your password? You can reset it below.
+                                            </div>
+                                        )}
+                                    </AlertDescription>
+                                </Alert>
+                            )}
 
-                        {/* Login Form - unchanged behaviour */}
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            <div className="space-y-2">
-                                <Label htmlFor="email" className="text-neutral-700">Email</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="you@example.com"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
+                            {/* Login Form - unchanged behaviour */}
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="email" className="text-zinc-700">Email</Label>
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        placeholder="you@example.com"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        required
+                                        disabled={loading}
+                                        className="h-11 w-full"
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="password" className="text-zinc-700">Password</Label>
+                                    <Input
+                                        id="password"
+                                        type="password"
+                                        placeholder="••••••••"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                        disabled={loading}
+                                        className="h-11 w-full"
+                                    />
+                                </div>
+
+                                <Button
+                                    type="submit"
                                     disabled={loading}
-                                    className="h-11 w-full"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="password" className="text-neutral-700">Password</Label>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    placeholder="••••••••"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                    disabled={loading}
-                                    className="h-11 w-full"
-                                />
-                            </div>
-
-                            <Button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full h-11 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
-                            >
-                                {loading ? 'Signing in...' : 'Sign In'}
-                            </Button>
-
-                            <p className="text-xs text-neutral-400 text-center">Secure sign in • UK GDPR compliant</p>
-                        </form>
-
-                        {/* Forgot password (more prominent) then Sign up */}
-                        <div className="mt-6 space-y-4">
-                            <div className="text-center">
-                                <Link
-                                    href="/reset-password"
-                                    className="text-sm font-medium text-primary hover:underline"
+                                    className="w-full h-11 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 hover:brightness-95 transition-[filter,background]"
                                 >
-                                    Forgot your password?
-                                </Link>
-                            </div>
-                            <div className="border-t border-neutral-200 pt-4 text-center">
-                                <span className="text-sm text-neutral-500">Don&apos;t have an account? </span>
-                                <Link
-                                    href="/signup"
-                                    className="text-sm font-medium text-primary hover:underline"
-                                >
-                                    Sign up
-                                </Link>
+                                    {loading ? 'Signing in...' : 'Sign In'}
+                                </Button>
+
+                                <p className="text-xs text-zinc-400 text-center pt-0.5">Secure sign in • UK GDPR compliant</p>
+                            </form>
+
+                            {/* Forgot password then Sign up */}
+                            <div className="mt-6 space-y-4">
+                                <div className="text-center">
+                                    <Link
+                                        href="/reset-password"
+                                        className="text-sm font-medium text-emerald-700 hover:text-emerald-800 transition-colors"
+                                    >
+                                        Forgot your password?
+                                    </Link>
+                                </div>
+                                <div className="border-t border-zinc-200 pt-4 text-center">
+                                    <span className="text-sm text-zinc-500">Don&apos;t have an account? </span>
+                                    <Link
+                                        href="/signup"
+                                        className="text-sm text-primary hover:underline"
+                                    >
+                                        Sign up
+                                    </Link>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Footer - Terms & Privacy */}
-            <footer className="py-4 px-4 sm:px-6">
-                <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-1 text-xs text-neutral-500">
-                    <Link href="/terms" className="hover:text-neutral-700 transition-colors">
+                {/* Footer - Terms & Privacy */}
+                <footer className="py-4 flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-1 text-xs text-zinc-500">
+                    <Link href="/terms" className="hover:text-zinc-700 hover:underline transition-colors">
                         Terms of Service
                     </Link>
-                    <span className="text-neutral-400" aria-hidden>·</span>
-                    <Link href="/privacy" className="hover:text-neutral-700 transition-colors">
+                    <span className="text-zinc-400" aria-hidden>·</span>
+                    <Link href="/privacy" className="hover:text-zinc-700 hover:underline transition-colors">
                         Privacy Policy
                     </Link>
-                </div>
-            </footer>
+                </footer>
+            </div>
         </div>
     );
 }
