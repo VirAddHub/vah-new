@@ -3,6 +3,8 @@
 
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
+import { sendKycSubmitted } from '../../lib/mailer';
+import { buildAppUrl } from '../../lib/mailer';
 
 const router = Router();
 
@@ -120,6 +122,16 @@ router.post('/start', requireAuth, async (req: Request, res: Response) => {
             INSERT INTO notification (user_id, type, title, body, read, created_at)
             VALUES ($1, 'kyc_started', 'KYC Verification Started', 'Your identity verification has been initiated. Please upload your documents.', false, $2)
         `, [userId, Date.now()]);
+
+        // Send "KYC submitted" email (user has started verification / submitted for review)
+        sendKycSubmitted({
+            email: user.email,
+            firstName: user.first_name || undefined,
+            name: user.last_name ? [user.first_name, user.last_name].filter(Boolean).join(' ') : user.first_name || undefined,
+            cta_url: buildAppUrl('/account/verification'),
+        }).catch((err) => {
+            console.error('[POST /api/kyc/start] Failed to send KYC submitted email:', err);
+        });
 
         return res.json({
             ok: true,

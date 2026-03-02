@@ -605,13 +605,30 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         if (typeof kyc_status === 'string' && kyc_status === 'approved' && previousKycStatus !== 'approved') {
             const updatedUser = result.rows[0];
             if (updatedUser && updatedUser.email) {
-                // Fire-and-forget email send
                 import('../../lib/mailer').then(({ sendKycApproved }) => {
                     sendKycApproved({
                         email: updatedUser.email,
                         firstName: updatedUser.first_name || "there",
                     }).catch((err) => {
                         console.error('[Admin] Failed to send KYC approved email:', err);
+                    });
+                }).catch((err) => {
+                    console.error('[Admin] Failed to import mailer:', err);
+                });
+            }
+        }
+
+        // Send KYC rejected email if KYC just became rejected
+        if (typeof kyc_status === 'string' && kyc_status === 'rejected' && previousKycStatus !== 'rejected') {
+            const updatedUser = result.rows[0];
+            if (updatedUser && updatedUser.email) {
+                import('../../lib/mailer').then(({ sendKycRejected }) => {
+                    sendKycRejected({
+                        email: updatedUser.email,
+                        firstName: updatedUser.first_name || "there",
+                        reason: updatedUser.kyc_rejection_reason || undefined,
+                    }).catch((err) => {
+                        console.error('[Admin] Failed to send KYC rejected email:', err);
                     });
                 }).catch((err) => {
                     console.error('[Admin] Failed to import mailer:', err);
