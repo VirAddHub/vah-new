@@ -23,11 +23,10 @@ interface BlogPageProps {
 }
 
 function MobileBlogCard({ post, onNavigate }: { post: BlogPost; onNavigate?: (page: string, data?: any) => void }) {
-    const [imageError, setImageError] = useState(false);
     const title = post.title?.trim() || "Untitled post";
     const excerpt = post.excerpt?.trim();
     const category = post.category?.trim() || "Blog";
-    const hasValidImage = post.imageUrl && !imageError;
+    const hasImage = !!post.imageUrl;
 
     return (
         <article
@@ -43,13 +42,13 @@ function MobileBlogCard({ post, onNavigate }: { post: BlogPost; onNavigate?: (pa
             className="rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
         >
             <div className="relative aspect-[16/9] w-full bg-zinc-100">
-                {hasValidImage ? (
-                    <img
+                {hasImage ? (
+                    <ImageWithFallback
                         src={post.imageUrl}
                         alt={title}
                         className="object-cover w-full h-full"
-                        onError={() => setImageError(true)}
-                        decoding="async"
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        quality={75}
                     />
                 ) : (
                     <div className="absolute inset-0 flex items-center justify-center text-sm text-zinc-500" aria-hidden="true">
