@@ -4,6 +4,7 @@
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { param } from '../../lib/express-params';
+import { safeErrorMessage } from '../../lib/safeError';
 import { sendSupportRequestReceived, sendSupportRequestClosed } from '../../lib/mailer';
 import { buildAppUrl } from '../../lib/mailer';
 
@@ -38,7 +39,7 @@ router.get('/', async (_req: Request, res: Response) => {
         return sendSupportInfo(res);
     } catch (error: any) {
         console.error('[GET /api/support] error:', error);
-        return res.status(500).json({ ok: false, error: 'server_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'server_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -51,7 +52,7 @@ router.get('/info', async (_req: Request, res: Response) => {
         return sendSupportInfo(res);
     } catch (error: any) {
         console.error('[GET /api/support/info] error:', error);
-        return res.status(500).json({ ok: false, error: 'server_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'server_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -74,7 +75,7 @@ router.get('/tickets', requireAuth, async (req: Request, res: Response) => {
         return res.json({ ok: true, data: result.rows });
     } catch (error: any) {
         console.error('[GET /api/support/tickets] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -123,7 +124,7 @@ router.post('/tickets', requireAuth, async (req: Request, res: Response) => {
         return res.json({ ok: true, data: ticket });
     } catch (error: any) {
         console.error('[POST /api/support/tickets] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -179,7 +180,7 @@ router.post('/tickets/:id/close', requireAuth, async (req: Request, res: Respons
         return res.json({ ok: true });
     } catch (error: any) {
         console.error('[POST /api/support/tickets/:id/close] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 

@@ -18,30 +18,48 @@ const loginSchema = z.object({
     password: z.string().min(1, "Password is required."),
 });
 
-// Test database connection endpoint
-router.get("/test-db", async (req, res) => {
+/**
+ * FIND-01: devOnly guard — all debug/test endpoints must pass this middleware.
+ * Returns 404 in production (so these routes appear entirely absent to attackers).
+ * In non-production environments, requires the DEV_SEED_SECRET header.
+ */
+function devOnly(req: any, res: any, next: any) {
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(404).json({ ok: false, error: 'not_found' });
+    }
+    const secret = process.env.DEV_SEED_SECRET;
+    if (!secret || req.headers['x-dev-seed-secret'] !== secret) {
+        return res.status(401).json({ ok: false, error: 'dev_secret_required' });
+    }
+    return next();
+}
+
+// Test database connection endpoint (dev-only)
+router.get("/test-db", devOnly, async (req, res) => {
     try {
         const pool = getPool();
         const result = await pool.query('SELECT NOW() as current_time');
         res.json({ ok: true, message: "Database connected", time: result.rows[0].current_time });
     } catch (error: any) {
-        res.status(500).json({ ok: false, error: "database_error", message: error.message });
+        logger.error('[auth/test-db]', { message: error?.message });
+        res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
 
-// Test user table endpoint
-router.get("/test-user-table", async (req, res) => {
+// Test user table endpoint (dev-only)
+router.get("/test-user-table", devOnly, async (req, res) => {
     try {
         const pool = getPool();
         const result = await pool.query('SELECT COUNT(*) as count FROM "user"');
         res.json({ ok: true, message: "User table exists", user_count: result.rows[0].count });
     } catch (error: any) {
-        res.status(500).json({ ok: false, error: "table_error", message: error.message });
+        logger.error('[auth/test-user-table]', { message: error?.message });
+        res.status(500).json({ ok: false, error: 'table_error' });
     }
 });
 
-// Get user table schema endpoint
-router.get("/user-table-schema", async (req, res) => {
+// Get user table schema endpoint (dev-only)
+router.get("/user-table-schema", devOnly, async (req, res) => {
     try {
         const pool = getPool();
         const result = await pool.query(`
@@ -61,12 +79,13 @@ router.get("/user-table-schema", async (req, res) => {
             columns: result.rows
         });
     } catch (error: any) {
-        res.status(500).json({ ok: false, error: "schema_error", message: error.message });
+        logger.error('[auth/user-table-schema]', { message: error?.message });
+        res.status(500).json({ ok: false, error: 'schema_error' });
     }
 });
 
-// Debug endpoint to check environment variables
-router.get("/debug-env", async (req, res) => {
+// Debug endpoint to check environment variables (dev-only)
+router.get("/debug-env", devOnly, async (req, res) => {
     res.json({
         ok: true,
         env: {
@@ -81,13 +100,14 @@ router.get("/debug-env", async (req, res) => {
     });
 });
 
-// Debug endpoint to check specific user
-router.get("/debug-user/:email", async (req, res) => {
+// Debug endpoint to check specific user (dev-only — NEVER exposes password hash)
+router.get("/debug-user/:email", devOnly, async (req, res) => {
     try {
         const email = req.params.email;
         const pool = getPool();
+        // FIND-01: Explicitly exclude password column — never return hash even in dev
         const user = await pool.query(
-            'SELECT id, email, password, first_name, last_name, is_admin, role, status FROM "user" WHERE email = $1',
+            'SELECT id, email, first_name, last_name, is_admin, role, status FROM "user" WHERE email = $1',
             [email.toLowerCase()]
         );
 
@@ -106,17 +126,16 @@ router.get("/debug-user/:email", async (req, res) => {
                 is_admin: userData.is_admin,
                 role: userData.role,
                 status: userData.status,
-                has_password: !!userData.password,
-                password_length: userData.password ? userData.password.length : 0
             }
         });
     } catch (error: any) {
-        res.status(500).json({ ok: false, error: error.message });
+        logger.error('[auth/debug-user]', { message: error?.message });
+        res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
 
-// Debug endpoint to test password update
-router.post("/debug-update-password", async (req, res) => {
+// Debug endpoint to test password update (dev-only)
+router.post("/debug-update-password", devOnly, async (req, res) => {
     try {
         const { email, newPassword } = req.body;
 
@@ -157,13 +176,13 @@ router.post("/debug-update-password", async (req, res) => {
         });
 
     } catch (error: any) {
-        logger.error('[debug-update-password] error', { message: error?.message });
-        res.status(500).json({ ok: false, error: error.message });
+        logger.error('[auth/debug-update-password] error', { message: error?.message });
+        res.status(500).json({ ok: false, error: 'server_error' });
     }
 });
 
-// Email test endpoint
-router.post("/test-email", async (req, res) => {
+// Email test endpoint (dev-only)
+router.post("/test-email", devOnly, async (req, res) => {
     try {
         const { to } = req.body;
         if (!to) {
@@ -184,8 +203,8 @@ router.post("/test-email", async (req, res) => {
 
         res.json({ ok: true, message: "Test email sent successfully" });
     } catch (error: any) {
-        logger.error('[test-email] error', { message: error?.message });
-        res.status(500).json({ ok: false, error: error.message || 'email_failed' });
+        logger.error('[auth/test-email] error', { message: error?.message });
+        res.status(500).json({ ok: false, error: 'email_failed' });
     }
 });
 
@@ -346,13 +365,13 @@ router.post("/signup", async (req, res) => {
         // Validate additional business owners email constraints
         if (!isSoleController && i.additionalOwners && i.additionalOwners.length > 0) {
             const normalizedMainEmail = normalizedEmail;
-            
+
             // Normalize and validate additional owner emails
             const normalizedOwnerEmails = i.additionalOwners.map(owner => {
                 const normalized = owner.email.trim().toLowerCase();
                 return { original: owner, normalized };
             });
-            
+
             // Check 1: No owner email matches main account email
             const matchingMainEmail = normalizedOwnerEmails.find(
                 ({ normalized }) => normalized === normalizedMainEmail
@@ -364,7 +383,7 @@ router.post("/signup", async (req, res) => {
                     message: "Additional business owner email cannot be the same as the account holder email.",
                 });
             }
-            
+
             // Check 2: No duplicate emails within additional owners
             const emailSet = new Set<string>();
             const duplicateOwner = normalizedOwnerEmails.find(({ normalized }) => {
@@ -594,7 +613,7 @@ router.post("/logout", (req, res) => {
     try {
         // Determine secure environment (matches how cookies are set in login/signup)
         const isSecure = process.env.NODE_ENV === 'production' || process.env.FORCE_SECURE_COOKIES === 'true';
-        
+
         // Clear cookies using clearCookie (works for direct browser requests)
         // Clear vah_session cookie with SAME attributes as when set
         // Matches: httpOnly: true, secure: true, sameSite: 'none', path: '/'
@@ -620,7 +639,7 @@ router.post("/logout", (req, res) => {
         const baseClearOptions = 'Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0';
         const secureFlag = isSecure ? '; Secure' : '';
         const sameSiteValue = isSecure ? 'None' : 'Lax';
-        
+
         // Set explicit Set-Cookie headers for clearing (for BFF forwarding)
         res.append('Set-Cookie', `vah_session=; ${baseClearOptions}; HttpOnly; SameSite=${sameSiteValue}${secureFlag}`);
         res.append('Set-Cookie', `vah_csrf_token=; ${baseClearOptions}; SameSite=${sameSiteValue}${secureFlag}`);

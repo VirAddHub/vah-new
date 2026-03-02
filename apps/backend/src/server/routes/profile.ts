@@ -10,6 +10,7 @@ import multer, { FileFilterCallback } from 'multer';
 import { fileTypeFromBuffer } from 'file-type';
 import { logger } from '../../lib/logger';
 import { param } from '../../lib/express-params';
+import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
 
@@ -110,6 +111,30 @@ function requireAuth(req: Request, res: Response, next: Function) {
     next();
 }
 
+// Cached profile schema flags (avoids querying information_schema on every GET /api/profile)
+let cachedHasMiddleNames: boolean | null = null;
+let cachedHasCompaniesHouseNumber: boolean | null = null;
+
+async function getProfileSchemaFlags(): Promise<{ hasMiddleNames: boolean; hasCompaniesHouseNumber: boolean }> {
+    if (cachedHasMiddleNames !== null && cachedHasCompaniesHouseNumber !== null) {
+        return { hasMiddleNames: cachedHasMiddleNames, hasCompaniesHouseNumber: cachedHasCompaniesHouseNumber };
+    }
+    const pool = getPool();
+    const [middleRes, chRes] = await Promise.all([
+        pool.query(`
+            SELECT column_name FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'user' AND column_name = 'middle_names'
+        `).then(r => r.rows.length > 0).catch(() => false),
+        pool.query(`
+            SELECT column_name FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'user' AND column_name = 'companies_house_number'
+        `).then(r => r.rows.length > 0).catch(() => false),
+    ]);
+    cachedHasMiddleNames = !!middleRes;
+    cachedHasCompaniesHouseNumber = !!chRes;
+    return { hasMiddleNames: cachedHasMiddleNames, hasCompaniesHouseNumber: cachedHasCompaniesHouseNumber };
+}
+
 /**
  * GET /api/profile
  * Get current user's profile
@@ -119,22 +144,8 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
     const pool = getPool();
 
     try {
-        // Check if middle_names column exists
-        const hasMiddleNames = await pool.query(`
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name = 'user' AND column_name = 'middle_names'
-        `).then(r => r.rows.length > 0).catch(() => false);
-
+        const { hasMiddleNames, hasCompaniesHouseNumber } = await getProfileSchemaFlags();
         const middleNamesSelect = hasMiddleNames ? 'middle_names,' : '';
-
-        // Check if companies_house_number column exists (migration 122 may not have run yet)
-        const hasCompaniesHouseNumber = await pool.query(`
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_schema = 'public' AND table_name = 'user' AND column_name = 'companies_house_number'
-        `).then(r => r.rows.length > 0).catch(() => false);
-
         const companiesHouseNumberSelect = hasCompaniesHouseNumber ? 'companies_house_number,' : 'NULL::TEXT AS companies_house_number,';
 
         const result = await pool.query(`
@@ -183,13 +194,6 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
 
         const user = result.rows[0];
 
-        // 🔍 STEP 1: Log DB value
-        console.log("🟢 PROFILE DB ROW:", {
-            userId: user.id,
-            forwarding_address: user.forwarding_address,
-            rawUser: user,
-        });
-
         // Compute identity compliance status
         const { computeIdentityCompliance } = await import('../services/compliance');
         const compliance = await computeIdentityCompliance(user);
@@ -198,29 +202,18 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
         // True if user declared they are NOT the sole controller
         const controllersVerificationRequired = user.is_sole_controller === false;
 
-        // 🔍 STEP 2: Log API response shape
-        const response = {
+        return res.json({
             ok: true,
             data: {
                 ...user,
                 compliance,
                 controllers_verification_required: controllersVerificationRequired,
             }
-        };
-
-        console.log("🟦 PROFILE API RESPONSE:", {
-            ok: response.ok,
-            data: {
-                id: response.data.id,
-                email: response.data.email,
-                forwarding_address: response.data.forwarding_address,
-            }
         });
-
-        return res.json(response);
     } catch (error: any) {
         logger.error('[GET /api/profile] error', { message: error?.message ?? String(error) });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        // FIND-05: Never leak raw DB error messages to clients
+        return res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
 
@@ -265,7 +258,8 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
         return res.json({ ok: true, data: { me: result.rows[0] } });
     } catch (error: any) {
         logger.error('[GET /api/profile/me] error', { message: error?.message ?? String(error) });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        // FIND-05: Never leak raw DB error messages to clients
+        return res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
 
@@ -284,6 +278,27 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
 
     // EXPLICIT ALLOWLIST: Only these fields can be updated via profile endpoint
     // Note: email and phone should use /api/profile/contact endpoint (email requires verification)
+    // FIND-08: Zod validation — string length limits prevent oversized payloads and ReDoS
+    const { z } = await import('zod').catch(() => ({ z: null }));
+    if (z) {
+        const schema = z.object({
+            first_name: z.string().max(100).optional(),
+            last_name: z.string().max(100).optional(),
+            middle_names: z.string().max(200).optional(),
+            forwarding_address: z.string().max(1000).optional(),
+            name: z.string().max(200).optional(),
+            company_name: z.string().max(255).optional(),
+        });
+        const parsed = schema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({
+                ok: false,
+                error: 'validation_error',
+                message: 'One or more fields exceed the maximum allowed length.',
+            });
+        }
+    }
+
     const ALLOWED_FIELDS = [
         'first_name',
         'last_name',
@@ -488,9 +503,12 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
         return res.json({ ok: true, data: newUser });
     } catch (error: any) {
         logger.error('[PATCH /api/profile] error', { message: error?.message ?? String(error) });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
+
+// Companies House number: 8 digits OR 2 letters + 6 digits (case-insensitive)
+const CH_NUMBER_RE = /^([0-9]{8}|[A-Za-z]{2}[0-9]{6})$/;
 
 /**
  * PATCH /api/profile/company-details
@@ -507,6 +525,13 @@ router.patch("/company-details", requireAuth, async (req: Request, res: Response
             ok: false,
             error: 'company_number_required',
             message: 'Company number is required.',
+        });
+    }
+    if (!CH_NUMBER_RE.test(company_number)) {
+        return res.status(400).json({
+            ok: false,
+            error: 'invalid_company_number',
+            message: 'Invalid Companies House number format. Use 8 digits or 2 letters followed by 6 digits.',
         });
     }
 
@@ -547,7 +572,7 @@ router.patch("/company-details", requireAuth, async (req: Request, res: Response
         });
     } catch (error: any) {
         logger.error('[PATCH /api/profile/company-details] error', { message: error?.message ?? String(error) });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -659,6 +684,31 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
         values.push(phone);
     }
     if (email !== undefined) {
+        // FIND-04: Email changes require re-authentication — an attacker with a hijacked session
+        // must not be able to lock out the legitimate owner by changing their email.
+        const { currentPassword } = req.body;
+        if (!currentPassword) {
+            return res.status(400).json({
+                ok: false,
+                error: 'current_password_required',
+                message: 'Your current password is required to change your email address.'
+            });
+        }
+
+        // Verify the current password
+        const bcrypt = await import('bcrypt');
+        const pwRow = await pool.query('SELECT password FROM "user" WHERE id = $1', [userId]);
+        const isPasswordValid = pwRow.rows[0]?.password
+            ? await bcrypt.compare(currentPassword, pwRow.rows[0].password)
+            : false;
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                ok: false,
+                error: 'incorrect_current_password',
+                message: 'The password you entered is incorrect.'
+            });
+        }
+
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
@@ -771,7 +821,7 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
         return res.json({ ok: true, data: newUser });
     } catch (error: any) {
         logger.error('[PATCH /api/profile/me] error', { message: error?.message ?? String(error) });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -847,7 +897,7 @@ router.get("/registered-office-address", requireAuth, async (req: Request, res: 
         });
     } catch (error: any) {
         logger.error('[GET /api/profile/registered-office-address] error', { message: error?.message ?? String(error) });
-        return res.status(500).json({ ok: false, error: 'server_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'server_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -1069,12 +1119,12 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.fillColor('#4b5563') // gray-600
             .fontSize(9.25) // text-sm equivalent
             .font(FONT.regular)
-            .text(dateText, contentX, logoY, { 
-                width: contentW, 
+            .text(dateText, contentX, logoY, {
+                width: contentW,
                 align: 'right',
-                lineGap: BASE.lineGap 
+                lineGap: BASE.lineGap
             });
-        
+
         // Header divider - 2px solid black bottom border (per design spec)
         doc.strokeColor('#000000') // Black
             .lineWidth(2) // 2px
@@ -1142,7 +1192,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
                 return Math.max(labelH, valueH) + (10 * scale); // Further reduced gap (8px -> 10px scaled)
             };
 
-            const verifiedSectionH = 
+            const verifiedSectionH =
                 (16 * scale) + // Further reduced gap after title (12px -> 16px scaled)
                 hRow('Registered Office Address', formattedAddr) +
                 hRow('Authorised Company', businessName) +
@@ -1233,10 +1283,10 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         // Labels column: fixed 200px, Values column: flexible
         const labelColWidth = 200;
         const valueColWidth = contentW - labelColWidth - 32; // 32px gap (gap-x-8)
-        
+
         // Format address with line break after SE1
         const formattedAddress = registeredBusinessAddress.replace('SE1 3PH', 'SE1\n3PH');
-        
+
         // Row 1: Registered Office Address (bold label, dark gray #374151)
         doc.fillColor(COLORS.label)
             .fontSize(TYPE.small)
@@ -1250,7 +1300,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             doc.heightOfString('Registered Office Address', { width: labelColWidth }),
             doc.heightOfString(formattedAddress, { width: valueColWidth, lineGap: chosen.lineGap })
         ) + 10; // Further reduced gap (closer spacing, ensure one page)
-        
+
         // Row 2: Authorised Company (bold label)
         doc.fillColor(COLORS.label)
             .fontSize(TYPE.small)
@@ -1264,7 +1314,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             doc.heightOfString('Authorised Company', { width: labelColWidth }),
             doc.heightOfString(businessName, { width: valueColWidth })
         ) + 10; // Further reduced gap (closer spacing, ensure one page)
-        
+
         // Row 3: Date of issue (bold label)
         doc.fillColor(COLORS.label)
             .fontSize(TYPE.small)
@@ -1278,7 +1328,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             doc.heightOfString('Date of issue', { width: labelColWidth }),
             doc.heightOfString(currentDate, { width: valueColWidth })
         ) + 16; // pb-8 equivalent (further reduced)
-        
+
         // Bottom border for verified details section
         doc.strokeColor(COLORS.border) // #e5e7eb
             .lineWidth(1)
@@ -1291,8 +1341,8 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         doc.fillColor('#1f2937') // gray-800
             .fontSize(TYPE.body) // text-sm equivalent
             .font(FONT.regular)
-            .text(statement1, contentX, doc.y, { 
-                width: contentW, 
+            .text(statement1, contentX, doc.y, {
+                width: contentW,
                 lineGap: 6, // Slightly reduced line gap to fit on one page
             });
         doc.y += 20; // Further reduced spacing to fit on one page
@@ -1356,7 +1406,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
 
     } catch (error: any) {
         logger.error('[GET /api/profile/certificate] error', { message: error?.message ?? String(error) });
-        return res.status(500).json({ ok: false, error: 'certificate_generation_failed', message: error.message });
+        return res.status(500).json({ ok: false, error: 'certificate_generation_failed', message: safeErrorMessage(error) });
     }
 });
 
@@ -1399,7 +1449,7 @@ router.get("/ch-verification", requireAuth, async (req: Request, res: Response) 
         });
     } catch (error: any) {
         logger.error('[GET /api/profile/ch-verification] error', { message: error?.message ?? String(error) });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -1478,7 +1528,7 @@ router.post("/ch-verification", requireAuth, chVerificationUpload.single('file')
         });
     } catch (error: any) {
         logger.error('[POST /api/profile/ch-verification] error', { message: error?.message ?? String(error) });
-        return res.status(500).json({ ok: false, error: 'upload_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'upload_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -1529,7 +1579,7 @@ router.get("/media/ch-verification/:filename", requireAuth, async (req: Request,
         fileStream.pipe(res);
     } catch (error: any) {
         logger.error('[GET /api/media/ch-verification/:filename] error', { message: error?.message ?? String(error) });
-        return res.status(500).json({ ok: false, error: 'file_serve_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'file_serve_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -1628,7 +1678,7 @@ router.patch("/controllers", requireAuth, async (req: Request, res: Response) =>
         return res.status(500).json({
             ok: false,
             error: 'database_error',
-            message: error.message,
+            message: safeErrorMessage(error),
         });
     }
 });

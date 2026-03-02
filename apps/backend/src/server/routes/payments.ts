@@ -11,6 +11,7 @@ import { upsertSubscriptionForUser } from '../services/subscription-linking';
 import { upsertGcBillingRequestFlow } from '../db/gcBillingRequestFlow';
 import { sendPlanCancelled, buildAppUrl, sendWelcomeKycEmail } from '../../lib/mailer';
 import { logger } from '../../lib/logger';
+import { safeErrorMessage } from '../../lib/safeError';
 import { getBillingProvider } from '../../config/billing';
 import { createStripeCheckoutSession } from './stripe-checkout';
 
@@ -84,7 +85,7 @@ router.get('/subscriptions/status', requireAuth, async (req: Request, res: Respo
         });
     } catch (error: any) {
         console.error('[GET /api/payments/subscriptions/status] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -148,7 +149,7 @@ router.post('/subscriptions', requireAuth, async (req: Request, res: Response) =
         return res.json({ ok: true, status: newStatus });
     } catch (error: any) {
         console.error('[POST /api/payments/subscriptions] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -426,7 +427,23 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
         const monthlyBrtUrl = (process.env.GC_MONTHLY_BRT_URL || '').trim();
         const annualBrtUrl = (process.env.GC_ANNUAL_BRT_URL || '').trim();
         const brtUrl = cadence === 'annual' ? annualBrtUrl : monthlyBrtUrl;
+
+        // FIND-12: Validate BRT URL is a legitimate GoCardless URL before redirecting user
+        const ALLOWED_BRT_HOSTS = new Set(['pay.gocardless.com']);
+        function isValidBrtUrl(url: string): boolean {
+            try {
+                const parsed = new URL(url);
+                return parsed.protocol === 'https:' && ALLOWED_BRT_HOSTS.has(parsed.hostname);
+            } catch { return false; }
+        }
+
         if (brtUrl) {
+            if (!isValidBrtUrl(brtUrl)) {
+                logger.error('[payments] invalid BRT URL configured — must be https://pay.gocardless.com/*', {
+                    brtHost: (() => { try { return new URL(brtUrl).hostname; } catch { return 'invalid'; } })()
+                });
+                return res.status(503).json({ ok: false, error: 'payment_misconfigured', message: 'Payment service is temporarily unavailable.' });
+            }
             await upsertSubscriptionForUser({
                 pool,
                 userId: Number(userId),
@@ -530,7 +547,7 @@ router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) 
         });
     } catch (err: any) {
         console.error('[GC] redirect-flows failed', {
-            message: err?.message,
+            message: safeErrorMessage(err),
             name: err?.name,
         });
 
@@ -637,7 +654,7 @@ router.post('/redirect-flows/:flowId/complete', requireAuth, async (req: Request
         });
     } catch (error: any) {
         console.error('[POST /api/payments/redirect-flows/:flowId/complete] error:', error);
-        return res.status(500).json({ ok: false, error: 'completion_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'completion_error', message: safeErrorMessage(error) });
     }
 });
 

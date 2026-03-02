@@ -88,16 +88,22 @@ export function requireCsrfToken(req: Request, res: Response, next: NextFunction
     return next();
   }
 
-  // Skip CSRF for webhook/internal endpoints (they have their own auth)
-  if (fullPath.startsWith('/api/webhooks') || fullPath.startsWith('/api/internal')) {
+  // Skip CSRF for webhook/internal endpoints (they use their own signature-based auth)
+  // IMPORTANT: Do NOT add broad path prefixes here — only exact webhook/internal paths.
+  if (
+    fullPath.startsWith('/api/webhooks/') ||
+    fullPath.startsWith('/api/internal/')
+  ) {
     return next();
   }
 
-  // Skip CSRF for admin API routes - they are server-side BFF routes with session + role checks
-  // Admin routes are protected by authentication and admin role verification, not CSRF
-  if (fullPath.startsWith('/api/admin')) {
+  // Skip CSRF for CSP report endpoint (browser sends POST without our session/CSRF; rate-limited)
+  if (fullPath === '/api/csp-report') {
     return next();
   }
+
+  // Note: /api/admin routes are intentionally NOT excluded — admin mutations must pass CSRF
+  // checks the same as any other authenticated browser session.
 
   // Skip CSRF for auth endpoints (login/signup/password reset) to avoid blocking first-time token establishment.
   // Note: these are still protected by rate limiting and do not leak enumeration details.

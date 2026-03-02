@@ -83,6 +83,14 @@ function parseArgs(): {
 }
 
 async function main(): Promise<void> {
+  // DB Inspect security guard for prod operators
+  if (process.env.NODE_ENV === "production") {
+    if (!process.env.DEV_SEED_SECRET || process.env.DEV_SEED_SECRET.length < 8) {
+      console.error("FATAL: DB Inspector in production requires DEV_SEED_SECRET to be set for trusted operators.");
+      process.exit(1);
+    }
+  }
+
   const url = process.env.DATABASE_URL;
   if (!url || !url.startsWith("postgres")) {
     console.error("DATABASE_URL must be set and point to PostgreSQL.");

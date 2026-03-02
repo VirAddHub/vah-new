@@ -5,15 +5,15 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip internal routes and static assets
-  if (pathname.startsWith('/_next') || 
-      pathname.startsWith('/api') || 
-      pathname.includes('.')) {
+  if (pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('.')) {
     const response = NextResponse.next();
     // Cache static assets for 1 year
-    if (pathname.startsWith('/_next/static/') || 
-        pathname.startsWith('/images/') || 
-        pathname.startsWith('/icons/') ||
-        pathname.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+    if (pathname.startsWith('/_next/static/') ||
+      pathname.startsWith('/images/') ||
+      pathname.startsWith('/icons/') ||
+      pathname.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
       response.headers.set(
         'Cache-Control',
         'public, max-age=31536000, immutable'
@@ -47,11 +47,11 @@ export function middleware(request: NextRequest) {
   if (isProtectedRoute) {
     const sessionCookie = request.cookies.get('vah_session');
     // More strict validation - check for empty, null, undefined, or very short values
-    const hasValidSession = sessionCookie && 
-                           sessionCookie.value !== 'null' && 
-                           sessionCookie.value !== 'undefined' && 
-                           sessionCookie.value !== '' &&
-                           sessionCookie.value.trim().length > 10;
+    const hasValidSession = sessionCookie &&
+      sessionCookie.value !== 'null' &&
+      sessionCookie.value !== 'undefined' &&
+      sessionCookie.value !== '' &&
+      sessionCookie.value.trim().length > 10;
 
     if (!hasValidSession) {
       // Only redirect if not already going to login (prevent redirect loops)
@@ -69,9 +69,9 @@ export function middleware(request: NextRequest) {
   // Cache API routes for 5 minutes with stale-while-revalidate
   if (pathname.startsWith('/api/')) {
     // Skip caching for auth and dynamic endpoints
-    if (pathname.includes('/auth/') || 
-        pathname.includes('/webhooks/') ||
-        pathname.includes('/analytics/')) {
+    if (pathname.includes('/auth/') ||
+      pathname.includes('/webhooks/') ||
+      pathname.includes('/analytics/')) {
       response.headers.set(
         'Cache-Control',
         'no-cache, no-store, must-revalidate'
@@ -85,12 +85,12 @@ export function middleware(request: NextRequest) {
   }
 
   // Cache static pages for 1 hour
-  if (pathname === '/' || 
-      pathname === '/about' || 
-      pathname === '/help' || 
-      pathname === '/terms' || 
-      pathname === '/privacy' ||
-      pathname === '/kyc-policy') {
+  if (pathname === '/' ||
+    pathname === '/about' ||
+    pathname === '/help' ||
+    pathname === '/terms' ||
+    pathname === '/privacy' ||
+    pathname === '/kyc-policy') {
     response.headers.set(
       'Cache-Control',
       'public, s-maxage=3600, stale-while-revalidate=86400'
@@ -111,12 +111,32 @@ export function middleware(request: NextRequest) {
   response.headers.set('Referrer-Policy', 'origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-  // Add CORS headers for API routes
+  // Add CORS headers for API routes (FIND-03: allowlist replaces wildcard)
   if (pathname.startsWith('/api/')) {
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    const ALLOWED_ORIGINS = new Set([
+      'https://virtualaddresshub.co.uk',
+      'https://www.virtualaddresshub.co.uk',
+      // Add staging / preview URLs here if needed:
+      // 'https://staging.virtualaddresshub.co.uk',
+    ]);
+
+    const origin = request.headers.get('origin') ?? '';
+    const allowOrigin = ALLOWED_ORIGINS.has(origin)
+      ? origin
+      : 'https://virtualaddresshub.co.uk'; // Safe default: never wildcard
+
+    response.headers.set('Access-Control-Allow-Origin', allowOrigin);
+    response.headers.set('Vary', 'Origin'); // Ensure CDN/proxy caches per-origin
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token');
   }
+
+  // FIND-07: Add HSTS to enforce HTTPS on all routes
+  response.headers.set(
+    'Strict-Transport-Security',
+    'max-age=63072000; includeSubDomains; preload'
+  );
 
   return response;
 }

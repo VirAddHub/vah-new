@@ -6,6 +6,7 @@ import { getPool } from '../db';
 import { selectPaged } from '../db-helpers';
 import { extractDrivePathFromSharePointUrl, streamSharePointFileByPath } from '../../services/sharepoint';
 import { logger } from '../../lib/logger';
+import { safeErrorMessage } from '../../lib/safeError';
 import { requireActiveSubscription } from '../../middleware/auth';
 import { param } from '../../lib/express-params';
 
@@ -140,7 +141,7 @@ router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
         return res.json({ ok: true, ...result });
     } catch (error: any) {
         logger.error('[mail] list error', { message: error?.message });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -184,7 +185,7 @@ router.get('/mail-items/:id', requireAuth, async (req: Request, res: Response) =
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
         logger.error('[mail] get error', { message: error?.message });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -272,7 +273,7 @@ router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response)
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
         logger.error('[mail] patch error', { message: error?.message });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -316,7 +317,7 @@ router.post('/mail-items/:id/tag', requireAuth, async (req: Request, res: Respon
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
         logger.error('[mail] tag error', { message: error?.message });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -353,7 +354,7 @@ router.delete('/mail-items/:id', requireAuth, async (req: Request, res: Response
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
         logger.error('[mail] delete error', { message: error?.message });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -390,7 +391,7 @@ router.post('/mail-items/:id/restore', requireAuth, async (req: Request, res: Re
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
         logger.error('[mail] restore error', { message: error?.message });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -445,7 +446,7 @@ router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Re
         });
     } catch (error: any) {
         logger.error('[mail] scan-url error', { message: error?.message });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -488,7 +489,7 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
     } catch (err: any) {
         logger.error('[mail] download error', { message: err?.message });
         if (!res.headersSent) {
-            res.status(500).json({ ok: false, error: 'internal_error', message: err.message });
+            res.status(500).json({ ok: false, error: 'internal_error', message: safeErrorMessage(err) });
         }
     }
 });
@@ -535,7 +536,7 @@ router.post('/tags/rename', requireAuth, async (req: Request, res: Response) => 
         });
     } catch (error: any) {
         logger.error('[mail] tag rename error', { message: error?.message });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -581,7 +582,7 @@ router.post('/tags/merge', requireAuth, async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         logger.error('[mail] tag merge error', { message: error?.message });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -607,7 +608,7 @@ router.get('/tags', requireAuth, async (req: Request, res: Response) => {
         return res.json({ ok: true, tags });
     } catch (error: any) {
         logger.error('[mail] tags list error', { message: error?.message });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -638,7 +639,7 @@ router.post('/tags/delete', requireAuth, async (req: Request, res: Response) => 
         return res.json({ ok: true, updatedCount: result.rowCount });
     } catch (error: any) {
         logger.error('[mail] delete tag error', { message: error?.message });
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 

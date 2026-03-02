@@ -75,8 +75,10 @@ async function validateImageMagicBytes(fileBuffer, originalName) {
     }
 }
 
-// Ensure uploads directory exists
-const UPLOADS_DIR = path.join(process.cwd(), "uploads", "blog");
+// Ensure uploads directory exists. Use DATA_DIR for persistent storage (e.g. Render disk at /var/data)
+// so blog cover images survive redeploys. See render.yaml: disk mountPath + DATA_DIR env.
+const basePath = process.env.DATA_DIR ? process.env.DATA_DIR : process.cwd();
+const UPLOADS_DIR = path.join(basePath, "uploads", "blog");
 if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }

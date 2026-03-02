@@ -211,7 +211,7 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
         });
     } catch (error: any) {
         console.error('[GET /api/admin/users] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
 
@@ -259,7 +259,6 @@ router.get('/users/search', adminUsersLimiter, requireAdmin, async (req: Request
         return res.status(500).json({
             ok: false,
             error: 'database_error',
-            message: error.message,
         });
     }
 });
@@ -305,7 +304,7 @@ router.get('/users/stats', requireAdmin, async (req: Request, res: Response) => 
         });
     } catch (error: any) {
         console.error('[GET /api/admin/users/stats] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
 
@@ -402,7 +401,7 @@ router.get('/users/deleted', adminUsersLimiter, requireAdmin, async (req: Reques
         });
     } catch (error: any) {
         console.error('[GET /api/admin/users/deleted] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
 
@@ -420,7 +419,15 @@ router.get('/users/:id', requireAdmin, async (req: Request, res: Response) => {
 
     try {
         const result = await pool.query(`
-            SELECT u.*
+            SELECT
+                u.id, u.email, u.first_name, u.last_name, u.company_name,
+                u.is_admin, u.is_staff, u.status, u.plan_status, u.plan_id,
+                u.kyc_status, u.kyc_approved_at, u.kyc_rejection_reason,
+                u.companies_house_verified, u.ch_verification_status,
+                u.subscription_status, u.stripe_customer_id,
+                u.gocardless_customer_id, u.gocardless_mandate_id,
+                u.phone, u.forwarding_address, u.created_at, u.updated_at,
+                u.last_active_at, u.last_login_at, u.deleted_at, u.expires_at
             FROM "user" u
             WHERE u.id = $1
         `, [userId]);
@@ -432,7 +439,7 @@ router.get('/users/:id', requireAdmin, async (req: Request, res: Response) => {
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
         console.error('[GET /api/admin/users/:id] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
 
@@ -584,11 +591,15 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
             values
         );
 
-        // Log admin action
+        // Log admin action — FIND-09: sanitise body before storing (strip password/token fields)
+        const SENSITIVE_AUDIT_FIELDS = new Set(['password', 'password_hash', 'token', 'secret', 'password_reset_token', 'password_reset_expires']);
+        const sanitisedBody = Object.fromEntries(
+            Object.entries(req.body).filter(([k]) => !SENSITIVE_AUDIT_FIELDS.has(k))
+        );
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
             VALUES ($1, 'update_user', 'user', $2, $3, $4)
-        `, [adminId, userId, JSON.stringify(req.body), TimestampUtils.forTableField('admin_audit', 'created_at')]);
+        `, [adminId, userId, JSON.stringify(sanitisedBody), TimestampUtils.forTableField('admin_audit', 'created_at')]);
 
         // Send KYC approved email if KYC just became approved
         if (typeof kyc_status === 'string' && kyc_status === 'approved' && previousKycStatus !== 'approved') {
@@ -611,7 +622,8 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
         console.error('[PATCH /api/admin/users/:id] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        // FIND-05: Do not leak raw DB error messages to clients
+        return res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
 
@@ -653,32 +665,32 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
         if (permanent) {
             // PERMANENT DELETE - Remove user completely from database
             // This cannot be undone!
-            
+
             // First, delete related records (cascade deletes should handle most, but be explicit)
             // Delete subscriptions
             await pool.query(`DELETE FROM subscription WHERE user_id = $1`, [userId]);
-            
+
             // Delete business owners
             await pool.query(`DELETE FROM business_owner WHERE user_id = $1`, [userId]);
-            
+
             // Delete mail items (if cascade doesn't work)
             await pool.query(`DELETE FROM mail_item WHERE user_id = $1`, [userId]);
-            
+
             // Delete redirect flows
             await pool.query(`DELETE FROM gc_redirect_flow WHERE user_id = $1`, [userId]);
-            
+
             // Delete admin audit entries for this user
             await pool.query(`DELETE FROM admin_audit WHERE target_id = $1 AND target_type = 'user'`, [userId]);
-            
+
             // Finally, delete the user
             await pool.query(`DELETE FROM "user" WHERE id = $1`, [userId]);
-            
+
             // Log admin action
             await pool.query(`
                 INSERT INTO admin_audit (admin_id, action, target_type, target_id, created_at)
                 VALUES ($1, $2, $3, $4, $5)
             `, [adminId, 'permanent_delete_user', 'user', userId, auditTimestamp]);
-            
+
             return res.json({
                 ok: true,
                 message: `User ${user.email} has been permanently deleted. This action cannot be undone.`,
@@ -728,7 +740,7 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
         }
     } catch (error: any) {
         console.error('[DELETE /api/admin/users/:id] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
 
@@ -827,7 +839,7 @@ router.post('/users/:id/restore', requireAdmin, async (req: Request, res: Respon
         });
     } catch (error: any) {
         console.error('[POST /api/admin/users/:id/restore] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
 

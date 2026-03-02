@@ -293,8 +293,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     next();
 });
 
-// CSP middleware
+// CSP middleware (report-uri for violation reporting; endpoint is rate-limited)
 app.use((req: Request, res: Response, next: NextFunction) => {
+    const reportUri = '/api/csp-report';
     res.set('Content-Security-Policy',
         "default-src 'self'; " +
         "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
@@ -304,7 +305,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         "font-src 'self' data:; " +
         "object-src 'none'; " +
         "base-uri 'self'; " +
-        "form-action 'self'"
+        "form-action 'self'; " +
+        "report-uri " + reportUri
     );
     next();
 });
@@ -356,9 +358,23 @@ const limiter = rateLimit({
     },
 });
 
+// Auth-only rate limiter (never disabled) — login/signup/reset must stay rate-limited
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    message: 'Too many authentication attempts, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
+});
+
 // Apply rate limiter to API routes only (health check already excluded)
-// Optional staging toggle to disable rate limiting
+// Optional staging toggle to disable rate limiting (does NOT disable auth limiter)
 const disableLimiter = process.env.DISABLE_RATE_LIMIT === '1';
+
+if (process.env.NODE_ENV === 'production' && disableLimiter) {
+    logger.warn('[security] DISABLE_RATE_LIMIT is set in production; general API rate limit is off (auth routes remain limited).');
+}
 
 if (process.env.DISABLE_RATE_LIMIT_FOR_HEALTHZ === '1' && process.env.NODE_ENV === 'test') {
     // In test mode, wrap limiter to skip health checks
@@ -469,6 +485,24 @@ async function start() {
     // CSRF protection for state-changing requests (after auth, before routes)
     app.use('/api', requireCsrfToken);
     logger.info('[middleware] CSRF protection middleware mounted');
+
+    // Auth rate limiter (never disabled)
+    app.use('/api/auth', authLimiter);
+
+    // CSP report endpoint (rate-limited, no auth) — browsers POST violation reports here
+    const cspReportLimiter = rateLimit({
+        windowMs: 60 * 1000,
+        max: 60,
+        standardHeaders: true,
+        legacyHeaders: false,
+        keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
+    });
+    const cspReportRouter = express.Router();
+    cspReportRouter.post('/', cspReportLimiter, (req: Request, res: Response) => {
+        logger.info('[csp-report]', { body: req.body });
+        res.status(204).end();
+    });
+    app.use('/api/csp-report', cspReportRouter);
 
     // Mount other routes
     app.use('/api/auth', authRouter);
