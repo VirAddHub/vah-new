@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
 import { Card, CardContent } from '@/components/ui/card';
@@ -34,6 +34,12 @@ interface BusinessOwner {
     requiresVerification?: boolean;
     requires_verification?: boolean;
     status: 'verified' | 'pending' | 'not_started' | 'rejected';
+}
+
+interface CompanySearchResult {
+    title: string;
+    regNumber: string;
+    identifier: string;
 }
 
 export default function AccountVerificationPage() {
@@ -104,13 +110,65 @@ export default function AccountVerificationPage() {
     const [companySaveBusy, setCompanySaveBusy] = useState(false);
     const [lookupBusy, setLookupBusy] = useState(false);
     const [lookupError, setLookupError] = useState<string | null>(null);
+    // Search by name
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<CompanySearchResult[]>([]);
+    const [searchBusy, setSearchBusy] = useState(false);
 
     const handleOpenCompanyModal = () => {
         setCompanyNumberInput(companyNumberOnFile);
         setCompanyNameInput(companyNameOnFile);
         setLookupError(null);
+        setSearchQuery('');
+        setSearchResults([]);
         setCompanyModalOpen(true);
     };
+
+    // Debounced search by company name (Companies House)
+    useEffect(() => {
+        const q = searchQuery.trim();
+        if (q.length < 2) {
+            setSearchResults([]);
+            return;
+        }
+        const timer = setTimeout(async () => {
+            setSearchBusy(true);
+            try {
+                const res = await fetch(`/api/bff/company-search?query=${encodeURIComponent(q)}`, { credentials: 'include' });
+                const json = await res.json().catch(() => ({}));
+                if (json?.ok && Array.isArray(json.businesses)) {
+                    setSearchResults(json.businesses.map((b: any) => ({
+                        title: b.title ?? '',
+                        regNumber: b.regNumber ?? b.identifier ?? '',
+                        identifier: b.identifier ?? b.regNumber ?? '',
+                    })));
+                } else {
+                    setSearchResults([]);
+                }
+            } catch {
+                setSearchResults([]);
+            } finally {
+                setSearchBusy(false);
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const handleSelectCompany = useCallback((company: CompanySearchResult) => {
+        setCompanyNameInput(company.title);
+        setCompanyNumberInput(company.regNumber);
+        setSearchResults([]);
+        setSearchQuery('');
+        setLookupError(null);
+    }, []);
+
+    const clearSelection = useCallback(() => {
+        setCompanyNumberInput('');
+        setCompanyNameInput('');
+        setSearchQuery('');
+        setSearchResults([]);
+        setLookupError(null);
+    }, []);
 
     const handleLookupCompany = async () => {
         const num = companyNumberInput.trim();
@@ -426,56 +484,96 @@ export default function AccountVerificationPage() {
 
             {/* Add Companies House number modal */}
             <Dialog open={companyModalOpen} onOpenChange={setCompanyModalOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
-                        <DialogTitle>Add Companies House number</DialogTitle>
+                        <DialogTitle>Add Companies House details</DialogTitle>
                         <DialogDescription>
-                            Enter your UK company number. You can find it on Companies House or your incorporation documents.
+                            Search by your company name to find and select your UK company, or enter the company number below.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-2">
+                        {/* Search by name (primary) */}
                         <div className="space-y-2">
-                            <Label htmlFor="company-number">Company number (required)</Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    id="company-number"
-                                    value={companyNumberInput}
-                                    onChange={(e) => { setCompanyNumberInput(e.target.value); setLookupError(null); }}
-                                    placeholder="e.g. 12345678 or SC123456"
-                                    className="flex-1"
-                                />
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={handleLookupCompany}
-                                    disabled={lookupBusy || !companyNumberInput.trim()}
-                                >
-                                    {lookupBusy ? 'Looking up…' : 'Look up'}
-                                </Button>
-                            </div>
-                            <p className="text-xs text-neutral-500">
-                                Use &quot;Look up&quot; to fetch your company name from Companies House.
-                            </p>
-                            {lookupError && (
-                                <p className="text-sm text-destructive">{lookupError}</p>
+                            <Label htmlFor="company-search">Search by company name</Label>
+                            <Input
+                                id="company-search"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="e.g. Virtual Address Hub"
+                                className="w-full"
+                                autoComplete="off"
+                            />
+                            {searchBusy && (
+                                <p className="text-xs text-neutral-500">Searching Companies House…</p>
+                            )}
+                            {!searchBusy && searchResults.length > 0 && (
+                                <ul className="border border-neutral-200 rounded-md divide-y divide-neutral-100 max-h-48 overflow-y-auto">
+                                    {searchResults.map((company, i) => (
+                                        <li key={`${company.identifier}-${i}`}>
+                                            <button
+                                                type="button"
+                                                className="w-full text-left px-3 py-2.5 text-sm hover:bg-neutral-50 focus:bg-neutral-50 focus:outline-none"
+                                                onClick={() => handleSelectCompany(company)}
+                                            >
+                                                <span className="font-medium text-neutral-900">{company.title}</span>
+                                                <span className="text-neutral-500 ml-2">({company.regNumber})</span>
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                            {!searchBusy && searchQuery.trim().length >= 2 && searchResults.length === 0 && searchQuery.trim() && (
+                                <p className="text-xs text-neutral-500">No companies found. Try a different name or enter the number below.</p>
                             )}
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="company-name">Company name (optional)</Label>
-                            <Input
-                                id="company-name"
-                                value={companyNameInput}
-                                onChange={(e) => setCompanyNameInput(e.target.value)}
-                                placeholder="As registered at Companies House"
-                                className="w-full"
-                            />
+
+                        {/* Selected company or manual entry */}
+                        <div className="space-y-3 border-t border-neutral-100 pt-4">
+                            {companyNumberInput || companyNameInput ? (
+                                <>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <p className="text-sm font-medium text-neutral-700">Selected company</p>
+                                        <Button type="button" variant="ghost" size="sm" onClick={clearSelection} className="text-primary">
+                                            Change
+                                        </Button>
+                                    </div>
+                                    <div className="rounded-md bg-neutral-50 px-3 py-2.5 text-sm">
+                                        <p className="font-medium text-neutral-900">{companyNameInput || '—'}</p>
+                                        <p className="text-neutral-500">Company number: {companyNumberInput || '—'}</p>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-sm text-neutral-600">Or enter company number and look up</p>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            id="company-number"
+                                            value={companyNumberInput}
+                                            onChange={(e) => { setCompanyNumberInput(e.target.value); setLookupError(null); }}
+                                            placeholder="e.g. 12345678 or SC123456"
+                                            className="flex-1"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={handleLookupCompany}
+                                            disabled={lookupBusy || !companyNumberInput.trim()}
+                                        >
+                                            {lookupBusy ? 'Looking up…' : 'Look up'}
+                                        </Button>
+                                    </div>
+                                    {lookupError && (
+                                        <p className="text-sm text-destructive">{lookupError}</p>
+                                    )}
+                                </>
+                            )}
                         </div>
                     </div>
                     <DialogFooter className="gap-2 sm:gap-0">
                         <Button type="button" variant="outline" onClick={() => setCompanyModalOpen(false)} disabled={companySaveBusy}>
                             Cancel
                         </Button>
-                        <Button type="button" onClick={handleSaveCompanyDetails} disabled={companySaveBusy}>
+                        <Button type="button" onClick={handleSaveCompanyDetails} disabled={companySaveBusy || !companyNumberInput.trim()}>
                             {companySaveBusy ? 'Saving…' : 'Save'}
                         </Button>
                     </DialogFooter>
