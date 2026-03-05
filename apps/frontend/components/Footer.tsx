@@ -134,7 +134,7 @@ export function Footer({ onNavigate }: FooterProps) {
 
                         {/* Contact us - CTA block */}
                         <div className="space-y-3">
-                            <p className="text-sm font-semibold text-neutral-900">Contact us</p>
+                            <p className="text-sm font-semibold text-[#206039]">Contact us</p>
                             <p className="text-sm text-neutral-600">
                                 Need help or have a question? We&apos;re here.
                             </p>
@@ -142,7 +142,7 @@ export function Footer({ onNavigate }: FooterProps) {
                                 <button
                                     type="button"
                                     onClick={() => handleNavClick('contact')}
-                                    className="inline-flex w-fit items-center justify-center rounded-xl bg-neutral-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-900/20"
+                                    className="inline-flex w-fit items-center justify-center rounded-xl bg-[#206039] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-[#024E40] focus:outline-none focus:ring-2 focus:ring-[#206039]/20"
                                 >
                                     Contact support
                                 </button>
