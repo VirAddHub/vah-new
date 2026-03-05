@@ -87,7 +87,7 @@ export function App({ initialPricing = null }: AppProps) {
           <BlogPostPage
             slug={blogHashData?.slug || 'default-slug'}
             onNavigate={navigate}
-            onBack={goBack}
+            onBack={() => navigate('blog')}
           />
         );
       case 'pricing':

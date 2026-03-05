@@ -15,6 +15,13 @@ type ImageWithFallbackProps = {
     quality?: number;
 };
 
+/** Use unoptimized <img> for API or relative paths to avoid INVALID_IMAGE_OPTIMIZE_REQUEST (Vercel) when optimizer can't fetch the URL */
+function useUnoptimized(src: string): boolean {
+    if (!src || typeof src !== 'string') return true;
+    const s = src.trim();
+    return s.startsWith('/api/') || s.startsWith('data:');
+}
+
 export function ImageWithFallback({
     src,
     alt,
@@ -27,7 +34,27 @@ export function ImageWithFallback({
     quality = 75,
 }: ImageWithFallbackProps) {
     const [currentSrc, setCurrentSrc] = useState(src);
-    
+    const [optimizerFailed, setOptimizerFailed] = useState(false);
+    const unoptimized = useUnoptimized(currentSrc) || optimizerFailed;
+
+    if (unoptimized) {
+        return (
+            <img
+                src={currentSrc}
+                alt={alt}
+                className={className}
+                width={width}
+                height={height}
+                decoding="async"
+                onError={() => {
+                    if (fallbackSrc && currentSrc !== fallbackSrc) {
+                        setCurrentSrc(fallbackSrc);
+                    }
+                }}
+            />
+        );
+    }
+
     return (
         <Image
             src={currentSrc}
@@ -43,6 +70,8 @@ export function ImageWithFallback({
             onError={() => {
                 if (fallbackSrc && currentSrc !== fallbackSrc) {
                     setCurrentSrc(fallbackSrc);
+                } else {
+                    setOptimizerFailed(true);
                 }
             }}
         />

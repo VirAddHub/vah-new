@@ -114,7 +114,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                     </p>
                     <Button onClick={onBack} variant="outline" className="px-6 py-3 bg-background/90 backdrop-blur-sm border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200">
                         <ArrowLeft className="h-4 w-4 mr-2" />
-                        Back to Blog
+                        Back to blogs
                     </Button>
                 </div>
             </div>
@@ -132,7 +132,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                         className="px-4 py-2 bg-background/90 backdrop-blur-sm border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200"
                     >
                         <ArrowLeft className="h-4 w-4 mr-2" />
-                        Back to Blog
+                        Back to blogs
                     </Button>
                 </div>
 
@@ -234,7 +234,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                         <div className="flex items-center gap-4">
                             <Button variant="outline" onClick={onBack}>
                                 <ArrowLeft className="h-4 w-4 mr-2" />
-                                Back to Blog
+                                Back to blogs
                             </Button>
                         </div>
                         <Button variant="ghost" size="sm" className="gap-2">
