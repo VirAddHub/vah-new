@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
@@ -40,12 +41,19 @@ type BlogPostListItem = {
 
 const FALLBACK_ORIGIN = 'http://localhost:3000';
 
-function resolveAppBaseUrl() {
+async function resolveAppBaseUrl(): Promise<string> {
+  try {
+    const h = await headers();
+    const host = h.get('x-forwarded-host') || h.get('host');
+    const proto = h.get('x-forwarded-proto') || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+    if (host) {
+      return `${proto === 'https' ? 'https' : 'http'}://${host}`;
+    }
+  } catch (_) {}
   const envUrl =
     process.env.NEXT_PUBLIC_APP_URL ||
     process.env.APP_BASE_URL ||
     process.env.VERCEL_URL;
-
   if (!envUrl) return FALLBACK_ORIGIN;
   if (envUrl.startsWith('http')) return envUrl;
   return `https://${envUrl}`;
@@ -53,14 +61,12 @@ function resolveAppBaseUrl() {
 
 async function getPost(slug: string): Promise<BlogPost | null> {
   try {
-    const base = resolveAppBaseUrl();
-    const res = await fetch(
-      `${base}/api/bff/blog/detail?slug=${encodeURIComponent(slug)}`,
-      {
-        cache: 'no-store',
-        headers: { accept: 'application/json' },
-      },
-    );
+    const base = await resolveAppBaseUrl();
+    const url = `${base}/api/bff/blog/detail?slug=${encodeURIComponent(slug)}`;
+    const res = await fetch(url, {
+      cache: 'no-store',
+      headers: { accept: 'application/json' },
+    });
 
     if (!res.ok) {
       return null;
@@ -84,7 +90,7 @@ async function getPost(slug: string): Promise<BlogPost | null> {
 
 async function getPopularPosts(currentSlug: string): Promise<BlogPostListItem[]> {
   try {
-    const base = resolveAppBaseUrl();
+    const base = await resolveAppBaseUrl();
     const res = await fetch(
       `${base}/api/bff/blog/list`,
       {
