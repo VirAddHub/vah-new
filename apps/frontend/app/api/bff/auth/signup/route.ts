@@ -5,18 +5,35 @@ import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 export const dynamic = 'force-dynamic';
 
 /**
+ * Normalise signup payload so backend validators don't choke on empty strings or null counts.
+ * - "" -> null for string fields
+ * - additionalControllersCount null/undefined -> 0
+ */
+function normaliseSignupPayload(p: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...p };
+  for (const k of Object.keys(out)) {
+    if (out[k] === '') out[k] = null;
+  }
+  if (out.additionalControllersCount == null) out.additionalControllersCount = 0;
+  return out;
+}
+
+/**
  * POST /api/bff/auth/signup
  * Proxy signup to backend so Set-Cookie is set for the frontend origin.
  * Otherwise the next request (e.g. payments/redirect-flows) would get 401
  * because the session cookie was only for the backend domain.
+ * On upstream 4xx/5xx, passes through the backend error body and logs it once.
  */
 export async function POST(request: NextRequest) {
-  const routePath = '/api/bff/auth/signup';
   let backendUrl = '';
 
   try {
     const cookie = request.headers.get('cookie') || '';
-    const body = await request.json();
+    const rawBody = await request.json();
+    const body = normaliseSignupPayload(
+      typeof rawBody === 'object' && rawBody !== null ? rawBody : {}
+    );
     const backend = getBackendOrigin();
     backendUrl = `${backend}/api/auth/signup`;
 
@@ -32,11 +49,7 @@ export async function POST(request: NextRequest) {
 
     const status = response.status;
     const text = await response.text();
-    const textPreview = text.substring(0, 300);
-
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`[BFF auth/signup] Backend response: ${status} from ${backendUrl}`);
-    }
+    const textPreview = text.substring(0, 500);
 
     let json: any = null;
     const contentType = response.headers.get('content-type') || '';
@@ -70,8 +83,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (status < 200 || status >= 300) {
-      // Return backend body as-is so frontend gets error.code (e.g. EMAIL_ALREADY_EXISTS)
+      // Log once so Vercel/terminal shows the exact upstream reason (unblocks HAR without response body)
+      console.error('[BFF auth/signup] upstream error', { status, url: backendUrl, data: json ?? textPreview });
+      // Return backend body as-is so frontend gets error.code (e.g. EMAIL_ALREADY_EXISTS) and HAR shows it
       return NextResponse.json(json ?? { ok: false, error: textPreview }, { status, headers: responseHeaders });
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[BFF auth/signup] Backend response: ${status} from ${backendUrl}`);
     }
 
     return NextResponse.json(json ?? { ok: true, data: {} }, {
