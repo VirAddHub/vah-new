@@ -93,23 +93,67 @@ export default function AccountVerificationPage() {
         }
     };
 
+    // Companies House: format 8 digits OR 2 letters + 6 digits (match backend)
+    const CH_NUMBER_RE = /^([0-9]{8}|[A-Za-z]{2}[0-9]{6})$/;
+
     // Companies House modal
     const { toast } = useToast();
     const [companyModalOpen, setCompanyModalOpen] = useState(false);
     const [companyNumberInput, setCompanyNumberInput] = useState('');
     const [companyNameInput, setCompanyNameInput] = useState('');
     const [companySaveBusy, setCompanySaveBusy] = useState(false);
+    const [lookupBusy, setLookupBusy] = useState(false);
+    const [lookupError, setLookupError] = useState<string | null>(null);
 
     const handleOpenCompanyModal = () => {
         setCompanyNumberInput(companyNumberOnFile);
         setCompanyNameInput(companyNameOnFile);
+        setLookupError(null);
         setCompanyModalOpen(true);
+    };
+
+    const handleLookupCompany = async () => {
+        const num = companyNumberInput.trim();
+        if (!num || !CH_NUMBER_RE.test(num)) {
+            toast({ title: 'Invalid number', description: 'Use 8 digits or 2 letters followed by 6 digits (e.g. 12345678 or SC123456).', variant: 'destructive' });
+            return;
+        }
+        setLookupBusy(true);
+        setLookupError(null);
+        try {
+            const res = await fetch(`/api/bff/companies/${encodeURIComponent(num)}`, { credentials: 'include' });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const msg = json?.message || json?.error || 'Company not found';
+                setLookupError(msg);
+                toast({ title: 'Lookup failed', description: msg, variant: 'destructive' });
+                return;
+            }
+            if (json?.ok && json?.data) {
+                const companyNumber = (json.data.company_number ?? num).toString().trim();
+                const companyName = (json.data.company_name ?? '').toString().trim();
+                if (companyNumber) setCompanyNumberInput(companyNumber);
+                if (companyName) setCompanyNameInput(companyName);
+                setLookupError(null);
+                toast({ title: 'Company found', description: companyName || 'Details updated from Companies House.' });
+            }
+        } catch (e) {
+            console.error(e);
+            setLookupError('Lookup failed');
+            toast({ title: 'Error', description: 'Could not look up company. Please try again.', variant: 'destructive' });
+        } finally {
+            setLookupBusy(false);
+        }
     };
 
     const handleSaveCompanyDetails = async () => {
         const num = companyNumberInput.trim();
         if (!num) {
             toast({ title: 'Company number required', description: 'Please enter your Companies House number.', variant: 'destructive' });
+            return;
+        }
+        if (!CH_NUMBER_RE.test(num)) {
+            toast({ title: 'Invalid number', description: 'Use 8 digits or 2 letters followed by 6 digits (e.g. 12345678 or SC123456).', variant: 'destructive' });
             return;
         }
         setCompanySaveBusy(true);
@@ -129,7 +173,7 @@ export default function AccountVerificationPage() {
                 toast({ title: 'Could not save', description: msg, variant: 'destructive' });
                 return;
             }
-            toast({ title: 'Companies House details saved.', description: 'Your company number has been updated.' });
+            toast({ title: 'Companies House details saved', description: 'Your company number and name have been saved.' });
             mutateProfile();
             setCompanyModalOpen(false);
         } catch (e) {
@@ -392,13 +436,29 @@ export default function AccountVerificationPage() {
                     <div className="grid gap-4 py-2">
                         <div className="space-y-2">
                             <Label htmlFor="company-number">Company number (required)</Label>
-                            <Input
-                                id="company-number"
-                                value={companyNumberInput}
-                                onChange={(e) => setCompanyNumberInput(e.target.value)}
-                                placeholder="e.g. 12345678 or SC123456"
-                                className="w-full"
-                            />
+                            <div className="flex gap-2">
+                                <Input
+                                    id="company-number"
+                                    value={companyNumberInput}
+                                    onChange={(e) => { setCompanyNumberInput(e.target.value); setLookupError(null); }}
+                                    placeholder="e.g. 12345678 or SC123456"
+                                    className="flex-1"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={handleLookupCompany}
+                                    disabled={lookupBusy || !companyNumberInput.trim()}
+                                >
+                                    {lookupBusy ? 'Looking up…' : 'Look up'}
+                                </Button>
+                            </div>
+                            <p className="text-xs text-neutral-500">
+                                Use &quot;Look up&quot; to fetch your company name from Companies House.
+                            </p>
+                            {lookupError && (
+                                <p className="text-sm text-destructive">{lookupError}</p>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="company-name">Company name (optional)</Label>

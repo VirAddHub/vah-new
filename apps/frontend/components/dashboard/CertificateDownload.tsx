@@ -21,9 +21,20 @@ export function CertificateDownload({ profile }: CertificateDownloadProps) {
     const { toast } = useToast();
     
     // Certificate requires both KYC approved and Companies House number (compliance)
-    const kycStatus = profile?.kyc_status || 'pending';
+    // Profile may be response.data (user object) or full response { ok, data }; use inner data when present
+    const userProfile = profile && typeof profile === 'object' && 'data' in profile && profile.data != null
+        ? (profile as { data: Record<string, unknown> }).data
+        : profile;
+    const kycStatus = (userProfile as any)?.kyc_status ?? (userProfile as any)?.kycStatus ?? 'pending';
     const isKycApproved = kycStatus === 'approved' || kycStatus === 'verified';
-    const hasCompanyNumber = ((profile?.companies_house_number || profile?.company_number) ?? '').trim().length > 0;
+    // Support both snake_case (backend) and camelCase in case response shape varies
+    const companyNumber = (
+        (userProfile as any)?.companies_house_number ??
+        (userProfile as any)?.companiesHouseNumber ??
+        (userProfile as any)?.company_number ??
+        ''
+    ).trim();
+    const hasCompanyNumber = companyNumber.length > 0;
     const canDownload = isKycApproved && hasCompanyNumber;
 
     const handleDownloadCertification = async () => {
