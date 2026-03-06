@@ -14,9 +14,12 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const cookie = request.headers.get('cookie') || '';
-    const body = await request.json();
+    const body = (await request.json()) as Record<string, unknown>;
     const backend = getBackendOrigin();
     backendUrl = `${backend}/api/profile/company-details`;
+
+    console.log('[BFF profile/company-details] body', JSON.stringify(body));
+    console.log('[BFF profile/company-details] BACKEND_ORIGIN', backend ? '(set)' : '(missing)');
 
     const csrfResponse = await fetch(`${backend}/api/csrf`, {
       method: 'GET',
@@ -35,6 +38,12 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    const payload = {
+      company_number: body.company_number ?? body.companies_house_number,
+      company_name: body.company_name,
+      companies_house_number: body.companies_house_number ?? body.company_number,
+    };
+
     const response = await fetch(backendUrl, {
       method: 'PATCH',
       headers: {
@@ -42,13 +51,16 @@ export async function PATCH(request: NextRequest) {
         'Content-Type': 'application/json',
         ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
       cache: 'no-store',
     });
 
     const status = response.status;
     const text = await response.text();
     const textPreview = text.substring(0, 300);
+
+    console.log('[BFF profile/company-details] upstream status', status);
+    console.log('[BFF profile/company-details] upstream body', textPreview);
 
     let json: unknown = null;
     const contentType = response.headers.get('content-type') || '';
@@ -67,12 +79,13 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (status < 200 || status >= 300) {
-      const errBody = json as { error?: string; message?: string } | null;
+      const errBody = json as { ok?: boolean; error?: string; message?: string } | null;
       return NextResponse.json(
         {
           ok: false,
-          error: errBody?.error,
+          error: errBody?.error ?? 'backend_error',
           message: errBody?.message ?? textPreview,
+          ...(errBody && typeof errBody === 'object' ? errBody : {}),
         },
         { status }
       );

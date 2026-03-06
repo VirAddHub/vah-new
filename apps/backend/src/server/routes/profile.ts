@@ -513,12 +513,21 @@ const CH_NUMBER_RE = /^([0-9]{8}|[A-Za-z]{2}[0-9]{6})$/;
 /**
  * PATCH /api/profile/company-details
  * Update Companies House number (and optionally company name) for users who signed up before incorporation.
+ * Accepts either company_number or companies_house_number in the body; normalises to companies_house_number for DB.
  */
 router.patch("/company-details", requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
-    const company_number = typeof req.body?.company_number === 'string' ? req.body.company_number.trim() : undefined;
+
+    if (process.env.NODE_ENV !== 'production') {
+        logger.debug('[PATCH /api/profile/company-details] payload', { body: req.body });
+    }
+
     const company_name = typeof req.body?.company_name === 'string' ? req.body.company_name.trim() : undefined;
+    const company_number =
+        (typeof req.body?.company_number === 'string' ? req.body.company_number.trim() : undefined) ||
+        (typeof req.body?.companies_house_number === 'string' ? req.body.companies_house_number.trim() : undefined) ||
+        undefined;
 
     if (!company_number || company_number.length === 0) {
         return res.status(400).json({
@@ -532,6 +541,16 @@ router.patch("/company-details", requireAuth, async (req: Request, res: Response
             ok: false,
             error: 'invalid_company_number',
             message: 'Invalid Companies House number format. Use 8 digits or 2 letters followed by 6 digits.',
+        });
+    }
+
+    const { hasCompaniesHouseNumber } = await getProfileSchemaFlags();
+    if (!hasCompaniesHouseNumber) {
+        logger.warn('[PATCH /api/profile/company-details] companies_house_number column missing on user table');
+        return res.status(503).json({
+            ok: false,
+            error: 'schema_not_ready',
+            message: 'Companies House details are not yet available. Please run the database migration for companies_house_number.',
         });
     }
 
@@ -552,12 +571,15 @@ router.patch("/company-details", requireAuth, async (req: Request, res: Response
     values.push(userId);
 
     try {
-        const result = await pool.query(`
+        const result = await pool.query(
+            `
             UPDATE "user"
             SET ${updates.join(', ')}
             WHERE id = $${paramIndex}
             RETURNING id, companies_house_number, company_name
-        `, values);
+        `,
+            values
+        );
 
         if (result.rows.length === 0) {
             return res.status(404).json({ ok: false, error: 'user_not_found' });
@@ -571,8 +593,16 @@ router.patch("/company-details", requireAuth, async (req: Request, res: Response
             },
         });
     } catch (error: any) {
-        logger.error('[PATCH /api/profile/company-details] error', { message: error?.message ?? String(error) });
-        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
+        logger.error('[PATCH /api/profile/company-details] error', {
+            message: error?.message ?? String(error),
+            code: error?.code,
+            detail: error?.detail,
+        });
+        return res.status(500).json({
+            ok: false,
+            error: 'database_error',
+            message: safeErrorMessage(error),
+        });
     }
 });
 
