@@ -7,6 +7,11 @@ export const dynamic = 'force-dynamic';
 /**
  * PATCH /api/bff/profile/company-details
  * Update Companies House number and company name (proxies to backend).
+ *
+ * Status passthrough: we do NOT convert upstream status to 503. If the client
+ * receives 503, it is from the backend. Backend returns 503 with error
+ * "schema_not_ready" when the user table is missing the companies_house_number
+ * column (run migration 122_add_companies_house_number.sql).
  */
 export async function PATCH(request: NextRequest) {
   const routePath = '/api/bff/profile/company-details';
@@ -19,6 +24,7 @@ export async function PATCH(request: NextRequest) {
     backendUrl = `${backend}/api/profile/company-details`;
 
     console.log('[BFF profile/company-details] body', JSON.stringify(body));
+    console.log('[BFF profile/company-details] upstream URL', backendUrl);
     console.log('[BFF profile/company-details] BACKEND_ORIGIN', backend ? '(set)' : '(missing)');
 
     const csrfResponse = await fetch(`${backend}/api/csrf`, {
@@ -59,7 +65,7 @@ export async function PATCH(request: NextRequest) {
     const text = await response.text();
     const textPreview = text.substring(0, 300);
 
-    console.log('[BFF profile/company-details] upstream status', status);
+    console.log('[BFF profile/company-details] upstream status', status, 'url', backendUrl);
     console.log('[BFF profile/company-details] upstream body', textPreview);
 
     let json: unknown = null;
@@ -80,15 +86,19 @@ export async function PATCH(request: NextRequest) {
 
     if (status < 200 || status >= 300) {
       const errBody = json as { ok?: boolean; error?: string; message?: string } | null;
-      return NextResponse.json(
-        {
-          ok: false,
-          error: errBody?.error ?? 'backend_error',
-          message: errBody?.message ?? textPreview,
-          ...(errBody && typeof errBody === 'object' ? errBody : {}),
+      const responseBody = {
+        ok: false,
+        error: errBody?.error ?? 'backend_error',
+        message: errBody?.message ?? textPreview,
+        ...(errBody && typeof errBody === 'object' ? errBody : {}),
+      };
+      return NextResponse.json(responseBody, {
+        status,
+        headers: {
+          'X-Upstream-Status': String(status),
+          'X-Upstream-URL': backendUrl,
         },
-        { status }
-      );
+      });
     }
 
     return NextResponse.json(json ?? { ok: true, data: {} }, { status: 200 });

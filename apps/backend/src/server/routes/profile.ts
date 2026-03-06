@@ -546,7 +546,7 @@ router.patch("/company-details", requireAuth, async (req: Request, res: Response
 
     const { hasCompaniesHouseNumber } = await getProfileSchemaFlags();
     if (!hasCompaniesHouseNumber) {
-        logger.warn('[PATCH /api/profile/company-details] companies_house_number column missing on user table');
+        logger.warn('[PATCH /api/profile/company-details] companies_house_number column missing on user table (run migration 122)');
         return res.status(503).json({
             ok: false,
             error: 'schema_not_ready',
