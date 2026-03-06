@@ -41,14 +41,26 @@ export default function AccountOverviewPage() {
             ? `£${(pricePence / 100).toFixed(2)}`
             : 'Price not available';
 
-        // Get next billing date
-        const nextBillingDate = o?.next_billing_date || o?.period_end;
+        // Next billing: backend sends next_billing_date, or use latest_invoice.period_end / next_charge_at
+        const nextBillingDate = o?.next_billing_date || o?.latest_invoice?.period_end || o?.period_end;
+        const nextChargeAt = o?.next_charge_at;
         let nextBillingLabel = 'N/A';
         if (nextBillingDate) {
             try {
                 const date = typeof nextBillingDate === 'string'
                     ? new Date(nextBillingDate + 'T00:00:00Z')
                     : new Date(nextBillingDate);
+                if (!isNaN(date.getTime())) {
+                    nextBillingLabel = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                }
+            } catch (e) {
+                // Keep 'N/A'
+            }
+        }
+        if (nextBillingLabel === 'N/A' && nextChargeAt != null) {
+            try {
+                const ms = Number(nextChargeAt);
+                const date = new Date(ms > 1e12 ? ms : ms * 1000);
                 if (!isNaN(date.getTime())) {
                     nextBillingLabel = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
                 }
@@ -162,7 +174,9 @@ export default function AccountOverviewPage() {
                                 Price
                             </p>
                             <p className="text-base font-medium text-neutral-900">
-                                {accountSummary.priceLabel}/{accountSummary.billingPeriod === 'annual' ? 'year' : 'month'}
+                                {accountSummary.billingPeriod === 'annual'
+                                    ? `Annual (${accountSummary.priceLabel}/year)`
+                                    : `Monthly (${accountSummary.priceLabel}/month)`}
                             </p>
                         </div>
                         <div className="flex flex-col gap-2">

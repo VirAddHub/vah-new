@@ -326,6 +326,20 @@ export async function getBillingOverview(req: Request, res: Response) {
         account_status: accountStatus,
         grace_period: gracePeriodInfo,
         next_charge_at: sub?.next_charge_at ?? null,
+        // next_billing_date: YYYY-MM-DD for display (from next_charge_at ms or latest invoice period_end)
+        next_billing_date: (() => {
+          const nca = sub?.next_charge_at;
+          if (nca != null && nca !== '') {
+            const ms = Number(nca);
+            if (!Number.isNaN(ms) && ms > 0) {
+              const d = new Date(ms > 1e12 ? ms : ms * 1000);
+              if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+            }
+          }
+          const periodEnd = latestInvoice?.period_end;
+          if (periodEnd && typeof periodEnd === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(periodEnd)) return periodEnd;
+          return null;
+        })(),
         mandate_status: sub?.mandate_id ? 'active' : 'missing',
         has_mandate: !!(user?.gocardless_mandate_id || user?.stripe_customer_id),
         has_redirect_flow: !!user?.gocardless_redirect_flow_id,

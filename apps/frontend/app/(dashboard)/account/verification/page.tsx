@@ -108,8 +108,6 @@ export default function AccountVerificationPage() {
     const [companyNumberInput, setCompanyNumberInput] = useState('');
     const [companyNameInput, setCompanyNameInput] = useState('');
     const [companySaveBusy, setCompanySaveBusy] = useState(false);
-    const [lookupBusy, setLookupBusy] = useState(false);
-    const [lookupError, setLookupError] = useState<string | null>(null);
     // Search by name
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<CompanySearchResult[]>([]);
@@ -118,7 +116,6 @@ export default function AccountVerificationPage() {
     const handleOpenCompanyModal = () => {
         setCompanyNumberInput(companyNumberOnFile);
         setCompanyNameInput(companyNameOnFile);
-        setLookupError(null);
         setSearchQuery('');
         setSearchResults([]);
         setCompanyModalOpen(true);
@@ -159,7 +156,6 @@ export default function AccountVerificationPage() {
         setCompanyNumberInput(company.regNumber);
         setSearchResults([]);
         setSearchQuery('');
-        setLookupError(null);
     }, []);
 
     const clearSelection = useCallback(() => {
@@ -167,42 +163,7 @@ export default function AccountVerificationPage() {
         setCompanyNameInput('');
         setSearchQuery('');
         setSearchResults([]);
-        setLookupError(null);
     }, []);
-
-    const handleLookupCompany = async () => {
-        const num = companyNumberInput.trim();
-        if (!num || !CH_NUMBER_RE.test(num)) {
-            toast({ title: 'Invalid number', description: 'Use 8 digits or 2 letters followed by 6 digits (e.g. 12345678 or SC123456).', variant: 'destructive' });
-            return;
-        }
-        setLookupBusy(true);
-        setLookupError(null);
-        try {
-            const res = await fetch(`/api/bff/companies/${encodeURIComponent(num)}`, { credentials: 'include' });
-            const json = await res.json().catch(() => ({}));
-            if (!res.ok) {
-                const msg = json?.message || json?.error || 'Company not found';
-                setLookupError(msg);
-                toast({ title: 'Lookup failed', description: msg, variant: 'destructive' });
-                return;
-            }
-            if (json?.ok && json?.data) {
-                const companyNumber = (json.data.company_number ?? num).toString().trim();
-                const companyName = (json.data.company_name ?? '').toString().trim();
-                if (companyNumber) setCompanyNumberInput(companyNumber);
-                if (companyName) setCompanyNameInput(companyName);
-                setLookupError(null);
-                toast({ title: 'Company found', description: companyName || 'Details updated from Companies House.' });
-            }
-        } catch (e) {
-            console.error(e);
-            setLookupError('Lookup failed');
-            toast({ title: 'Error', description: 'Could not look up company. Please try again.', variant: 'destructive' });
-        } finally {
-            setLookupBusy(false);
-        }
-    };
 
     const handleSaveCompanyDetails = async () => {
         const num = companyNumberInput.trim();
@@ -488,7 +449,7 @@ export default function AccountVerificationPage() {
                     <DialogHeader>
                         <DialogTitle>Add Companies House details</DialogTitle>
                         <DialogDescription>
-                            Search by your company name to find and select your UK company, or enter the company number below.
+                            Search by your company name to find and select your UK company.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-2">
@@ -523,11 +484,11 @@ export default function AccountVerificationPage() {
                                 </ul>
                             )}
                             {!searchBusy && searchQuery.trim().length >= 2 && searchResults.length === 0 && searchQuery.trim() && (
-                                <p className="text-xs text-neutral-500">No companies found. Try a different name or enter the number below.</p>
+                                <p className="text-xs text-neutral-500">No companies found. Try a different name.</p>
                             )}
                         </div>
 
-                        {/* Selected company or manual entry */}
+                        {/* Selected company */}
                         <div className="space-y-3 border-t border-neutral-100 pt-4">
                             {companyNumberInput || companyNameInput ? (
                                 <>
@@ -543,29 +504,7 @@ export default function AccountVerificationPage() {
                                     </div>
                                 </>
                             ) : (
-                                <>
-                                    <p className="text-sm text-neutral-600">Or enter company number and look up</p>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            id="company-number"
-                                            value={companyNumberInput}
-                                            onChange={(e) => { setCompanyNumberInput(e.target.value); setLookupError(null); }}
-                                            placeholder="e.g. 12345678 or SC123456"
-                                            className="flex-1"
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={handleLookupCompany}
-                                            disabled={lookupBusy || !companyNumberInput.trim()}
-                                        >
-                                            {lookupBusy ? 'Looking up…' : 'Look up'}
-                                        </Button>
-                                    </div>
-                                    {lookupError && (
-                                        <p className="text-sm text-destructive">{lookupError}</p>
-                                    )}
-                                </>
+                                <p className="text-sm text-neutral-500">Search above to find and select your company.</p>
                             )}
                         </div>
                     </div>

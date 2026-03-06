@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, RefreshCw, Shield, Loader2 } from 'lucide-react';
+import { CreditCard, RefreshCw, Loader2 } from 'lucide-react';
 import { SubscriptionSummary } from '@/lib/account/types';
 import { toast } from '@/hooks/use-toast';
 import useSWR from 'swr';
@@ -182,38 +182,6 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
     }
   };
 
-  const handleReauthorise = async () => {
-    setIsLoading('reauthorise');
-    try {
-      const response = await fetch('/api/bff/billing/reauthorise', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.ok) {
-        throw new Error(data.error || 'Failed to create reauthorization link');
-      }
-
-      const redirectUrl = data.data?.url || data.data?.redirect_url;
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
-        return;
-      }
-      throw new Error('No redirect URL received');
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to open reauthorization page. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(null);
-    }
-  };
-
   const getStatusBadge = () => {
     switch (subscription.status) {
       case 'active':
@@ -227,16 +195,39 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
     }
   };
 
-  // Get next billing date from overview
-  const nextBillingDate = overview?.data?.next_billing_date || overview?.data?.period_end;
+  // Next billing: backend sends next_billing_date (YYYY-MM-DD) or we use next_charge_at (ms) or latest_invoice.period_end
+  const nextBillingDate =
+    overview?.data?.next_billing_date ||
+    overview?.data?.latest_invoice?.period_end;
+  const nextChargeAt = overview?.data?.next_charge_at;
   let nextBillingLabel = 'N/A';
   if (nextBillingDate) {
     try {
-      const date = typeof nextBillingDate === 'string' 
-        ? new Date(nextBillingDate + 'T00:00:00Z')
-        : new Date(nextBillingDate);
+      const date =
+        typeof nextBillingDate === 'string'
+          ? new Date(nextBillingDate + 'T00:00:00Z')
+          : new Date(nextBillingDate);
       if (!isNaN(date.getTime())) {
-        nextBillingLabel = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        nextBillingLabel = date.toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        });
+      }
+    } catch (e) {
+      // Keep 'N/A'
+    }
+  }
+  if (nextBillingLabel === 'N/A' && nextChargeAt != null) {
+    try {
+      const ms = Number(nextChargeAt);
+      const date = new Date(ms > 1e12 ? ms : ms * 1000);
+      if (!isNaN(date.getTime())) {
+        nextBillingLabel = date.toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        });
       }
     } catch (e) {
       // Keep 'N/A'
@@ -252,13 +243,15 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
             Account & billing
           </h3>
 
-          {/* Plan */}
+          {/* Plan: clarify monthly vs yearly */}
           <div className="flex items-center justify-between gap-[58px]">
             <span className="text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
               Plan
             </span>
             <span className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-              {subscription.price_label}/{subscription.billing_period === 'annual' ? 'year' : 'month'}
+              {subscription.billing_period === 'annual'
+                ? `Annual (${subscription.price_label}/year)`
+                : `Monthly (${subscription.price_label}/month)`}
             </span>
           </div>
           <div className="w-full h-[0.5px] bg-[#E5E7EB]"></div>
@@ -323,36 +316,19 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
               </Button>
             )}
             {hasMandate && (
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  variant="outline"
-                  onClick={handleUpdateBank}
-                  disabled={isLoading === 'update-bank'}
-                  className="flex-1"
-                  style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                >
-                  {isLoading === 'update-bank' ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <CreditCard className="h-4 w-4 mr-2" />
-                  )}
-                  Update bank details
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleReauthorise}
-                  disabled={isLoading === 'reauthorise'}
-                  className="flex-1"
-                  style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
-                >
-                  {isLoading === 'reauthorise' ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Shield className="h-4 w-4 mr-2" />
-                  )}
-                  Re-authorise
-                </Button>
-              </div>
+              <Button
+                onClick={handleUpdateBank}
+                disabled={isLoading === 'update-bank'}
+                className="w-full bg-[#206039] text-white hover:bg-[#206039]/90"
+                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+              >
+                {isLoading === 'update-bank' ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <CreditCard className="h-4 w-4 mr-2" />
+                )}
+                Update bank details
+              </Button>
             )}
           </div>
         </div>
