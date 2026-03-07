@@ -3,18 +3,25 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from "./ui/button";
-import { Menu, LogOut } from "lucide-react";
+import { Menu, LogOut, ChevronDown, Building2 } from "lucide-react";
 import { clearToken } from "@/lib/token-manager";
 import { VAHLogo } from "./VAHLogo";
 import { useDashboardView } from "@/contexts/DashboardViewContext";
+import { useActiveBusiness } from "@/contexts/ActiveBusinessContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface DashboardNavigationProps {
     onNavigate?: (page: string) => void;
 }
 
 export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {}) {
-    // Get mobile sidebar state from context
     const { isMobileSidebarOpen, setIsMobileSidebarOpen } = useDashboardView();
+    const { businesses, activeBusiness, activeBusinessId, setActiveBusinessId, isLoading } = useActiveBusiness();
     const router = useRouter();
     const pathname = usePathname();
     const hamburgerRef = useRef<HTMLButtonElement>(null);
@@ -96,16 +103,47 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
                     <VAHLogo onNavigate={onNavigate} size="lg" />
                 </div>
 
-                {/* Right section: Sign out */}
-                <div className="hidden lg:flex items-center gap-4 ml-auto">
+                {/* Right section: Active business switcher + Sign out */}
+                <div className="flex items-center gap-2 sm:gap-4 ml-auto">
+                    {!isLoading && businesses.length > 0 && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex items-center gap-2 min-w-0 max-w-[200px] sm:max-w-[240px]"
+                                >
+                                    <Building2 className="h-4 w-4 shrink-0" strokeWidth={2} />
+                                    <span className="truncate">
+                                        {activeBusiness?.company_name ?? 'Active business'}
+                                    </span>
+                                    <ChevronDown className="h-4 w-4 shrink-0" strokeWidth={2} />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="min-w-[220px]">
+                                {businesses.map((b) => (
+                                    <DropdownMenuItem
+                                        key={b.id}
+                                        onClick={() => setActiveBusinessId(b.id)}
+                                        className={activeBusinessId === b.id ? 'bg-accent' : ''}
+                                    >
+                                        <span className="truncate">{b.company_name}</span>
+                                        {b.is_primary && (
+                                            <span className="ml-2 text-xs text-muted-foreground">Primary</span>
+                                        )}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
                     <Button
                         onClick={handleLogout}
                         variant="outline"
                         size="sm"
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 shrink-0"
                     >
                         <LogOut className="h-4 w-4" strokeWidth={2} />
-                        <span>Sign out</span>
+                        <span className="hidden sm:inline">Sign out</span>
                     </Button>
                 </div>
             </div>

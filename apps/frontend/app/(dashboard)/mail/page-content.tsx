@@ -3,7 +3,8 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSWRConfig } from 'swr';
-import { useMail, useTags, useProfile, KEYS } from '@/hooks/useDashboardData';
+import { useMail, useTags, useProfile } from '@/hooks/useDashboardData';
+import { useActiveBusiness } from '@/contexts/ActiveBusinessContext';
 import { Building2, FileText, Landmark, Settings, Search, ChevronDown, ChevronRight, Tag, X, Archive, ArchiveRestore, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,8 +24,9 @@ import { CreatableTagSelect } from '@/components/dashboard/user/CreatableTagSele
 
 export default function MailInboxPage() {
     const router = useRouter();
-    const { mutate } = useSWRConfig(); // Global mutator
+    const { mutate } = useSWRConfig();
     const { isMobileSidebarOpen } = useDashboardView();
+    const { activeBusinessId } = useActiveBusiness();
     const [activeTab, setActiveTab] = useState<'inbox' | 'archived' | 'tags'>('inbox');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null); // Filter inbox by tag
@@ -48,8 +50,8 @@ export default function MailInboxPage() {
     const [scrollPosition, setScrollPosition] = useState(0);
     const { toast } = useToast();
 
-    // Fetch mail items using stable hook
-    const { data: mailData, error: mailError, isLoading: mailLoading, mutate: mutateMailItems } = useMail();
+    // Fetch mail items for the active business
+    const { data: mailData, error: mailError, isLoading: mailLoading, mutate: mutateMailItems } = useMail(activeBusinessId ?? undefined);
 
     // Fetch tags using stable hook
     const { data: tagsData, mutate: mutateTags } = useTags();

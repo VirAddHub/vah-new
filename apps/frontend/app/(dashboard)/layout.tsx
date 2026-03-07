@@ -1,6 +1,7 @@
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { DashboardNavigation } from '@/components/DashboardNavigation';
 import { DashboardViewProvider } from '@/contexts/DashboardViewContext';
+import { ActiveBusinessProvider } from '@/contexts/ActiveBusinessContext';
 import { OnboardingGate } from '@/components/OnboardingGate';
 
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,7 @@ export default function DashboardLayout({
 }) {
     return (
         <DashboardViewProvider>
+            <ActiveBusinessProvider>
             <OnboardingGate>
                 <div className="min-h-[100dvh] w-full bg-[#F6F6F7]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                     <div className="sticky top-0 z-50">
@@ -33,6 +35,7 @@ export default function DashboardLayout({
                     </div>
                 </div>
             </OnboardingGate>
+            </ActiveBusinessProvider>
         </DashboardViewProvider>
     );
 }

@@ -4,7 +4,10 @@ import useSWR, { SWRConfiguration } from 'swr';
 import { swrFetcher } from '@/services/http';
 
 export const KEYS = {
-    MAIL: '/api/bff/mail-items?includeArchived=true',
+    MAIL: (businessId: number | null) =>
+        businessId != null
+            ? `/api/bff/mail-items?includeArchived=true&business_id=${businessId}`
+            : '/api/bff/mail-items?includeArchived=true',
     TAGS: '/api/bff/tags',
     ACCOUNT: '/api/bff/account',
     PROFILE: '/api/bff/profile',
@@ -20,8 +23,9 @@ const DEFAULT_CONFIG: SWRConfiguration = {
     dedupingInterval: 60000, // 1 minute
 };
 
-export function useMail(options?: SWRConfiguration) {
-    return useSWR(KEYS.MAIL, swrFetcher, { ...DEFAULT_CONFIG, ...options });
+export function useMail(businessId?: number | null, options?: SWRConfiguration) {
+    const key = KEYS.MAIL(businessId ?? null);
+    return useSWR(key, swrFetcher, { ...DEFAULT_CONFIG, ...options });
 }
 
 export function useTags(options?: SWRConfiguration) {
@@ -46,4 +50,10 @@ export function useInvoices(options?: SWRConfiguration) {
 
 export function useWhoAmI(options?: SWRConfiguration) {
     return useSWR(KEYS.WHOAMI, swrFetcher, { ...DEFAULT_CONFIG, ...options });
+}
+
+export const KEYS_BUSINESSES = '/api/bff/account/businesses';
+
+export function useBusinesses(options?: SWRConfiguration) {
+    return useSWR(KEYS_BUSINESSES, swrFetcher, { ...DEFAULT_CONFIG, ...options });
 }

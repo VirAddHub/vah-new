@@ -40,6 +40,7 @@ import { Router } from "express";
 import profileRouter from "./server/routes/profile";
 import profileEmailChangeRouter from "./server/routes/profileEmailChange";
 import businessOwnersRouter from "./server/routes/businessOwners";
+import accountBusinessesRouter from "./server/routes/account-businesses";
 import publicPlansRouter from "./server/routes/public/plans";
 import debugEmailRouter from "./server/routes/debug-email";
 import devRouter from "./server/routes/dev";
@@ -512,6 +513,7 @@ async function start() {
     app.use('/api/profile', robustPasswordResetRouter); // Mount robust password reset
     app.use('/api/profile', passwordResetRouter); // Mount password reset endpoints
     app.use('/api/business-owners', businessOwnersRouter); // Mount business owners routes
+    app.use('/api/account', accountBusinessesRouter);
     app.use('/api', sumsubWebhook);
     app.use('/api', publicPlansRouter);
     app.use('/api', blogRouter);

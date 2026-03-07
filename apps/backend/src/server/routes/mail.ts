@@ -109,10 +109,23 @@ router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 20;
     const includeArchived = req.query.includeArchived === 'true';
+    const businessIdParam = req.query.business_id as string | undefined;
+    const pool = getPool();
 
     try {
+        let businessId: number | null = null;
+        if (businessIdParam) {
+            const bid = parseInt(businessIdParam, 10);
+            if (!Number.isNaN(bid)) {
+                const own = await pool.query('SELECT 1 FROM business WHERE id = $1 AND user_id = $2', [bid, userId]);
+                if (own.rows.length > 0) businessId = bid;
+            }
+        }
+
         // Build the query based on whether to include archived items
         const deletedFilter = includeArchived ? '' : 'AND m.deleted = false';
+        const businessFilter = businessId != null ? 'AND (m.business_id = $2 OR (m.business_id IS NULL AND (SELECT id FROM business WHERE user_id = m.user_id AND is_primary = true LIMIT 1) = $2))' : '';
+        const params = businessId != null ? [userId, businessId] : [userId];
 
         const result = await selectPaged(
             `SELECT
@@ -131,9 +144,9 @@ router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
             FROM mail_item m
             LEFT JOIN file f ON m.file_id = f.id
             LEFT JOIN forwarding_request fr ON fr.mail_item_id = m.id AND fr.status IN ('Requested', 'Processing')
-            WHERE m.user_id = $1 ${deletedFilter}
+            WHERE m.user_id = $1 ${deletedFilter} ${businessFilter}
             ORDER BY m.created_at DESC`,
-            [userId],
+            params,
             page,
             pageSize
         );
