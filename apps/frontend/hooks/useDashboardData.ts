@@ -4,10 +4,9 @@ import useSWR, { SWRConfiguration } from 'swr';
 import { swrFetcher } from '@/services/http';
 
 export const KEYS = {
+    // Include business_id in key so SWR cache is per-business (no stale data on switch)
     MAIL: (businessId: number | null) =>
-        businessId != null
-            ? `/api/bff/mail-items?includeArchived=true&business_id=${businessId}`
-            : '/api/bff/mail-items?includeArchived=true',
+        `/api/bff/mail-items?includeArchived=true&business_id=${businessId ?? 'primary'}`,
     TAGS: '/api/bff/tags',
     ACCOUNT: '/api/bff/account',
     PROFILE: '/api/bff/profile',

@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { z } from 'zod';
 import { getPool } from '../db';
 import { nowMs } from '../../lib/time';
+import { getPrimaryBusinessIdForUser } from '../../lib/business-helpers';
 import { sendMailScanned } from '../../lib/mailer';
 import { logger } from '../../lib/logger';
 
@@ -364,16 +365,19 @@ router.post('/', async (req: any, res) => {
             const defaultTagSlug = null; // No auto-tagging - tag must be set manually
             const defaultSubject = subject || 'Mail received';
 
-            // Insert mail item
+            const primaryBusinessId = await getPrimaryBusinessIdForUser(extractedUserId);
+
+            // Insert mail item (business_id = user's primary business for multi-business support)
             const result = await pool.query(
               `INSERT INTO mail_item (
-                idempotency_key, user_id, subject, sender_name, received_date,
+                idempotency_key, user_id, business_id, subject, sender_name, received_date,
                 scan_file_url, file_size, scanned, status, tag, notes,
                 received_at_ms, created_at, updated_at
               )
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
               ON CONFLICT (idempotency_key) DO UPDATE SET
                 user_id = EXCLUDED.user_id,
+                business_id = EXCLUDED.business_id,
                 subject = EXCLUDED.subject,
                 sender_name = EXCLUDED.sender_name,
                 received_date = EXCLUDED.received_date,
@@ -389,6 +393,7 @@ router.post('/', async (req: any, res) => {
               [
                 idempotencyKey,
                 extractedUserId,
+                primaryBusinessId,
                 defaultSubject,
                 'OneDrive Scan',
                 new Date(receivedAtMs).toISOString().split('T')[0],
@@ -524,16 +529,19 @@ router.post('/', async (req: any, res) => {
       });
     }
 
-    // Upsert mail item (create or update)
+    const primaryBusinessId = await getPrimaryBusinessIdForUser(finalUserId);
+
+    // Upsert mail item (create or update); business_id = user's primary business
     const result = await pool.query(
       `INSERT INTO mail_item (
-        idempotency_key, user_id, subject, sender_name, received_date,
+        idempotency_key, user_id, business_id, subject, sender_name, received_date,
         scan_file_url, file_size, scanned, status, tag, notes,
         received_at_ms, created_at, updated_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       ON CONFLICT (idempotency_key) DO UPDATE SET
         user_id = EXCLUDED.user_id,
+        business_id = EXCLUDED.business_id,
         subject = EXCLUDED.subject,
         sender_name = EXCLUDED.sender_name,
         received_date = EXCLUDED.received_date,
@@ -549,18 +557,19 @@ router.post('/', async (req: any, res) => {
       [
         idempotencyKey,           // $1: idempotency_key
         finalUserId,              // $2: user_id
-        initialSubject,           // $3: subject (human-readable title from tag)
-        'OneDrive Scan',          // $4: sender_name
-        new Date(receivedAtMs).toISOString().split('T')[0], // $5: received_date (YYYY-MM-DD)
-        webUrl,                   // $6: scan_file_url
-        size,                     // $7: file_size
-        true,                     // $8: scanned (true for OneDrive files)
-        'received',               // $9: status
-        tagSlug,                  // $10: tag (lowercase slug: hmrc, companies_house, bank, etc.)
-        `OneDrive path: ${cleanPath}`, // $11: notes
-        receivedAtMs,             // $12: received_at_ms
-        now,                      // $13: created_at
-        now                       // $14: updated_at
+        primaryBusinessId,        // $3: business_id
+        initialSubject,           // $4: subject (human-readable title from tag)
+        'OneDrive Scan',          // $5: sender_name
+        new Date(receivedAtMs).toISOString().split('T')[0], // $6: received_date (YYYY-MM-DD)
+        webUrl,                   // $7: scan_file_url
+        size,                     // $8: file_size
+        true,                     // $9: scanned (true for OneDrive files)
+        'received',               // $10: status
+        tagSlug,                  // $11: tag (lowercase slug: hmrc, companies_house, bank, etc.)
+        `OneDrive path: ${cleanPath}`, // $12: notes
+        receivedAtMs,             // $13: received_at_ms
+        now,                      // $14: created_at
+        now                       // $15: updated_at
       ]
     );
 

@@ -331,6 +331,9 @@ router.post('/from-onedrive', async (req, res) => {
       WHERE table_name = 'mail_item' AND column_name = 'locked'
     `).then(r => r.rows.length > 0).catch(() => false);
 
+    const { getPrimaryBusinessIdForUser } = await import('../../lib/business-helpers');
+    const primaryBusinessId = await getPrimaryBusinessIdForUser(payload.userId);
+
     // Insert mail item with scan_file_url initially null
     // The worker will move the file to processed folder and update this URL with the final location
     // Always create the mail item, but mark it as locked if user/plan/kyc is inactive
@@ -339,13 +342,14 @@ router.post('/from-onedrive', async (req, res) => {
       // Migration 042 has run - use locked columns
       result = await pool.query(
         `INSERT INTO mail_item (
-          idempotency_key, user_id, subject, sender_name, received_date,
+          idempotency_key, user_id, business_id, subject, sender_name, received_date,
           scan_file_url, file_size, scanned, status, tag, notes,
           received_at_ms, created_at, updated_at, locked, locked_reason, admin_note
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
         ON CONFLICT (idempotency_key) DO UPDATE SET
           user_id = EXCLUDED.user_id,
+          business_id = EXCLUDED.business_id,
           subject = EXCLUDED.subject,
           sender_name = EXCLUDED.sender_name,
           received_date = EXCLUDED.received_date,
@@ -364,21 +368,22 @@ router.post('/from-onedrive', async (req, res) => {
         [
           idempotencyKey,                    // $1: idempotency_key
           payload.userId,                     // $2: user_id
-          subject,                            // $3: subject
-          senderName,                         // $4: sender_name
-          finalReceivedDate,                  // $5: received_date (from filename or receivedAtMs)
-          null,                               // $6: scan_file_url - set to null initially, will be updated after file move
-          0,                                  // $7: file_size (not provided in payload)
-          true,                               // $8: scanned (true for OneDrive files)
-          'received',                         // $9: status
-          payload.sourceSlug,                 // $10: tag
-          `OneDrive import: ${payload.fileName}`, // $11: notes
-          receivedAtMs,                       // $12: received_at_ms
-          now,                                // $13: created_at
-          now,                                // $14: updated_at
-          locked,                             // $15: locked
-          lockedReason,                       // $16: locked_reason
-          locked ? `Ingested while ${lockedReason}` : null, // $17: admin_note
+          primaryBusinessId,                  // $3: business_id
+          subject,                            // $4: subject
+          senderName,                         // $5: sender_name
+          finalReceivedDate,                  // $6: received_date (from filename or receivedAtMs)
+          null,                               // $7: scan_file_url - set to null initially, will be updated after file move
+          0,                                  // $8: file_size (not provided in payload)
+          true,                               // $9: scanned (true for OneDrive files)
+          'received',                         // $10: status
+          payload.sourceSlug,                 // $11: tag
+          `OneDrive import: ${payload.fileName}`, // $12: notes
+          receivedAtMs,                       // $13: received_at_ms
+          now,                                // $14: created_at
+          now,                                // $15: updated_at
+          locked,                             // $16: locked
+          lockedReason,                       // $17: locked_reason
+          locked ? `Ingested while ${lockedReason}` : null, // $18: admin_note
         ]
       );
     } else {
@@ -392,13 +397,14 @@ router.post('/from-onedrive', async (req, res) => {
       
       result = await pool.query(
         `INSERT INTO mail_item (
-          idempotency_key, user_id, subject, sender_name, received_date,
+          idempotency_key, user_id, business_id, subject, sender_name, received_date,
           scan_file_url, file_size, scanned, status, tag, notes,
           received_at_ms, created_at, updated_at, admin_note
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         ON CONFLICT (idempotency_key) DO UPDATE SET
           user_id = EXCLUDED.user_id,
+          business_id = EXCLUDED.business_id,
           subject = EXCLUDED.subject,
           sender_name = EXCLUDED.sender_name,
           received_date = EXCLUDED.received_date,
@@ -415,19 +421,20 @@ router.post('/from-onedrive', async (req, res) => {
         [
           idempotencyKey,                    // $1: idempotency_key
           payload.userId,                     // $2: user_id
-          subject,                            // $3: subject
-          senderName,                         // $4: sender_name
-          finalReceivedDate,                  // $5: received_date (from filename or receivedAtMs)
-          null,                               // $6: scan_file_url - set to null initially, will be updated after file move
-          0,                                  // $7: file_size (not provided in payload)
-          true,                               // $8: scanned (true for OneDrive files)
-          'received',                         // $9: status
-          payload.sourceSlug,                 // $10: tag
-          `OneDrive import: ${payload.fileName}`, // $11: notes
-          receivedAtMs,                       // $12: received_at_ms
-          now,                                // $13: created_at
-          now,                                // $14: updated_at
-          locked ? `Ingested while ${lockedReason} (locked columns not available)` : null, // $15: admin_note
+          primaryBusinessId,                  // $3: business_id
+          subject,                            // $4: subject
+          senderName,                         // $5: sender_name
+          finalReceivedDate,                  // $6: received_date (from filename or receivedAtMs)
+          null,                               // $7: scan_file_url - set to null initially, will be updated after file move
+          0,                                  // $8: file_size (not provided in payload)
+          true,                               // $9: scanned (true for OneDrive files)
+          'received',                         // $10: status
+          payload.sourceSlug,                 // $11: tag
+          `OneDrive import: ${payload.fileName}`, // $12: notes
+          receivedAtMs,                       // $13: received_at_ms
+          now,                                // $14: created_at
+          now,                                // $15: updated_at
+          locked ? `Ingested while ${lockedReason} (locked columns not available)` : null, // $16: admin_note
         ]
       );
     }

@@ -20,6 +20,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import { ActiveBusinessContextBanner } from '@/components/account/ActiveBusinessContextBanner';
 
 const SumsubKycWidget = dynamic(() => import('../SumsubKycWidget').then(mod => ({ default: mod.SumsubKycWidget })), { ssr: false });
 
@@ -205,6 +206,7 @@ export default function AccountVerificationPage() {
 
     return (
         <div className="w-full max-w-3xl">
+            <ActiveBusinessContextBanner />
             {/* Page Header */}
             <div className="mb-8">
                 <h1 className="text-3xl lg:text-4xl font-semibold text-neutral-900 mb-2 leading-tight tracking-tight">

@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useBillingOverview, useInvoices } from '@/hooks/useDashboardData';
 import { Card, CardContent } from '@/components/ui/card';
+import { ActiveBusinessContextBanner } from '@/components/account/ActiveBusinessContextBanner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SubscriptionSummary } from '@/lib/account/types';
 import dynamic from 'next/dynamic';
@@ -103,6 +104,7 @@ export default function AccountBillingPage() {
 
     return (
         <div className="w-full" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <ActiveBusinessContextBanner />
             {/* Page Header */}
             <div className="mb-8">
                 <h1 className="text-[54px] font-medium leading-[1.2] text-[#1A1A1A] mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>

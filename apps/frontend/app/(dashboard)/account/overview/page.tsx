@@ -10,6 +10,7 @@ import { CreditCard, MapPin, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight 
 import { REGISTERED_OFFICE_ADDRESS } from '@/lib/config/address';
 import { EmailChangeCard } from '@/components/account/EmailChangeCard';
 import { BusinessesSection } from '@/components/account/BusinessesSection';
+import { ActiveBusinessContextBanner } from '@/components/account/ActiveBusinessContextBanner';
 
 /**
  * Premium Account Overview Page
@@ -104,6 +105,7 @@ export default function AccountOverviewPage() {
 
     return (
         <div className="w-full">
+            <ActiveBusinessContextBanner />
             {/* Page Header */}
             <div className="mb-8">
                 <h1 className="text-3xl lg:text-4xl font-semibold text-neutral-900 mb-2 leading-tight tracking-tight">

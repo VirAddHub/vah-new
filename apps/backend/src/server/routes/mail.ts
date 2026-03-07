@@ -114,7 +114,10 @@ router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
 
     try {
         let businessId: number | null = null;
-        if (businessIdParam) {
+        if (businessIdParam === 'primary') {
+            const primaryRow = await pool.query<{ id: number }>('SELECT id FROM business WHERE user_id = $1 AND is_primary = true LIMIT 1', [userId]);
+            if (primaryRow.rows[0]) businessId = primaryRow.rows[0].id;
+        } else if (businessIdParam) {
             const bid = parseInt(businessIdParam, 10);
             if (!Number.isNaN(bid)) {
                 const own = await pool.query('SELECT 1 FROM business WHERE id = $1 AND user_id = $2', [bid, userId]);
