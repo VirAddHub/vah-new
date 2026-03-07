@@ -544,7 +544,19 @@ router.patch("/company-details", requireAuth, async (req: Request, res: Response
         });
     }
 
-    const { hasCompaniesHouseNumber } = await getProfileSchemaFlags();
+    // Fresh schema check (no cache) so migration 122 is picked up without restarting the server
+    let hasCompaniesHouseNumber: boolean;
+    try {
+        const colRes = await pool.query(`
+            SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'user' AND column_name = 'companies_house_number'
+            LIMIT 1
+        `);
+        hasCompaniesHouseNumber = (colRes.rows?.length ?? 0) > 0;
+    } catch (e) {
+        logger.warn('[PATCH /api/profile/company-details] schema check failed', { message: (e as any)?.message });
+        hasCompaniesHouseNumber = false;
+    }
     if (!hasCompaniesHouseNumber) {
         logger.warn('[PATCH /api/profile/company-details] companies_house_number column missing on user table (run migration 122)');
         return res.status(503).json({
