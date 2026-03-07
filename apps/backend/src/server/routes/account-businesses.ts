@@ -2,7 +2,7 @@
 // Account businesses API: list, create, update, set-primary. All require auth and ownership.
 
 import { Router, Request, Response } from 'express';
-import { getPool } from '../../db';
+import { getPool } from '../db';
 import { getMonthlyPricePenceForNextBusiness } from '../../lib/business-pricing';
 import { logger } from '../../lib/logger';
 import { safeErrorMessage } from '../../lib/safeError';
