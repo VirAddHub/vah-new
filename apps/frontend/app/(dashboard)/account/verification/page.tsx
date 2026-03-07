@@ -212,7 +212,7 @@ export default function AccountVerificationPage() {
                 </h1>
                 <p className="text-base text-neutral-600 leading-relaxed">
                     {verificationState === 'verified' 
-                        ? 'Your identity has been verified'
+                        ? 'Your identity check has been approved'
                         : verificationState === 'pending_others'
                         ? 'Waiting for other directors to complete verification'
                         : 'Complete verification to access your business address'
@@ -245,9 +245,6 @@ export default function AccountVerificationPage() {
                                             </p>
                                         )}
                                     </div>
-                                    <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80 w-full sm:w-auto" onClick={handleOpenCompanyModal}>
-                                        Change
-                                    </Button>
                                 </>
                             ) : (
                                 <>
@@ -280,10 +277,10 @@ export default function AccountVerificationPage() {
                             </div>
                             <div className="flex-1">
                                 <h2 className="text-xl font-semibold text-neutral-900 mb-2">
-                                    Verification Complete
+                                    Identity verification complete
                                 </h2>
                                 <p className="text-base text-neutral-600 leading-relaxed mb-6">
-                                    Your identity has been verified. You have full access to your business address and all account features.
+                                    Your identity check (ID verification) has been approved. You have full access to your business address and all account features.
                                 </p>
                                 <Button
                                     onClick={() => router.push('/account/overview')}

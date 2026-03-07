@@ -62,6 +62,7 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
                 u.first_name,
                 u.last_name,
                 u.company_name,
+                u.companies_house_number,
                 u.is_admin,
                 u.status,
                 u.plan_status,
@@ -421,6 +422,7 @@ router.get('/users/:id', requireAdmin, async (req: Request, res: Response) => {
         const result = await pool.query(`
             SELECT
                 u.id, u.email, u.first_name, u.last_name, u.company_name,
+                u.companies_house_number, u.company_number,
                 u.is_admin, u.is_staff, u.status, u.plan_status, u.plan_id,
                 u.kyc_status, u.kyc_approved_at, u.kyc_rejection_reason,
                 u.companies_house_verified, u.ch_verification_status,
@@ -536,7 +538,9 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
                 }
             }
         }
-        // Allow admin to update plan_status (e.g., to set pending_payment for users who haven't paid)
+        // Allow admin to update plan_status (e.g., to set pending_payment for users who haven't paid).
+        // NOTE: Do not clear companies_house_number or company_name when changing plan_status —
+        // only the letter of certification is gated on active plan; company details stay on the user.
         if (typeof plan_status === 'string') {
             updates.push(`plan_status = $${paramIndex++}`);
             values.push(plan_status);

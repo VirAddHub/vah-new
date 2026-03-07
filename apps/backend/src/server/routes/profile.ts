@@ -159,6 +159,7 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
                 phone,
                 company_name,
                 ${companiesHouseNumberSelect}
+                company_number,
                 address_line1,
                 address_line2,
                 city,
@@ -193,6 +194,12 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
         }
 
         const user = result.rows[0];
+
+        // So verification page shows company number whether it was set at signup (company_number) or later (companies_house_number)
+        const companyNumber = (user.companies_house_number || user.company_number || '').trim();
+        if (companyNumber && !user.companies_house_number) {
+            user.companies_house_number = companyNumber;
+        }
 
         // Compute identity compliance status
         const { computeIdentityCompliance } = await import('../services/compliance');
@@ -952,7 +959,7 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
     const pool = getPool();
 
     try {
-        // Get user profile data including KYC status and Companies House number
+        // Get user profile data including KYC status, Companies House number, and plan_status
         const result = await pool.query(`
             SELECT
                 first_name,
@@ -961,7 +968,8 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
                 companies_house_number,
                 email,
                 created_at,
-                kyc_status
+                kyc_status,
+                plan_status
             FROM "user"
             WHERE id = $1
         `, [userId]);
@@ -971,6 +979,15 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
         }
 
         const user = result.rows[0];
+
+        // Letter of certification requires an active plan (do not clear company details when plan is pending_payment)
+        if (user.plan_status !== 'active') {
+            return res.status(403).json({
+                ok: false,
+                error: 'ACTIVE_PLAN_REQUIRED',
+                message: 'An active subscription is required to download your letter of certification. Your Companies House details are unchanged.',
+            });
+        }
 
         // Check KYC status - certificate requires approved KYC
         const { isKycApproved } = await import('../services/kyc-guards');

@@ -7,11 +7,28 @@ export async function POST(request: NextRequest) {
     const cookie = request.headers.get('cookie') || '';
     const backend = getBackendOrigin();
 
+    let csrfToken: string | null = null;
+    const csrfResponse = await fetch(`${backend}/api/csrf`, {
+      method: 'GET',
+      headers: { Cookie: cookie },
+      credentials: 'include',
+      cache: 'no-store',
+    });
+    if (csrfResponse.ok) {
+      try {
+        const csrfData = await csrfResponse.json();
+        csrfToken = csrfData.csrfToken || null;
+      } catch {
+        // ignore
+      }
+    }
+
     const response = await fetch(`${backend}/api/billing/reauthorise`, {
       method: 'POST',
       headers: {
-        'Cookie': cookie,
+        Cookie: cookie,
         'Content-Type': 'application/json',
+        ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       },
     });
 
