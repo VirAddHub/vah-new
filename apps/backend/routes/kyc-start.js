@@ -32,8 +32,13 @@ const { db } = require('../server/db');
  */
 router.post("/start", async (req, res) => {
   try {
-    // Auth middleware sets req.user
+    if (!req.user || req.user.id == null) {
+      return res.status(401).json({ ok: false, error: "unauthenticated", message: "Please log in to start verification." });
+    }
     const userId = Number(req.user.id);
+    if (!Number.isFinite(userId)) {
+      return res.status(401).json({ ok: false, error: "unauthenticated", message: "Please log in to start verification." });
+    }
 
     const user = db.prepare("SELECT id, email, first_name, last_name, sumsub_applicant_id FROM user WHERE id = ?").get(userId);
     if (!user) return res.status(404).json({ ok: false, error: "user_not_found" });
