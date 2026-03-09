@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Check, Shield, Mail, Truck, FileText } from 'lucide-react';
+import { ArrowLeft, Check } from 'lucide-react';
 import { ScrollToTopButton } from '../ScrollToTopButton';
 import { usePlans } from '@/hooks/usePlans';
 
@@ -40,29 +40,6 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
         'Cancel anytime online'
     ];
 
-    const trustSignals = [
-        {
-            icon: Shield,
-            title: 'HMRC Compliant',
-            description: 'Fully compliant with UK regulations'
-        },
-        {
-            icon: Mail,
-            title: 'Professional Scanning',
-            description: 'High-quality mail scanning service'
-        },
-        {
-            icon: Truck,
-            title: 'Gov Mail is Free',
-            description: 'HMRC & Companies House forwarding included'
-        },
-        {
-            icon: FileText,
-            title: 'Address Certificate',
-            description: 'Official proof of address document'
-        }
-    ];
-
     const handleContinue = () => {
         const plan = plans?.find(p => p.interval === (billing === 'annual' ? 'year' : 'month'));
         onNext({
@@ -74,11 +51,11 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
 
     return (
         <main className="flex-1">
-            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+            <div className="min-h-screen bg-background flex items-center justify-center p-4 sm:p-6">
                 <div className="w-full max-w-4xl">
                     {/* Header with progress and back button */}
-                    <div className="text-center mb-8">
-                        <div className="flex items-center justify-center gap-4 mb-6">
+                    <div className="text-center mb-5 sm:mb-6">
+                        <div className="flex items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-5">
                             <button
                                 onClick={onBack}
                                 className="inline-flex items-center justify-center border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-8 rounded-md gap-1.5 px-3 text-sm font-medium transition-all"
@@ -103,13 +80,13 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                             </div>
                         </div>
 
-                        <h1 className="mb-4">Choose Your Plan</h1>
-                        <p className="text-muted-foreground max-w-2xl mx-auto">
-                            One plan, two ways to pay. Switch between monthly and annual billing anytime.
+                        <h1 className="mb-2 text-xl font-semibold sm:mb-3 sm:text-2xl">Choose Your Plan</h1>
+                        <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto">
+                            One plan. Monthly or annual — switch anytime.
                         </p>
 
                         {/* Billing toggle */}
-                        <div className="mt-6 flex items-center justify-center gap-3">
+                        <div className="mt-4 flex items-center justify-center gap-3">
                             <div className="inline-flex rounded-xl border bg-card p-1 shadow-sm">
                                 <button
                                     onClick={() => setBilling('monthly')}
@@ -139,8 +116,8 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                     </div>
 
                     {/* Main pricing card */}
-                    <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border mb-8">
-                        <div className="grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 pt-6 relative">
+                    <div className="bg-card text-card-foreground flex flex-col gap-4 sm:gap-5 rounded-xl border mb-6 shadow-sm">
+                        <div className="grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-5 pt-5 sm:px-6 sm:pt-6 relative">
                             {/* Badge - varies by billing type */}
                             <div className="absolute -top-3 left-4">
                                 {billing === 'monthly' ? (
@@ -182,8 +159,8 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                         </div>
 
                         {/* Features list */}
-                        <div className="px-6 pb-6">
-                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="px-5 pb-5 sm:px-6 sm:pb-6">
+                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
                                 {planFeatures.map((feature, index) => (
                                     <li key={index} className="flex items-start gap-3 text-sm">
                                         <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -196,36 +173,16 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                         </div>
                     </div>
 
-                    {/* Trust signals */}
-                    <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border mb-8">
-                        <div className="px-6 pt-6 pb-6">
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                {trustSignals.map((signal, index) => {
-                                    const IconComponent = signal.icon;
-                                    return (
-                                        <div key={index} className="text-center">
-                                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                                                <IconComponent className="h-6 w-6 text-primary" />
-                                            </div>
-                                            <h4 className="font-medium mb-2">{signal.title}</h4>
-                                            <p className="text-sm text-muted-foreground">{signal.description}</p>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Continue button */}
+                    {/* CTA — close to card for clear next step */}
                     <div className="text-center">
                         <ScrollToTopButton
                             onClick={handleContinue}
-                            className="w-full flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-md px-6"
+                            className="w-full flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-lg px-6 shadow-sm"
                         >
-                            Create Account - £{getPlanPrice(billing)}{billing === 'monthly' ? '/mo' : '/year'}
+                            Continue — £{getPlanPrice(billing)}{billing === 'monthly' ? '/month' : '/year'}
                         </ScrollToTopButton>
-                        <p className="text-sm text-muted-foreground mt-4">
-                            No payment required yet. Complete your information first.
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-3">
+                            No payment now. You’ll enter details first.
                         </p>
                     </div>
                 </div>
