@@ -17,6 +17,10 @@ import {
   FileText,
   ExternalLink
 } from 'lucide-react';
+import {
+  PaymentMethodModal,
+  type PaymentMethodModalMode,
+} from '@/components/account/PaymentMethodModal';
 
 interface BillingDashboardProps {
   onNavigate?: (page: string) => void;
@@ -36,6 +40,10 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
   const [subscriptionStatus, setSubscriptionStatus] = useState<any>(null);
   const [billingInfo, setBillingInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [paymentModalMode, setPaymentModalMode] =
+    useState<PaymentMethodModalMode>('update');
+  const [paymentActionLoading, setPaymentActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
   
@@ -82,7 +90,7 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
 
   const handleCreatePaymentMethod = async () => {
     try {
-      setLoading(true);
+      setPaymentActionLoading(true);
       const response = await apiClient.createRedirectFlow();
 
       if (response.ok) {
@@ -99,7 +107,7 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
       console.error('Failed to create payment method:', err);
       setError('Failed to create payment method');
     } finally {
-      setLoading(false);
+      setPaymentActionLoading(false);
     }
   };
 
@@ -237,8 +245,15 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
 
             <div className="mt-6 flex flex-wrap gap-4">
               <Button
-                onClick={handleCreatePaymentMethod}
-                disabled={loading}
+                onClick={() => {
+                  const mode: PaymentMethodModalMode =
+                    subscriptionStatus?.plan_status === 'active'
+                      ? 'update'
+                      : 'setup';
+                  setPaymentModalMode(mode);
+                  setPaymentModalOpen(true);
+                }}
+                disabled={loading || paymentActionLoading}
                 className="flex items-center gap-2"
               >
                 <CreditCard className="h-4 w-4" />
@@ -384,6 +399,15 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
           </Card>
         )}
       </div>
+      <PaymentMethodModal
+        open={paymentModalOpen}
+        mode={paymentModalMode}
+        onClose={() => setPaymentModalOpen(false)}
+        onConfirm={async () => {
+          await handleCreatePaymentMethod();
+          setPaymentModalOpen(false);
+        }}
+      />
     </div>
   );
 }

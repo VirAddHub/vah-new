@@ -9,15 +9,28 @@ import { SubscriptionSummary } from '@/lib/account/types';
 import { toast } from '@/hooks/use-toast';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
+import {
+  PaymentMethodModal,
+  type PaymentMethodModalMode,
+} from '@/components/account/PaymentMethodModal';
 
 interface AccountBillingCardProps {
   subscription: SubscriptionSummary;
   onRefresh?: () => void;
 }
 
-export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCardProps) {
+export function AccountBillingCard({
+  subscription,
+  onRefresh,
+}: AccountBillingCardProps) {
   const [isLoading, setIsLoading] = useState<string | null>(null);
-  const { data: overview, mutate: mutateOverview } = useSWR('/api/bff/billing/overview', swrFetcher);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [paymentModalMode, setPaymentModalMode] =
+    useState<PaymentMethodModalMode>('update');
+  const { data: overview, mutate: mutateOverview } = useSWR(
+    '/api/bff/billing/overview',
+    swrFetcher
+  );
 
   const hasMandate = overview?.data?.has_mandate || false;
   const mandateStatus = overview?.data?.mandate_status || 'missing';
@@ -49,8 +62,8 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
       // Handle already linked case
       if (data.data?.alreadyLinked) {
         toast({
-          title: "Already active",
-          description: "Your subscription is already active.",
+          title: 'Already active',
+          description: 'Your subscription is already active.',
         });
         await mutateOverview();
         if (onRefresh) {
@@ -62,7 +75,9 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
       // Handle resume case
       if (data.data?.resume && data.data?.redirectFlowId) {
         const appUrl = window.location.origin;
-        window.location.href = `${appUrl}/billing?billing_request_flow_id=${encodeURIComponent(data.data.redirectFlowId)}`;
+        window.location.href = `${appUrl}/billing?billing_request_flow_id=${encodeURIComponent(
+          data.data.redirectFlowId
+        )}`;
         return;
       }
 
@@ -70,7 +85,7 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
       const redirectUrl = data.data?.redirect_url || data.redirect_url;
       if (redirectUrl) {
         toast({
-          title: "Redirecting to payment setup",
+          title: 'Redirecting to payment setup',
           description: "You'll be redirected to complete your payment setup.",
         });
         window.location.href = redirectUrl;
@@ -79,8 +94,9 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
 
       if (data.data?.skip_payment) {
         toast({
-          title: "Payment setup",
-          description: data.data.message || "Payment setup will be completed later.",
+          title: 'Payment setup',
+          description:
+            data.data.message || 'Payment setup will be completed later.',
         });
         await mutateOverview();
         if (onRefresh) {
@@ -92,9 +108,10 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
       throw new Error('No redirect URL received');
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to restart subscription. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description:
+          error.message || 'Failed to restart subscription. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(null);
@@ -102,7 +119,6 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
   };
 
   const handleUpdateBank = async () => {
-    setIsLoading('update-bank');
     try {
       const response = await fetch('/api/bff/billing/update-bank', {
         method: 'POST',
@@ -124,17 +140,15 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
       throw new Error('No redirect URL received');
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to open bank update page. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description:
+          error.message || 'Failed to open bank update page. Please try again.',
+        variant: 'destructive',
       });
-    } finally {
-      setIsLoading(null);
     }
   };
 
   const handleSetupPayment = async () => {
-    setIsLoading('setup');
     try {
       const planId = overview?.data?.plan_id || null;
       const billingPeriod = subscription.billing_period || 'monthly';
@@ -149,23 +163,37 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
         throw new Error(data.error || 'Failed to start payment setup');
       }
       if (data.data?.alreadyLinked) {
-        toast({ title: 'Already set up', description: 'Your payment method is already linked.' });
+        toast({
+          title: 'Already set up',
+          description: 'Your payment method is already linked.',
+        });
         await mutateOverview();
         onRefresh?.();
         return;
       }
       if (data.data?.resume && data.data?.redirectFlowId) {
-        window.location.href = `${window.location.origin}/billing?billing_request_flow_id=${encodeURIComponent(data.data.redirectFlowId)}`;
+        window.location.href = `${
+          window.location.origin
+        }/billing?billing_request_flow_id=${encodeURIComponent(
+          data.data.redirectFlowId
+        )}`;
         return;
       }
       const redirectUrl = data.data?.redirect_url || data.redirect_url;
       if (redirectUrl) {
-        toast({ title: 'Redirecting', description: "You'll be taken to complete payment setup." });
+        toast({
+          title: 'Redirecting',
+          description: "You'll be taken to complete payment setup.",
+        });
         window.location.href = redirectUrl;
         return;
       }
       if (data.data?.skip_payment) {
-        toast({ title: 'Payment setup', description: data.data.message || 'Payment setup will be completed later.' });
+        toast({
+          title: 'Payment setup',
+          description:
+            data.data.message || 'Payment setup will be completed later.',
+        });
         await mutateOverview();
         onRefresh?.();
         return;
@@ -174,24 +202,10 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to open payment setup. Please try again.',
+        description:
+          error.message || 'Failed to open payment setup. Please try again.',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(null);
-    }
-  };
-
-  const getStatusBadge = () => {
-    switch (subscription.status) {
-      case 'active':
-        return <Badge className="bg-green-600">Active</Badge>;
-      case 'cancelled':
-        return <Badge variant="secondary">Cancelled</Badge>;
-      case 'past_due':
-        return <Badge variant="destructive">Past due</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
     }
   };
 
@@ -235,20 +249,36 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
   }
 
   return (
-    <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white w-full max-w-[408px] flex-shrink-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+    <Card
+      className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white w-full max-w-[408px] flex-shrink-0"
+      style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+    >
       <CardContent className="p-[28px] h-full flex flex-col">
         <div className="flex flex-col gap-[14px] flex-1">
           {/* Header */}
-          <h3 className="text-[18px] font-semibold leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+          <h3
+            className="text-[18px] font-semibold leading-[1.4] text-[#1A1A1A]"
+            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+          >
             Account & billing
           </h3>
 
           {/* Plan: clarify monthly vs yearly */}
           <div className="flex items-center justify-between gap-[58px]">
-            <span className="text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <span
+              className="text-[12px] font-normal leading-[1.4] text-[#666666]"
+              style={{
+                fontFamily: 'var(--font-poppins), Poppins, sans-serif',
+              }}
+            >
               Plan
             </span>
-            <span className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <span
+              className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right"
+              style={{
+                fontFamily: 'var(--font-poppins), Poppins, sans-serif',
+              }}
+            >
               {subscription.billing_period === 'annual'
                 ? `Annual (${subscription.price_label}/year)`
                 : `Monthly (${subscription.price_label}/month)`}
@@ -258,33 +288,62 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
 
           {/* Status */}
           <div className="flex items-center justify-between gap-[58px]">
-            <span className="text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <span
+              className="text-[12px] font-normal leading-[1.4] text-[#666666]"
+              style={{
+                fontFamily: 'var(--font-poppins), Poppins, sans-serif',
+              }}
+            >
               Status
             </span>
-            <span className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-              {subscription.status === 'active' ? 'Active' : subscription.status === 'cancelled' ? 'Cancelled' : subscription.status === 'past_due' ? 'Past due' : 'Unknown'}
+            <span
+              className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right"
+              style={{
+                fontFamily: 'var(--font-poppins), Poppins, sans-serif',
+              }}
+            >
+              {subscription.status === 'active'
+                ? 'Active'
+                : subscription.status === 'cancelled'
+                  ? 'Cancelled'
+                  : subscription.status === 'past_due'
+                    ? 'Past due'
+                    : 'Unknown'}
             </span>
           </div>
           <div className="w-full h-[0.5px] bg-[#E5E7EB]"></div>
 
           {/* Next billing */}
           <div className="flex items-center justify-between gap-[58px]">
-            <span className="text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <span
+              className="text-[12px] font-normal leading-[1.4] text-[#666666]"
+              style={{
+                fontFamily: 'var(--font-poppins), Poppins, sans-serif',
+              }}
+            >
               Next billing
             </span>
-            <span className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <span
+              className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right"
+              style={{
+                fontFamily: 'var(--font-poppins), Poppins, sans-serif',
+              }}
+            >
               {nextBillingLabel}
             </span>
           </div>
 
           {/* Payment details actions: always show so users can edit / set up payment */}
           <div className="pt-4 border-t space-y-3">
-            {(subscription.status === 'cancelled' || subscription.status === 'past_due') && (
+            {(subscription.status === 'cancelled' ||
+              subscription.status === 'past_due') && (
               <Button
                 onClick={handleReactivate}
                 disabled={isLoading === 'reactivate'}
                 className="w-full bg-[#206039] text-white hover:bg-[#206039]/90"
-                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                style={{
+                  fontFamily: 'var(--font-poppins), Poppins, sans-serif',
+                }}
               >
                 {isLoading === 'reactivate' ? (
                   <>
@@ -302,36 +361,53 @@ export function AccountBillingCard({ subscription, onRefresh }: AccountBillingCa
             {subscription.status === 'active' && !hasMandate && (
               <Button
                 variant="outline"
-                onClick={handleSetupPayment}
-                disabled={isLoading === 'setup'}
+                onClick={() => {
+                  setPaymentModalMode('setup');
+                  setPaymentModalOpen(true);
+                }}
                 className="w-full"
-                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                style={{
+                  fontFamily: 'var(--font-poppins), Poppins, sans-serif',
+                }}
               >
-                {isLoading === 'setup' ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <CreditCard className="h-4 w-4 mr-2" />
-                )}
+                <CreditCard className="h-4 w-4 mr-2" />
                 Set up payment method
               </Button>
             )}
             {hasMandate && (
               <Button
-                onClick={handleUpdateBank}
-                disabled={isLoading === 'update-bank'}
+                onClick={() => {
+                  setPaymentModalMode('update');
+                  setPaymentModalOpen(true);
+                }}
                 className="w-full bg-[#206039] text-white hover:bg-[#206039]/90"
-                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                style={{
+                  fontFamily: 'var(--font-poppins), Poppins, sans-serif',
+                }}
               >
-                {isLoading === 'update-bank' ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <CreditCard className="h-4 w-4 mr-2" />
-                )}
+                <CreditCard className="h-4 w-4 mr-2" />
                 Update bank details
               </Button>
             )}
           </div>
         </div>
+
+        <PaymentMethodModal
+          open={paymentModalOpen}
+          mode={paymentModalMode}
+          onClose={() => setPaymentModalOpen(false)}
+          onConfirm={async () => {
+            if (paymentModalMode === 'setup') {
+              await handleSetupPayment();
+            } else {
+              await handleUpdateBank();
+            }
+            // If we are still on this page after the flow, refresh overview data
+            await mutateOverview();
+            onRefresh?.();
+            setPaymentModalOpen(false);
+          }}
+        />
       </CardContent>
     </Card>
   );
