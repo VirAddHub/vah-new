@@ -38,7 +38,7 @@
         "@types/react-dom": "18.3.0"
     },
     "overrides": {
-        "dompurify": "^3.2.7",
+        "dompurify": "^3.3.2",
         "marked": "^16.4.0",
         "elliptic": "^6.6.1",
         "sha.js": "^2.4.12",
@@ -51,12 +51,16 @@
         "serialize-javascript": "^6.0.1",
         "prismjs": "^1.30.0",
         "webpack": "^5.93.0",
-        "tar": "^7.5.7"
+        "tar": "^7.5.10",
+        "axios": "^1.13.5",
+        "@tootallnate/once": "^3.0.1",
+        "esbuild": "^0.25.0",
+        "minimatch": "^10.2.1"
     },
     "dependencies": {
         "pg": "^8.11.0",
         "@microsoft/microsoft-graph-client": "^3.0.7",
-        "dompurify": "^3.2.7",
+        "dompurify": "^3.3.2",
         "drizzle-kit": "^0.31.5",
         "isomorphic-fetch": "^3.0.0",
         "marked": "^16.4.0"
