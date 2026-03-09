@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-import { SignupPage } from '../../components/SignupPage';
+import { redirect } from 'next/navigation';
 import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
 import { FooterWithNav } from '@/components/layout/FooterWithNav';
 import { SignupPageClient } from './SignupPageClient';
+import { getSessionFromCookies } from '@/lib/server/session';
 
 export const metadata: Metadata = {
     title: 'Sign Up | VirtualAddressHub',
@@ -16,7 +17,14 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-export default function Signup() {
+export default async function Signup() {
+    const session = await getSessionFromCookies();
+
+    if (session.authenticated) {
+        // Authenticated users should not meaningfully see the signup page
+        redirect('/mail');
+    }
+
     return (
         <div className="min-h-screen flex flex-col relative">
             <HeaderWithNav />

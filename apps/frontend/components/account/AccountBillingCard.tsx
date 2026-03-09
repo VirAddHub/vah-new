@@ -118,97 +118,6 @@ export function AccountBillingCard({
     }
   };
 
-  const handleUpdateBank = async () => {
-    try {
-      const response = await fetch('/api/bff/billing/update-bank', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.ok) {
-        throw new Error(data.error || 'Failed to create update bank link');
-      }
-
-      const redirectUrl = data.data?.url || data.data?.redirect_url;
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
-        return;
-      }
-      throw new Error('No redirect URL received');
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description:
-          error.message || 'Failed to open bank update page. Please try again.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleSetupPayment = async () => {
-    try {
-      const planId = overview?.data?.plan_id || null;
-      const billingPeriod = subscription.billing_period || 'monthly';
-      const response = await fetch('/api/bff/payments/redirect-flows', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ plan_id: planId, billing_period: billingPeriod }),
-      });
-      const data = await response.json();
-      if (!response.ok || !data.ok) {
-        throw new Error(data.error || 'Failed to start payment setup');
-      }
-      if (data.data?.alreadyLinked) {
-        toast({
-          title: 'Already set up',
-          description: 'Your payment method is already linked.',
-        });
-        await mutateOverview();
-        onRefresh?.();
-        return;
-      }
-      if (data.data?.resume && data.data?.redirectFlowId) {
-        window.location.href = `${
-          window.location.origin
-        }/billing?billing_request_flow_id=${encodeURIComponent(
-          data.data.redirectFlowId
-        )}`;
-        return;
-      }
-      const redirectUrl = data.data?.redirect_url || data.redirect_url;
-      if (redirectUrl) {
-        toast({
-          title: 'Redirecting',
-          description: "You'll be taken to complete payment setup.",
-        });
-        window.location.href = redirectUrl;
-        return;
-      }
-      if (data.data?.skip_payment) {
-        toast({
-          title: 'Payment setup',
-          description:
-            data.data.message || 'Payment setup will be completed later.',
-        });
-        await mutateOverview();
-        onRefresh?.();
-        return;
-      }
-      throw new Error('No redirect URL received');
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description:
-          error.message || 'Failed to open payment setup. Please try again.',
-        variant: 'destructive',
-      });
-    }
-  };
-
   // Next billing: backend sends next_billing_date (YYYY-MM-DD) or we use next_charge_at (ms) or latest_invoice.period_end
   const nextBillingDate =
     overview?.data?.next_billing_date ||
@@ -396,16 +305,9 @@ export function AccountBillingCard({
           open={paymentModalOpen}
           mode={paymentModalMode}
           onClose={() => setPaymentModalOpen(false)}
-          onConfirm={async () => {
-            if (paymentModalMode === 'setup') {
-              await handleSetupPayment();
-            } else {
-              await handleUpdateBank();
-            }
-            // If we are still on this page after the flow, refresh overview data
+          onSuccess={async () => {
             await mutateOverview();
             onRefresh?.();
-            setPaymentModalOpen(false);
           }}
         />
       </CardContent>

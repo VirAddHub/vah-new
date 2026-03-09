@@ -762,3 +762,204 @@ export async function postCancelAtPeriodEnd(req: Request, res: Response) {
   // Stub: mark cancel_at_period_end in GC and persist
   res.json({ ok: true, data: { cancels_on: null } });
 }
+
+/**
+ * POST /api/billing/payment-methods/setup-intent
+ * Create a Stripe SetupIntent for updating the customer's default payment method.
+ * Used by the in-app billing modal (card payments only).
+ */
+export async function postCreateStripeSetupIntent(req: Request, res: Response) {
+  try {
+    const userId = Number(req.user!.id);
+
+    if (getBillingProvider() !== 'stripe') {
+      return res
+        .status(400)
+        .json({ ok: false, error: 'billing_provider_not_stripe' });
+    }
+
+    const stripe = getStripe();
+    if (!stripe) {
+      return res
+        .status(503)
+        .json({ ok: false, error: 'stripe_not_configured' });
+    }
+
+    const pool = getPool();
+    const userResult = await pool.query(
+      `SELECT stripe_customer_id, email FROM "user" WHERE id = $1`,
+      [userId]
+    );
+    const user = userResult.rows[0];
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ ok: false, error: 'user_not_found' });
+    }
+
+    let customerId: string | null = user.stripe_customer_id;
+
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email || undefined,
+        metadata: { userId: String(userId) },
+      });
+      customerId = customer.id;
+      await pool.query(
+        `UPDATE "user" SET stripe_customer_id = $1, updated_at = $2 WHERE id = $3`,
+        [customerId, Date.now(), userId]
+      );
+    }
+
+    const setupIntent = await stripe.setupIntents.create({
+      customer: customerId,
+      // Use automatic payment methods but we'll restrict to card in the client Payment Element.
+      automatic_payment_methods: { enabled: true },
+      usage: 'off_session',
+    });
+
+    if (!setupIntent.client_secret) {
+      logger.error('[postCreateStripeSetupIntent] missing_client_secret', {
+        userId,
+        setupIntentId: setupIntent.id,
+      });
+      return res
+        .status(500)
+        .json({ ok: false, error: 'missing_client_secret' });
+    }
+
+    return res.json({
+      ok: true,
+      data: {
+        client_secret: setupIntent.client_secret,
+        setup_intent_id: setupIntent.id,
+      },
+    });
+  } catch (error: any) {
+    logger.error('[postCreateStripeSetupIntent] error', {
+      message: error?.message ?? String(error),
+    });
+    return res
+      .status(500)
+      .json({ ok: false, error: 'setup_intent_failed' });
+  }
+}
+
+/**
+ * POST /api/billing/payment-methods/complete-setup
+ * Mark the payment method from a succeeded SetupIntent as the customer's default.
+ * This endpoint trusts Stripe as source of truth and re-fetches the SetupIntent server-side.
+ */
+export async function postCompleteStripeSetupIntent(req: Request, res: Response) {
+  try {
+    const userId = Number(req.user!.id);
+    const { setup_intent_id } = (req.body ?? {}) as {
+      setup_intent_id?: string;
+    };
+
+    if (!setup_intent_id || typeof setup_intent_id !== 'string') {
+      return res
+        .status(400)
+        .json({ ok: false, error: 'invalid_setup_intent_id' });
+    }
+
+    if (getBillingProvider() !== 'stripe') {
+      return res
+        .status(400)
+        .json({ ok: false, error: 'billing_provider_not_stripe' });
+    }
+
+    const stripe = getStripe();
+    if (!stripe) {
+      return res
+        .status(503)
+        .json({ ok: false, error: 'stripe_not_configured' });
+    }
+
+    const pool = getPool();
+    const userResult = await pool.query(
+      `SELECT stripe_customer_id FROM "user" WHERE id = $1`,
+      [userId]
+    );
+    const user = userResult.rows[0];
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ ok: false, error: 'user_not_found' });
+    }
+
+    const customerId: string | null = user.stripe_customer_id;
+    if (!customerId) {
+      return res
+        .status(400)
+        .json({ ok: false, error: 'stripe_customer_missing' });
+    }
+
+    const setupIntent = await stripe.setupIntents.retrieve(setup_intent_id);
+
+    if (setupIntent.status !== 'succeeded') {
+      return res.status(400).json({
+        ok: false,
+        error: 'setup_intent_not_succeeded',
+        status: setupIntent.status,
+      });
+    }
+
+    const pm =
+      typeof setupIntent.payment_method === 'string'
+        ? setupIntent.payment_method
+        : setupIntent.payment_method?.id;
+
+    if (!pm) {
+      return res
+        .status(400)
+        .json({ ok: false, error: 'payment_method_missing' });
+    }
+
+    // Ensure the SetupIntent belongs to the same customer as our user
+    const siCustomer =
+      typeof setupIntent.customer === 'string'
+        ? setupIntent.customer
+        : setupIntent.customer?.id;
+
+    if (!siCustomer || siCustomer !== customerId) {
+      logger.warn('[postCompleteStripeSetupIntent] customer_mismatch', {
+        userId,
+        customerId,
+        siCustomer,
+        setupIntentId: setup_intent_id,
+      });
+      return res
+        .status(400)
+        .json({ ok: false, error: 'customer_mismatch' });
+    }
+
+    await stripe.customers.update(customerId, {
+      invoice_settings: {
+        default_payment_method: pm,
+      },
+    });
+
+    logger.info('[postCompleteStripeSetupIntent] default_payment_method_updated', {
+      userId,
+      customerId,
+    });
+
+    return res.json({
+      ok: true,
+      data: {
+        default_payment_method: pm,
+      },
+    });
+  } catch (error: any) {
+    logger.error('[postCompleteStripeSetupIntent] error', {
+      message: error?.message ?? String(error),
+    });
+    return res
+      .status(500)
+      .json({ ok: false, error: 'complete_setup_failed' });
+  }
+}
+

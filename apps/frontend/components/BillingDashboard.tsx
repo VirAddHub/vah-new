@@ -43,7 +43,6 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentModalMode, setPaymentModalMode] =
     useState<PaymentMethodModalMode>('update');
-  const [paymentActionLoading, setPaymentActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
   
@@ -87,29 +86,6 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
 
     loadBillingData();
   }, []);
-
-  const handleCreatePaymentMethod = async () => {
-    try {
-      setPaymentActionLoading(true);
-      const response = await apiClient.createRedirectFlow();
-
-      if (response.ok) {
-        const data = response.data as { redirect_url?: string };
-        if (data.redirect_url) {
-          window.location.href = data.redirect_url;
-          return;
-        }
-        setRedirectUrl(data.redirect_url || '');
-      } else {
-        setError('Failed to create payment method');
-      }
-    } catch (err) {
-      console.error('Failed to create payment method:', err);
-      setError('Failed to create payment method');
-    } finally {
-      setPaymentActionLoading(false);
-    }
-  };
 
   const handleDownloadInvoice = async (invoiceId: string) => {
     try {
@@ -253,7 +229,7 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
                   setPaymentModalMode(mode);
                   setPaymentModalOpen(true);
                 }}
-                disabled={loading || paymentActionLoading}
+                disabled={loading}
                 className="flex items-center gap-2"
               >
                 <CreditCard className="h-4 w-4" />
@@ -403,9 +379,23 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
         open={paymentModalOpen}
         mode={paymentModalMode}
         onClose={() => setPaymentModalOpen(false)}
-        onConfirm={async () => {
-          await handleCreatePaymentMethod();
-          setPaymentModalOpen(false);
+        onSuccess={async () => {
+          // Reload page to reflect updated billing info
+          try {
+            const [billingResponse, subscriptionResponse] = await Promise.all([
+              apiClient.getBilling(),
+              apiClient.getSubscriptionStatus(),
+            ]);
+
+            if (billingResponse.ok) {
+              setBillingInfo(billingResponse.data);
+            }
+            if (subscriptionResponse.ok) {
+              setSubscriptionStatus(subscriptionResponse.data);
+            }
+          } catch (err) {
+            console.error('Failed to refresh billing after payment update:', err);
+          }
         }}
       />
     </div>

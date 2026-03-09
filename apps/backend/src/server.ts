@@ -546,8 +546,23 @@ async function start() {
     // Mount safe stubs for integrations until providers are wired
     app.use('/api/payments', paymentsStubRouter);
     logger.info('[mount] /api/payments (stubs) mounted');
-    app.use('/api/kyc', kycStubRouter);
-    logger.info('[mount] /api/kyc (stubs) mounted');
+
+    // Only mount KYC stub if Sumsub is not configured (no token/secret in either primary or sandbox vars)
+    const hasSumsubToken =
+        process.env.SUMSUB_APP_TOKEN ||
+        process.env.SUMSUB_APP_TOKEN_SANDBOX;
+    const hasSumsubSecret =
+        process.env.SUMSUB_APP_SECRET ||
+        process.env.SUMSUB_SECRET_KEY ||
+        process.env.SUMSUB_SECRET_KEY_SANDBOX;
+    const sumsubConfigured = !!(hasSumsubToken && hasSumsubSecret);
+
+    if (!sumsubConfigured) {
+        app.use('/api/kyc', kycStubRouter);
+        logger.info('[mount] /api/kyc (stubs) mounted — Sumsub not configured');
+    } else {
+        logger.info('[mount] /api/kyc stubs skipped — Sumsub configured');
+    }
 
     app.use('/api', forwardingRouter);
     logger.info('[mount] /api (forwarding routes) mounted');

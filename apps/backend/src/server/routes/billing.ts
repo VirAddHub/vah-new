@@ -1,8 +1,17 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middleware/auth';
 import {
-  downloadInvoicePdf, getBillingOverview, getInvoiceById, listInvoices, postUpdateBank, postReauthorise,
-  postRetryPayment, postChangePlan, postCancelAtPeriodEnd
+  downloadInvoicePdf,
+  getBillingOverview,
+  getInvoiceById,
+  listInvoices,
+  postUpdateBank,
+  postReauthorise,
+  postRetryPayment,
+  postChangePlan,
+  postCancelAtPeriodEnd,
+  postCreateStripeSetupIntent,
+  postCompleteStripeSetupIntent,
 } from '../controllers/billing';
 
 const router = Router();
@@ -13,6 +22,16 @@ router.get('/invoices/:id', requireAuth, getInvoiceById);
 router.get('/invoices/:id/download', requireAuth, downloadInvoicePdf);
 router.post('/update-bank', requireAuth, postUpdateBank);
 router.post('/reauthorise', requireAuth, postReauthorise);
+router.post(
+  '/payment-methods/setup-intent',
+  requireAuth,
+  postCreateStripeSetupIntent
+);
+router.post(
+  '/payment-methods/complete-setup',
+  requireAuth,
+  postCompleteStripeSetupIntent
+);
 router.post('/retry-payment', requireAuth, postRetryPayment);
 router.post('/change-plan', requireAuth, postChangePlan);
 router.post('/cancel', requireAuth, postCancelAtPeriodEnd);

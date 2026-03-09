@@ -217,7 +217,7 @@ export default function AccountVerificationPage() {
                         ? 'Your identity check has been approved'
                         : verificationState === 'pending_others'
                         ? 'Waiting for other directors to complete verification'
-                        : 'Complete verification to access your business address'
+                        : 'Complete verification to fully activate your account and compliance features'
                     }
                 </p>
             </div>
@@ -331,7 +331,7 @@ export default function AccountVerificationPage() {
                                         Pending Verification
                                     </h2>
                                     <p className="text-base text-neutral-600 leading-relaxed mb-6">
-                                        The following individuals must complete verification before your business address becomes available.
+                                        The following individuals must complete verification before we can issue proof of address certificates and fully activate your account.
                                     </p>
                                     
                                     {/* Owners List */}
@@ -375,24 +375,6 @@ export default function AccountVerificationPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Address Locked Notice */}
-                    <Card className="rounded-2xl border border-neutral-200 bg-white">
-                        <CardContent className="p-8">
-                            <div className="flex items-start gap-6">
-                                <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0">
-                                    <Lock className="w-6 h-6 text-neutral-600" strokeWidth={2} />
-                        </div>
-                                <div className="flex-1">
-                                    <h2 className="text-xl font-semibold text-neutral-900 mb-2">
-                                        Address Unavailable
-                                    </h2>
-                                    <p className="text-base text-neutral-600 leading-relaxed">
-                                        Your business address will be available once all required individuals complete verification.
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
                 </>
             )}
 
@@ -411,7 +393,7 @@ export default function AccountVerificationPage() {
                                         Verification Required
                                     </h2>
                                     <p className="text-base text-neutral-600 leading-relaxed mb-6">
-                                        Complete identity verification to access your business address. This typically takes 5-10 minutes.
+                                        Complete identity verification to fully activate your account (including proof of address certificates). This typically takes 5-10 minutes.
                                     </p>
                                     
                                     {/* Sumsub Widget */}
@@ -421,24 +403,6 @@ export default function AccountVerificationPage() {
                 </CardContent>
             </Card>
 
-                    {/* Address Locked Notice */}
-                    <Card className="rounded-2xl border border-neutral-200 bg-white">
-                    <CardContent className="p-8">
-                            <div className="flex items-start gap-6">
-                                <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0">
-                                    <Lock className="w-6 h-6 text-neutral-600" strokeWidth={2} />
-                                </div>
-                                <div className="flex-1">
-                                    <h2 className="text-xl font-semibold text-neutral-900 mb-2">
-                                        Address Unavailable
-                                    </h2>
-                                    <p className="text-base text-neutral-600 leading-relaxed">
-                                        Your business address will be available once verification is complete.
-                        </p>
-                                </div>
-                            </div>
-                    </CardContent>
-                </Card>
                 </>
             )}
 

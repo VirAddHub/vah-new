@@ -39,11 +39,25 @@ router.post("/start", async (req, res) => {
     if (!user) return res.status(404).json({ ok: false, error: "user_not_found" });
 
     // Check if Sumsub credentials are configured
-    // Support both old (SUMSUB_APP_SECRET) and new (SUMSUB_SECRET_KEY) env var names
-    const appToken = process.env.SUMSUB_APP_TOKEN;
-    const appSecret = process.env.SUMSUB_APP_SECRET || process.env.SUMSUB_SECRET_KEY;
-    const levelName = process.env.SUMSUB_LEVEL || process.env.SUMSUB_LEVEL_NAME || "basic-kyc";
-    const baseUrl = process.env.SUMSUB_BASE_URL || process.env.SUMSUB_API || "https://api.sumsub.com";
+    // Support old, new and sandbox env var names
+    const appToken =
+      process.env.SUMSUB_APP_TOKEN ||
+      process.env.SUMSUB_APP_TOKEN_SANDBOX;
+    const appSecret =
+      process.env.SUMSUB_APP_SECRET ||
+      process.env.SUMSUB_SECRET_KEY ||
+      process.env.SUMSUB_SECRET_KEY_SANDBOX;
+    const levelName =
+      process.env.SUMSUB_LEVEL ||
+      process.env.SUMSUB_LEVEL_NAME ||
+      process.env.SUMSUB_LEVEL_NAME_SANDBOX ||
+      "basic-kyc";
+    const baseUrl =
+      process.env.SUMSUB_BASE_URL ||
+      process.env.SUMSUB_API ||
+      process.env.SUMSUB_BASE_URL_SANDBOX ||
+      process.env.SUMSUB_API_SANDBOX ||
+      "https://api.sumsub.com";
 
     if (!appToken || !appSecret) {
       console.error('[kyc/start] Sumsub not configured', {

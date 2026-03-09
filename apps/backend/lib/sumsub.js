@@ -1,10 +1,25 @@
 const crypto = require("crypto");
 const fetch = (...args) => import("node-fetch").then(m => m.default(...args));
 
-// Support both old and new env var names for backward compatibility
-const SUMSUB_API = process.env.SUMSUB_BASE_URL || process.env.SUMSUB_API || "https://api.sumsub.com";
-const APP_TOKEN = process.env.SUMSUB_APP_TOKEN || "";
-const APP_SECRET = process.env.SUMSUB_APP_SECRET || process.env.SUMSUB_SECRET_KEY || "";
+// Support both old, new and sandbox env var names for backward compatibility
+const SUMSUB_API =
+  process.env.SUMSUB_BASE_URL ||
+  process.env.SUMSUB_API ||
+  process.env.SUMSUB_BASE_URL_SANDBOX ||
+  process.env.SUMSUB_API_SANDBOX ||
+  "https://api.sumsub.com";
+
+// Prefer primary vars, then sandbox variants
+const APP_TOKEN =
+  process.env.SUMSUB_APP_TOKEN ||
+  process.env.SUMSUB_APP_TOKEN_SANDBOX ||
+  "";
+
+const APP_SECRET =
+  process.env.SUMSUB_APP_SECRET ||
+  process.env.SUMSUB_SECRET_KEY ||
+  process.env.SUMSUB_SECRET_KEY_SANDBOX ||
+  "";
 
 /**
  * Sign Sumsub API requests with HMAC-SHA256
