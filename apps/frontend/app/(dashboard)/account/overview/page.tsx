@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { CreditCard, MapPin, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 import { REGISTERED_OFFICE_ADDRESS } from '@/lib/config/address';
 import { EmailChangeCard } from '@/components/account/EmailChangeCard';
-import { BusinessesSection } from '@/components/account/BusinessesSection';
 import { ActiveBusinessContextBanner } from '@/components/account/ActiveBusinessContextBanner';
 
 /**
@@ -235,11 +234,6 @@ export default function AccountOverviewPage() {
             {/* Email Address Card */}
             <div className="mb-6">
                 <EmailChangeCard />
-            </div>
-
-            {/* Businesses */}
-            <div className="mb-6">
-                <BusinessesSection />
             </div>
 
             {/* Business Address Card */}

@@ -142,6 +142,22 @@ export async function getBillingOverview(req: Request, res: Response) {
 
     const sub = subResult.rows[0] || null;
 
+    // When using Stripe, fetch subscription to get accurate next billing date (current_period_end)
+    let stripeNextBillingDate: string | null = null;
+    if (getBillingProvider() === 'stripe' && sub?.stripe_subscription_id) {
+      try {
+        const stripe = getStripe();
+        if (stripe) {
+          const stripeSub = await stripe.subscriptions.retrieve(sub.stripe_subscription_id, { expand: [] });
+          if (stripeSub.current_period_end) {
+            stripeNextBillingDate = new Date(stripeSub.current_period_end * 1000).toISOString().slice(0, 10);
+          }
+        }
+      } catch (e) {
+        logger.warn('[getBillingOverview] stripe_subscription_fetch_failed', { message: (e as any)?.message ?? String(e) });
+      }
+    }
+
     // Get latest invoice row for user_id
     const latestInvoiceResult = await pool.query(`
       SELECT 
@@ -326,8 +342,9 @@ export async function getBillingOverview(req: Request, res: Response) {
         account_status: accountStatus,
         grace_period: gracePeriodInfo,
         next_charge_at: sub?.next_charge_at ?? null,
-        // next_billing_date: YYYY-MM-DD for display (from next_charge_at ms or latest invoice period_end)
+        // next_billing_date: YYYY-MM-DD for display. Prefer Stripe current_period_end when using Stripe.
         next_billing_date: (() => {
+          if (stripeNextBillingDate) return stripeNextBillingDate;
           const nca = sub?.next_charge_at;
           if (nca != null && nca !== '') {
             const ms = Number(nca);
