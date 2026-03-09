@@ -12,15 +12,15 @@ const steps = [
     },
     {
         k: 'use',
-        title: 'Use Your Central London Address',
-        description: 'Use your Central London address for Companies House, HMRC, and everyday business correspondence.',
+        title: 'Start using your address',
+        description: 'Once approved, you can begin using your address across your company records and business communications.',
         icon: '/figma/how-icon-2.svg',
         LucideIcon: MapPin,
     },
     {
         k: 'handle',
-        title: 'We Handle Your Mail',
-        description: 'We receive, log, and scan your mail and make it available the same business day through your secure dashboard.',
+        title: 'We process your post',
+        description: 'Incoming mail is logged, scanned, and added to your dashboard for secure online access.',
         icon: '/figma/how-icon-3.svg',
         LucideIcon: Mail,
     },
@@ -35,7 +35,7 @@ export default function HowItWorks() {
                         How It Works
                     </h2>
                     <p className="text-xs text-muted-foreground sm:text-sm md:text-base lg:text-[18px] lg:leading-[1.4]">
-                        Three steps to a professional Central London address
+                        Getting started is simple
                     </p>
                 </header>
 

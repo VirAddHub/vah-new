@@ -149,15 +149,15 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 {[
                                     {
                                         title: "Registered Office And Director's Service Address",
-                                        description: "Use our Central London address for Companies House and HMRC filings.",
+                                        description: "Use our address for your registered office and director's service address requirements.",
                                     },
                                     {
                                         title: "Professional Business Address",
-                                        description: "Use the same address on invoices, websites, contracts, and correspondence.",
+                                        description: "Present a more established business image across your website, invoices, contracts, and client communications.",
                                     },
                                     {
                                         title: "Same Day Mail Scanning And Instant Alerts",
-                                        description: "Letters are scanned the day they arrive and uploaded to your secure dashboard.",
+                                        description: "Your post is processed promptly and uploaded to your dashboard so you can review it online without delay.",
                                     },
                                     {
                                         title: "Secure Online Dashboard",
@@ -169,7 +169,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     },
                                     {
                                         title: "Privacy Protection",
-                                        description: "Keep your home address off public records and business documents.",
+                                        description: "Separate your personal address from your business presence for greater privacy and peace of mind.",
                                     },
                                 ].map((item) => (
                                     <li key={item.title} className="flex items-start gap-3">
@@ -198,9 +198,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
             >
                 <div className="mx-auto max-w-6xl px-6">
                     <div className="text-center">
-                        <h2 className="text-2xl font-medium leading-[1.1] text-foreground sm:text-3xl md:text-4xl lg:text-4xl">One Simple Plan</h2>
+                        <h2 className="text-2xl font-medium leading-[1.1] text-foreground sm:text-3xl md:text-4xl lg:text-4xl">Simple pricing</h2>
                         <p className="mt-1.5 text-sm leading-[1.4] text-muted-foreground sm:mt-2 sm:text-base md:text-lg lg:mt-3 lg:text-base">
-                            One simple plan with everything included. Switch billing frequency anytime.
+                            One monthly plan covering your core address and digital mail handling, with no hidden extras.
                         </p>
                     </div>
 
@@ -239,7 +239,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </div>
 
                                 <div className="mt-4">
-                                    <div className="text-xs font-normal text-primary-foreground/70 sm:text-sm">Include with every plan</div>
+                                    <div className="text-xs font-normal text-primary-foreground/70 sm:text-sm">Everything below is included</div>
                                     <div className="mt-1.5 space-y-1.5">
                                         {[
                                             "Registered Office address",
@@ -303,7 +303,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </div>
 
                                 <div className="mt-4">
-                                    <div className="text-xs font-normal text-muted-foreground sm:text-sm">Include with every plan</div>
+                                    <div className="text-xs font-normal text-muted-foreground sm:text-sm">Everything below is included</div>
                                     <div className="mt-1.5 space-y-1.5">
                                         {[
                                             "Registered Office address",
@@ -375,7 +375,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 Built for Modern UK Businesses
                             </h2>
                             <p className="mt-4 text-base leading-7 text-zinc-600 sm:text-lg lg:mt-5 lg:text-xl">
-                                Designed for founders who want a professional Central London presence without renting office space or publishing their home address.
+                                Built for founders who want a credible business presence, better privacy, and less admin.
                             </p>
                         </div>
 
@@ -383,9 +383,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                         <div className="w-full max-w-md mt-8 space-y-3 sm:space-y-4 lg:mt-0 lg:max-w-none lg:w-[433px]">
                             {[
-                                { t: "One clear service.", icon: "/figma/builtfor-icon-1.svg" },
-                                { t: "One predictable price.", icon: "/figma/builtfor-icon-2.svg" },
-                                { t: "Secure mail handling you can rely on.", icon: "/figma/builtfor-icon-3.svg" },
+                                { t: "Professional by default.", icon: "/figma/builtfor-icon-1.svg" },
+                                { t: "Straightforward pricing.", icon: "/figma/builtfor-icon-2.svg" },
+                                { t: "Secure digital mail management.", icon: "/figma/builtfor-icon-3.svg" },
                             ].map((x) => (
                                 <div
                                     key={x.t}
@@ -416,10 +416,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <div className="lg:max-w-3xl">
                                     <p className="text-sm font-medium text-emerald-100">VirtualAddressHub</p>
                                     <h2 className="mt-2 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-                                        Get your Central London business address today
+                                        Get started with VirtualAddressHub
                                     </h2>
                                     <p className="mt-4 text-base leading-7 text-emerald-50/95 sm:text-lg">
-                                        Stay compliant with Companies House and HMRC, protect your home address, and manage your post online with same-day mail scanning.
+                                        Set up your address in minutes and manage your business post online through one secure dashboard.
                                     </p>
                                     <div className="mt-5 flex flex-wrap gap-2.5 lg:mt-6">
                                         <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95">ICO registered</span>

@@ -4,7 +4,7 @@
  */
 
 export interface FormatPriceOptions {
-  /** Show interval suffix e.g. "/ month" */
+  /** Show interval suffix e.g. "/month" */
   interval?: 'month' | 'year';
   /** Currency symbol (default £) */
   currency?: string;
@@ -23,20 +23,20 @@ export function formatPrice(
   const { interval, currency = defaultCurrency } = options;
   const value = Number.isFinite(amount) ? amount : 0;
   const formatted = `${currency}${value.toFixed(2)}`;
-  if (interval === 'month') return `${formatted}/ month`;
-  if (interval === 'year') return `${formatted}/ year`;
+  if (interval === 'month') return `${formatted}/month`;
+  if (interval === 'year') return `${formatted}/year`;
   return formatted;
 }
 
 /**
- * Format monthly price with "/ month" suffix.
+ * Format monthly price with "/month" suffix.
  */
 export function formatMonthly(amount: number): string {
   return formatPrice(amount, { interval: 'month' });
 }
 
 /**
- * Format annual price with "/ year" suffix.
+ * Format annual price with "/year" suffix.
  */
 export function formatAnnual(amount: number): string {
   return formatPrice(amount, { interval: 'year' });
