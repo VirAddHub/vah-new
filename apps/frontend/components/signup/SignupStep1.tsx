@@ -51,11 +51,11 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
 
     return (
         <main className="flex-1">
-            <div className="min-h-screen bg-background flex items-center justify-center p-4 sm:p-6">
+            <div className="bg-background flex flex-col items-center pt-4 pb-6 sm:pt-6 sm:pb-8 px-4 sm:px-6">
                 <div className="w-full max-w-4xl">
                     {/* Header with progress and back button */}
-                    <div className="text-center mb-5 sm:mb-6">
-                        <div className="flex items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-5">
+                    <div className="text-center mb-3 sm:mb-4">
+                        <div className="flex items-center justify-center gap-3 sm:gap-4 mb-2.5 sm:mb-3">
                             <button
                                 onClick={onBack}
                                 className="inline-flex items-center justify-center border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-8 rounded-md gap-1.5 px-3 text-sm font-medium transition-all"
@@ -80,13 +80,13 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                             </div>
                         </div>
 
-                        <h1 className="mb-2 text-xl font-semibold sm:mb-3 sm:text-2xl">Choose Your Plan</h1>
+                        <h1 className="mb-1.5 text-xl font-semibold sm:mb-2 sm:text-2xl">Choose Your Plan</h1>
                         <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto">
                             One plan. Monthly or annual — switch anytime.
                         </p>
 
                         {/* Billing toggle */}
-                        <div className="mt-4 flex items-center justify-center gap-3">
+                        <div className="mt-3 flex items-center justify-center gap-3">
                             <div className="inline-flex rounded-xl border bg-card p-1 shadow-sm">
                                 <button
                                     onClick={() => setBilling('monthly')}
@@ -116,7 +116,7 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                     </div>
 
                     {/* Main pricing card */}
-                    <div className="bg-card text-card-foreground flex flex-col gap-4 sm:gap-5 rounded-xl border mb-6 shadow-sm">
+                    <div className="bg-card text-card-foreground flex flex-col gap-3 sm:gap-4 rounded-xl border mb-4 shadow-sm sm:mb-5">
                         <div className="grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-5 pt-5 sm:px-6 sm:pt-6 relative">
                             {/* Badge - varies by billing type */}
                             <div className="absolute -top-3 left-4">
@@ -138,7 +138,7 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
 
                             <h4 className="leading-none">All in One Plan</h4>
 
-                            <div className="mt-4">
+                            <div className="mt-3 sm:mt-4">
                                 <div className="flex items-baseline gap-2">
                                     <span className="text-4xl font-extrabold text-neutral-900">
                                         {billing === 'monthly' ? `£${getPlanPrice('monthly')}/month` : `£${getPlanPrice('annual')}/year`}
@@ -181,9 +181,6 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                         >
                             Continue — £{getPlanPrice(billing)}{billing === 'monthly' ? '/month' : '/year'}
                         </ScrollToTopButton>
-                        <p className="text-xs sm:text-sm text-muted-foreground mt-3">
-                            No payment now. You’ll enter details first.
-                        </p>
                     </div>
                 </div>
             </div>
