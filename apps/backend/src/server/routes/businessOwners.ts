@@ -141,13 +141,13 @@ router.post('/:id/resend', requireAuth, async (req: Request, res: Response) => {
             });
         }
         
-        // Verify owner belongs to user
+        // Verify owner belongs to user and get status
         const pool = getPool();
         const ownerCheck = await pool.query(
-            'SELECT id FROM business_owner WHERE id = $1 AND user_id = $2',
+            'SELECT id, status, requires_verification FROM business_owner WHERE id = $1 AND user_id = $2',
             [ownerId, userId]
         );
-        
+
         if (ownerCheck.rows.length === 0) {
             return res.status(404).json({
                 ok: false,
@@ -155,13 +155,34 @@ router.post('/:id/resend', requireAuth, async (req: Request, res: Response) => {
                 message: 'Business owner not found',
             });
         }
-        
+
+        const owner = ownerCheck.rows[0];
+        if (owner.requires_verification === false) {
+            return res.json({
+                ok: true,
+                data: {
+                    message: 'This director does not require verification.',
+                },
+            });
+        }
+        if (owner.status === 'verified') {
+            return res.status(200).json({
+                ok: true,
+                data: {
+                    message: 'This director has already completed verification.',
+                    alreadyVerified: true,
+                },
+            });
+        }
+
         await businessOwnersService.resendBusinessOwnerInvite(ownerId);
-        
+        const { logVerificationEvent } = await import('../services/verificationEventLog');
+        await logVerificationEvent('business_owner', ownerId, 'invite_resent', {});
+
         return res.json({
             ok: true,
             data: {
-                message: 'Verification email resent',
+                message: 'Verification email sent',
             },
         });
     } catch (error: any) {
@@ -176,12 +197,12 @@ router.post('/:id/resend', requireAuth, async (req: Request, res: Response) => {
 
 /**
  * GET /api/business-owners/verify?token=...
- * Verify invite token (public, no auth required)
+ * Verify invite token (public, no auth required). Returns owner + status for page state.
  */
 router.get('/verify', async (req: Request, res: Response) => {
     try {
         const token = req.query.token as string;
-        
+
         if (!token) {
             return res.json({
                 ok: true,
@@ -191,10 +212,10 @@ router.get('/verify', async (req: Request, res: Response) => {
                 },
             });
         }
-        
-        const owner = await businessOwnersService.verifyBusinessOwnerInviteToken(token);
-        
-        if (!owner) {
+
+        const ctx = await businessOwnersService.getOwnerVerificationContext(token);
+
+        if (!ctx) {
             return res.json({
                 ok: true,
                 data: {
@@ -203,15 +224,31 @@ router.get('/verify', async (req: Request, res: Response) => {
                 },
             });
         }
-        
+
+        if (ctx.tokenExpired) {
+            return res.json({
+                ok: true,
+                data: {
+                    valid: false,
+                    tokenExpired: true,
+                    message: 'This verification link has expired. Please contact the account holder to request a new link.',
+                },
+            });
+        }
+
         return res.json({
             ok: true,
             data: {
                 valid: true,
+                canStart: ctx.canStart,
+                tokenUsed: ctx.tokenUsed,
+                tokenExpired: false,
+                alreadyVerified: ctx.status === 'verified',
                 owner: {
-                    id: owner.ownerId,
-                    fullName: owner.fullName,
-                    email: owner.email,
+                    id: ctx.ownerId,
+                    fullName: ctx.fullName,
+                    email: ctx.email,
+                    status: ctx.status,
                 },
             },
         });
@@ -261,7 +298,9 @@ router.post('/verify/start', async (req: Request, res: Response) => {
         
         // Create Sumsub applicant and get access token
         const { applicantId, accessToken } = await businessOwnersService.createSumsubApplicantForOwner(owner.ownerId);
-        
+        const { logVerificationEvent } = await import('../services/verificationEventLog');
+        await logVerificationEvent('business_owner', owner.ownerId, 'sumsub_started', { applicantId });
+
         return res.json({
             ok: true,
             data: {

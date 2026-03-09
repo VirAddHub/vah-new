@@ -225,6 +225,25 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/profile/compliance
+ * Return identity compliance flags for the current user (spec: computeIdentityCompliance by userId).
+ */
+router.get("/compliance", requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id as number;
+    try {
+        const { computeIdentityComplianceByUserId } = await import('../services/compliance');
+        const compliance = await computeIdentityComplianceByUserId(userId);
+        if (!compliance) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+        return res.json({ ok: true, data: compliance });
+    } catch (error: any) {
+        logger.error('[GET /api/profile/compliance] error', { message: error?.message ?? String(error) });
+        return res.status(500).json({ ok: false, error: 'database_error' });
+    }
+});
+
+/**
  * GET /api/profile/me (legacy endpoint)
  * Get current user's profile (same as GET /api/profile)
  */
@@ -951,6 +970,64 @@ router.get("/registered-office-address", requireAuth, async (req: Request, res: 
 });
 
 /**
+ * GET /api/profile/certificate-url
+ * Return certificate download URL if eligible; 403 with machine-readable reason if not.
+ * Spec: primary_user_not_verified | owners_pending | company_number_missing
+ */
+router.get("/certificate-url", requireAuth, async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const pool = getPool();
+    try {
+        const planResult = await pool.query(
+            'SELECT plan_status FROM "user" WHERE id = $1',
+            [userId]
+        );
+        if (planResult.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+        if (planResult.rows[0].plan_status !== 'active') {
+            return res.status(403).json({
+                ok: false,
+                error: 'ACTIVE_PLAN_REQUIRED',
+                message: 'An active subscription is required to download your letter of certification.',
+            });
+        }
+        const { computeIdentityComplianceByUserId } = await import('../services/compliance');
+        const compliance = await computeIdentityComplianceByUserId(userId as number);
+        if (!compliance) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+        if (!compliance.canDownloadProofOfAddressCertificate) {
+            let errorCode = 'primary_user_not_verified';
+            if (!compliance.isPrimaryUserVerified) {
+                errorCode = 'primary_user_not_verified';
+            } else if (!compliance.allRequiredOwnersVerified) {
+                errorCode = 'owners_pending';
+            } else if (!compliance.hasCompanyNumber) {
+                errorCode = 'company_number_missing';
+            }
+            const messages: Record<string, string> = {
+                primary_user_not_verified: 'You must complete identity verification (KYC) before accessing your proof of address certificate.',
+                owners_pending: 'All required directors or persons with significant control must complete verification before you can download your proof of address certificate.',
+                company_number_missing: 'Please add your Companies House number in Account → Verification before downloading your proof of address certificate.',
+            };
+            return res.status(403).json({
+                ok: false,
+                error: errorCode,
+                message: messages[errorCode] || messages.primary_user_not_verified,
+            });
+        }
+        return res.json({
+            ok: true,
+            data: { url: '/api/profile/certificate' },
+        });
+    } catch (error: any) {
+        logger.error('[GET /api/profile/certificate-url] error', { message: error?.message ?? String(error) });
+        return res.status(500).json({ ok: false, error: 'database_error' });
+    }
+});
+
+/**
  * GET /api/profile/certificate
  * Generate and download proof of address certificate
  */
@@ -989,23 +1066,30 @@ router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
             });
         }
 
-        // Check KYC status - certificate requires approved KYC
-        const { isKycApproved } = await import('../services/kyc-guards');
-        if (!isKycApproved(user.kyc_status)) {
-            return res.status(403).json({
-                ok: false,
-                error: 'KYC_REQUIRED',
-                message: 'You must complete identity verification (KYC) before accessing your proof of address certificate.',
-            });
+        // Certificate eligibility per identity verification spec (machine-readable 403 reasons)
+        const { computeIdentityComplianceByUserId } = await import('../services/compliance');
+        const compliance = await computeIdentityComplianceByUserId(userId as number);
+        if (!compliance) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
         }
-
-        // Certificate also requires Companies House number (compliance)
-        const companyNumber = user.companies_house_number?.trim?.() || '';
-        if (!companyNumber) {
+        if (!compliance.canDownloadProofOfAddressCertificate) {
+            let errorCode = 'primary_user_not_verified';
+            if (!compliance.isPrimaryUserVerified) {
+                errorCode = 'primary_user_not_verified';
+            } else if (!compliance.allRequiredOwnersVerified) {
+                errorCode = 'owners_pending';
+            } else if (!compliance.hasCompanyNumber) {
+                errorCode = 'company_number_missing';
+            }
+            const messages: Record<string, string> = {
+                primary_user_not_verified: 'You must complete identity verification (KYC) before accessing your proof of address certificate.',
+                owners_pending: 'All required directors or persons with significant control must complete verification before you can download your proof of address certificate.',
+                company_number_missing: 'Please add your Companies House number in Account → Verification before downloading your proof of address certificate.',
+            };
             return res.status(403).json({
                 ok: false,
-                error: 'COMPANY_NUMBER_REQUIRED',
-                message: 'Please add your Companies House number in Account → Verification before downloading your proof of address certificate.',
+                error: errorCode,
+                message: messages[errorCode] || messages.primary_user_not_verified,
             });
         }
 

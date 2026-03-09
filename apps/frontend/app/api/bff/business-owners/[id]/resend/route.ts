@@ -50,8 +50,8 @@ export async function POST(
 
     if (status < 200 || status >= 300) {
       return NextResponse.json(
-        { ok: false, error: { code: 'BACKEND_ERROR', status, body: json ?? textPreview } },
-        { status: 502 }
+        json ?? { ok: false, error: 'BACKEND_ERROR', status, body: textPreview },
+        { status }
       );
     }
 

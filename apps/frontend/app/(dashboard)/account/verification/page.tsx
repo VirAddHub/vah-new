@@ -6,7 +6,7 @@ import { swrFetcher } from '@/services/http';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, CheckCircle2, AlertCircle, Lock, Mail, Building2 } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, AlertCircle, Mail, Building2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import {
@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { ActiveBusinessContextBanner } from '@/components/account/ActiveBusinessContextBanner';
+import { getOwnerStatusMeta } from '@/lib/verification-state';
 
 const SumsubKycWidget = dynamic(() => import('../SumsubKycWidget').then(mod => ({ default: mod.SumsubKycWidget })), { ssr: false });
 
@@ -46,57 +47,74 @@ interface CompanySearchResult {
 export default function AccountVerificationPage() {
     const router = useRouter();
     
-    // Fetch profile data for KYC status and Companies House
+    // Fetch profile, compliance (backend source of truth), and owners
     const { data: profileData, mutate: mutateProfile } = useSWR('/api/bff/profile', swrFetcher);
+    const { data: complianceData } = useSWR('/api/bff/profile/compliance', swrFetcher);
     const { data: userData } = useSWR('/api/bff/auth/whoami', swrFetcher);
     const { data: ownersData, mutate: mutateOwners } = useSWR('/api/bff/business-owners', swrFetcher);
 
     const user = userData?.data?.user || userData?.data || null;
     const profile = profileData?.data;
+    const compliance = complianceData?.data;
     const owners: BusinessOwner[] = ownersData?.data?.owners || [];
     const companyNumberOnFile = (profile?.companies_house_number || profile?.company_number || '').trim();
     const companyNameOnFile = (profile?.company_name || '').trim();
 
-    // Get primary user KYC status
+    // Verification state: prefer backend compliance.verificationState when available
     const primaryKycStatus = useMemo(() => {
         const status = profile?.kyc_status || user?.kyc_status || 'pending';
         return status === 'approved' || status === 'verified' ? 'verified' : 'pending';
     }, [profile, user]);
 
-    // Check if there are other owners requiring verification
     const pendingOwners = useMemo(() => {
-        return owners.filter(owner => 
-            (owner.requiresVerification || owner.requires_verification) && 
+        return owners.filter(owner =>
+            (owner.requiresVerification || owner.requires_verification) &&
             owner.status !== 'verified'
         );
     }, [owners]);
 
-    // Determine overall verification state
     const verificationState = useMemo(() => {
-        if (primaryKycStatus === 'verified' && pendingOwners.length === 0) {
-            return 'verified';
-        } else if (primaryKycStatus === 'verified' && pendingOwners.length > 0) {
-            return 'pending_others';
-        } else {
-            return 'action_required';
+        if (compliance?.verificationState) {
+            return compliance.verificationState as 'verified' | 'pending_others' | 'action_required';
         }
-    }, [primaryKycStatus, pendingOwners]);
+        if (primaryKycStatus === 'verified' && pendingOwners.length === 0) return 'verified';
+        if (primaryKycStatus === 'verified' && pendingOwners.length > 0) return 'pending_others';
+        return 'action_required';
+    }, [compliance?.verificationState, primaryKycStatus, pendingOwners]);
 
-    // Handle resend verification email
+    const [resendingId, setResendingId] = useState<string | number | null>(null);
     const handleResend = async (ownerId: string | number) => {
+        if (resendingId !== null) return;
+        setResendingId(ownerId);
         try {
             const response = await fetch(`/api/bff/business-owners/${ownerId}/resend`, {
                 method: 'POST',
+                credentials: 'include',
             });
-            
+            const data = await response.json().catch(() => ({}));
             if (response.ok) {
-                alert('Verification email resent successfully');
+                if (data?.data?.alreadyVerified) {
+                    toast({
+                        title: 'Already verified',
+                        description: 'This director has already completed verification.',
+                        variant: 'default',
+                    });
+                } else {
+                    toast({
+                        title: 'Verification email sent',
+                        description: 'A new verification link has been sent to their email address.',
+                    });
+                }
+                mutateOwners();
             } else {
-                alert('Failed to resend verification email');
+                const msg = data?.data?.message || data?.error?.message || 'Failed to resend verification email.';
+                toast({ title: 'Could not resend', description: msg, variant: 'destructive' });
             }
         } catch (error) {
             console.error('Error resending verification:', error);
-            alert('An error occurred');
+            toast({ title: 'Error', description: 'An error occurred. Please try again.', variant: 'destructive' });
+        } finally {
+            setResendingId(null);
         }
     };
 
@@ -330,8 +348,11 @@ export default function AccountVerificationPage() {
                                     <h2 className="text-xl font-semibold text-neutral-900 mb-2">
                                         Pending Verification
                                     </h2>
-                                    <p className="text-base text-neutral-600 leading-relaxed mb-6">
-                                        The following individuals must complete verification before we can issue proof of address certificates and fully activate your account.
+                                    <p className="text-base text-neutral-600 leading-relaxed mb-4">
+                                        The following individuals must complete verification before we can issue proof of address certificates.
+                                    </p>
+                                    <p className="text-sm text-neutral-500 leading-relaxed mb-6">
+                                        Your address can still be used for incorporation and Companies House setup; the proof of address certificate will be available once all required directors have verified.
                                     </p>
                                     
                                     {/* Owners List */}
@@ -352,18 +373,26 @@ export default function AccountVerificationPage() {
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-3">
-                                                    <Badge className="bg-yellow-100 text-yellow-800 border-0">
-                                                        {owner.status === 'pending' ? 'Pending' : 'Not Started'}
+                                                    <Badge
+                                                        variant={getOwnerStatusMeta(owner.status).variant}
+                                                        className={
+                                                            owner.status === 'pending' || owner.status === 'not_started'
+                                                                ? 'bg-yellow-100 text-yellow-800 border-0'
+                                                                : undefined
+                                                        }
+                                                    >
+                                                        {getOwnerStatusMeta(owner.status).label}
                                                     </Badge>
                                                     {owner.email && (
                                                         <Button
                                                             onClick={() => handleResend(owner.id)}
+                                                            disabled={resendingId === owner.id}
                                                             variant="ghost"
                                                             size="sm"
                                                             className="text-primary hover:text-primary/80"
                                                         >
                                                             <Mail className="w-4 h-4 mr-2" strokeWidth={2} />
-                                                            Resend
+                                                            {resendingId === owner.id ? 'Sending…' : 'Resend verification'}
                                                         </Button>
                                                     )}
                                                 </div>

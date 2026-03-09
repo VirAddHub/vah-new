@@ -4,38 +4,57 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileText, Download, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  getCertificateBlockMeta,
+  getCertificateBlockReasonFromCompliance,
+  getCertificateBlockReasonFromError,
+} from '@/lib/verification-state';
+
+/** Compliance from GET /api/bff/profile/compliance (or profile.compliance) */
+interface ComplianceSnapshot {
+    isPrimaryUserVerified?: boolean;
+    allRequiredOwnersVerified?: boolean;
+    hasCompanyNumber?: boolean;
+    canDownloadProofOfAddressCertificate?: boolean;
+}
 
 interface CertificateDownloadProps {
     /**
-     * Profile data containing KYC status
-     * If not provided, component will show disabled state
+     * Profile data containing KYC status and company number.
+     * If not provided, component will show disabled state.
      */
     profile?: {
         kyc_status?: string;
-        [key: string]: any;
+        companies_house_number?: string;
+        company_number?: string;
+        [key: string]: unknown;
     } | null;
+    /**
+     * Optional compliance from backend. When provided, used for eligibility and 403 reason messaging.
+     */
+    compliance?: ComplianceSnapshot | null;
 }
 
-export function CertificateDownload({ profile }: CertificateDownloadProps) {
+export function CertificateDownload({ profile, compliance }: CertificateDownloadProps) {
     const [isCertBusy, setIsCertBusy] = useState(false);
     const { toast } = useToast();
-    
-    // Certificate requires both KYC approved and Companies House number (compliance)
-    // Profile may be response.data (user object) or full response { ok, data }; use inner data when present
+
     const userProfile = profile && typeof profile === 'object' && 'data' in profile && profile.data != null
         ? (profile as { data: Record<string, unknown> }).data
         : profile;
-    const kycStatus = (userProfile as any)?.kyc_status ?? (userProfile as any)?.kycStatus ?? 'pending';
+    const kycStatus = (userProfile as Record<string, unknown>)?.kyc_status ?? (userProfile as Record<string, unknown>)?.kycStatus ?? 'pending';
     const isKycApproved = kycStatus === 'approved' || kycStatus === 'verified';
-    // Support both snake_case (backend) and camelCase in case response shape varies
     const companyNumber = (
-        (userProfile as any)?.companies_house_number ??
-        (userProfile as any)?.companiesHouseNumber ??
-        (userProfile as any)?.company_number ??
+        (userProfile as Record<string, unknown>)?.companies_house_number ??
+        (userProfile as Record<string, unknown>)?.companiesHouseNumber ??
+        (userProfile as Record<string, unknown>)?.company_number ??
         ''
-    ).trim();
-    const hasCompanyNumber = companyNumber.length > 0;
-    const canDownload = isKycApproved && hasCompanyNumber;
+    );
+    const hasCompanyNumber = String(companyNumber ?? '').trim().length > 0;
+
+    const canDownload = compliance
+        ? Boolean(compliance.canDownloadProofOfAddressCertificate)
+        : (isKycApproved && hasCompanyNumber);
 
     const handleDownloadCertification = async () => {
         if (isCertBusy || !canDownload) return;
@@ -49,11 +68,18 @@ export function CertificateDownload({ profile }: CertificateDownloadProps) {
 
             if (!response.ok) {
                 let errorMessage = "Failed to prepare certificate";
-                try {
-                    const errorData = await response.json();
-                    errorMessage = errorData?.error || errorData?.message || errorMessage;
-                } catch {
-                    // Not JSON, use default message
+                if (response.headers.get('content-type')?.includes('application/json')) {
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = (errorData?.message as string) || errorMessage;
+                        if (response.status === 403 && errorData?.error) {
+                            const reason = getCertificateBlockReasonFromError(errorData.error as string);
+                            const meta = getCertificateBlockMeta(reason);
+                            errorMessage = meta.description;
+                        }
+                    } catch {
+                        // use default
+                    }
                 }
                 throw new Error(errorMessage);
             }
@@ -121,35 +147,27 @@ export function CertificateDownload({ profile }: CertificateDownloadProps) {
                             Use for banks, payment providers and professional contacts.
                         </p>
                     </>
-                ) : !isKycApproved ? (
-                    <div className="rounded-[8px] bg-[#FEF3C7] border border-[#FCD34D] p-3">
-                        <div className="flex items-start gap-2">
-                            <AlertCircle className="w-4 h-4 text-[#92400E] mt-0.5 flex-shrink-0" />
-                            <div className="flex flex-col gap-1">
-                                <p className="text-[11px] font-medium text-[#92400E] leading-tight">
-                                    Verification required
-                                </p>
-                                <p className="text-[10px] text-[#92400E]/80 leading-tight">
-                                    Complete identity verification to download your letter.
-                                </p>
+                ) : (() => {
+                    const reason = compliance
+                        ? getCertificateBlockReasonFromCompliance(compliance)
+                        : (!isKycApproved ? 'primary' : 'company');
+                    const meta = getCertificateBlockMeta(reason);
+                    return (
+                        <div className="rounded-[8px] bg-[#FEF3C7] border border-[#FCD34D] p-3">
+                            <div className="flex items-start gap-2">
+                                <AlertCircle className="w-4 h-4 text-[#92400E] mt-0.5 flex-shrink-0" />
+                                <div className="flex flex-col gap-1">
+                                    <p className="text-[11px] font-medium text-[#92400E] leading-tight">
+                                        {meta.title}
+                                    </p>
+                                    <p className="text-[10px] text-[#92400E]/80 leading-tight">
+                                        {meta.description}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ) : (
-                    <div className="rounded-[8px] bg-[#FEF3C7] border border-[#FCD34D] p-3">
-                        <div className="flex items-start gap-2">
-                            <AlertCircle className="w-4 h-4 text-[#92400E] mt-0.5 flex-shrink-0" />
-                            <div className="flex flex-col gap-1">
-                                <p className="text-[11px] font-medium text-[#92400E] leading-tight">
-                                    Companies House number required
-                                </p>
-                                <p className="text-[10px] text-[#92400E]/80 leading-tight">
-                                    Add your Companies House number in Account → Verification to download your letter.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                    );
+                })()}
             </div>
         </div>
     );

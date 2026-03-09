@@ -1,11 +1,22 @@
 const express = require('express');
 const crypto = require('crypto');
 const { notify } = require('../lib/notify');
+const { logVerificationEvent } = require('../lib/verificationEventLog');
 
 const router = express.Router();
 
 // Use centralized database connection
 const { db } = require('../server/db');
+
+function safeWebhookPayload(payload, applicantId, reviewStatus, reviewAnswer, externalUserId) {
+  return {
+    applicantId: applicantId || payload?.applicantId,
+    reviewStatus: reviewStatus || payload?.reviewStatus,
+    reviewAnswer: reviewAnswer || payload?.reviewResult?.reviewAnswer,
+    externalUserId: externalUserId != null ? String(externalUserId) : undefined,
+    eventType: payload?.type || payload?.eventType,
+  };
+}
 
 function verifySig(secret, rawBody, signature) {
   // Sumsub sends x-payload-digest: hex(hmacsha256(secret, raw_body))
@@ -94,11 +105,12 @@ router.post('/', async (req, res) => {
   const now = Date.now();
   const statusText = reviewAnswer || reviewStatus || 'unknown';
   const reviewIsGreen = reviewAnswer === 'GREEN' || reviewStatus === 'completed';
+  const safePayload = safeWebhookPayload(payload, applicantId, reviewStatus, reviewAnswer, externalUserId);
 
   // Handle business owner verification
   if (ownerRow) {
     const previousStatus = ownerRow.status;
-    
+
     // Determine new status
     let newStatus = 'pending';
     if (reviewIsGreen) {
@@ -106,7 +118,9 @@ router.post('/', async (req, res) => {
     } else if (reviewAnswer === 'RED' || reviewStatus === 'rejected') {
       newStatus = 'rejected';
     }
-    
+
+    await logVerificationEvent('business_owner', ownerRow.id, 'webhook_received', safePayload);
+
     await db.transaction(async (txDb) => {
       await txDb.run(`
         UPDATE business_owner
@@ -116,9 +130,11 @@ router.post('/', async (req, res) => {
             updated_at = NOW()
         WHERE id = $3
       `, [applicantId || null, newStatus, ownerRow.id]);
-      
+
       console.log(`[SumsubWebhook] Updated business owner ${ownerRow.id} status to: ${newStatus}`);
     });
+
+    await logVerificationEvent('business_owner', ownerRow.id, newStatus === 'verified' ? 'verified' : newStatus === 'rejected' ? 'rejected' : 'pending', safePayload);
     
     // Send notification email if verified or rejected
     if (newStatus === 'verified' && previousStatus !== 'verified') {
@@ -152,6 +168,8 @@ router.post('/', async (req, res) => {
   
   // Handle primary user verification
   const previousKycStatus = userRow.kyc_status;
+
+  await logVerificationEvent('user', userRow.id, 'webhook_received', safePayload);
 
   await db.transaction(async (txDb) => {
     // Update Sumsub-specific fields
@@ -193,6 +211,9 @@ router.post('/', async (req, res) => {
 
     console.log(`[SumsubWebhook] Updated user ${userRow.id} KYC status to: ${kycStatus}`);
   });
+
+  const userEventType = reviewIsGreen ? 'verified' : (reviewAnswer === 'RED' || reviewStatus === 'rejected') ? 'rejected' : 'pending';
+  await logVerificationEvent('user', userRow.id, userEventType, safePayload);
 
   // Send KYC approved email if transitioning to approved for the first time
   const becameApproved = reviewIsGreen && previousKycStatus !== 'approved';

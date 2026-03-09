@@ -561,7 +561,8 @@ async function start() {
         app.use('/api/kyc', kycStubRouter);
         logger.info('[mount] /api/kyc (stubs) mounted — Sumsub not configured');
     } else {
-        logger.info('[mount] /api/kyc stubs skipped — Sumsub configured');
+        app.use('/api/kyc', kycStartRouter);
+        logger.info('[mount] /api/kyc (legacy Sumsub start) mounted — Sumsub configured');
     }
 
     app.use('/api', forwardingRouter);
@@ -615,7 +616,7 @@ async function start() {
     logger.info('[mount] /api (ops-self-test) mounted');
     logger.info('[mount] /api/debug mounted');
     app.use('/api/kyc', kycRouter);
-    logger.info('[mount] /api/kyc mounted');
+    logger.info('[mount] /api/kyc (TS status/upload) mounted');
     app.use('/api/support', supportRouter);
     logger.info('[mount] /api/support mounted');
     app.use('/api/contact', contactRouter);
@@ -687,9 +688,6 @@ async function start() {
 
     app.use('/api/gdpr-export', gdprExportRouter);
     logger.info('[mount] /api/gdpr-export mounted');
-
-    app.use('/api/kyc', kycStartRouter);
-    logger.info('[mount] /api/kyc mounted');
 
     // Global error handler (must be last, after all routes)
     app.use(errorHandler);

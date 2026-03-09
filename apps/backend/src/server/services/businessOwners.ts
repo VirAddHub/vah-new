@@ -99,7 +99,10 @@ export async function createBusinessOwner(
         console.error('[businessOwners] Failed to send verification email:', error);
         // Don't throw - owner is created, can resend later
     }
-    
+
+    const { logVerificationEvent } = await import('./verificationEventLog');
+    await logVerificationEvent('business_owner', ownerId, 'invite_sent', {});
+
     return { id: ownerId, inviteToken: token };
 }
 
@@ -182,36 +185,67 @@ export async function resendBusinessOwnerInvite(ownerId: number): Promise<string
 }
 
 /**
- * Verify invite token and return owner details
+ * Verify invite token and return owner details (only when invite is unused and not expired).
  */
 export async function verifyBusinessOwnerInviteToken(token: string): Promise<{
     ownerId: number;
     fullName: string;
     email: string;
 } | null> {
+    const ctx = await getOwnerVerificationContext(token);
+    if (!ctx || !ctx.canStart) return null;
+    return {
+        ownerId: ctx.ownerId,
+        fullName: ctx.fullName,
+        email: ctx.email,
+    };
+}
+
+/**
+ * Get full verification context for an invite token (used for /verify page state).
+ * Returns owner info + status + token state so frontend can show already_verified, expired, etc.
+ */
+export async function getOwnerVerificationContext(token: string): Promise<{
+    valid: boolean;
+    canStart: boolean;
+    ownerId: number;
+    fullName: string;
+    email: string;
+    status: string;
+    tokenUsed: boolean;
+    tokenExpired: boolean;
+} | null> {
     const pool = getPool();
     const tokenHash = hashToken(token);
-    
-    // Find valid invite
+    const now = new Date();
+
     const inviteResult = await pool.query(
-        `SELECT bo.id, bo.full_name, bo.email, boi.expires_at, boi.used_at
+        `SELECT bo.id, bo.full_name, bo.email, bo.status, boi.expires_at, boi.used_at
          FROM business_owner_invite boi
          JOIN business_owner bo ON bo.id = boi.business_owner_id
-         WHERE boi.token_hash = $1
-           AND boi.used_at IS NULL
-           AND boi.expires_at > NOW()`,
+         WHERE boi.token_hash = $1`,
         [tokenHash]
     );
-    
-    if (inviteResult.rows.length === 0) {
-        return null;
-    }
-    
+
+    if (inviteResult.rows.length === 0) return null;
+
     const row = inviteResult.rows[0];
+    const expiresAt = row.expires_at ? new Date(row.expires_at) : null;
+    const usedAt = row.used_at;
+    const tokenUsed = !!usedAt;
+    const tokenExpired = expiresAt ? now > expiresAt : false;
+    const canStart = !tokenUsed && !tokenExpired;
+    const valid = true;
+
     return {
+        valid,
+        canStart,
         ownerId: row.id,
         fullName: row.full_name,
         email: row.email,
+        status: row.status || 'not_started',
+        tokenUsed,
+        tokenExpired,
     };
 }
 

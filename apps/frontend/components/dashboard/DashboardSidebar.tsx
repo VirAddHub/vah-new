@@ -250,9 +250,8 @@ export function DashboardSidebar() {
                 </nav>
 
                 {/* Certificate Download - Pinned to bottom */}
-                {/* Pass profile data to avoid duplicate fetch */}
                 <div className="shrink-0 bg-white">
-                    <CertificateDownload profile={profile} />
+                    <CertificateDownload profile={profile} compliance={profile?.compliance} />
                 </div>
             </div>
         </aside>
@@ -453,8 +452,7 @@ export function DashboardSidebar() {
 
                             {/* Footer with Certificate Download and Sign Out - Pinned to bottom */}
                             <div className="shrink-0 border-t border-neutral-200 bg-white">
-                                {/* Certificate Download - Component has its own padding and border-top */}
-                                <CertificateDownload profile={profile} />
+                                <CertificateDownload profile={profile} compliance={profile?.compliance} />
                                 
                                 {/* Sign Out */}
                                 <div
