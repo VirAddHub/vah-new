@@ -405,30 +405,30 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* Final CTA — signup + pricing */}
             <section className="py-12 lg:py-20 bg-white">
                 <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-                    <div className="relative overflow-hidden rounded-2xl border border-emerald-200/60 bg-gradient-to-b from-emerald-900/95 via-emerald-900 to-emerald-800 text-white shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
+                    <div className="relative overflow-hidden rounded-2xl border border-emerald-200/60 bg-gradient-to-b from-emerald-900 to-emerald-800 text-white shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
                         <div className="relative px-6 py-8 sm:px-8 sm:py-10 lg:px-12 lg:py-12">
-                            {/* Subtle decorative glows */}
-                            <span aria-hidden="true" className="pointer-events-none absolute -top-20 -right-20 h-40 w-40 rounded-full bg-emerald-400/25 blur-3xl" />
+                            <span aria-hidden="true" className="pointer-events-none absolute -top-20 -right-20 h-40 w-40 rounded-full bg-emerald-400/20 blur-3xl" />
                             <span aria-hidden="true" className="pointer-events-none absolute -bottom-16 -left-16 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
-                            <span aria-hidden="true" className="pointer-events-none absolute top-1/2 -left-20 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl" />
 
                             <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-                                {/* Left: copy + trust line — tighter column */}
-                                <div className="lg:max-w-xl">
-                                    <h2 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-                                        Get your London business address
+                                {/* Left: headline + supporting text + trust pills */}
+                                <div className="lg:max-w-3xl">
+                                    <h2 className="text-2xl font-semibold leading-tight tracking-tight sm:text-3xl lg:text-4xl">
+                                        Your Central London business address
                                     </h2>
-                                    <p className="mt-4 text-base leading-7 text-emerald-50/95 sm:text-lg max-w-lg">
-                                        Set up in minutes and manage your business post through one secure online dashboard.
+                                    <p className="mt-4 text-base leading-7 text-emerald-50/95 sm:text-lg">
+                                        Use one trusted address for company registration, business mail, and everyday correspondence.
                                     </p>
-                                    <p className="mt-6 text-xs text-white/75 tracking-wide">
-                                        ICO registered · HMRC AML supervised · {formatMonthly(monthlyPrice)}
-                                    </p>
+                                    <div className="mt-5 flex flex-wrap gap-2.5 lg:mt-6">
+                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95">ICO registered</span>
+                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95">HMRC AML supervised</span>
+                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95 tabular-nums">{formatMonthly(monthlyPrice)} · Cancel anytime</span>
+                                    </div>
                                 </div>
 
-                                {/* Right: primary + secondary CTA, more spacing */}
-                                <div className="lg:ml-10 lg:shrink-0 lg:text-left">
-                                    <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:mt-0 lg:flex-col lg:min-w-[200px]">
+                                {/* Right: CTAs + microcopy */}
+                                <div className="lg:ml-8 lg:shrink-0">
+                                    <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:mt-0 lg:flex-col lg:min-w-[220px]">
                                         <Button
                                             onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                             className="w-full bg-white text-emerald-900 hover:bg-white/95 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-800"
@@ -437,13 +437,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         </Button>
                                         <Button
                                             onClick={() => handleNavClick?.("pricing")}
-                                            variant="ghost"
-                                            className="w-full text-white/95 hover:bg-white/10 hover:text-white"
+                                            variant="outline"
+                                            className="w-full border-white/40 text-white hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-800"
                                         >
-                                            See pricing
+                                            View pricing
                                         </Button>
                                     </div>
-                                    <p className="mt-5 text-sm text-emerald-100/80">
+                                    <p className="mt-3 text-sm text-emerald-100/90">
                                         Setup takes a few minutes.
                                     </p>
                                 </div>
