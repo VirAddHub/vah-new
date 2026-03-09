@@ -28,13 +28,13 @@ const steps = [
 
 export default function HowItWorks() {
     return (
-        <section className="w-full bg-background py-12 lg:pt-24 lg:pb-24">
+        <section className="w-full bg-background pt-12 pb-16 sm:pb-20 lg:pt-24 lg:pb-24" aria-labelledby="how-it-works-heading">
             <div className="safe-pad mx-auto w-full max-w-[1280px] px-6 sm:px-8 lg:px-12">
                 <header className="mb-6 text-center sm:mb-8 md:mb-10 lg:mb-[60px]">
-                    <h2 className="mb-2 text-2xl font-medium text-foreground sm:mb-3 sm:text-3xl md:text-4xl lg:text-[44px] lg:leading-[1.1]">
+                    <h2 id="how-it-works-heading" className="mb-2 text-2xl font-semibold text-foreground sm:mb-3 sm:text-3xl md:text-4xl lg:text-[44px] lg:leading-[1.1]">
                         How It Works
                     </h2>
-                    <p className="text-xs text-muted-foreground sm:text-sm md:text-base lg:text-[18px] lg:leading-[1.4]">
+                    <p className="text-sm text-muted-foreground sm:text-base md:text-base lg:text-[18px] lg:leading-[1.4]">
                         Getting started is simple
                     </p>
                 </header>
