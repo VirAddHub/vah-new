@@ -934,41 +934,37 @@ export default function MailInboxPage() {
     }, [forwardInlineNotice]);
 
     return (
-        <div className="w-full -mx-4 md:mx-0 px-4 md:px-0">
-            {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 md:mb-8 gap-4">
-                <div className="flex items-baseline gap-3">
+        <div className="w-full min-w-0 -mx-4 md:mx-0 px-4 md:px-0">
+            {/* Page header: title + count + search — clearer hierarchy on mobile */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5 md:mb-8">
+                <div className="flex items-baseline gap-2 md:gap-3 flex-wrap">
                     <h1 className="text-2xl md:text-3xl font-semibold text-neutral-900 tracking-tight">
                         Mail
                     </h1>
-                    <span className="text-sm text-neutral-500 font-normal">{inboxCount} items</span>
+                    <span className="text-sm text-neutral-400 font-normal">{inboxCount} items</span>
                 </div>
-
-                {/* Search */}
-                <div className="relative w-full md:w-80">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" strokeWidth={2} />
+                <div className="relative w-full md:w-80 shrink-0">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" strokeWidth={2} />
                     <Input
                         type="text"
                         placeholder="Search mail..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 h-10 rounded-lg border-neutral-200 bg-white text-sm focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary transition-all duration-150"
+                        className="pl-10 h-11 md:h-10 rounded-xl md:rounded-lg border-neutral-200 bg-white text-sm focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all duration-150 border shadow-sm md:shadow-none"
                     />
                 </div>
             </div>
 
             {/* Tag Filter Indicator */}
             {selectedTagFilter && activeTab === 'inbox' && (
-                <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-50 border border-neutral-200">
-                    <span className="text-sm text-neutral-600 font-medium">
-                        Filtered by:
-                    </span>
+                <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200">
+                    <span className="text-sm text-neutral-600 font-medium">Filtered by:</span>
                     <TagDot tag={selectedTagFilter} label={getTagLabel(selectedTagFilter)} />
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={clearTagFilter}
-                        className="h-7 px-2 text-xs text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 ml-auto transition-colors duration-150"
+                        className="h-8 min-h-[36px] px-3 text-xs text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 ml-auto transition-colors duration-150 touch-manipulation"
                     >
                         <X className="h-3.5 w-3.5 mr-1" strokeWidth={2} />
                         Clear
@@ -976,28 +972,24 @@ export default function MailInboxPage() {
                 </div>
             )}
 
-            {/* Tabs */}
+            {/* Tabs — mobile: pill segment control; desktop: underline */}
             <Tabs value={activeTab} onValueChange={(v) => {
                 setActiveTab(v as 'inbox' | 'archived' | 'tags');
-                // Clear tag filter when switching tabs
-                if (v !== 'inbox') {
-                    setSelectedTagFilter(null);
-                }
-            }} className="mb-6 md:mb-8">
-                <div className="sticky top-[56px] md:top-0 md:static z-20 bg-white md:bg-transparent -mx-4 md:mx-0 px-4 md:px-0 pb-3 md:pb-0 border-b border-neutral-200 md:border-b-0">
+                if (v !== 'inbox') setSelectedTagFilter(null);
+            }} className="mb-5 md:mb-8">
+                <div className="sticky top-[56px] md:top-0 md:static z-20 bg-[#F6F6F7] md:bg-transparent -mx-4 md:mx-0 px-4 md:px-0 pt-1 pb-4 md:pt-0 md:pb-0 border-b-0 md:border-b md:border-neutral-200">
                     <TabsList className={cn(
-                        "bg-transparent border-b-0 rounded-none p-0 h-auto gap-1",
-                        "md:border-b md:border-neutral-200 md:gap-0"
+                        "w-full md:w-auto bg-neutral-100 md:bg-transparent p-1 rounded-xl md:rounded-none md:p-0 h-auto gap-0 border-0",
+                        "md:border-b md:border-neutral-200"
                     )}>
                         <TabsTrigger
                             value="inbox"
                             className={cn(
-                                "flex-1 md:flex-none px-4 md:px-5 py-2.5 md:py-3 text-sm font-medium",
-                                "rounded-lg md:rounded-none border-0 md:border-b-2 md:border-transparent",
-                                "data-[state=active]:bg-primary data-[state=active]:text-white",
+                                "flex-1 md:flex-none min-h-[44px] md:min-h-0 px-4 md:px-5 py-3 md:py-3 text-sm font-medium rounded-lg md:rounded-none border-0 md:border-b-2 md:border-transparent",
+                                "data-[state=active]:bg-white data-[state=active]:text-neutral-900 data-[state=active]:shadow-sm",
                                 "md:data-[state=active]:bg-transparent md:data-[state=active]:text-primary md:data-[state=active]:border-primary",
-                                "text-neutral-600 hover:text-neutral-900",
-                                "transition-all duration-150"
+                                "text-neutral-600 hover:text-neutral-900 md:hover:text-neutral-900",
+                                "transition-all duration-150 touch-manipulation"
                             )}
                         >
                             <span className="md:hidden">Inbox</span>
@@ -1006,12 +998,11 @@ export default function MailInboxPage() {
                         <TabsTrigger
                             value="archived"
                             className={cn(
-                                "flex-1 md:flex-none px-4 md:px-5 py-2.5 md:py-3 text-sm font-medium",
-                                "rounded-lg md:rounded-none border-0 md:border-b-2 md:border-transparent",
-                                "data-[state=active]:bg-primary data-[state=active]:text-white",
+                                "flex-1 md:flex-none min-h-[44px] md:min-h-0 px-4 md:px-5 py-3 md:py-3 text-sm font-medium rounded-lg md:rounded-none border-0 md:border-b-2 md:border-transparent",
+                                "data-[state=active]:bg-white data-[state=active]:text-neutral-900 data-[state=active]:shadow-sm",
                                 "md:data-[state=active]:bg-transparent md:data-[state=active]:text-primary md:data-[state=active]:border-primary",
-                                "text-neutral-600 hover:text-neutral-900",
-                                "transition-all duration-150"
+                                "text-neutral-600 hover:text-neutral-900 md:hover:text-neutral-900",
+                                "transition-all duration-150 touch-manipulation"
                             )}
                         >
                             <span className="md:hidden">Archived</span>
@@ -1020,12 +1011,11 @@ export default function MailInboxPage() {
                         <TabsTrigger
                             value="tags"
                             className={cn(
-                                "flex-1 md:flex-none px-4 md:px-5 py-2.5 md:py-3 text-sm font-medium",
-                                "rounded-lg md:rounded-none border-0 md:border-b-2 md:border-transparent",
-                                "data-[state=active]:bg-primary data-[state=active]:text-white",
+                                "flex-1 md:flex-none min-h-[44px] md:min-h-0 px-4 md:px-5 py-3 md:py-3 text-sm font-medium rounded-lg md:rounded-none border-0 md:border-b-2 md:border-transparent",
+                                "data-[state=active]:bg-white data-[state=active]:text-neutral-900 data-[state=active]:shadow-sm",
                                 "md:data-[state=active]:bg-transparent md:data-[state=active]:text-primary md:data-[state=active]:border-primary",
-                                "text-neutral-600 hover:text-neutral-900",
-                                "transition-all duration-150"
+                                "text-neutral-600 hover:text-neutral-900 md:hover:text-neutral-900",
+                                "transition-all duration-150 touch-manipulation"
                             )}
                         >
                             <span className="md:hidden">Tags</span>
@@ -1071,7 +1061,7 @@ export default function MailInboxPage() {
                 </div>
             ) : (
                 /* Mail List View */
-                <div className="w-full space-y-2">
+                <div className="w-full space-y-3 md:space-y-2">
                     {mailLoading ? (
                         <div className="py-16 md:py-16 text-center">
                             <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-primary border-r-transparent mb-4"></div>
@@ -1143,7 +1133,7 @@ export default function MailInboxPage() {
                                         </div>
                                         {/* Mail Items for this Tag */}
                                         {!isCollapsed && (
-                                            <div className="space-y-2 pb-6 md:pb-6">
+                                            <div className="space-y-3 md:space-y-2 pb-6">
                                                 {items.map((item) => {
                                                     const Icon = getMailIcon(item);
                                                     const senderName = getSenderName(item);
@@ -1154,35 +1144,41 @@ export default function MailInboxPage() {
                                                         <div
                                                             key={item.id}
                                                             onClick={() => handleMailClick(item)}
+                                                            role="button"
+                                                            tabIndex={0}
+                                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleMailClick(item); } }}
                                                             className={cn(
-                                                                "flex items-center gap-4 md:gap-5 rounded-lg border px-5 md:px-6 py-4 md:py-5",
-                                                                "bg-white hover:bg-neutral-50 active:bg-neutral-100 transition-colors duration-150",
-                                                                "border-neutral-200 hover:border-primary/30 hover:shadow-sm",
-                                                                "cursor-pointer min-h-[56px] md:min-h-0"
+                                                                "flex items-center gap-3 md:gap-5 rounded-xl md:rounded-lg border px-4 py-4 md:px-6 md:py-5",
+                                                                "bg-white hover:bg-neutral-50/80 active:bg-neutral-100 transition-colors duration-150",
+                                                                "border-neutral-200/80 hover:border-neutral-300 md:hover:border-primary/30 shadow-sm hover:shadow md:hover:shadow-sm",
+                                                                "cursor-pointer min-h-[64px] md:min-h-0 touch-manipulation"
                                                             )}
                                                         >
-                                                            {/* Mobile: Icon + Sender/Tag + Date */}
+                                                            {/* Mobile: icon in circle + sender/tag + date */}
                                                             <div className="flex items-center gap-3 flex-1 min-w-0 md:hidden">
-                                                                <div className="flex-shrink-0">
+                                                                <div className={cn(
+                                                                    "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center",
+                                                                    isRead ? "bg-neutral-100" : "bg-primary/10"
+                                                                )}>
                                                                     <Icon className={cn(
                                                                         "h-5 w-5",
-                                                                        isRead ? 'text-neutral-400' : 'text-neutral-700'
+                                                                        isRead ? 'text-neutral-500' : 'text-primary'
                                                                     )} strokeWidth={2} />
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <p className={cn(
-                                                                            "text-[15px] leading-tight truncate",
-                                                                            isRead ? 'font-normal text-neutral-600' : 'font-semibold text-neutral-900'
-                                                                        )}>
-                                                                            {senderName}
-                                                                        </p>
-                                                                        {item.tag && (
+                                                                    <p className={cn(
+                                                                        "text-[15px] leading-snug truncate",
+                                                                        isRead ? 'font-normal text-neutral-600' : 'font-semibold text-neutral-900'
+                                                                    )}>
+                                                                        {senderName}
+                                                                    </p>
+                                                                    {item.tag && (
+                                                                        <div className="mt-0.5">
                                                                             <TagDot tag={item.tag} label={getTagLabel(item.tag)} />
-                                                                        )}
-                                                                    </div>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
-                                                                <span className="text-xs text-neutral-500 whitespace-nowrap flex-shrink-0 tabular-nums">
+                                                                <span className="text-xs text-neutral-400 whitespace-nowrap flex-shrink-0 tabular-nums">
                                                                     {date}
                                                                 </span>
                                                             </div>
@@ -1269,35 +1265,41 @@ export default function MailInboxPage() {
                                 <div
                                     key={item.id}
                                     onClick={() => handleMailClick(item)}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleMailClick(item); } }}
                                     className={cn(
-                                        "flex items-center gap-4 md:gap-5 rounded-lg border px-5 md:px-6 py-4 md:py-5",
-                                        "bg-white hover:bg-neutral-50 active:bg-neutral-100 transition-colors duration-150",
-                                        "border-neutral-200 hover:border-primary/30 hover:shadow-sm",
-                                        "cursor-pointer min-h-[56px] md:min-h-0"
+                                        "flex items-center gap-3 md:gap-5 rounded-xl md:rounded-lg border px-4 py-4 md:px-6 md:py-5",
+                                        "bg-white hover:bg-neutral-50/80 active:bg-neutral-100 transition-colors duration-150",
+                                        "border-neutral-200/80 hover:border-neutral-300 md:hover:border-primary/30 shadow-sm hover:shadow md:hover:shadow-sm",
+                                        "cursor-pointer min-h-[64px] md:min-h-0 touch-manipulation"
                                     )}
                                 >
-                                    {/* Mobile: Icon + Sender/Tag + Date */}
+                                    {/* Mobile: icon in circle + sender/tag + date */}
                                     <div className="flex items-center gap-3 flex-1 min-w-0 md:hidden">
-                                        <div className="flex-shrink-0">
+                                        <div className={cn(
+                                            "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center",
+                                            isRead ? "bg-neutral-100" : "bg-primary/10"
+                                        )}>
                                             <Icon className={cn(
                                                 "h-5 w-5",
-                                                isRead ? 'text-neutral-400' : 'text-neutral-700'
-                                            )} />
+                                                isRead ? 'text-neutral-500' : 'text-primary'
+                                            )} strokeWidth={2} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <p className={cn(
-                                                    "text-[15px] leading-tight truncate",
-                                                    isRead ? 'font-normal text-neutral-600' : 'font-semibold text-neutral-900'
-                                                )}>
-                                                    {senderName}
-                                                </p>
-                                                {item.tag && (
+                                            <p className={cn(
+                                                "text-[15px] leading-snug truncate",
+                                                isRead ? 'font-normal text-neutral-600' : 'font-semibold text-neutral-900'
+                                            )}>
+                                                {senderName}
+                                            </p>
+                                            {item.tag && (
+                                                <div className="mt-0.5">
                                                     <TagDot tag={item.tag} label={getTagLabel(item.tag)} />
-                                                )}
-                                            </div>
+                                                </div>
+                                            )}
                                         </div>
-                                        <span className="text-xs text-neutral-500 whitespace-nowrap flex-shrink-0 tabular-nums">
+                                        <span className="text-xs text-neutral-400 whitespace-nowrap flex-shrink-0 tabular-nums">
                                             {date}
                                         </span>
                                     </div>
@@ -1333,7 +1335,6 @@ export default function MailInboxPage() {
                                             onValueChange={(newTag) => handleTagUpdate(item, newTag)}
                                             getTagLabel={getTagLabel}
                                         />
-
                                         {item.deleted ? (
                                             <Button
                                                 variant="ghost"
@@ -1355,7 +1356,6 @@ export default function MailInboxPage() {
                                                 Archive
                                             </Button>
                                         )}
-
                                         <span className="text-xs text-neutral-500 whitespace-nowrap min-w-[72px] text-right tabular-nums">
                                             {date}
                                         </span>
