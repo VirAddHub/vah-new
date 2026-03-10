@@ -219,8 +219,8 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
   };
 
   return (
-    <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-      <CardContent className="p-[28px]">
+    <Card className="rounded-xl sm:rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white min-w-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+      <CardContent className="p-4 sm:p-6 md:p-[28px]">
         <div className="flex flex-col gap-[14px]">
           {/* Header with Edit button aligned top-right */}
           <div className="flex items-center justify-between">
@@ -241,7 +241,7 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
                       Edit
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[calc(100vw-2rem)] sm:w-full p-4 sm:p-6">
                     <DialogHeader>
                       <DialogTitle>Edit Forwarding Address</DialogTitle>
                     </DialogHeader>
@@ -298,7 +298,7 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
                                 className="mt-1"
                               />
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
                                 <Label htmlFor="manual-city">
                                   City <span className="text-destructive">*</span>
@@ -328,11 +328,11 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
                         </div>
                       )}
 
-                      <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" onClick={handleCancel}>
+                      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={handleCancel} className="min-h-[44px] sm:min-h-0">
                           Cancel
                         </Button>
-                        <Button type="submit" disabled={isSaving}>
+                        <Button type="submit" disabled={isSaving} className="min-h-[44px] sm:min-h-0">
                           {isSaving ? 'Saving...' : 'Save address'}
                         </Button>
                       </div>
@@ -345,14 +345,14 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="text-[12px] text-[#206039] hover:text-[#206039]/80 hover:bg-[#206039]/5 -mr-2" 
+                    className="text-[12px] text-[#206039] hover:text-[#206039]/80 hover:bg-[#206039]/5 -mr-2 min-h-[44px] min-w-[44px] touch-manipulation" 
                     style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                   >
                     <Plus className="h-3.5 w-3.5 mr-1.5" />
                       Add address
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[calc(100vw-2rem)] sm:w-full p-4 sm:p-6">
                     <DialogHeader>
                       <DialogTitle>Add Forwarding Address</DialogTitle>
                     </DialogHeader>
@@ -404,7 +404,7 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
                                 className="mt-1"
                               />
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
                                 <Label htmlFor="add-manual-city">
                                   City <span className="text-destructive">*</span>
@@ -434,11 +434,11 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
                         </div>
                       )}
 
-                      <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" onClick={handleCancel}>
+                      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={handleCancel} className="min-h-[44px] sm:min-h-0">
                           Cancel
                         </Button>
-                        <Button type="submit" disabled={isSaving}>
+                        <Button type="submit" disabled={isSaving} className="min-h-[44px] sm:min-h-0">
                           {isSaving ? 'Saving...' : 'Save address'}
                         </Button>
                       </div>

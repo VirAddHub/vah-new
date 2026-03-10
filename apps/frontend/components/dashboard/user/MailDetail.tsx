@@ -63,21 +63,22 @@ export function MailDetail({
   const formattedDate = formatDate(getMailDate(item));
 
   return (
-    <div className="bg-background w-full">
-      <div className="flex flex-col gap-6 md:gap-8">
-        {/* Back to Inbox button */}
+    <div className="bg-background w-full min-w-0">
+      <div className="flex flex-col gap-5 md:gap-8">
+        {/* Back to Inbox - touch-friendly on mobile */}
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 transition-colors duration-150 text-sm font-normal w-fit -ml-1"
+          className="inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 transition-colors duration-150 text-sm font-normal w-fit min-h-[44px] py-2 -ml-1 pr-2 rounded-lg touch-manipulation -mb-1"
+          aria-label="Back to inbox"
         >
-          <ArrowLeft className="h-4 w-4" strokeWidth={2} />
+          <ArrowLeft className="h-4 w-4 shrink-0" strokeWidth={2} />
           Back to Inbox
         </button>
 
-        {/* Mail title + date only */}
-        <div className="space-y-2 md:space-y-3">
-          <h1 className="text-2xl md:text-3xl font-semibold text-neutral-900 leading-tight">
+        {/* Mail title + date */}
+        <div className="space-y-1.5 md:space-y-3">
+          <h1 className="text-xl md:text-3xl font-semibold text-neutral-900 leading-tight break-words">
             {title}
           </h1>
           <p className="text-sm text-neutral-500">
@@ -85,12 +86,12 @@ export function MailDetail({
           </p>
         </div>
 
-        {/* Action buttons */}
+        {/* Action buttons - stack on mobile, comfortable height */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 flex-wrap">
           <Button
             type="button"
             onClick={onView}
-            className="h-10 px-5 transition-all duration-150 flex-1 sm:flex-none"
+            className="h-11 sm:h-10 px-5 transition-all duration-150 flex-1 sm:flex-none touch-manipulation"
           >
             View Scan
           </Button>
@@ -100,7 +101,7 @@ export function MailDetail({
               type="button"
               onClick={onUnarchive}
               variant="outline"
-              className="h-10 px-5 transition-all duration-150 flex-1 sm:flex-none"
+              className="h-11 sm:h-10 px-5 transition-all duration-150 flex-1 sm:flex-none touch-manipulation"
             >
               <ArchiveRestore className="h-4 w-4 mr-2" strokeWidth={2} />
               Unarchive
@@ -110,7 +111,7 @@ export function MailDetail({
               type="button"
               onClick={onArchive}
               variant="outline"
-              className="h-10 px-5 transition-all duration-150 flex-1 sm:flex-none"
+              className="h-11 sm:h-10 px-5 transition-all duration-150 flex-1 sm:flex-none touch-manipulation"
             >
               <Archive className="h-4 w-4 mr-2" strokeWidth={2} />
               Archive
@@ -122,7 +123,7 @@ export function MailDetail({
               type="button"
               onClick={onForward}
               variant="outline"
-              className="h-10 px-5 transition-all duration-150 w-full sm:w-auto"
+              className="h-11 sm:h-10 px-5 transition-all duration-150 w-full sm:w-auto touch-manipulation"
             >
               Request Forwarding
             </Button>
@@ -150,7 +151,7 @@ export function MailDetail({
         </div>
 
         {/* PDF Viewer - Embedded container */}
-        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 md:p-6">
+        <div className="rounded-xl md:rounded-lg border border-neutral-200 bg-neutral-50 p-4 md:p-6 min-w-0">
           {miniViewerLoading ? (
             <div className="flex flex-col items-center justify-center min-h-[300px] md:min-h-[400px] py-12 md:py-16">
               <div className="mx-auto h-10 w-10 rounded-full border-2 border-neutral-300 border-t-neutral-700 animate-spin" />

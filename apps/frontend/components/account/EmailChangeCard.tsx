@@ -132,16 +132,16 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
 
   return (
     <>
-      <Card className="rounded-2xl border border-neutral-200 bg-white">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <Mail className="w-6 h-6 text-primary" strokeWidth={2} />
-            <CardTitle className="text-xl font-semibold text-neutral-900">
+      <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white min-w-0">
+        <CardHeader className="p-4 sm:p-6">
+          <div className="flex items-center gap-3 min-w-0">
+            <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-primary shrink-0" strokeWidth={2} />
+            <CardTitle className="text-lg sm:text-xl font-semibold text-neutral-900 truncate">
               Email Address
             </CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
           {/* Current Email */}
           <div className="space-y-2">
             <Label className="text-sm text-neutral-500">Current email address</Label>
@@ -187,7 +187,7 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
             onClick={() => setIsDialogOpen(true)}
             variant="outline"
             size="sm"
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto min-h-[44px] sm:min-h-0 touch-manipulation"
             disabled={!!pendingEmail}
           >
             {pendingEmail ? 'Email change pending' : 'Change email address'}
@@ -201,7 +201,7 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
 
       {/* Email Change Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto w-[calc(100vw-2rem)] sm:w-full p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Change Email Address</DialogTitle>
             <DialogDescription>

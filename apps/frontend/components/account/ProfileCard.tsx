@@ -76,16 +76,16 @@ export function ProfileCard() {
   };
 
   return (
-    <Card className="rounded-2xl border border-neutral-200 bg-white">
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <User className="w-6 h-6 text-primary" strokeWidth={2} />
-          <CardTitle className="text-xl font-semibold text-neutral-900">
+    <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white min-w-0">
+      <CardHeader className="p-4 sm:p-6">
+        <div className="flex items-center gap-3 min-w-0">
+          <User className="w-5 h-5 sm:w-6 sm:h-6 text-primary shrink-0" strokeWidth={2} />
+          <CardTitle className="text-lg sm:text-xl font-semibold text-neutral-900 truncate">
             Profile Information
           </CardTitle>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-5 sm:space-y-6 p-4 sm:p-6 pt-0">
         {/* First Name - Read-only */}
         <div className="space-y-2">
           <Label htmlFor="first-name" className="flex items-center gap-2 text-sm text-neutral-700">
@@ -172,11 +172,11 @@ export function ProfileCard() {
 
         {/* Save Button */}
         {canSave && (
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto min-h-[44px] sm:min-h-0 touch-manipulation"
             >
               {isSaving ? 'Saving...' : 'Save changes'}
             </Button>
@@ -186,7 +186,7 @@ export function ProfileCard() {
                 setPhone(profile?.phone || '');
               }}
               disabled={isSaving}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto min-h-[44px] sm:min-h-0 touch-manipulation"
             >
               Cancel
             </Button>

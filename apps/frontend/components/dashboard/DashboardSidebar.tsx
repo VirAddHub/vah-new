@@ -347,69 +347,66 @@ export function DashboardSidebar() {
                         aria-label="Navigation Menu"
                     >
                         <div className="flex h-[100dvh] flex-col bg-white shadow-xl">
-                            {/* Header - Fixed at top */}
-                            <div className="shrink-0 flex items-center justify-between p-6 border-b border-neutral-200">
+                            {/* Header - Fixed at top, touch-friendly */}
+                            <div className="shrink-0 flex items-center justify-between px-4 py-4 sm:p-5 border-b border-neutral-200">
                                     <h2 className="text-lg font-semibold text-neutral-900">Menu</h2>
                                     <Button
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => setIsMobileSidebarOpen(false)}
-                                        className="h-8 w-8"
-                                    aria-label="Close menu"
+                                        className="h-11 w-11 min-h-[44px] min-w-[44px] rounded-lg touch-manipulation"
+                                        aria-label="Close menu"
                                     >
                                         <X className="h-5 w-5" strokeWidth={2} />
                                     </Button>
                                 </div>
 
-                            {/* Nav area - Scrollable */}
-                            <div className="flex-1 overflow-y-auto px-4 py-4">
-                                    {/* Main Navigation */}
-                                <div className="mb-4">
-                                        <div className="space-y-1">
-                                            {/* Mail Inbox */}
+                            {/* Nav area - Scrollable, 44px touch targets */}
+                            <div className="flex-1 overflow-y-auto px-3 py-4">
+                                    <div className="mb-2">
+                                        <div className="space-y-0.5">
                                             <button
                                                 onClick={() => {
-                                                handleMailClick();
+                                                    handleMailClick();
                                                     setIsMobileSidebarOpen(false);
                                                 }}
                                                 className={cn(
-                                                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full",
+                                                    "flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-sm font-medium transition-colors text-left w-full touch-manipulation",
                                                     isMailActive
                                                         ? "bg-primary/10 text-primary"
                                                         : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
                                                 )}
                                             >
-                                                <Mail className="w-5 h-5" strokeWidth={2} />
+                                                <Mail className="w-5 h-5 shrink-0" strokeWidth={2} />
                                                 Mail Inbox
                                             </button>
                                         </div>
                                     </div>
 
                                     {/* Account Section */}
-                                <div className="mt-4 pt-4 border-t border-neutral-200">
+                                    <div className="mt-2 pt-4 border-t border-neutral-200">
                                         <div className="px-3 mb-2">
                                             <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
                                                 Account
                                             </h3>
                                         </div>
-                                        <div className="space-y-1">
+                                        <div className="space-y-0.5">
                                             {accountNavItems.map((item) => {
                                                 const Icon = item.icon;
                                                 const active = isActive(item.href);
-
                                                 return (
                                                     <Link
                                                         key={item.href}
                                                         href={item.href}
                                                         onClick={() => setIsMobileSidebarOpen(false)}
                                                         className={cn(
-                                                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                                                            "flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-sm font-medium transition-colors touch-manipulation",
                                                             active
                                                                 ? "bg-primary/10 text-primary"
                                                                 : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
                                                         )}
                                                     >
-                                                        <Icon className="w-5 h-5" strokeWidth={2} />
+                                                        <Icon className="w-5 h-5 shrink-0" strokeWidth={2} />
                                                         {item.label}
                                                     </Link>
                                                 );
@@ -418,30 +415,29 @@ export function DashboardSidebar() {
                                     </div>
 
                                     {/* Settings Section */}
-                                    <div className="mt-4 pt-4 border-t border-neutral-200">
+                                    <div className="mt-2 pt-4 border-t border-neutral-200">
                                         <div className="px-3 mb-2">
                                             <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
                                                 Settings
                                             </h3>
                                         </div>
-                                        <div className="space-y-1">
+                                        <div className="space-y-0.5">
                                             {settingsNavItems.map((item) => {
                                                 const Icon = item.icon;
                                                 const active = isActive(item.href);
-
                                                 return (
                                                     <Link
                                                         key={item.href}
                                                         href={item.href}
                                                         onClick={() => setIsMobileSidebarOpen(false)}
                                                         className={cn(
-                                                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                                                            "flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-sm font-medium transition-colors touch-manipulation",
                                                             active
                                                                 ? "bg-primary/10 text-primary"
                                                                 : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
                                                         )}
                                                     >
-                                                        <Icon className="w-5 h-5" strokeWidth={2} />
+                                                        <Icon className="w-5 h-5 shrink-0" strokeWidth={2} />
                                                         {item.label}
                                                     </Link>
                                                 );

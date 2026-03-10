@@ -119,7 +119,7 @@ export function CertificateDownload({ profile, compliance }: CertificateDownload
     };
 
     return (
-        <div className="px-4 pb-6 pt-4 border-t border-[#E5E7EB]">
+        <div className="px-3 sm:px-4 pb-4 sm:pb-6 pt-3 sm:pt-4 border-t border-[#E5E7EB]">
             <div className="flex flex-col gap-3">
                 <p className="text-xs font-semibold text-[#374151]">
                     Letter of Certification
@@ -129,7 +129,7 @@ export function CertificateDownload({ profile, compliance }: CertificateDownload
                         <Button
                             onClick={handleDownloadCertification}
                             disabled={isCertBusy}
-                            className="w-full bg-[#206039] text-white hover:bg-[#206039]/90 text-sm font-medium py-2.5"
+                            className="w-full min-h-[44px] sm:min-h-0 bg-[#206039] text-white hover:bg-[#206039]/90 text-sm font-medium py-2.5 sm:py-2.5 touch-manipulation"
                         >
                             {isCertBusy ? (
                                 <>

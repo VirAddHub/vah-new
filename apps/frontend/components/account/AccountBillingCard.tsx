@@ -159,23 +159,23 @@ export function AccountBillingCard({
 
   return (
     <Card
-      className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white w-full max-w-[408px] flex-shrink-0"
+      className="rounded-xl sm:rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white w-full max-w-full sm:max-w-[408px] flex-shrink-0 min-w-0"
       style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
     >
-      <CardContent className="p-[28px] h-full flex flex-col">
-        <div className="flex flex-col gap-[14px] flex-1">
+      <CardContent className="p-4 sm:p-[28px] h-full flex flex-col">
+        <div className="flex flex-col gap-3 sm:gap-[14px] flex-1">
           {/* Header */}
           <h3
-            className="text-[18px] font-semibold leading-[1.4] text-[#1A1A1A]"
+            className="text-base sm:text-[18px] font-semibold leading-[1.4] text-[#1A1A1A]"
             style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
           >
             Account & billing
           </h3>
 
           {/* Plan: clarify monthly vs yearly */}
-          <div className="flex items-center justify-between gap-[58px]">
+          <div className="flex items-center justify-between gap-3 sm:gap-4 min-w-0">
             <span
-              className="text-[12px] font-normal leading-[1.4] text-[#666666]"
+              className="text-[12px] font-normal leading-[1.4] text-[#666666] shrink-0"
               style={{
                 fontFamily: 'var(--font-poppins), Poppins, sans-serif',
               }}
@@ -183,7 +183,7 @@ export function AccountBillingCard({
               Plan
             </span>
             <span
-              className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right"
+              className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right min-w-0 truncate max-w-[60%] sm:max-w-none"
               style={{
                 fontFamily: 'var(--font-poppins), Poppins, sans-serif',
               }}
@@ -196,9 +196,9 @@ export function AccountBillingCard({
           <div className="w-full h-[0.5px] bg-[#E5E7EB]"></div>
 
           {/* Status */}
-          <div className="flex items-center justify-between gap-[58px]">
+          <div className="flex items-center justify-between gap-3 sm:gap-4 min-w-0">
             <span
-              className="text-[12px] font-normal leading-[1.4] text-[#666666]"
+              className="text-[12px] font-normal leading-[1.4] text-[#666666] shrink-0"
               style={{
                 fontFamily: 'var(--font-poppins), Poppins, sans-serif',
               }}
@@ -206,7 +206,7 @@ export function AccountBillingCard({
               Status
             </span>
             <span
-              className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right"
+              className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right min-w-0"
               style={{
                 fontFamily: 'var(--font-poppins), Poppins, sans-serif',
               }}
@@ -223,9 +223,9 @@ export function AccountBillingCard({
           <div className="w-full h-[0.5px] bg-[#E5E7EB]"></div>
 
           {/* Next billing */}
-          <div className="flex items-center justify-between gap-[58px]">
+          <div className="flex items-center justify-between gap-3 sm:gap-4 min-w-0">
             <span
-              className="text-[12px] font-normal leading-[1.4] text-[#666666]"
+              className="text-[12px] font-normal leading-[1.4] text-[#666666] shrink-0"
               style={{
                 fontFamily: 'var(--font-poppins), Poppins, sans-serif',
               }}
@@ -233,7 +233,7 @@ export function AccountBillingCard({
               Next billing
             </span>
             <span
-              className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right"
+              className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right min-w-0 truncate max-w-[55%] sm:max-w-none"
               style={{
                 fontFamily: 'var(--font-poppins), Poppins, sans-serif',
               }}
@@ -249,7 +249,7 @@ export function AccountBillingCard({
               <Button
                 onClick={handleReactivate}
                 disabled={isLoading === 'reactivate'}
-                className="w-full bg-[#206039] text-white hover:bg-[#206039]/90"
+                className="w-full min-h-[44px] sm:min-h-0 bg-[#206039] text-white hover:bg-[#206039]/90 touch-manipulation"
                 style={{
                   fontFamily: 'var(--font-poppins), Poppins, sans-serif',
                 }}
@@ -274,7 +274,7 @@ export function AccountBillingCard({
                   setPaymentModalMode('setup');
                   setPaymentModalOpen(true);
                 }}
-                className="w-full"
+                className="w-full min-h-[44px] sm:min-h-0 touch-manipulation"
                 style={{
                   fontFamily: 'var(--font-poppins), Poppins, sans-serif',
                 }}
@@ -289,7 +289,7 @@ export function AccountBillingCard({
                   setPaymentModalMode('update');
                   setPaymentModalOpen(true);
                 }}
-                className="w-full bg-[#206039] text-white hover:bg-[#206039]/90"
+                className="w-full min-h-[44px] sm:min-h-0 bg-[#206039] text-white hover:bg-[#206039]/90 touch-manipulation"
                 style={{
                   fontFamily: 'var(--font-poppins), Poppins, sans-serif',
                 }}
