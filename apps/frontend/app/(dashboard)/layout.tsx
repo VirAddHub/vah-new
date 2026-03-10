@@ -28,7 +28,7 @@ export default function DashboardLayout({
                             role="main" 
                             className="min-w-0 flex-1 w-full overflow-x-hidden"
                         >
-                            <div className="w-full max-w-full pt-4 md:pt-6 pb-3 md:pb-6 px-4 sm:px-6">
+                            <div className="w-full max-w-full pt-3 pb-4 px-3 sm:pt-4 sm:px-4 sm:pb-5 md:pt-6 md:px-6 md:pb-6">
                                 {children}
                             </div>
                         </main>

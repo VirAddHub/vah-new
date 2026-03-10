@@ -28,19 +28,19 @@ export function InvoicesCard({ invoices }: InvoicesCardProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Invoices</CardTitle>
+    <Card className="rounded-xl sm:rounded-2xl overflow-hidden">
+      <CardHeader className="p-4 sm:p-6 pb-2">
+        <CardTitle className="text-lg sm:text-xl">Invoices</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 sm:p-6 pt-0">
         {invoices.length === 0 ? (
           <div className="p-8 text-center border-2 border-dashed rounded-lg">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">No invoices yet</p>
           </div>
         ) : (
-          <div className="border rounded-lg overflow-hidden">
-            <Table>
+          <div className="border rounded-lg overflow-x-auto -mx-1 px-1 sm:mx-0 sm:px-0">
+            <Table className="min-w-[600px] sm:min-w-0">
               <TableHeader>
                 <TableRow>
                   <TableHead>Invoice No.</TableHead>

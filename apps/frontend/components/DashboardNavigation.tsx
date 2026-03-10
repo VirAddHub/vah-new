@@ -86,14 +86,14 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
 
     return (
         <header className="w-full border-b bg-white">
-            <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div className="mx-auto max-w-[1400px] px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 min-w-0">
                 {/* Left section: Hamburger (mobile) + Logo */}
                 <div className="flex items-center gap-3 shrink-0">
                     {/* Mobile Hamburger Menu (Dashboard Navigation) */}
                     <button
                         ref={hamburgerRef}
                         onClick={() => setIsMobileSidebarOpen(true)}
-                        className="md:hidden p-2 -ml-2 text-neutral-600 hover:text-neutral-900 transition-colors"
+                        className="lg:hidden p-2 -ml-2 text-neutral-600 hover:text-neutral-900 transition-colors touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
                         aria-label="Open dashboard menu"
                     >
                         <Menu className="h-5 w-5" strokeWidth={2} />
@@ -111,7 +111,7 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="flex items-center gap-2 min-w-0 max-w-[200px] sm:max-w-[240px]"
+                                    className="flex items-center gap-2 min-w-0 max-w-[160px] sm:max-w-[240px] shrink"
                                 >
                                     <Building2 className="h-4 w-4 shrink-0" strokeWidth={2} />
                                     <span className="truncate">

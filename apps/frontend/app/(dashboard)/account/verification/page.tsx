@@ -226,11 +226,11 @@ export default function AccountVerificationPage() {
         <div className="w-full max-w-3xl">
             <ActiveBusinessContextBanner />
             {/* Page Header */}
-            <div className="mb-8">
-                <h1 className="text-3xl lg:text-4xl font-semibold text-neutral-900 mb-2 leading-tight tracking-tight">
+            <div className="mb-5 sm:mb-6 md:mb-8">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-neutral-900 mb-1.5 sm:mb-2 leading-tight tracking-tight">
                     Identity Verification
                 </h1>
-                <p className="text-base text-neutral-600 leading-relaxed">
+                <p className="text-sm sm:text-base text-neutral-600 leading-relaxed">
                     {verificationState === 'verified' 
                         ? 'Your identity check has been approved'
                         : verificationState === 'pending_others'
@@ -241,8 +241,8 @@ export default function AccountVerificationPage() {
             </div>
 
             {/* Companies House details card — top of Verification */}
-            <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
-                <CardContent className="p-4 md:p-6">
+            <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+                <CardContent className="p-4 sm:p-6">
                     <div className="flex items-start gap-3 md:gap-4">
                         <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0">
                             <Building2 className="w-5 h-5 text-neutral-600" strokeWidth={2} />
@@ -289,9 +289,9 @@ export default function AccountVerificationPage() {
 
             {/* STATE: VERIFIED */}
             {verificationState === 'verified' && (
-                <Card className="rounded-2xl border border-neutral-200 bg-white">
-                <CardContent className="p-8">
-                        <div className="flex items-start gap-6">
+                <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+                <CardContent className="p-4 sm:p-6 md:p-8">
+                        <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
                             <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                                 <CheckCircle2 className="w-6 h-6 text-green-700" strokeWidth={2} />
                             </div>
@@ -319,9 +319,9 @@ export default function AccountVerificationPage() {
             {verificationState === 'pending_others' && (
                 <>
                     {/* Primary User Verified */}
-                    <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
-                <CardContent className="p-8">
-                            <div className="flex items-start gap-6">
+                    <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+                <CardContent className="p-4 sm:p-6 md:p-8">
+                            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
                                 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                                     <CheckCircle2 className="w-6 h-6 text-green-700" strokeWidth={2} />
                                 </div>
@@ -338,9 +338,9 @@ export default function AccountVerificationPage() {
             </Card>
 
                     {/* Pending Owners */}
-                    <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
-                <CardContent className="p-8">
-                            <div className="flex items-start gap-6 mb-6">
+                    <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+                <CardContent className="p-4 sm:p-6 md:p-8">
+                            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 mb-4 sm:mb-6">
                                 <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
                                     <AlertCircle className="w-6 h-6 text-yellow-700" strokeWidth={2} />
                                 </div>
@@ -411,9 +411,9 @@ export default function AccountVerificationPage() {
             {verificationState === 'action_required' && (
                 <>
                     {/* Verification Required Card */}
-                    <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
-                        <CardContent className="p-8">
-                            <div className="flex items-start gap-6 mb-6">
+                    <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+                        <CardContent className="p-4 sm:p-6 md:p-8">
+                            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 mb-4 sm:mb-6">
                                 <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
                                     <ShieldCheck className="w-6 h-6 text-yellow-700" strokeWidth={2} />
                         </div>

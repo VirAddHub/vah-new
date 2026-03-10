@@ -106,21 +106,21 @@ export default function AccountOverviewPage() {
         <div className="w-full">
             <ActiveBusinessContextBanner />
             {/* Page Header */}
-            <div className="mb-8">
-                <h1 className="text-3xl lg:text-4xl font-semibold text-neutral-900 mb-2 leading-tight tracking-tight">
+            <div className="mb-5 sm:mb-6 md:mb-8">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-neutral-900 mb-1.5 sm:mb-2 leading-tight tracking-tight">
                     Account Overview
                 </h1>
-                <p className="text-base text-neutral-600 leading-relaxed">
+                <p className="text-sm sm:text-base text-neutral-600 leading-relaxed">
                     View your account status and quick actions
                 </p>
             </div>
 
             {/* Account Status Card */}
-            <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
-                <CardContent className="p-6">
+            <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+                <CardContent className="p-4 sm:p-6">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex flex-col gap-3">
-                            <h2 className="text-xl font-semibold text-neutral-900">
+                            <h2 className="text-lg sm:text-xl font-semibold text-neutral-900">
                                 Account Status
                             </h2>
                             <div className="flex items-center gap-3">
@@ -146,10 +146,10 @@ export default function AccountOverviewPage() {
             </Card>
 
             {/* Plan & Billing Summary */}
-            <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
-                <CardContent className="p-6">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-6">
-                        <h2 className="text-xl font-semibold text-neutral-900">
+            <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+                <CardContent className="p-4 sm:p-6">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
+                        <h2 className="text-lg sm:text-xl font-semibold text-neutral-900">
                             Plan & Billing
                         </h2>
                         <Button
@@ -162,7 +162,7 @@ export default function AccountOverviewPage() {
                             <ArrowRight className="w-4 h-4 ml-2" strokeWidth={2} />
                         </Button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                         <div className="flex flex-col gap-2">
                             <p className="text-sm text-neutral-500">
                                 Plan
@@ -194,13 +194,13 @@ export default function AccountOverviewPage() {
             </Card>
 
             {/* KYC Status Card */}
-            <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
-                <CardContent className="p-6">
+            <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+                <CardContent className="p-4 sm:p-6">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-3">
                                 <ShieldCheck className="w-6 h-6 text-primary" strokeWidth={2} />
-                                <h2 className="text-xl font-semibold text-neutral-900">
+                                <h2 className="text-lg sm:text-xl font-semibold text-neutral-900">
                                     Identity Verification
                                 </h2>
                             </div>
@@ -232,17 +232,17 @@ export default function AccountOverviewPage() {
             </Card>
 
             {/* Email Address Card */}
-            <div className="mb-6">
+            <div className="mb-4 sm:mb-6">
                 <EmailChangeCard />
             </div>
 
             {/* Business Address Card */}
-            <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
-                <CardContent className="p-6">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                            <MapPin className="w-6 h-6 text-primary" strokeWidth={2} />
-                            <h2 className="text-xl font-semibold text-neutral-900">
+            <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+                <CardContent className="p-4 sm:p-6">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-primary shrink-0" strokeWidth={2} />
+                            <h2 className="text-lg sm:text-xl font-semibold text-neutral-900 truncate">
                                 Registered Business Address
                             </h2>
                         </div>

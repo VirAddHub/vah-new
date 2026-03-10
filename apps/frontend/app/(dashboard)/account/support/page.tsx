@@ -8,22 +8,22 @@ export default function AccountSupportPage() {
     return (
         <div className="w-full">
             {/* Page Header */}
-            <div className="mb-6">
-                <h1 className="text-4xl lg:text-5xl font-semibold leading-tight tracking-tight text-neutral-900 mb-4">
+            <div className="mb-4 sm:mb-6">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight tracking-tight text-neutral-900 mb-2 sm:mb-4">
                     Support
                 </h1>
-                <p className="text-lg text-neutral-600 leading-relaxed">
+                <p className="text-sm sm:text-base lg:text-lg text-neutral-600 leading-relaxed">
                     Get help and contact our support team
                 </p>
             </div>
 
             {/* Support Options List */}
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
                 {/* Email Support */}
-                <div className="flex items-start gap-4 p-6 rounded-2xl border border-neutral-200 bg-white">
+                <div className="flex items-start gap-3 sm:gap-4 p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-neutral-200 bg-white min-w-0">
                     <Mail className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                        <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                    <div className="flex-1 min-w-0">
+                        <h2 className="text-lg sm:text-xl font-semibold text-neutral-900 mb-2">
                                 Email Support
                             </h2>
                         <p className="text-base text-neutral-600 leading-relaxed mb-3">
@@ -48,10 +48,10 @@ export default function AccountSupportPage() {
                 </div>
 
                 {/* WhatsApp Support */}
-                <div className="flex items-start gap-4 p-6 rounded-2xl border border-neutral-200 bg-white">
+                <div className="flex items-start gap-3 sm:gap-4 p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-neutral-200 bg-white min-w-0">
                     <MessageCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                        <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                    <div className="flex-1 min-w-0">
+                        <h2 className="text-lg sm:text-xl font-semibold text-neutral-900 mb-2">
                                 WhatsApp Support
                             </h2>
                         <p className="text-base text-neutral-600 leading-relaxed mb-3">

@@ -118,23 +118,22 @@ export default function AccountAddressesPage() {
         <div className="w-full" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
             <ActiveBusinessContextBanner />
             {/* Page Header */}
-            <div className="mb-8">
-                <h1 className="text-[54px] font-medium leading-[1.2] text-[#1A1A1A] mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <div className="mb-5 sm:mb-6 md:mb-8">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[42px] font-medium leading-tight text-[#1A1A1A] mb-2 sm:mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                     Addresses
                 </h1>
-                <p className="text-[18px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                <p className="text-sm sm:text-base md:text-[18px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                     Manage your business and forwarding addresses
                 </p>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
                 {/* Registered Office Address (Companies House) */}
-                {/* Enhanced authoritative styling: stronger background tint and clearer official label */}
-                <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border border-[#D1D5DB] bg-[#F5F5F5]">
-                    <CardContent className="p-8">
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <h2 className="text-[24px] font-semibold leading-[1.33] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                <Card className="rounded-xl sm:rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border border-[#D1D5DB] bg-[#F5F5F5]">
+                    <CardContent className="p-4 sm:p-6 md:p-8">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4">
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
+                                <h2 className="text-lg sm:text-xl md:text-[24px] font-semibold leading-[1.33] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
                                     Registered Office Address
                                 </h2>
                                 <Badge variant="outline" className="border-[#D1D5DB] bg-white text-[#666666]">

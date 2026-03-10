@@ -109,12 +109,12 @@ export function BusinessesSection() {
 
   return (
     <>
-      <Card className="rounded-2xl border border-neutral-200 bg-white mb-6">
-        <CardContent className="p-6">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Building2 className="w-6 h-6 text-primary" strokeWidth={2} />
-              <h2 className="text-xl font-semibold text-neutral-900">
+      <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary shrink-0" strokeWidth={2} />
+              <h2 className="text-lg sm:text-xl font-semibold text-neutral-900 truncate">
                 Businesses
               </h2>
             </div>
