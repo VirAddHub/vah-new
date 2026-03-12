@@ -87,8 +87,8 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
     return (
         <header className="w-full border-b border-neutral-200/80 bg-white">
             <div className="mx-auto max-w-[1400px] px-3 sm:px-6 lg:px-8 h-12 sm:h-16 flex items-center justify-between gap-2 sm:gap-3 min-w-0">
-                {/* Left: Hamburger (mobile) + Logo — slimmer app bar on mobile */}
-                <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
+                {/* Left: Hamburger (mobile) + desktop logo */}
+                <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
                     <button
                         ref={hamburgerRef}
                         onClick={() => setIsMobileSidebarOpen(true)}
@@ -97,9 +97,25 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
                     >
                         <Menu className="h-5 w-5 shrink-0" strokeWidth={2} />
                     </button>
-                    <div className="max-h-8 sm:max-h-none flex items-center min-w-0">
-                        <VAHLogo onNavigate={onNavigate} size="lg" className="min-w-0 h-8 sm:h-auto" imgClassName="max-h-8 sm:max-h-none w-auto object-contain" />
+                    {/* Desktop logo (hidden on mobile) */}
+                    <div className="hidden sm:flex items-center min-w-0">
+                        <VAHLogo
+                            onNavigate={onNavigate}
+                            size="lg"
+                            className="min-w-0 h-8 sm:h-auto"
+                            imgClassName="max-h-8 sm:max-h-none w-auto object-contain"
+                        />
                     </div>
+                </div>
+
+                {/* Centered logo on mobile */}
+                <div className="flex flex-1 justify-center sm:hidden">
+                    <VAHLogo
+                        onNavigate={onNavigate}
+                        size="lg"
+                        className="h-8 min-w-0"
+                        imgClassName="max-h-8 w-auto object-contain"
+                    />
                 </div>
 
                 {/* Right section: Active business switcher + Sign out — icon-only on mobile to avoid cramped "VI" */}
