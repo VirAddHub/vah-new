@@ -3,17 +3,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from "./ui/button";
-import { Menu, LogOut, ChevronDown, Building2 } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 import { clearToken } from "@/lib/token-manager";
 import { VAHLogo } from "./VAHLogo";
 import { useDashboardView } from "@/contexts/DashboardViewContext";
 import { useActiveBusiness } from "@/contexts/ActiveBusinessContext";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface DashboardNavigationProps {
     onNavigate?: (page: string) => void;
@@ -21,7 +15,7 @@ interface DashboardNavigationProps {
 
 export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {}) {
     const { isMobileSidebarOpen, setIsMobileSidebarOpen } = useDashboardView();
-    const { businesses, activeBusiness, activeBusinessId, setActiveBusinessId, isLoading } = useActiveBusiness();
+    const { isLoading } = useActiveBusiness();
     const router = useRouter();
     const pathname = usePathname();
     const hamburgerRef = useRef<HTMLButtonElement>(null);
@@ -109,40 +103,8 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
                     />
                 </div>
 
-                {/* Right: Active business switcher + Sign out */}
+                {/* Right: Sign out (business context is account-level, single-business UI) */}
                 <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                    {!isLoading && businesses.length > 0 && (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="flex items-center gap-2 min-h-[44px] min-w-[44px] sm:min-w-0 sm:max-w-[240px] px-2.5 sm:px-3 touch-manipulation"
-                                    aria-label={`Switch business: ${activeBusiness?.company_name ?? 'Active business'}`}
-                                >
-                                    <Building2 className="h-4 w-4 shrink-0" strokeWidth={2} />
-                                    <span className="truncate hidden sm:inline">
-                                        {activeBusiness?.company_name ?? 'Active business'}
-                                    </span>
-                                    <ChevronDown className="h-4 w-4 shrink-0" strokeWidth={2} />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="min-w-[220px]">
-                                {businesses.map((b) => (
-                                    <DropdownMenuItem
-                                        key={b.id}
-                                        onClick={() => setActiveBusinessId(b.id)}
-                                        className={activeBusinessId === b.id ? 'bg-accent' : ''}
-                                    >
-                                        <span className="truncate">{b.company_name}</span>
-                                        {b.is_primary && (
-                                            <span className="ml-2 text-xs text-muted-foreground">Primary</span>
-                                        )}
-                                    </DropdownMenuItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    )}
                     <Button
                         onClick={handleLogout}
                         variant="outline"

@@ -9,10 +9,10 @@ export default function AccountBusinessesPage() {
       <ActiveBusinessContextBanner />
       <div className="mb-5 sm:mb-6 md:mb-8">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-neutral-900 mb-1.5 sm:mb-2 leading-tight tracking-tight">
-          Businesses
+          Business
         </h1>
         <p className="text-sm sm:text-base text-neutral-600 leading-relaxed">
-          Manage your businesses and add more under this account
+          View and manage your business details for this account.
         </p>
       </div>
       <BusinessesSection />

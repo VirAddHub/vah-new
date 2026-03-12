@@ -59,7 +59,7 @@ const mainNavItems: NavItem[] = [
 
 const accountNavItems: NavItem[] = [
     { label: 'Overview', href: '/account/overview', icon: LayoutDashboard },
-    { label: 'Businesses', href: '/account/businesses', icon: Building2 },
+    { label: 'Business', href: '/account/businesses', icon: Building2 },
     { label: 'Billing', href: '/account/billing', icon: CreditCard },
     { label: 'Addresses', href: '/account/addresses', icon: MapPin },
     { label: 'Verification', href: '/account/verification', icon: ShieldCheck },
