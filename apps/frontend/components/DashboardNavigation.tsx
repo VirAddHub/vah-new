@@ -86,9 +86,9 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
 
     return (
         <header className="w-full border-b border-neutral-200/80 bg-white">
-            <div className="mx-auto max-w-[1400px] px-3 sm:px-6 lg:px-8 h-12 sm:h-16 flex items-center justify-between gap-2 sm:gap-3 min-w-0">
-                {/* Left: Hamburger (mobile) + desktop logo */}
-                <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+            <div className="mx-auto max-w-[1400px] px-3 sm:px-6 lg:px-8 h-12 sm:h-16 flex items-center gap-2 sm:gap-3 min-w-0">
+                {/* Left: hamburger (mobile) */}
+                <div className="flex items-center shrink-0">
                     <button
                         ref={hamburgerRef}
                         onClick={() => setIsMobileSidebarOpen(true)}
@@ -97,19 +97,10 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
                     >
                         <Menu className="h-5 w-5 shrink-0" strokeWidth={2} />
                     </button>
-                    {/* Desktop logo (hidden on mobile) */}
-                    <div className="hidden sm:flex items-center min-w-0">
-                        <VAHLogo
-                            onNavigate={onNavigate}
-                            size="lg"
-                            className="min-w-0 h-8 sm:h-auto"
-                            imgClassName="max-h-8 sm:max-h-none w-auto object-contain"
-                        />
-                    </div>
                 </div>
 
-                {/* Centered logo on mobile */}
-                <div className="flex flex-1 justify-center sm:hidden">
+                {/* Center slot: logo (centered on mobile, left-aligned on desktop) */}
+                <div className="flex-1 flex justify-center sm:justify-start min-w-0">
                     <VAHLogo
                         onNavigate={onNavigate}
                         size="lg"
@@ -118,7 +109,7 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
                     />
                 </div>
 
-                {/* Right section: Active business switcher + Sign out — icon-only on mobile to avoid cramped "VI" */}
+                {/* Right: Active business switcher + Sign out */}
                 <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                     {!isLoading && businesses.length > 0 && (
                         <DropdownMenu>
