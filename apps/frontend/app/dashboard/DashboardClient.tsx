@@ -18,19 +18,18 @@ const UserDashboard = dynamic(
 
 export default function DashboardClient() {
     const router = useRouter();
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    // Initialise from localStorage synchronously so we don't flash a loader
+    const [hasToken, setHasToken] = useState<boolean | null>(null);
 
     useEffect(() => {
-        // Check if user is authenticated
-        const token = localStorage.getItem('vah_jwt');
+        // Check auth token on mount (client-only codepath)
+        const token = window.localStorage.getItem('vah_jwt');
         if (!token) {
-            router.push('/login');
+            router.replace('/login');
+            setHasToken(false);
             return;
         }
-
-        setIsAuthenticated(true);
-        setIsLoading(false);
+        setHasToken(true);
     }, [router]);
 
     const handleLogout = () => {
@@ -42,7 +41,7 @@ export default function DashboardClient() {
         document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         // Also clear CSRF cookie explicitly (defensive)
         document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        router.push('/login');
+        router.replace('/login');
     };
 
     const handleNavigate = (page: string) => {
@@ -80,17 +79,10 @@ export default function DashboardClient() {
         console.log('Go back');
     };
 
-    if (isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-        );
-    }
-
-    if (!isAuthenticated) {
-        return null; // Will redirect to login
-    }
+    // While we are checking for a token, render nothing to avoid flicker.
+    if (hasToken === null) return null;
+    // If there is no token we already triggered a redirect.
+    if (hasToken === false) return null;
 
     return (
         <UserDashboard

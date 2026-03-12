@@ -105,13 +105,8 @@ export function App({ initialPricing = null }: AppProps) {
         return <ContactPage onNavigate={navigate} />;
       case 'login':
         // Redirect handled by useEffect above
-        return (
-          <div className="min-h-screen bg-background flex items-center justify-center">
-            <div className="text-center">
-              <p className="text-muted-foreground">Redirecting to login...</p>
-            </div>
-          </div>
-        );
+        // Avoid visible text flicker; allow native navigation to take over
+        return null;
       case 'signup':
         return <SignupPage onNavigate={navigate} initialBilling={signupData?.initialBilling} />;
       case 'dashboard':
