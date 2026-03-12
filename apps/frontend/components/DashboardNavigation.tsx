@@ -7,7 +7,6 @@ import { Menu, LogOut } from "lucide-react";
 import { clearToken } from "@/lib/token-manager";
 import { VAHLogo } from "./VAHLogo";
 import { useDashboardView } from "@/contexts/DashboardViewContext";
-import { useActiveBusiness } from "@/contexts/ActiveBusinessContext";
 
 interface DashboardNavigationProps {
     onNavigate?: (page: string) => void;
@@ -15,7 +14,6 @@ interface DashboardNavigationProps {
 
 export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {}) {
     const { isMobileSidebarOpen, setIsMobileSidebarOpen } = useDashboardView();
-    const { isLoading } = useActiveBusiness();
     const router = useRouter();
     const pathname = usePathname();
     const hamburgerRef = useRef<HTMLButtonElement>(null);

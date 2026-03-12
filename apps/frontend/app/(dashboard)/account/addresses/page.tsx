@@ -11,7 +11,6 @@ import { REGISTERED_OFFICE_ADDRESS } from '@/lib/config/address';
 import { toast } from '@/hooks/use-toast';
 import { mutate as globalMutate } from 'swr';
 import { useRouter } from 'next/navigation';
-import { ActiveBusinessContextBanner } from '@/components/account/ActiveBusinessContextBanner';
 
 const ForwardingAddressCard = dynamic(() => import('@/components/account/ForwardingAddressCard').then(mod => ({ default: mod.ForwardingAddressCard })), { ssr: false });
 
@@ -116,7 +115,6 @@ export default function AccountAddressesPage() {
 
     return (
         <div className="w-full" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-            <ActiveBusinessContextBanner />
             {/* Page Header */}
             <div className="mb-5 sm:mb-6 md:mb-8">
                 <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[42px] font-medium leading-tight text-[#1A1A1A] mb-2 sm:mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
