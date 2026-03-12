@@ -76,13 +76,13 @@ export function MailDetail({
           Back to Inbox
         </button>
 
-        {/* Mail title + date */}
+        {/* Mail title + date added to dashboard */}
         <div className="space-y-1.5 md:space-y-3">
           <h1 className="text-xl md:text-3xl font-semibold text-neutral-900 leading-tight break-words">
             {title}
           </h1>
           <p className="text-sm text-neutral-500">
-            {formattedDate ? `Received: ${formattedDate}` : 'Received: —'}
+            {formattedDate ? `Added: ${formattedDate}` : 'Added: —'}
           </p>
         </div>
 
