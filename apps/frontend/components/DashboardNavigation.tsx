@@ -85,36 +85,36 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
     };
 
     return (
-        <header className="w-full border-b bg-white">
-            <div className="mx-auto max-w-[1400px] px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 min-w-0">
-                {/* Left section: Hamburger (mobile) + Logo */}
-                <div className="flex items-center gap-3 shrink-0">
-                    {/* Mobile Hamburger Menu (Dashboard Navigation) */}
+        <header className="w-full border-b border-neutral-200/80 bg-white">
+            <div className="mx-auto max-w-[1400px] px-3 sm:px-6 lg:px-8 h-12 sm:h-16 flex items-center justify-between gap-2 sm:gap-3 min-w-0">
+                {/* Left: Hamburger (mobile) + Logo — slimmer app bar on mobile */}
+                <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
                     <button
                         ref={hamburgerRef}
                         onClick={() => setIsMobileSidebarOpen(true)}
-                        className="lg:hidden p-2 -ml-2 text-neutral-600 hover:text-neutral-900 transition-colors touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        className="lg:hidden p-2 -ml-0.5 text-neutral-600 hover:text-neutral-900 transition-colors touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md"
                         aria-label="Open dashboard menu"
                     >
-                        <Menu className="h-5 w-5" strokeWidth={2} />
+                        <Menu className="h-5 w-5 shrink-0" strokeWidth={2} />
                     </button>
-
-                    {/* Logo - Left aligned on both mobile and desktop */}
-                    <VAHLogo onNavigate={onNavigate} size="lg" />
+                    <div className="max-h-8 sm:max-h-none flex items-center min-w-0">
+                        <VAHLogo onNavigate={onNavigate} size="lg" className="min-w-0 h-8 sm:h-auto" imgClassName="max-h-8 sm:max-h-none w-auto object-contain" />
+                    </div>
                 </div>
 
-                {/* Right section: Active business switcher + Sign out */}
-                <div className="flex items-center gap-2 sm:gap-4 ml-auto">
+                {/* Right section: Active business switcher + Sign out — icon-only on mobile to avoid cramped "VI" */}
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                     {!isLoading && businesses.length > 0 && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="flex items-center gap-2 min-w-0 max-w-[160px] sm:max-w-[240px] shrink"
+                                    className="flex items-center gap-2 min-h-[44px] min-w-[44px] sm:min-w-0 sm:max-w-[240px] px-2.5 sm:px-3 touch-manipulation"
+                                    aria-label={`Switch business: ${activeBusiness?.company_name ?? 'Active business'}`}
                                 >
                                     <Building2 className="h-4 w-4 shrink-0" strokeWidth={2} />
-                                    <span className="truncate">
+                                    <span className="truncate hidden sm:inline">
                                         {activeBusiness?.company_name ?? 'Active business'}
                                     </span>
                                     <ChevronDown className="h-4 w-4 shrink-0" strokeWidth={2} />
@@ -140,9 +140,10 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
                         onClick={handleLogout}
                         variant="outline"
                         size="sm"
-                        className="flex items-center gap-2 shrink-0"
+                        className="flex items-center gap-2 shrink-0 min-h-[44px] min-w-[44px] sm:min-w-0 px-2.5 sm:px-3 touch-manipulation"
+                        aria-label="Sign out"
                     >
-                        <LogOut className="h-4 w-4" strokeWidth={2} />
+                        <LogOut className="h-4 w-4 shrink-0" strokeWidth={2} />
                         <span className="hidden sm:inline">Sign out</span>
                     </Button>
                 </div>
