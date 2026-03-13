@@ -11,27 +11,22 @@ export function isKycApproved(status: KycStatus): boolean {
     return status === "approved" || status === "verified";
 }
 
+const OFFICIAL_TAG_VARIANTS = ["hmrc", "companies house", "companieshouse", "companies_house"];
+
+function isOfficialTag(value: string | null | undefined): boolean {
+    const n = (value || "").toLowerCase().trim();
+    return OFFICIAL_TAG_VARIANTS.some(v => n === v || n.replace(/\s+/g, "_") === v);
+}
+
 /**
- * Check if mail can be forwarded based on KYC status and mail tag
+ * Check if mail can be forwarded based on KYC status and mail tag/source
  * 
  * Rules:
- * - HMRC and Companies House mail can always be forwarded (regardless of KYC)
+ * - HMRC and Companies House mail (tag or source_slug) can always be forwarded (regardless of KYC)
  * - All other mail requires approved KYC status
  */
-export function canForwardMail(kycStatus: KycStatus, tag?: string | null): boolean {
-    const normalisedTag = (tag || "").toLowerCase().trim();
-
-    // Always allow HMRC and Companies House mail, regardless of KYC
-    if (
-        normalisedTag === "hmrc" ||
-        normalisedTag === "companies house" ||
-        normalisedTag === "companieshouse" ||
-        normalisedTag === "companies_house"
-    ) {
-        return true;
-    }
-
-    // Everything else requires approved KYC (accepts both "approved" and "verified")
+export function canForwardMail(kycStatus: KycStatus, tag?: string | null, sourceSlug?: string | null): boolean {
+    if (isOfficialTag(tag) || isOfficialTag(sourceSlug)) return true;
     return kycStatus === "approved" || kycStatus === "verified";
 }
 

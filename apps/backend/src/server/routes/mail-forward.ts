@@ -59,7 +59,7 @@ router.post('/forward', async (req: Request, res: Response) => {
 
         // Get mail item with received date for GDPR check and tag for KYC check
         const result = await pool.query(
-            `SELECT id, user_id, expires_at, received_at_ms, received_date, tag, physical_destruction_date FROM mail_item WHERE id = $1`,
+            `SELECT id, user_id, expires_at, received_at_ms, received_date, tag, source_slug, physical_destruction_date FROM mail_item WHERE id = $1`,
             [Number(mail_item_id || 0)]
         );
 
@@ -80,7 +80,7 @@ router.post('/forward', async (req: Request, res: Response) => {
 
         // Check KYC requirement for forwarding (HMRC/Companies House always allowed)
         const { canForwardMail } = await import('../services/kyc-guards');
-        if (!canForwardMail(userKycStatus, m.tag)) {
+        if (!canForwardMail(userKycStatus, m.tag, m.source_slug)) {
             await auditForward(userId, m.id, 'blocked', 'kyc_required');
             return res.status(403).json({
                 ok: false,

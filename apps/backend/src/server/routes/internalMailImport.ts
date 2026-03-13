@@ -343,10 +343,10 @@ router.post('/from-onedrive', async (req, res) => {
       result = await pool.query(
         `INSERT INTO mail_item (
           idempotency_key, user_id, business_id, subject, sender_name, received_date,
-          scan_file_url, file_size, scanned, status, tag, notes,
+          scan_file_url, file_size, scanned, status, tag, source_slug, notes,
           received_at_ms, created_at, updated_at, locked, locked_reason, admin_note
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
         ON CONFLICT (idempotency_key) DO UPDATE SET
           user_id = EXCLUDED.user_id,
           business_id = EXCLUDED.business_id,
@@ -357,7 +357,7 @@ router.post('/from-onedrive', async (req, res) => {
           file_size = EXCLUDED.file_size,
           scanned = EXCLUDED.scanned,
           status = EXCLUDED.status,
-          tag = EXCLUDED.tag,
+          source_slug = EXCLUDED.source_slug,
           notes = EXCLUDED.notes,
           received_at_ms = EXCLUDED.received_at_ms,
           updated_at = EXCLUDED.updated_at,
@@ -376,14 +376,15 @@ router.post('/from-onedrive', async (req, res) => {
           0,                                  // $8: file_size (not provided in payload)
           true,                               // $9: scanned (true for OneDrive files)
           'received',                         // $10: status
-          payload.sourceSlug,                 // $11: tag
-          `OneDrive import: ${payload.fileName}`, // $12: notes
-          receivedAtMs,                       // $13: received_at_ms
-          now,                                // $14: created_at
-          now,                                // $15: updated_at
-          locked,                             // $16: locked
-          lockedReason,                       // $17: locked_reason
-          locked ? `Ingested while ${lockedReason}` : null, // $18: admin_note
+          null,                               // $11: tag - leave empty until user selects; use source_slug for billing
+          payload.sourceSlug,                 // $12: source_slug (from filename, for forwarding/KYC)
+          `OneDrive import: ${payload.fileName}`, // $13: notes
+          receivedAtMs,                       // $14: received_at_ms
+          now,                                // $15: created_at
+          now,                                // $16: updated_at
+          locked,                             // $17: locked
+          lockedReason,                       // $18: locked_reason
+          locked ? `Ingested while ${lockedReason}` : null, // $19: admin_note
         ]
       );
     } else {
@@ -398,10 +399,10 @@ router.post('/from-onedrive', async (req, res) => {
       result = await pool.query(
         `INSERT INTO mail_item (
           idempotency_key, user_id, business_id, subject, sender_name, received_date,
-          scan_file_url, file_size, scanned, status, tag, notes,
+          scan_file_url, file_size, scanned, status, tag, source_slug, notes,
           received_at_ms, created_at, updated_at, admin_note
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
         ON CONFLICT (idempotency_key) DO UPDATE SET
           user_id = EXCLUDED.user_id,
           business_id = EXCLUDED.business_id,
@@ -412,7 +413,7 @@ router.post('/from-onedrive', async (req, res) => {
           file_size = EXCLUDED.file_size,
           scanned = EXCLUDED.scanned,
           status = EXCLUDED.status,
-          tag = EXCLUDED.tag,
+          source_slug = EXCLUDED.source_slug,
           notes = EXCLUDED.notes,
           received_at_ms = EXCLUDED.received_at_ms,
           updated_at = EXCLUDED.updated_at,
@@ -429,12 +430,13 @@ router.post('/from-onedrive', async (req, res) => {
           0,                                  // $8: file_size (not provided in payload)
           true,                               // $9: scanned (true for OneDrive files)
           'received',                         // $10: status
-          payload.sourceSlug,                 // $11: tag
-          `OneDrive import: ${payload.fileName}`, // $12: notes
-          receivedAtMs,                       // $13: received_at_ms
-          now,                                // $14: created_at
-          now,                                // $15: updated_at
-          locked ? `Ingested while ${lockedReason} (locked columns not available)` : null, // $16: admin_note
+          null,                               // $11: tag - leave empty until user selects
+          payload.sourceSlug,                 // $12: source_slug (from filename, for forwarding/KYC)
+          `OneDrive import: ${payload.fileName}`, // $13: notes
+          receivedAtMs,                       // $14: received_at_ms
+          now,                                // $15: created_at
+          now,                                // $16: updated_at
+          locked ? `Ingested while ${lockedReason} (locked columns not available)` : null, // $17: admin_note
         ]
       );
     }

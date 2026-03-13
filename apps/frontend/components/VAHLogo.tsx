@@ -26,7 +26,7 @@ const logoVariants = cva(
                 sm: "text-xs",
                 md: "text-sm",
                 lg: "text-base",
-                xl: "text-lg",
+                xl: "text-xl",
             },
         },
         defaultVariants: {
@@ -78,16 +78,22 @@ export function VAHLogo({
         }
     };
 
-    // Dynamic logo sizing based on `size` prop
+    // Dynamic logo sizing (xl = fill header height on public pages, ~64px)
     const logoDimensions = {
         sm: { width: 120, height: 30 },
         md: { width: 160, height: 40 },
-        lg: { width: 200, height: 50 },
-        xl: { width: 240, height: 60 },
+        lg: { width: 220, height: 44 },
+        xl: { width: 320, height: 64 },
     }[size || "md"];
 
     const inner = (
-        <span className="inline-flex min-h-[2rem] min-w-[80px] items-center" data-vah-logo>
+        <span
+            className={cn(
+                "inline-flex items-center shrink-0",
+                (size === "xl" || size === "lg") ? "min-h-[3rem] min-w-[120px]" : "min-h-[2rem] min-w-[80px]"
+            )}
+            data-vah-logo
+        >
             {imgFailed ? (
                 <span className="font-semibold text-neutral-800 text-base tracking-tight">{fullName}</span>
             ) : (
@@ -97,10 +103,11 @@ export function VAHLogo({
                         width={logoDimensions.width}
                         height={logoDimensions.height}
                         className={cn(
-                            "block w-auto max-w-full object-contain transition-opacity duration-200 group-hover:opacity-90",
+                            "block object-contain transition-opacity duration-200 group-hover:opacity-90",
+                            size === "xl" ? "h-14 w-[280px] min-h-[3.5rem] sm:h-16 sm:w-[320px] sm:min-h-16" : "w-auto max-w-full",
                             imgClassName
                         )}
-                        style={{ height: 'auto', maxHeight: '100%' }}
+                        style={size === "xl" ? undefined : { height: "auto", maxHeight: "100%" }}
                         onError={() => setImgFailed(true)}
                         fetchPriority="high"
                     />

@@ -42,7 +42,7 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
     return await pool.query('BEGIN').then(async () => {
         try {
             const mail = await pool.query(`
-        SELECT id, status, tag, subject, received_at_ms, received_date, physical_destruction_date 
+        SELECT id, status, tag, source_slug, subject, received_at_ms, received_date, physical_destruction_date 
         FROM mail_item 
         WHERE id = $1 AND user_id = $2 AND deleted = false
       `, [mailItemId, userId]);
@@ -77,7 +77,7 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
                 throw new Error('Mail item is older than 30 days and cannot be forwarded due to GDPR compliance');
             }
 
-            const isOfficial = isOfficialMail(mailData.tag);
+            const isOfficial = isOfficialMail(mailData.tag) || isOfficialMail(mailData.source_slug);
 
             // Check for existing active forwarding request (idempotent check)
             // Treat these as "active" requests where we should not allow duplicates

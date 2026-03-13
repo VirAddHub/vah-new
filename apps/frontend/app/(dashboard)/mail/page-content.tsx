@@ -128,7 +128,7 @@ export default function MailInboxPage() {
 
     // Get tag display label
     const getTagLabel = useCallback((tag: string | null | undefined): string => {
-        if (!tag) return "Untagged";
+        if (!tag) return "Add tag";
         // Use predefined label if exists, otherwise humanize the slug
         return tagMeta[tag]?.label || humanizeTag(tag);
     }, [humanizeTag]);
