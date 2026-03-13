@@ -42,8 +42,6 @@ export function MailDetail({
   formatTime,
   formatDate,
 }: MailDetailProps) {
-  const title = item.sender_name || item.subject || item.tag || 'Mail';
-
   const getMailDate = (mailItem: MailItem): string | number | undefined => {
     if (mailItem.received_at_ms !== undefined && mailItem.received_at_ms !== null) {
       return mailItem.received_at_ms;
@@ -60,7 +58,9 @@ export function MailDetail({
     return undefined;
   };
 
-  const formattedDate = formatDate(getMailDate(item));
+  const dateValue = getMailDate(item);
+  const formattedDate = formatDate(dateValue);
+  const title = formattedDate || item.sender_name || item.subject || item.tag || 'Mail';
 
   return (
     <div className="bg-background w-full min-w-0">

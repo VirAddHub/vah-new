@@ -64,14 +64,17 @@ async function processFile(file: { id: string; name: string; createdDateTime: st
     return 'failed';
   }
 
-  // Build payload
+  // Use date from filename (user{ID}_{DD-MM-YY}_{TAG}.pdf) when present; otherwise OneDrive file date
+  const createdAt =
+    parsed.dateIso ? `${parsed.dateIso}T00:00:00.000Z` : file.createdDateTime;
+
   const payload = {
     userId: parsed.userId,
     sourceSlug: parsed.sourceSlug,
     fileName: file.name,
     oneDriveFileId: file.id,
     oneDriveDownloadUrl: file.downloadUrl ?? null,
-    createdAt: file.createdDateTime,
+    createdAt,
   };
 
   // Call webhook

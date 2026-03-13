@@ -482,8 +482,13 @@ export default function MailInboxPage() {
         return FileText;
     };
 
-    // Single display title for the mail row (avoids showing the same text twice as title + subtitle)
+    // Display title = received date when available (from filename user{ID}_{DD-MM-YY}_{TAG}.pdf), else subject/sender
     const getDisplayTitle = (item: MailItem) => {
+        const dateValue = getMailDate(item);
+        if (dateValue !== undefined && dateValue !== null) {
+            const formatted = formatDate(dateValue);
+            if (formatted) return formatted;
+        }
         return (item.user_title || item.sender_name || item.subject || 'Unknown Sender').trim();
     };
     // Handle tag update for a mail item

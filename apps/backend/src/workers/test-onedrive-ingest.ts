@@ -15,12 +15,13 @@ console.log('🧪 Testing OneDrive Mail Ingestion Components\n');
 console.log('📝 Testing Filename Parser:\n');
 
 const testCases = [
-  { filename: 'user4_02-12-2025_companieshouse.pdf', expected: { userId: 4, sourceSlug: 'companieshouse' } },
-  { filename: 'user12_01-01-2026_hmrc.pdf', expected: { userId: 12, sourceSlug: 'hmrc' } },
-  { filename: 'user007_15-03-2026_bank.pdf', expected: { userId: 7, sourceSlug: 'bank' } },
-  { filename: 'user0007-15-03-2026-hmrc.pdf', expected: { userId: 7, sourceSlug: 'hmrc' } },
-  { filename: 'user12_2025-11-01_bank-letter.pdf', expected: { userId: 12, sourceSlug: 'bank' } },
-  { filename: 'user4_10_10_2024_barclays.pdf', expected: { userId: 4, sourceSlug: 'barclays' } },
+  { filename: 'user4_02-12-2025_companieshouse.pdf', expected: { userId: 4, sourceSlug: 'companieshouse', dateIso: '2025-12-02' } },
+  { filename: 'user12_01-01-2026_hmrc.pdf', expected: { userId: 12, sourceSlug: 'hmrc', dateIso: '2026-01-01' } },
+  { filename: 'user007_15-03-2026_bank.pdf', expected: { userId: 7, sourceSlug: 'bank', dateIso: '2026-03-15' } },
+  { filename: 'user0007-15-03-2026-hmrc.pdf', expected: { userId: 7, sourceSlug: 'hmrc', dateIso: '2026-03-15' } },
+  { filename: 'user12_2025-11-01_bank-letter.pdf', expected: { userId: 12, sourceSlug: 'bank', dateIso: '2025-11-01' } },
+  { filename: 'user4_10_10_2024_barclays.pdf', expected: { userId: 4, sourceSlug: 'barclays', dateIso: '2024-10-10' } },
+  { filename: 'user4_02-12-25_hmrc.pdf', expected: { userId: 4, sourceSlug: 'hmrc', dateIso: '2025-12-02' } },
   { filename: 'random-document.pdf', expected: null },
   { filename: 'invoice.pdf', expected: null },
   { filename: 'user4.pdf', expected: null },
