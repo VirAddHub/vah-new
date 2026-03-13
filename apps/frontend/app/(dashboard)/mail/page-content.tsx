@@ -95,7 +95,7 @@ export default function MailInboxPage() {
             const query = searchQuery.toLowerCase();
             items = items.filter((item: MailItem) =>
                 item.subject?.toLowerCase().includes(query) ||
-                item.sender_name?.toLowerCase().includes(query) ||
+                (item.sender_name ?? item.user_title)?.toLowerCase().includes(query) ||
                 item.tag?.toLowerCase().includes(query) ||
                 item.received_date?.toLowerCase().includes(query)
             );
@@ -482,9 +482,18 @@ export default function MailInboxPage() {
         return FileText;
     };
 
-    // Get sender name
-    const getSenderName = (item: MailItem) => {
-        return item.sender_name || item.subject || 'Unknown Sender';
+    // Single display title for the mail row (avoids showing the same text twice as title + subtitle)
+    const getDisplayTitle = (item: MailItem) => {
+        return (item.user_title || item.sender_name || item.subject || 'Unknown Sender').trim();
+    };
+    // Whether to show subject as a second line (only when it adds info and is not the same as the title).
+    // We normalise spacing and case so we never render the exact same text twice.
+    const showSubjectAsSubtitle = (item: MailItem, displayTitle: string) => {
+        const normalise = (value: string) => value.trim().replace(/\s+/g, ' ').toLowerCase();
+        const titleNorm = normalise(displayTitle);
+        const subjectRaw = (item.subject || '').trim();
+        const subjectNorm = normalise(subjectRaw);
+        return subjectRaw.length > 0 && subjectNorm !== titleNorm;
     };
 
     // Handle tag update for a mail item
@@ -1138,7 +1147,7 @@ export default function MailInboxPage() {
                                             <div className="space-y-1.5 md:space-y-2 pb-6">
                                                 {items.map((item) => {
                                                     const Icon = getMailIcon(item);
-                                                    const senderName = getSenderName(item);
+                                                    const displayTitle = getDisplayTitle(item);
                                                     const date = formatDate(getMailDate(item));
                                                     const isRead = item.is_read ?? true;
 
@@ -1172,7 +1181,7 @@ export default function MailInboxPage() {
                                                                         "text-sm leading-tight truncate",
                                                                         isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
                                                                     )}>
-                                                                        {senderName}
+                                                                        {displayTitle}
                                                                     </p>
                                                                     <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
                                                                         {item.tag ? (
@@ -1184,7 +1193,7 @@ export default function MailInboxPage() {
                                                                 <ChevronRight className="h-4 w-4 text-neutral-400 shrink-0" strokeWidth={2} />
                                                             </div>
 
-                                                            {/* Desktop: Sender/Subject + Date */}
+                                                            {/* Desktop: Title / Subject + Date */}
                                                             <div className="hidden md:flex items-center gap-4 flex-1 min-w-0">
                                                                 <div className="flex-shrink-0">
                                                                     <Icon className={cn(
@@ -1197,11 +1206,11 @@ export default function MailInboxPage() {
                                                                         "text-[15px] leading-tight truncate mb-0.5",
                                                                         isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
                                                                     )}>
-                                                                        {senderName}
+                                                                        {displayTitle}
                                                                     </p>
-                                                                    {item.subject && item.subject !== senderName && (
+                                                                    {showSubjectAsSubtitle(item, displayTitle) && (
                                                                         <p className="text-sm text-neutral-500 truncate leading-tight">
-                                                                            {item.subject}
+                                                                            {(item.subject || '').trim()}
                                                                         </p>
                                                                     )}
                                                                 </div>
@@ -1258,7 +1267,7 @@ export default function MailInboxPage() {
                         /* Flat List View (Inbox/Archived) — compact mobile rows */
                         filteredItems.map((item) => {
                             const Icon = getMailIcon(item);
-                            const senderName = getSenderName(item);
+                            const displayTitle = getDisplayTitle(item);
                             const date = formatDate(getMailDate(item));
                             const isRead = item.is_read ?? true;
 
@@ -1292,7 +1301,7 @@ export default function MailInboxPage() {
                                                 "text-sm leading-tight truncate",
                                                 isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
                                             )}>
-                                                {senderName}
+                                                {displayTitle}
                                             </p>
                                             <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
                                                 {item.tag ? (
@@ -1304,7 +1313,7 @@ export default function MailInboxPage() {
                                         <ChevronRight className="h-4 w-4 text-neutral-400 shrink-0" strokeWidth={2} />
                                     </div>
 
-                                    {/* Desktop: Sender/Subject */}
+                                    {/* Desktop: Title / Subject */}
                                     <div className="hidden md:flex items-center gap-4 flex-1 min-w-0">
                                         <div className="flex-shrink-0">
                                             <Icon className={cn(
@@ -1317,11 +1326,11 @@ export default function MailInboxPage() {
                                                 "text-[15px] leading-tight truncate mb-0.5",
                                                 isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
                                             )}>
-                                                {senderName}
+                                                {displayTitle}
                                             </p>
-                                            {item.subject && item.subject !== senderName && (
+                                            {showSubjectAsSubtitle(item, displayTitle) && (
                                                 <p className="text-sm text-neutral-500 truncate leading-tight">
-                                                    {item.subject}
+                                                    {(item.subject || '').trim()}
                                                 </p>
                                             )}
                                         </div>
