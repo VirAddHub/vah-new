@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -50,6 +50,7 @@ export function VAHLogo({
     imgClassName,
     onNavigate,
 }: VAHLogoProps) {
+    const [imgFailed, setImgFailed] = useState(false);
     useEffect(() => {
         logClientEvent("vah_logo_view", {
             size,
@@ -81,19 +82,23 @@ export function VAHLogo({
     }[size || "md"];
 
     const inner = (
-        <div className="flex items-center">
-            {/* Use img tag for SVG since Next.js Image doesn't optimize SVGs well */}
-            <img
-                src="/images/logo.svg"
-                alt={fullName}
-                width={logoDimensions.width}
-                height={logoDimensions.height}
-                className={cn(
-                    "h-auto transition-opacity duration-200 group-hover:opacity-90",
-                    imgClassName
-                )}
-                style={{ maxWidth: '100%', height: 'auto' }}
-            />
+        <div className="flex items-center min-h-[2rem] min-w-[5rem]">
+            {imgFailed ? (
+                <span className="font-semibold text-neutral-800 text-lg tracking-tight">{initials}</span>
+            ) : (
+                <img
+                    src="/images/logo.svg"
+                    alt={fullName}
+                    width={logoDimensions.width}
+                    height={logoDimensions.height}
+                    className={cn(
+                        "h-auto transition-opacity duration-200 group-hover:opacity-90",
+                        imgClassName
+                    )}
+                    style={{ maxWidth: '100%', height: 'auto' }}
+                    onError={() => setImgFailed(true)}
+                />
+            )}
         </div>
     );
 

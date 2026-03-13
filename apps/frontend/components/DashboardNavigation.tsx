@@ -77,8 +77,8 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
     };
 
     return (
-        <header className="w-full border-b border-neutral-200/80 bg-white">
-            <div className="mx-auto max-w-[1400px] px-3 sm:px-6 lg:px-8 h-12 sm:h-16 flex items-center gap-2 sm:gap-3 min-w-0">
+        <header className="w-full border-b border-neutral-200/80 bg-white shrink-0">
+            <div className="mx-auto max-w-[1400px] px-3 sm:px-6 lg:px-8 h-12 sm:h-16 flex items-center gap-2 sm:gap-3">
                 {/* Left: hamburger (mobile) */}
                 <div className="flex items-center shrink-0">
                     <button
@@ -91,8 +91,8 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
                     </button>
                 </div>
 
-                {/* Center slot: logo (centered on mobile, left-aligned on desktop). min-w-[7rem] prevents flex from shrinking logo to zero. */}
-                <div className="flex-1 flex justify-center sm:justify-start min-w-[7rem]">
+                {/* Center: logo — shrink-0 + min-width so the logo never collapses or disappears */}
+                <div className="flex shrink-0 min-w-[120px] w-[140px] sm:w-[180px] flex items-center justify-center sm:justify-start">
                     <VAHLogo
                         onNavigate={onNavigate}
                         size="lg"
