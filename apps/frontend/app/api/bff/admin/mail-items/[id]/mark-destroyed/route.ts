@@ -76,18 +76,40 @@ export async function POST(
     }
 
     // Forward Authorization header if available (JWT token)
-    // Backend's requireAdmin middleware will validate admin status
     if (authHeader) {
       headers["Authorization"] = authHeader;
     }
 
-    // Log what we're forwarding
-    console.log("[BFF Admin Mail Item Mark Destroyed] Forwarding to backend", {
-      hasCookies: !!cookieString,
-      hasAuth: !!authHeader,
-      cookieLength: cookieString?.length || 0,
-      authHeaderLength: authHeader?.length || 0
-    });
+    // CSRF: Backend requires X-CSRF-Token for state-changing requests. Extract from cookie or fetch from backend.
+    let csrfToken: string | null = null;
+    if (cookieString) {
+      const m = cookieString.match(/(?:^|;\s*)vah_csrf_token=([^;]+)/);
+      if (m?.[1]) {
+        try {
+          csrfToken = decodeURIComponent(m[1].trim());
+        } catch {
+          csrfToken = m[1].trim();
+        }
+      }
+    }
+    if (!csrfToken) {
+      try {
+        const csrfRes = await fetch(`${backend}/api/csrf`, {
+          method: "GET",
+          headers: cookieString ? { Cookie: cookieString } : {},
+          cache: "no-store",
+        });
+        if (csrfRes.ok) {
+          const d = await csrfRes.json();
+          csrfToken = d?.csrfToken ?? d?.token ?? null;
+        }
+      } catch (e) {
+        console.warn("[BFF Admin Mail Item Mark Destroyed] CSRF fetch failed", e);
+      }
+    }
+    if (csrfToken) {
+      (headers as Record<string, string>)["X-CSRF-Token"] = csrfToken;
+    }
 
     const r = await fetch(url, {
       method: "POST",

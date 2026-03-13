@@ -79,16 +79,13 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
                     >
                         <Menu className="h-5 w-5 shrink-0" strokeWidth={2} />
                     </button>
-                    <div className="flex h-8 min-h-[2rem] min-w-[140px] items-center gap-2 rounded-md border border-transparent bg-neutral-50/80 px-1 sm:px-2" data-dashboard-logo-slot>
+                    <div className="flex h-8 min-h-[2rem] min-w-[140px] items-center rounded-md border border-transparent bg-neutral-50/80 px-1 sm:px-2" data-dashboard-logo-slot>
                         <VAHLogo
                             onNavigate={onNavigate}
                             size="lg"
                             className="h-8 w-auto max-w-[180px] shrink-0"
                             imgClassName="h-8 w-auto max-w-full object-contain object-left"
                         />
-                        <span className="text-sm font-semibold text-neutral-800 whitespace-nowrap sm:text-base" aria-hidden="true">
-                            VirtualAddressHub
-                        </span>
                     </div>
                 </div>
 

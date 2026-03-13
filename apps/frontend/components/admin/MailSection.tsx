@@ -94,33 +94,35 @@ export function MailSection({ }: MailSectionProps) {
                 });
                 refetchMailItems();
             } else {
-                // Extract error message from various possible response structures
+                // Extract error message (apiClient puts backend message in .error or .message)
+                const status = (response as any).status;
                 const errorData = response.data as { error?: string; message?: string } | undefined;
-                const errorMessage = errorData?.message 
-                    || errorData?.error 
-                    || (response as any).message 
-                    || `Failed to mark as destroyed (status: ${(response as any).status || 'unknown'})`;
-                console.error('[Mark Destroyed] Backend error:', {
-                    response,
-                    errorData,
-                    status: (response as any).status,
-                    fullResponse: JSON.stringify(response, null, 2)
-                });
+                let errorMessage =
+                    (response as any).error
+                    || errorData?.message
+                    || errorData?.error
+                    || (response as any).message
+                    || `Failed to mark as destroyed (status: ${status || 'unknown'})`;
+                if (status === 403) {
+                    errorMessage = "You don't have permission to perform this action. If you're an admin, try signing in again.";
+                }
+                console.error('[Mark Destroyed] Backend error:', { status, errorMessage, response });
                 throw new Error(errorMessage);
             }
         } catch (error: any) {
-            // Handle both apiClient errors and fetch errors
-            const errorMessage = error?.response?.data?.message 
-                || error?.response?.data?.error 
+            const status = error?.status ?? error?.response?.status;
+            const errorMessage =
+                error?.response?.data?.message
+                || error?.response?.data?.error
                 || error?.data?.message
                 || error?.data?.error
-                || error?.message 
-                || "An error occurred";
-            console.error('[Mark Destroyed] Error:', {
-                error,
-                responseData: error?.response?.data,
-                data: error?.data
-            });
+                || error?.message
+                || (status === 403
+                    ? "You don't have permission. If you're an admin, try signing in again."
+                    : "An error occurred");
+            if (process.env.NODE_ENV === 'development') {
+                console.error('[Mark Destroyed]', errorMessage, status != null ? `(status ${status})` : '');
+            }
             toast({
                 title: "Failed to mark as destroyed",
                 description: errorMessage,
