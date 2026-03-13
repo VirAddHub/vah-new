@@ -69,8 +69,8 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
         <header className="w-full shrink-0 border-b border-neutral-200/80 bg-white">
             {/* Inner: same max-width/padding as dashboard shell; single row, justify-between */}
             <div className="mx-auto flex h-12 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 sm:h-16">
-                {/* Left: hamburger (mobile only) + logo. Logo aligned left, fixed height. */}
-                <div className="flex min-w-0 flex-shrink-0 items-center gap-2 sm:gap-3">
+                {/* Left: hamburger (mobile only) + logo + wordmark. No min-w-0 so this section cannot collapse. */}
+                <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
                     <button
                         ref={hamburgerRef}
                         onClick={() => setIsMobileSidebarOpen(true)}
@@ -79,13 +79,16 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
                     >
                         <Menu className="h-5 w-5 shrink-0" strokeWidth={2} />
                     </button>
-                    <div className="flex h-8 items-center">
+                    <div className="flex h-8 min-h-[2rem] min-w-[140px] items-center gap-2 rounded-md border border-transparent bg-neutral-50/80 px-1 sm:px-2" data-dashboard-logo-slot>
                         <VAHLogo
                             onNavigate={onNavigate}
                             size="lg"
                             className="h-8 w-auto max-w-[180px] shrink-0"
                             imgClassName="h-8 w-auto max-w-full object-contain object-left"
                         />
+                        <span className="text-sm font-semibold text-neutral-800 whitespace-nowrap sm:text-base" aria-hidden="true">
+                            VirtualAddressHub
+                        </span>
                     </div>
                 </div>
 

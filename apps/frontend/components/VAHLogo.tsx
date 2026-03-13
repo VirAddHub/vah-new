@@ -87,22 +87,23 @@ export function VAHLogo({
     }[size || "md"];
 
     const inner = (
-        <span className="inline-flex items-center min-h-[2rem]">
+        <span className="inline-flex min-h-[2rem] min-w-[80px] items-center" data-vah-logo>
             {imgFailed ? (
-                <span className="font-semibold text-neutral-800 text-lg tracking-tight">{initials}</span>
+                <span className="font-semibold text-neutral-800 text-base tracking-tight">{fullName}</span>
             ) : (
-                <img
-                    src="/images/logo.svg"
-                    alt={fullName}
-                    width={logoDimensions.width}
-                    height={logoDimensions.height}
-                    className={cn(
-                        "transition-opacity duration-200 group-hover:opacity-90",
-                        imgClassName
-                    )}
-                    style={{ height: 'auto', maxWidth: '100%' }}
-                    onError={() => setImgFailed(true)}
-                />
+                    <img
+                        src="/images/logo.svg"
+                        alt={fullName}
+                        width={logoDimensions.width}
+                        height={logoDimensions.height}
+                        className={cn(
+                            "block transition-opacity duration-200 group-hover:opacity-90",
+                            imgClassName
+                        )}
+                        style={{ height: '2rem', width: 'auto', maxWidth: '100%', objectFit: 'contain' }}
+                        onError={() => setImgFailed(true)}
+                        fetchPriority="high"
+                    />
             )}
         </span>
     );
