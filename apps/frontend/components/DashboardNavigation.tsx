@@ -8,6 +8,15 @@ import { clearToken } from "@/lib/token-manager";
 import { VAHLogo } from "./VAHLogo";
 import { useDashboardView } from "@/contexts/DashboardViewContext";
 
+/**
+ * Dashboard top header — LAYOUT CONTRACT (do not break):
+ * - One row: left section (hamburger + logo) | right section (Sign out).
+ * - Use justify-between so logo stays left and Sign out stays right.
+ * - Do NOT put logo in a "center" flex-1 slot (causes logo/sign out to shift).
+ * - Logo: fixed height (h-8), width auto, object-contain. No flexible width.
+ * - Sign out: always in the right section, shrink-0.
+ * - Same max-width and horizontal padding as dashboard shell for alignment.
+ */
 interface DashboardNavigationProps {
     onNavigate?: (page: string) => void;
 }
@@ -20,94 +29,73 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
     const prevIsOpenRef = useRef(isMobileSidebarOpen);
     const prevPathnameRef = useRef(pathname);
 
-    // Focus Restoration
     useEffect(() => {
-        // If sidebar was open and now is closed
         if (prevIsOpenRef.current && !isMobileSidebarOpen) {
-            // And we happen to be on the same page (didn't navigate away)
             if (pathname === prevPathnameRef.current) {
                 hamburgerRef.current?.focus();
             }
         }
-
-        // Update refs
         prevIsOpenRef.current = isMobileSidebarOpen;
         prevPathnameRef.current = pathname;
     }, [isMobileSidebarOpen, pathname]);
 
-    // Handle logout - use proper API endpoint
     const handleLogout = async () => {
-        // Prevent multiple logout attempts
-        if ((handleLogout as any).__isLoggingOut) {
-            return;
-        }
+        if ((handleLogout as any).__isLoggingOut) return;
         (handleLogout as any).__isLoggingOut = true;
 
         try {
-            // Call logout API endpoint - backend will clear httpOnly cookies
             await fetch('/api/bff/auth/logout', {
                 method: 'POST',
                 credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
             });
         } catch (error) {
             console.error('Logout API call failed:', error);
         } finally {
-            // Clear client-side tokens (localStorage + CSRF cookie)
             clearToken();
-            // Clear all localStorage items related to auth
             localStorage.removeItem('vah_jwt');
             localStorage.removeItem('vah_user');
-            // Force clear cookies client-side as well
             document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
             document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
             document.cookie = 'vah_role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
             document.cookie = 'vah_user=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
             document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-            
-            // Use replace with a longer delay to ensure everything is cleared
-            // Stop any ongoing requests by navigating immediately
-            window.stop(); // Stop any pending requests
-            setTimeout(() => {
-                window.location.replace('/login');
-            }, 200);
+            window.stop();
+            setTimeout(() => window.location.replace('/login'), 200);
         }
     };
 
     return (
-        <header className="w-full border-b border-neutral-200/80 bg-white shrink-0">
-            <div className="mx-auto max-w-[1400px] px-3 sm:px-6 lg:px-8 h-12 sm:h-16 flex items-center gap-2 sm:gap-3">
-                {/* Left: hamburger (mobile) */}
-                <div className="flex items-center shrink-0">
+        <header className="w-full shrink-0 border-b border-neutral-200/80 bg-white">
+            {/* Inner: same max-width/padding as dashboard shell; single row, justify-between */}
+            <div className="mx-auto flex h-12 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 sm:h-16">
+                {/* Left: hamburger (mobile only) + logo. Logo aligned left, fixed height. */}
+                <div className="flex min-w-0 flex-shrink-0 items-center gap-2 sm:gap-3">
                     <button
                         ref={hamburgerRef}
                         onClick={() => setIsMobileSidebarOpen(true)}
-                        className="lg:hidden p-2 -ml-0.5 text-neutral-600 hover:text-neutral-900 transition-colors touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md"
+                        className="flex min-h-[44px] min-w-[44px] -ml-0.5 items-center justify-center rounded-md p-2 text-neutral-600 transition-colors hover:text-neutral-900 touch-manipulation lg:hidden"
                         aria-label="Open dashboard menu"
                     >
                         <Menu className="h-5 w-5 shrink-0" strokeWidth={2} />
                     </button>
+                    <div className="flex h-8 items-center">
+                        <VAHLogo
+                            onNavigate={onNavigate}
+                            size="lg"
+                            className="h-8 w-auto max-w-[180px] shrink-0"
+                            imgClassName="h-8 w-auto max-w-full object-contain object-left"
+                        />
+                    </div>
                 </div>
 
-                {/* Center: logo — shrink-0 + min-width so the logo never collapses or disappears */}
-                <div className="flex shrink-0 min-w-[120px] w-[140px] sm:w-[180px] flex items-center justify-center sm:justify-start">
-                    <VAHLogo
-                        onNavigate={onNavigate}
-                        size="lg"
-                        className="h-8 shrink-0"
-                        imgClassName="max-h-8 w-auto object-contain"
-                    />
-                </div>
-
-                {/* Right: Sign out (business context is account-level, single-business UI) */}
-                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                {/* Right: Sign out only. Shrink-0 so it never moves with logo width. */}
+                <div className="flex shrink-0 items-center">
                     <Button
                         onClick={handleLogout}
                         variant="outline"
                         size="sm"
-                        className="flex items-center gap-2 shrink-0 min-h-[44px] min-w-[44px] sm:min-w-0 px-2.5 sm:px-3 touch-manipulation"
+                        className="flex min-h-[44px] min-w-[44px] shrink-0 items-center gap-2 px-2.5 touch-manipulation sm:min-w-0 sm:px-3"
                         aria-label="Sign out"
                     >
                         <LogOut className="h-4 w-4 shrink-0" strokeWidth={2} />

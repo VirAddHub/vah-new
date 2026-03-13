@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * Logo for header/nav. When used in DashboardNavigation, parent constrains size
+ * (e.g. h-8, max-w-[180px]); pass imgClassName for object-contain so the logo
+ * keeps aspect ratio and does not shift layout.
+ */
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -82,7 +87,7 @@ export function VAHLogo({
     }[size || "md"];
 
     const inner = (
-        <div className="flex items-center min-h-[2rem] min-w-[5rem]">
+        <span className="inline-flex items-center min-h-[2rem]">
             {imgFailed ? (
                 <span className="font-semibold text-neutral-800 text-lg tracking-tight">{initials}</span>
             ) : (
@@ -92,14 +97,14 @@ export function VAHLogo({
                     width={logoDimensions.width}
                     height={logoDimensions.height}
                     className={cn(
-                        "h-auto transition-opacity duration-200 group-hover:opacity-90",
+                        "transition-opacity duration-200 group-hover:opacity-90",
                         imgClassName
                     )}
-                    style={{ maxWidth: '100%', height: 'auto' }}
+                    style={{ height: 'auto', maxWidth: '100%' }}
                     onError={() => setImgFailed(true)}
                 />
             )}
-        </div>
+        </span>
     );
 
     if (onNavigate) {
