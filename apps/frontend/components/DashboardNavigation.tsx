@@ -91,12 +91,12 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
                     </button>
                 </div>
 
-                {/* Center slot: logo (centered on mobile, left-aligned on desktop) */}
-                <div className="flex-1 flex justify-center sm:justify-start min-w-0">
+                {/* Center slot: logo (centered on mobile, left-aligned on desktop). min-w-[7rem] prevents flex from shrinking logo to zero. */}
+                <div className="flex-1 flex justify-center sm:justify-start min-w-[7rem]">
                     <VAHLogo
                         onNavigate={onNavigate}
                         size="lg"
-                        className="h-8 min-w-0"
+                        className="h-8 shrink-0"
                         imgClassName="max-h-8 w-auto object-contain"
                     />
                 </div>
