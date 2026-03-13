@@ -97,10 +97,10 @@ export function VAHLogo({
                         width={logoDimensions.width}
                         height={logoDimensions.height}
                         className={cn(
-                            "block transition-opacity duration-200 group-hover:opacity-90",
+                            "block w-auto max-w-full object-contain transition-opacity duration-200 group-hover:opacity-90",
                             imgClassName
                         )}
-                        style={{ height: '2rem', width: 'auto', maxWidth: '100%', objectFit: 'contain' }}
+                        style={{ height: 'auto', maxHeight: '100%' }}
                         onError={() => setImgFailed(true)}
                         fetchPriority="high"
                     />

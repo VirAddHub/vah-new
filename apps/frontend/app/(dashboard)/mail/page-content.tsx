@@ -486,16 +486,6 @@ export default function MailInboxPage() {
     const getDisplayTitle = (item: MailItem) => {
         return (item.user_title || item.sender_name || item.subject || 'Unknown Sender').trim();
     };
-    // Whether to show subject as a second line (only when it adds info and is not the same as the title).
-    // We normalise spacing and case so we never render the exact same text twice.
-    const showSubjectAsSubtitle = (item: MailItem, displayTitle: string) => {
-        const normalise = (value: string) => value.trim().replace(/\s+/g, ' ').toLowerCase();
-        const titleNorm = normalise(displayTitle);
-        const subjectRaw = (item.subject || '').trim();
-        const subjectNorm = normalise(subjectRaw);
-        return subjectRaw.length > 0 && subjectNorm !== titleNorm;
-    };
-
     // Handle tag update for a mail item
     const handleTagUpdate = useCallback(async (item: MailItem, newTag: string | null) => {
         // Normalize both values for comparison (null vs undefined vs empty string)
@@ -1159,13 +1149,13 @@ export default function MailInboxPage() {
                                                             tabIndex={0}
                                                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleMailClick(item); } }}
                                                             className={cn(
-                                                                "flex items-center gap-2.5 md:gap-5 rounded-lg border px-3 py-2.5 md:px-6 md:py-5",
+                                                                "flex items-center gap-2.5 md:gap-5 rounded-lg border px-3 py-2 md:px-6 md:py-4",
                                                                 "bg-white hover:bg-neutral-50 active:bg-neutral-100/80 transition-colors",
                                                                 "border-neutral-200 hover:border-neutral-300 md:hover:border-primary/30",
                                                                 "cursor-pointer touch-manipulation md:shadow-sm md:hover:shadow"
                                                             )}
                                                         >
-                                                            {/* Mobile: compact row — small icon, title, meta line, date */}
+                                                            {/* Mobile: single row — icon, title, tag/date, chevron */}
                                                             <div className="flex items-center gap-2.5 flex-1 min-w-0 md:hidden">
                                                                 <div className={cn(
                                                                     "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center",
@@ -1176,24 +1166,20 @@ export default function MailInboxPage() {
                                                                         isRead ? 'text-neutral-500' : 'text-primary'
                                                                     )} strokeWidth={2} />
                                                                 </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className={cn(
-                                                                        "text-sm leading-tight truncate",
-                                                                        isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
-                                                                    )}>
-                                                                        {displayTitle}
-                                                                    </p>
-                                                                    <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
-                                                                        {item.tag ? (
-                                                                            <span className="text-xs text-neutral-500 truncate">{getTagLabel(item.tag)}</span>
-                                                                        ) : null}
-                                                                        <span className="text-xs text-neutral-400 tabular-nums shrink-0">{date}</span>
-                                                                    </div>
-                                                                </div>
+                                                                <p className={cn(
+                                                                    "flex-1 min-w-0 text-sm leading-tight truncate",
+                                                                    isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
+                                                                )}>
+                                                                    {displayTitle}
+                                                                </p>
+                                                                {item.tag ? (
+                                                                    <span className="text-xs text-neutral-500 truncate shrink-0 max-w-[80px]">{getTagLabel(item.tag)}</span>
+                                                                ) : null}
+                                                                <span className="text-xs text-neutral-400 tabular-nums shrink-0">{date}</span>
                                                                 <ChevronRight className="h-4 w-4 text-neutral-400 shrink-0" strokeWidth={2} />
                                                             </div>
 
-                                                            {/* Desktop: Title / Subject + Date */}
+                                                            {/* Desktop: single-line title + date */}
                                                             <div className="hidden md:flex items-center gap-4 flex-1 min-w-0">
                                                                 <div className="flex-shrink-0">
                                                                     <Icon className={cn(
@@ -1201,20 +1187,13 @@ export default function MailInboxPage() {
                                                                         isRead ? 'text-neutral-400' : 'text-neutral-700'
                                                                     )} strokeWidth={2} />
                                                                 </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className={cn(
-                                                                        "text-[15px] leading-tight truncate mb-0.5",
-                                                                        isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
-                                                                    )}>
-                                                                        {displayTitle}
-                                                                    </p>
-                                                                    {showSubjectAsSubtitle(item, displayTitle) && (
-                                                                        <p className="text-sm text-neutral-500 truncate leading-tight">
-                                                                            {(item.subject || '').trim()}
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                                <span className="text-xs text-neutral-500 whitespace-nowrap min-w-[72px] text-right tabular-nums">
+                                                                <p className={cn(
+                                                                    "flex-1 min-w-0 text-[15px] leading-tight truncate",
+                                                                    isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
+                                                                )}>
+                                                                    {displayTitle}
+                                                                </p>
+                                                                <span className="text-xs text-neutral-500 whitespace-nowrap min-w-[72px] text-right tabular-nums shrink-0">
                                                                     {date}
                                                                 </span>
                                                             </div>
@@ -1279,13 +1258,13 @@ export default function MailInboxPage() {
                                     tabIndex={0}
                                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleMailClick(item); } }}
                                     className={cn(
-                                        "flex items-center gap-2.5 md:gap-5 rounded-lg border px-3 py-2.5 md:px-6 md:py-5",
+                                        "flex items-center gap-2.5 md:gap-5 rounded-lg border px-3 py-2 md:px-6 md:py-4",
                                         "bg-white hover:bg-neutral-50 active:bg-neutral-100/80 transition-colors",
                                         "border-neutral-200 hover:border-neutral-300 md:hover:border-primary/30",
                                         "cursor-pointer touch-manipulation md:shadow-sm md:hover:shadow"
                                     )}
                                 >
-                                    {/* Mobile: compact row — small icon, title, meta, chevron */}
+                                    {/* Mobile: single row — icon, title, tag/date, chevron */}
                                     <div className="flex items-center gap-2.5 flex-1 min-w-0 md:hidden">
                                         <div className={cn(
                                             "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center",
@@ -1296,24 +1275,20 @@ export default function MailInboxPage() {
                                                 isRead ? 'text-neutral-500' : 'text-primary'
                                             )} strokeWidth={2} />
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className={cn(
-                                                "text-sm leading-tight truncate",
-                                                isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
-                                            )}>
-                                                {displayTitle}
-                                            </p>
-                                            <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
-                                                {item.tag ? (
-                                                    <span className="text-xs text-neutral-500 truncate">{getTagLabel(item.tag)}</span>
-                                                ) : null}
-                                                <span className="text-xs text-neutral-400 tabular-nums shrink-0">{date}</span>
-                                            </div>
-                                        </div>
+                                        <p className={cn(
+                                            "flex-1 min-w-0 text-sm leading-tight truncate",
+                                            isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
+                                        )}>
+                                            {displayTitle}
+                                        </p>
+                                        {item.tag ? (
+                                            <span className="text-xs text-neutral-500 truncate shrink-0 max-w-[80px]">{getTagLabel(item.tag)}</span>
+                                        ) : null}
+                                        <span className="text-xs text-neutral-400 tabular-nums shrink-0">{date}</span>
                                         <ChevronRight className="h-4 w-4 text-neutral-400 shrink-0" strokeWidth={2} />
                                     </div>
 
-                                    {/* Desktop: Title / Subject */}
+                                    {/* Desktop: single-line title */}
                                     <div className="hidden md:flex items-center gap-4 flex-1 min-w-0">
                                         <div className="flex-shrink-0">
                                             <Icon className={cn(
@@ -1321,19 +1296,15 @@ export default function MailInboxPage() {
                                                 isRead ? 'text-neutral-400' : 'text-neutral-700'
                                             )} strokeWidth={2} />
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className={cn(
-                                                "text-[15px] leading-tight truncate mb-0.5",
-                                                isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
-                                            )}>
-                                                {displayTitle}
-                                            </p>
-                                            {showSubjectAsSubtitle(item, displayTitle) && (
-                                                <p className="text-sm text-neutral-500 truncate leading-tight">
-                                                    {(item.subject || '').trim()}
-                                                </p>
-                                            )}
-                                        </div>
+                                        <p className={cn(
+                                            "flex-1 min-w-0 text-[15px] leading-tight truncate",
+                                            isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
+                                        )}>
+                                            {displayTitle}
+                                        </p>
+                                        <span className="text-xs text-neutral-500 whitespace-nowrap min-w-[72px] text-right tabular-nums shrink-0">
+                                            {date}
+                                        </span>
                                     </div>
 
                                     {/* Desktop: Tag + Archive + Date */}
