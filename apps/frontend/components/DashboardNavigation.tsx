@@ -63,8 +63,15 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
             document.cookie = 'vah_user=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
             document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
             window.stop();
-            toast({ title: "You've been signed out", duration: 2000 });
-            setTimeout(() => window.location.replace('/'), 400);
+            try {
+                toast({ title: "You've been signed out", duration: 2000 });
+            } catch (_) {
+                // ignore so redirect always runs
+            }
+            // Always redirect to homepage (not login) after manual sign-out
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 300);
         }
     };
 
