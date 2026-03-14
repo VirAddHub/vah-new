@@ -45,9 +45,9 @@ export function MarketingNavigation({ onNavigate }: MarketingNavigationProps) {
     return (
         <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-neutral-200">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16">
-                    {/* Logo - fixed min size so it doesn't shrink */}
-                    <div className="flex h-14 min-h-[3.5rem] min-w-[200px] shrink-0 items-center sm:h-16 sm:min-w-[260px]">
+                <div className="flex items-center justify-between h-14 sm:h-16">
+                    {/* Logo - shrink-0 so it doesn't collapse */}
+                    <div className="flex shrink-0 items-center">
                         <VAHLogo onNavigate={onNavigate} size="xl" />
                     </div>
 

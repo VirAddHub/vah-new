@@ -4,8 +4,6 @@ import { useMemo } from 'react';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Lock } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { REGISTERED_OFFICE_ADDRESS } from '@/lib/config/address';
 import { toast } from '@/hooks/use-toast';
@@ -126,23 +124,14 @@ export default function AccountAddressesPage() {
             </div>
 
             <div className="space-y-4 sm:space-y-6">
-                {/* Registered Office Address (Companies House) */}
+                {/* Registered Office Address */}
                 <Card className="rounded-xl sm:rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border border-[#D1D5DB] bg-[#F5F5F5]">
                     <CardContent className="p-4 sm:p-6 md:p-8">
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4">
-                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
-                                <h2 className="text-lg sm:text-xl md:text-[24px] font-semibold leading-[1.33] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                                    Registered Office Address
-                                </h2>
-                                <Badge variant="outline" className="border-[#D1D5DB] bg-white text-[#666666]">
-                                    <Lock className="w-3 h-3 mr-1" />
-                                    Companies House
-                                </Badge>
-                            </div>
-                        </div>
-                        {/* Updated label to emphasize official status */}
+                        <h2 className="text-lg sm:text-xl md:text-[24px] font-semibold leading-[1.33] text-[#1A1A1A] mb-3 sm:mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                            Registered Office Address
+                        </h2>
                         <p className="text-[14px] font-medium leading-[1.4] text-[#1A1A1A] mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-                            Official address on file with Companies House. For compliance reasons, it cannot be edited here.
+                            Your trusted Central London address for Companies House, HMRC, and official business mail.
                         </p>
                         {addresses.businessAddress?.formatted ? (
                             <div className="bg-white rounded-[10px] p-4 border border-[#E5E7EB]">
