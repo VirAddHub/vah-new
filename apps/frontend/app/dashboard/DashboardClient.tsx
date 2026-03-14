@@ -41,7 +41,7 @@ export default function DashboardClient() {
         document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         // Also clear CSRF cookie explicitly (defensive)
         document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        router.replace('/login');
+        router.replace('/');
     };
 
     const handleNavigate = (page: string) => {

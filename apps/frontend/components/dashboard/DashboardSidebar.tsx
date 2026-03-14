@@ -22,6 +22,7 @@ import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { useDashboardView } from '@/contexts/DashboardViewContext';
 import { useProfile } from '@/hooks/useDashboardData';
+import { useToast } from '@/components/ui/use-toast';
 
 // Lazy load CertificateDownload to avoid unnecessary bundle size
 // Only load when sidebar is rendered (not on every page)
@@ -72,6 +73,7 @@ export function DashboardSidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const { isMobileSidebarOpen, setIsMobileSidebarOpen } = useDashboardView();
+    const { toast } = useToast();
     const [isMobile, setIsMobile] = useState(false);
     
     // Fetch profile data once (shared across dashboard, no duplicate fetches)
@@ -113,13 +115,10 @@ export function DashboardSidebar() {
             document.cookie = 'vah_role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
             document.cookie = 'vah_user=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
             document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-            
-            // Use replace with a longer delay to ensure everything is cleared
-            // Stop any ongoing requests by navigating immediately
-            window.stop(); // Stop any pending requests
-            setTimeout(() => {
-                window.location.replace('/login');
-            }, 200);
+
+            window.stop();
+            toast({ title: "You've been signed out", duration: 2000 });
+            setTimeout(() => window.location.replace('/'), 400);
         }
     };
 

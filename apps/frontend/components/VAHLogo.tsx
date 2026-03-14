@@ -78,12 +78,12 @@ export function VAHLogo({
         }
     };
 
-    // Dynamic logo sizing (xl = moderate size on public header, not oversized)
+    // Dynamic logo sizing (matches ~26671fb1: public header uses lg = 200x50)
     const logoDimensions = {
         sm: { width: 120, height: 30 },
         md: { width: 160, height: 40 },
-        lg: { width: 200, height: 40 },
-        xl: { width: 220, height: 44 },
+        lg: { width: 200, height: 50 },
+        xl: { width: 240, height: 60 },
     }[size || "md"];
 
     const inner = (

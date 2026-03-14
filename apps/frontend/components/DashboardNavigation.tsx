@@ -7,6 +7,7 @@ import { Menu, LogOut } from "lucide-react";
 import { clearToken } from "@/lib/token-manager";
 import { VAHLogo } from "./VAHLogo";
 import { useDashboardView } from "@/contexts/DashboardViewContext";
+import { useToast } from "@/components/ui/use-toast";
 
 /**
  * Dashboard top header — LAYOUT CONTRACT (do not break):
@@ -25,6 +26,7 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
     const { isMobileSidebarOpen, setIsMobileSidebarOpen } = useDashboardView();
     const router = useRouter();
     const pathname = usePathname();
+    const { toast } = useToast();
     const hamburgerRef = useRef<HTMLButtonElement>(null);
     const prevIsOpenRef = useRef(isMobileSidebarOpen);
     const prevPathnameRef = useRef(pathname);
@@ -61,7 +63,8 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
             document.cookie = 'vah_user=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
             document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
             window.stop();
-            setTimeout(() => window.location.replace('/login'), 200);
+            toast({ title: "You've been signed out", duration: 2000 });
+            setTimeout(() => window.location.replace('/'), 400);
         }
     };
 
