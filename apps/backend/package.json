@@ -18,7 +18,7 @@
     "ci:prepare": "npm run db:prepare",
     "ci:build": "npm run db:prepare && npm run typecheck:backend",
     "ci:test": "npm run db:prepare && npm run typecheck:backend && jest --config jest.backend.config.cjs",
-    "prebuild": "bash scripts/banlist.sh || true",
+    "prebuild": "(cd ../../packages/shared && npm run build) && (bash scripts/banlist.sh || true)",
     "prebuild:shared": "cd ../../packages/shared && pwd && ls -la && npm install && echo 'Building shared package...' && npm run build 2>&1 && echo 'Shared package build complete'",
     "postinstall": "bash scripts/patch-native.sh",
     "clean": "rimraf dist",
