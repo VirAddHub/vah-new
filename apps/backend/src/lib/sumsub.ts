@@ -1,9 +1,6 @@
 import crypto from 'crypto';
 
-// Use dynamic import for node-fetch to support ESM
-const fetch = (...args: any[]) => import('node-fetch').then(m => m.default(...args as Parameters<typeof m.default>));
-
-// Support both old, new and sandbox env var names for backward compatibility
+// Use global fetch, natively supported in Node 18+
 const SUMSUB_API =
   process.env.SUMSUB_BASE_URL ||
   process.env.SUMSUB_API ||

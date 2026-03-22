@@ -92,10 +92,7 @@ export default function HowItWorks() {
                     <div className="grid grid-cols-3 gap-12 text-center">
                         {steps.map((step, index) => (
                             <div key={step.k} className="relative z-10 flex flex-col items-center">
-                                <div className="flex h-[32px] w-[32px] items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-                                    {index + 1}
-                                </div>
-                                <div className="mt-4 flex h-[80px] w-[80px] items-center justify-center text-primary rounded-full bg-emerald-50 border border-emerald-100 shrink-0">
+                                <div className="flex h-[80px] w-[80px] items-center justify-center text-primary rounded-full bg-emerald-50 border border-emerald-100 shrink-0">
                                     <step.LucideIcon strokeWidth={1.5} className="h-10 w-10 text-emerald-700" />
                                 </div>
                                 <h3 className="mt-4 text-[18px] font-medium text-foreground">

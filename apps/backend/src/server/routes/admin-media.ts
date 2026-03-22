@@ -18,7 +18,12 @@ const upload = multer({
     limits: {
         fileSize: 10 * 1024 * 1024, // 10MB limit
     },
-    fileFilter: (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+    // Multer file shape (avoid Express.Multer.File — not merged with @types/express v5)
+    fileFilter: (
+        req: Request,
+        file: { originalname: string; mimetype: string },
+        cb: multer.FileFilterCallback,
+    ) => {
         // Step 1: Whitelist file extension
         const ext = path.extname(file.originalname).toLowerCase();
         if (!ALLOWED_IMAGE_EXTENSIONS.includes(ext)) {

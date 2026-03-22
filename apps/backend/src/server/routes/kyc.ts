@@ -116,7 +116,6 @@ router.post('/start', requireAuth, async (req: Request, res: Response) => {
                 info: {
                     firstName: user.first_name || "",
                     lastName: user.last_name || "",
-                    country: "",
                 },
             };
             
