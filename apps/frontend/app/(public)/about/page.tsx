@@ -28,149 +28,85 @@ export default function AboutPage() {
                         <header className="text-center mb-12">
                             <h1 className="text-4xl font-bold mb-6">About VirtualAddressHub</h1>
                             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-                                Your trusted partner for professional London business addresses and virtual office solutions
+                                The modern, compliant alternative to using your home address for business.
                             </p>
                         </header>
 
                         <div className="prose prose-lg max-w-none">
                             <section className="mb-12">
-                                <h2 className="text-3xl font-semibold mb-6">Who We Are</h2>
+                                <h2 className="text-3xl font-semibold mb-6">Why We Built This</h2>
                                 <p className="text-lg leading-relaxed mb-6">
-                                    VirtualAddressHub is a leading provider of professional business address services in London,
-                                    specializing in virtual office solutions, mail forwarding, and compliance support for UK businesses.
-                                    Founded in 2024, we have quickly become the trusted choice for over 1,000 businesses seeking
-                                    a prestigious London address for their operations.
+                                    Before we started VirtualAddressHub, setting up a business in the UK meant making a difficult choice: expose your personal home address on the public Companies House register for anyone to see, or overpay hundreds of pounds a year for an archaic mail forwarding service that took weeks to send you your letters.
                                 </p>
                                 <p className="text-lg leading-relaxed mb-6">
-                                    Our mission is to provide businesses with the tools they need to establish a professional
-                                    presence in London without the overhead of a physical office. We understand the complexities
-                                    of UK business compliance and have designed our services to meet the highest standards of
-                                    regulatory requirements.
+                                    We believed founders deserved better. We built VirtualAddressHub to provide a perfectly legal, fully compliant Central London address that shields your privacy, combined with modern software that gets your mail onto your screen the same day it arrives at our office. No hidden fees, no outdated portals, and no compromises on compliance.
                                 </p>
                             </section>
 
                             <section className="mb-12">
-                                <h2 className="text-3xl font-semibold mb-6">Our Services</h2>
+                                <h2 className="text-3xl font-semibold mb-6">How We Work</h2>
                                 <div className="grid md:grid-cols-2 gap-8">
                                     <div className="bg-card p-6 rounded-lg border border-border">
-                                        <h3 className="text-xl font-semibold mb-4">Virtual Business Address</h3>
+                                        <h3 className="text-xl font-semibold mb-4">Central London Address</h3>
                                         <p className="text-muted-foreground">
-                                            A prestigious London address for company registration, HMRC correspondence,
-                                            and professional business communications. Perfect for Companies House registration
-                                            and maintaining compliance with UK regulations.
+                                            A genuine, physical address in London. Use it for your Registered Office, Director's Service Address, and daily business correspondence. We process the physical mail, so you can work from anywhere.
                                         </p>
                                     </div>
                                     <div className="bg-card p-6 rounded-lg border border-border">
-                                        <h3 className="text-xl font-semibold mb-4">Mail Forwarding Service</h3>
+                                        <h3 className="text-xl font-semibold mb-4">Same-Day Digital Processing</h3>
                                         <p className="text-muted-foreground">
-                                            Secure digital mail scanning with same-day processing. Receive your mail
-                                            digitally through our secure dashboard and request physical forwarding
-                                            when needed. Free forwarding for official HMRC and Companies House documents.
+                                            When a letter arrives, our on-site team securely scans the envelope and its contents. It lands in your secure digital dashboard typically within hours of the postman dropping it off.
                                         </p>
                                     </div>
                                     <div className="bg-card p-6 rounded-lg border border-border">
-                                        <h3 className="text-xl font-semibold mb-4">Compliance Support</h3>
+                                        <h3 className="text-xl font-semibold mb-4">Strict Compliance</h3>
                                         <p className="text-muted-foreground">
-                                            Expert guidance on UK business compliance requirements, including HMRC
-                                            regulations, Companies House filings, and director service address requirements.
+                                            We don't cut corners. We strictly enforce Know Your Customer (KYC) identity checks to keep bad actors out, ensuring the address remains reputable and trusted by banks and government bodies.
                                         </p>
                                     </div>
                                     <div className="bg-card p-6 rounded-lg border border-border">
-                                        <h3 className="text-xl font-semibold mb-4">Virtual Office Solutions</h3>
+                                        <h3 className="text-xl font-semibold mb-4">Privacy First</h3>
                                         <p className="text-muted-foreground">
-                                            Complete virtual office package including business address, mail handling,
-                                            and professional support services. Everything you need to run your business
-                                            from anywhere in the world.
+                                            We act as a firewall for your privacy. Once documents are processed or physical forwards are dispatched, we securely shred and recycle sensitive physical paper after 30 days.
                                         </p>
                                     </div>
                                 </div>
                             </section>
 
                             <section className="mb-12">
-                                <h2 className="text-3xl font-semibold mb-6">Why We Exist</h2>
+                                <h2 className="text-3xl font-semibold mb-6">Our Commitment to Trust</h2>
                                 <p className="text-lg leading-relaxed mb-6">
-                                    Too many founders face risks – fines, exposure, or legal complications – by using their home address,
-                                    or by overpaying for outdated services. We created VirtualAddressHub as a modern, no-fuss alternative:
+                                    Handling official company mail requires absolute security and legal standing. As a regulated Trust and Company Service Provider (TCSP), we operate closely with UK authorities to keep your data safe and our operations secure.
                                 </p>
-                                <div className="bg-card p-6 rounded-lg border border-border">
-                                    <ul className="space-y-4">
-                                        <li className="flex items-start">
-                                            <span className="text-primary mr-3">✓</span>
-                                            <span><strong>Fully compliant:</strong> With all UK laws, including new Companies House rules.</span>
-                                        </li>
-                                        <li className="flex items-start">
-                                            <span className="text-primary mr-3">✓</span>
-                                            <span><strong>Fairly priced:</strong> No surprises, no mark-ups.</span>
-                                        </li>
-                                        <li className="flex items-start">
-                                            <span className="text-primary mr-3">✓</span>
-                                            <span><strong>Fast to set up:</strong> With secure ID checks and instant dashboard access.</span>
-                                        </li>
-                                        <li className="flex items-start">
-                                            <span className="text-primary mr-3">✓</span>
-                                            <span><strong>Made for modern businesses:</strong> Designed for remote-first operations and digital convenience.</span>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </section>
-
-                            <section className="mb-12">
-                                <h2 className="text-3xl font-semibold mb-6">Why Choose VirtualAddressHub?</h2>
                                 <ul className="space-y-4 text-lg">
                                     <li className="flex items-start">
-                                        <span className="text-primary mr-3">✓</span>
-                                        <span><strong>ICO Registered:</strong> ZC051808 - Fully compliant with UK data protection regulations</span>
+                                        <span className="text-emerald-600 mr-3 mt-1">✓</span>
+                                        <span><strong>HMRC AML Supervised:</strong> We are strictly audited and approved for handling official tax and corporate correspondence.</span>
                                     </li>
                                     <li className="flex items-start">
-                                        <span className="text-primary mr-3">✓</span>
-                                        <span><strong>HMRC AML Supervised:</strong> Approved for handling official tax correspondence</span>
+                                        <span className="text-emerald-600 mr-3 mt-1">✓</span>
+                                        <span><strong>ICO Registered (ZC051808):</strong> Fully compliant with UK data protection regulations and the Data Protection Act 2018.</span>
                                     </li>
                                     <li className="flex items-start">
-                                        <span className="text-primary mr-3">✓</span>
-                                        <span><strong>GDPR Aligned:</strong> Your data privacy and security is our top priority</span>
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="text-primary mr-3">✓</span>
-                                        <span><strong>Same-Day Processing:</strong> Mail scanned and available within 24 hours</span>
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="text-primary mr-3">✓</span>
-                                        <span><strong>Secure Platform:</strong> Bank-level encryption and secure data handling</span>
-                                    </li>
-                                    <li className="flex items-start">
-                                        <span className="text-primary mr-3">✓</span>
-                                        <span><strong>Expert Support:</strong> Dedicated customer service team with UK business expertise</span>
+                                        <span className="text-emerald-600 mr-3 mt-1">✓</span>
+                                        <span><strong>Economic Crime Act Ready:</strong> Our address meets the "appropriate address" test under the new UK corporate transparency legislation.</span>
                                     </li>
                                 </ul>
                             </section>
 
                             <section className="mb-12">
-                                <h2 className="text-3xl font-semibold mb-6">Our Commitment</h2>
+                                <h2 className="text-3xl font-semibold mb-6">Get in Touch</h2>
                                 <p className="text-lg leading-relaxed mb-6">
-                                    At VirtualAddressHub, we are committed to providing exceptional service and maintaining
-                                    the highest standards of security and compliance. Our team of experts understands the
-                                    unique challenges faced by modern businesses and has designed our services to address
-                                    these needs effectively.
+                                    If you're unsure whether our service is right for your specific company setup, or if you just have questions about UK compliance, our team is happy to help.
                                 </p>
-                                <p className="text-lg leading-relaxed mb-6">
-                                    We believe that every business deserves access to professional services that enable
-                                    growth and compliance, regardless of their size or location. Our transparent pricing
-                                    and comprehensive service offerings make it easy for businesses to establish and
-                                    maintain their professional presence in London.
-                                </p>
-                            </section>
-
-                            <section className="mb-12">
-                                <h2 className="text-3xl font-semibold mb-6">Contact Us</h2>
-                                <p className="text-lg leading-relaxed mb-6">
-                                    Ready to establish your professional London presence? Our team is here to help you
-                                    get started with the perfect virtual office solution for your business needs.
-                                </p>
-                                <div className="bg-primary/5 p-6 rounded-lg border border-primary/20">
-                                    <p className="text-lg font-semibold mb-2">Get Started Today</p>
-                                    <p className="text-muted-foreground">
-                                        Contact our team to learn more about our services and find the perfect solution for your business.
+                                <div className="bg-emerald-50/50 p-6 rounded-lg border border-emerald-100">
+                                    <p className="text-lg font-semibold mb-2 text-emerald-900">Reach Out</p>
+                                    <p className="text-emerald-800/80 mb-4">
+                                        We support founders globally setting up in the UK. Contact us for direct guidance on your address requirements.
                                     </p>
+                                    <a href="/contact" className="inline-flex font-medium text-emerald-700 hover:text-emerald-600 underline underline-offset-4">
+                                        Contact Support
+                                    </a>
                                 </div>
                             </section>
                         </div>

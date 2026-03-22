@@ -1,16 +1,24 @@
-const express = require("express");
-// Use dist path for production, fallback to src for development
-let getPool;
-try {
-    getPool = require("../dist/src/server/db").getPool;
-} catch {
-    getPool = require("../src/server/db").getPool;
-}
+/**
+ * Admin Blog API Routes
+ *
+ * GET /api/admin/blog/posts
+ * GET /api/admin/blog/posts/:slug
+ * POST /api/admin/blog/posts
+ * PUT /api/admin/blog/posts/:slug
+ * DELETE /api/admin/blog/posts/:slug
+ * GET /api/admin/blog/categories
+ *
+ * All routes are protected by admin check (`req.user?.is_admin`).
+ */
 
-const router = express.Router();
+import { Router, Request, Response } from 'express';
+import { getPool } from '../db';
+import { requireAdmin } from '../../middleware/auth';
+
+const router = Router();
 
 // Helper function to get post by slug from database
-async function getPostBySlug(slug) {
+async function getPostBySlug(slug: string) {
     try {
         const pool = getPool();
         const result = await pool.query(
@@ -50,8 +58,7 @@ async function getPostBySlug(slug) {
 }
 
 // GET /api/admin/blog/posts - List all blog posts with pagination
-router.get("/blog/posts", async (req, res) => {
-    if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
+router.get("/blog/posts", requireAdmin, async (req: Request, res: Response) => {
     try {
         const includeDrafts = req.query.includeDrafts === "true";
         const page = parseInt(String(req.query.page || '1')) || 1;
@@ -60,18 +67,15 @@ router.get("/blog/posts", async (req, res) => {
         
         const pool = getPool();
         
-        // Build WHERE clause
         let whereClause = '';
         if (!includeDrafts) {
             whereClause = ` WHERE status != 'draft'`;
         }
         
-        // Get total count
         const countQuery = `SELECT COUNT(*) as total FROM blog_posts${whereClause}`;
         const countResult = await pool.query(countQuery);
-        const total = parseInt(countResult.rows[0].total);
+        const total = parseInt(countResult.rows[0].total, 10);
         
-        // Get paginated posts
         let query = `SELECT 
             slug, title, description, content, excerpt, date, updated, tags, cover, 
             status, og_title, og_desc, noindex, author_name, author_title, author_image
@@ -99,54 +103,53 @@ router.get("/blog/posts", async (req, res) => {
             authorImage: post.author_image || "/images/authors/liban.jpg"
         }));
 
-        res.json({ 
+        return res.json({ 
             ok: true, 
             items: posts,
-            total: total,
-            page: page,
-            pageSize: pageSize
+            total,
+            page,
+            pageSize
         });
     } catch (error) {
         console.error("Error fetching blog posts:", error);
-        res.status(500).json({ ok: false, error: "Failed to fetch posts" });
+        return res.status(500).json({ ok: false, error: "Failed to fetch posts" });
     }
 });
 
 // GET /api/admin/blog/posts/:slug - Get specific blog post
-router.get("/blog/posts/:slug", async (req, res) => {
-    if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
+router.get("/blog/posts/:slug", requireAdmin, async (req: Request, res: Response) => {
     try {
-        const { slug } = req.params;
+        const slug = req.params.slug as string;
         const post = await getPostBySlug(slug);
 
         if (!post) {
             return res.status(404).json({ ok: false, error: "Post not found" });
         }
 
-        res.json({ ok: true, data: post });
+        return res.json({ ok: true, data: post });
     } catch (error) {
         console.error("Error fetching blog post:", error);
-        res.status(500).json({ ok: false, error: "Failed to fetch post" });
+        return res.status(500).json({ ok: false, error: "Failed to fetch post" });
     }
 });
 
 // POST /api/admin/blog/posts - Create new blog post
-router.post("/blog/posts", async (req, res) => {
-    if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
+router.post("/blog/posts", requireAdmin, async (req: Request, res: Response) => {
     try {
-        const { slug, title, description, content, tags, cover, status, ogTitle, ogDesc, noindex, authorName, authorTitle, authorImage } = req.body;
+        const { 
+            slug, title, description, content, tags, cover, status, 
+            ogTitle, ogDesc, noindex, authorName, authorTitle, authorImage 
+        } = req.body;
 
         if (!slug || !title || !content) {
             return res.status(400).json({ ok: false, error: "Missing required fields" });
         }
 
-        // Check if post already exists
         const existing = await getPostBySlug(slug);
         if (existing) {
             return res.status(409).json({ ok: false, error: "Post with this slug already exists" });
         }
 
-        // Normalize status - only 'draft' or 'published'
         const normalizedStatus = (status === "draft" || status === "published") ? status : "published";
         const now = new Date().toISOString();
         const excerpt = content ? content.substring(0, 200) + "..." : "";
@@ -198,27 +201,27 @@ router.post("/blog/posts", async (req, res) => {
             authorImage: authorImage || "/images/authors/liban.jpg"
         };
 
-        res.json({ ok: true, data: postData });
+        return res.json({ ok: true, data: postData });
     } catch (error) {
         console.error("Error creating blog post:", error);
-        res.status(500).json({ ok: false, error: "Failed to create post" });
+        return res.status(500).json({ ok: false, error: "Failed to create post" });
     }
 });
 
 // PUT /api/admin/blog/posts/:slug - Update blog post
-router.put("/blog/posts/:slug", async (req, res) => {
-    if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
+router.put("/blog/posts/:slug", requireAdmin, async (req: Request, res: Response) => {
     try {
-        const { slug } = req.params;
-        const { title, description, content, tags, cover, status, ogTitle, ogDesc, noindex, authorName, authorTitle, authorImage } = req.body;
+        const slug = req.params.slug as string;
+        const { 
+            title, description, content, tags, cover, status, 
+            ogTitle, ogDesc, noindex, authorName, authorTitle, authorImage 
+        } = req.body;
 
-        // Check if post exists
         const existingPost = await getPostBySlug(slug);
         if (!existingPost) {
             return res.status(404).json({ ok: false, error: "Post not found" });
         }
 
-        // Normalize status - only 'draft' or 'published', default to existing status if not provided
         const normalizedStatus = status
             ? ((status === "draft" || status === "published") ? status : existingPost.status)
             : existingPost.status;
@@ -269,7 +272,7 @@ router.put("/blog/posts/:slug", async (req, res) => {
             slug,
             title: title || existingPost.title,
             description: description !== undefined ? description : existingPost.description,
-            date: existingPost.date, // Keep original date
+            date: existingPost.date,
             updated: now,
             tags: tags !== undefined ? tags : existingPost.tags,
             cover: cover !== undefined ? cover : existingPost.cover,
@@ -284,20 +287,18 @@ router.put("/blog/posts/:slug", async (req, res) => {
             authorImage: authorImage !== undefined ? authorImage : (existingPost.authorImage || "/images/authors/liban.jpg")
         };
 
-        res.json({ ok: true, data: postData });
+        return res.json({ ok: true, data: postData });
     } catch (error) {
         console.error("Error updating blog post:", error);
-        res.status(500).json({ ok: false, error: "Failed to update post" });
+        return res.status(500).json({ ok: false, error: "Failed to update post" });
     }
 });
 
 // DELETE /api/admin/blog/posts/:slug - Delete blog post
-router.delete("/blog/posts/:slug", async (req, res) => {
-    if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
+router.delete("/blog/posts/:slug", requireAdmin, async (req: Request, res: Response) => {
     try {
-        const { slug } = req.params;
+        const slug = req.params.slug as string;
 
-        // Check if post exists
         const existing = await getPostBySlug(slug);
         if (!existing) {
             return res.status(404).json({ ok: false, error: "Post not found" });
@@ -309,20 +310,19 @@ router.delete("/blog/posts/:slug", async (req, res) => {
             [slug]
         );
 
-        if (result.rowCount > 0) {
-            res.json({ ok: true, message: "Post deleted successfully" });
+        if (result.rowCount && result.rowCount > 0) {
+            return res.json({ ok: true, message: "Post deleted successfully" });
         } else {
-            res.status(500).json({ ok: false, error: "Failed to delete post" });
+            return res.status(500).json({ ok: false, error: "Failed to delete post" });
         }
     } catch (error) {
         console.error("Error deleting blog post:", error);
-        res.status(500).json({ ok: false, error: "Failed to delete post" });
+        return res.status(500).json({ ok: false, error: "Failed to delete post" });
     }
 });
 
 // GET /api/admin/blog/categories - Get all categories/tags
-router.get("/blog/categories", async (req, res) => {
-    if (!req.user?.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
+router.get("/blog/categories", requireAdmin, async (req: Request, res: Response) => {
     try {
         const pool = getPool();
         const result = await pool.query(
@@ -332,11 +332,11 @@ router.get("/blog/categories", async (req, res) => {
         const allTags = result.rows.map(row => row.tag).filter(Boolean);
         const uniqueTags = [...new Set(allTags)].sort();
 
-        res.json({ ok: true, data: uniqueTags });
+        return res.json({ ok: true, data: uniqueTags });
     } catch (error) {
         console.error("Error fetching categories:", error);
-        res.status(500).json({ ok: false, error: "Failed to fetch categories" });
+        return res.status(500).json({ ok: false, error: "Failed to fetch categories" });
     }
 });
 
-module.exports = router;
+export default router;

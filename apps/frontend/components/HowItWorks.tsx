@@ -7,21 +7,18 @@ const steps = [
         k: 'verify',
         title: 'Verify Your Account',
         description: 'Verify your account by completing the required identity checks for regulated address services.',
-        icon: '/figma/how-icon-1.svg',
         LucideIcon: ShieldCheck,
     },
     {
         k: 'use',
         title: 'Start using your address',
         description: 'Once approved, you can begin using your address across your company records and business communications.',
-        icon: '/figma/how-icon-2.svg',
         LucideIcon: MapPin,
     },
     {
         k: 'handle',
         title: 'We process your post',
         description: 'Incoming mail is logged, scanned, and added to your dashboard for secure online access.',
-        icon: '/figma/how-icon-3.svg',
         LucideIcon: Mail,
     },
 ];
@@ -98,13 +95,8 @@ export default function HowItWorks() {
                                 <div className="flex h-[32px] w-[32px] items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                                     {index + 1}
                                 </div>
-                                <div className="mt-4 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-muted">
-                                    <img
-                                        src={step.icon}
-                                        alt=""
-                                        aria-hidden="true"
-                                        className="h-[38px] w-[38px]"
-                                    />
+                                <div className="mt-4 flex h-[80px] w-[80px] items-center justify-center text-primary rounded-full bg-emerald-50 border border-emerald-100 shrink-0">
+                                    <step.LucideIcon strokeWidth={1.5} className="h-10 w-10 text-emerald-700" />
                                 </div>
                                 <h3 className="mt-4 text-[18px] font-medium text-foreground">
                                     {step.title}

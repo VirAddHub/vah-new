@@ -118,7 +118,7 @@ export function DashboardSidebar() {
 
             window.stop();
             try {
-                toast({ title: "You've been signed out", duration: 2000 });
+                toast({ title: "You've been signed out", durationMs: 2000 });
             } catch (_) {
                 // ignore so redirect always runs
             }

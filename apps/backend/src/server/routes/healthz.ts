@@ -3,6 +3,7 @@
 
 import { Router } from 'express';
 import { MAIL_STATUS, ALLOWED } from '../../modules/forwarding/mailStatus';
+import { metrics } from '../../lib/metrics';
 
 const router = Router();
 
@@ -70,7 +71,6 @@ router.get('/status-guard', (req, res) => {
 // Detailed metrics health check
 router.get('/metrics', (req, res) => {
   try {
-    const { metrics } = require('../../lib/metrics');
     const summary = metrics.getSummary();
     
     const health = {

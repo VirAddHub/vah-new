@@ -1,10 +1,11 @@
-const express = require("express");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-const { fileTypeFromBuffer } = require("file-type");
+import { Router, Request, Response } from "express";
+import multer from "multer";
+import * as path from "path";
+import * as fs from "fs";
+import { fileTypeFromBuffer } from "file-type";
+import { requireAdmin } from "../../middleware/auth";
 
-const router = express.Router();
+const router = Router();
 
 // Allowed file extensions and MIME types for blog images
 const ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
@@ -17,16 +18,16 @@ const upload = multer({
     limits: {
         fileSize: 10 * 1024 * 1024, // 10MB limit
     },
-    fileFilter: (req, file, cb) => {
+    fileFilter: (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
         // Step 1: Whitelist file extension
         const ext = path.extname(file.originalname).toLowerCase();
         if (!ALLOWED_IMAGE_EXTENSIONS.includes(ext)) {
-            return cb(new Error('File extension not allowed. Only image files are permitted.'), false);
+            return cb(new Error('File extension not allowed. Only image files are permitted.'));
         }
 
         // Step 2: Basic mimetype check (can be spoofed, but fail fast)
         if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.mimetype)) {
-            return cb(new Error('File type not allowed. Only image files are permitted.'), false);
+            return cb(new Error('File type not allowed. Only image files are permitted.'));
         }
 
         // Note: Magic-byte validation happens in the route handler
@@ -38,9 +39,9 @@ const upload = multer({
  * Validate file using magic bytes (file-type library)
  * This prevents spoofed Content-Type headers
  */
-async function validateImageMagicBytes(fileBuffer, originalName) {
+async function validateImageMagicBytes(fileBuffer: Buffer, originalName: string) {
     try {
-        const uint8Array = new Uint8Array(fileBuffer);
+        const uint8Array = new Uint8Array(fileBuffer.buffer, fileBuffer.byteOffset, fileBuffer.byteLength);
         const fileType = await fileTypeFromBuffer(uint8Array);
 
         if (!fileType) {
@@ -56,7 +57,7 @@ async function validateImageMagicBytes(fileBuffer, originalName) {
         const originalExt = path.extname(originalName).toLowerCase();
         const detectedExt = `.${ext}`;
 
-        const extMap = {
+        const extMap: Record<string, string[]> = {
             '.jpg': ['.jpg', '.jpeg'],
             '.jpeg': ['.jpg', '.jpeg'],
             '.png': ['.png'],
@@ -70,7 +71,7 @@ async function validateImageMagicBytes(fileBuffer, originalName) {
         }
 
         return { valid: true };
-    } catch (error) {
+    } catch (error: any) {
         return { valid: false, error: `File validation error: ${error.message}` };
     }
 }
@@ -83,11 +84,9 @@ if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-// POST /api/admin/blog/upload - Upload image for blog posts
-router.post("/blog/upload", upload.single('image'), async (req, res) => {
-    if (!req.user?.is_admin) {
-        return res.status(403).json({ ok: false, error: "forbidden" });
-    }
+// POST /api/admin/blog/upload (and /api/blog/upload)
+router.post("/blog/upload", requireAdmin, upload.single('image'), async (req: Request, res: Response) => {
+    // Note: requireAdmin reliably covers the 'is_admin' authentication fallback.
 
     if (!req.file) {
         return res.status(400).json({ ok: false, error: "No image file provided" });
@@ -97,7 +96,7 @@ router.post("/blog/upload", upload.single('image'), async (req, res) => {
         // SECURITY: Validate file using magic bytes (prevents Content-Type spoofing)
         const validation = await validateImageMagicBytes(req.file.buffer, req.file.originalname);
         if (!validation.valid) {
-            console.warn('[POST /api/admin/blog/upload] File validation failed:', {
+            console.warn('[POST /blog/upload] File validation failed:', {
                 filename: req.file.originalname,
                 mimetype: req.file.mimetype,
                 error: validation.error
@@ -117,7 +116,7 @@ router.post("/blog/upload", upload.single('image'), async (req, res) => {
 
         // Save validated file to disk
         const filePath = path.join(UPLOADS_DIR, filename);
-        fs.writeFileSync(filePath, req.file.buffer);
+        fs.writeFileSync(filePath, req.file.buffer as any);
 
         // Generate public URL
         const publicUrl = `${process.env.API_BASE_URL || 'https://vah-api-staging.onrender.com'}/api/media/blog/${filename}`;
@@ -137,10 +136,10 @@ router.post("/blog/upload", upload.single('image'), async (req, res) => {
     }
 });
 
-// GET /api/media/blog/:filename - Serve uploaded images publicly
-router.get("/media/blog/:filename", (req, res) => {
+// GET /api/media/blog/:filename (and /api/admin/media/blog/:filename)
+router.get("/media/blog/:filename", (req: Request, res: Response) => {
     try {
-        const { filename } = req.params;
+        const filename = req.params.filename as string;
         const filePath = path.join(UPLOADS_DIR, filename);
 
         if (!fs.existsSync(filePath)) {
@@ -159,4 +158,4 @@ router.get("/media/blog/:filename", (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

@@ -59,30 +59,13 @@ router.get('/summary', requireAdmin, async (_req: Request, res: Response) => {
 
         const dbStatus = await checkDB();
 
-        // Check external services (stub implementations - replace with real SDK pings)
+        // Validate configuration presence (Note: does not perform actual API pings yet)
         const deps = await Promise.all([
-            checkService('email_postmark', async () => {
-                // TODO: Replace with actual Postmark health check
-                // For now, check if env var exists
-                return !!process.env.POSTMARK_TOKEN;
-            }),
-            checkService('payments_gocardless', async () => {
-                // TODO: Replace with actual GoCardless health check
-                return !!(process.env.GC_ACCESS_TOKEN || process.env.GOCARDLESS_ACCESS_TOKEN);
-            }),
-            checkService('kyc_sumsub', async () => {
-                // TODO: Replace with actual Sumsub health check
-                return !!process.env.SUMSUB_API_KEY;
-            }),
-            checkService('storage_onedrive', async () => {
-                // TODO: Replace with actual OneDrive/Graph health check
-                return !!(process.env.GRAPH_CLIENT_ID && process.env.GRAPH_CLIENT_SECRET);
-            }),
-            checkService('queue_jobs', async () => {
-                // TODO: Replace with actual job queue health check
-                // For now, just check DB is accessible (jobs likely use DB)
-                return dbStatus.severity !== 'down';
-            }),
+            checkService('email_postmark_config', async () => !!process.env.POSTMARK_TOKEN),
+            checkService('payments_gocardless_config', async () => !!(process.env.GC_ACCESS_TOKEN || process.env.GOCARDLESS_ACCESS_TOKEN)),
+            checkService('kyc_sumsub_config', async () => !!process.env.SUMSUB_API_KEY),
+            checkService('storage_onedrive_config', async () => !!(process.env.GRAPH_CLIENT_ID && process.env.GRAPH_CLIENT_SECRET)),
+            checkService('queue_jobs_db', async () => dbStatus.severity !== 'down'),
         ]);
 
         const severity = rollupSeverity([dbStatus, ...deps]);
@@ -109,11 +92,11 @@ router.get('/dependencies', requireAdmin, async (_req: Request, res: Response) =
         const dbStatus = await checkDB();
 
         const deps = await Promise.all([
-            checkService('email_postmark', async () => !!process.env.POSTMARK_TOKEN),
-            checkService('payments_gocardless', async () => !!(process.env.GC_ACCESS_TOKEN || process.env.GOCARDLESS_ACCESS_TOKEN)),
-            checkService('kyc_sumsub', async () => !!process.env.SUMSUB_API_KEY),
-            checkService('storage_onedrive', async () => !!(process.env.GRAPH_CLIENT_ID && process.env.GRAPH_CLIENT_SECRET)),
-            checkService('queue_jobs', async () => dbStatus.severity !== 'down'),
+            checkService('email_postmark_config', async () => !!process.env.POSTMARK_TOKEN),
+            checkService('payments_gocardless_config', async () => !!(process.env.GC_ACCESS_TOKEN || process.env.GOCARDLESS_ACCESS_TOKEN)),
+            checkService('kyc_sumsub_config', async () => !!process.env.SUMSUB_API_KEY),
+            checkService('storage_onedrive_config', async () => !!(process.env.GRAPH_CLIENT_ID && process.env.GRAPH_CLIENT_SECRET)),
+            checkService('queue_jobs_db', async () => dbStatus.severity !== 'down'),
         ]);
 
         res.json({

@@ -31,11 +31,11 @@ import { ensureSchema, getPool } from "./server/db";
 import { selectOne, selectMany, execute, insertReturningId } from "./server/db-helpers";
 
 // --- routes that need raw body (webhooks)
-import sumsubWebhook from "./server/routes/webhooks-sumsub";
 import { postmarkWebhook } from "./server/routes/webhooks-postmark";
 import onedriveWebhook from "./server/routes/webhooks-onedrive";
 import gocardlessWebhook from "./server/routes/webhooks-gocardless";
 import stripeWebhook from "./server/routes/webhooks-stripe";
+import sumsubWebhook from "./server/routes/webhooks-sumsub";
 import { Router } from "express";
 import profileRouter from "./server/routes/profile";
 import profileEmailChangeRouter from "./server/routes/profileEmailChange";
@@ -87,7 +87,6 @@ import { systemMaintenance } from "./server/services/maintenance";
 
 // Safe stubs for integrations until providers are wired
 import paymentsStubRouter from "./server/routes/payments-stub";
-import kycStubRouter from "./server/routes/kyc-stub";
 import kycRouter from "./server/routes/kyc";
 import forwardingRouter from "./server/routes/forwarding";
 import emailPrefsRouterNew from "./server/routes/email-prefs";
@@ -97,8 +96,21 @@ import addressRouterImport from "./server/routes/address";
 import bffMailScanRouter from "./routes/bff-mail-scan";
 import { quizRouter } from "./server/routes/quiz";
 import internalMailImportRouter from "./server/routes/internalMailImport";
-
-
+import mailForwardRouter from "./server/routes/mail-forward";
+import gdprExportRouter from "./server/routes/gdpr-export";
+import filesRouter from "./server/routes/files";
+import downloadsRouter from "./server/routes/downloads";
+import { sessionCookieOptions, isSecureEnv } from "./lib/cookies";
+import adminAuditRouter from "./server/routes/admin-audit";
+import adminForwardAuditRouter from "./server/routes/admin-forward-audit";
+import adminBlogRouter from "./server/routes/admin-blog";
+import adminMediaRouter from "./server/routes/admin-media";
+import adminRepairRouter from "./server/routes/admin-repair";
+import blogRouter from "./server/routes/blog";
+import debugRouterLegacy from "./server/routes/debug";
+import mailSearchRouter from "./server/routes/mail-search";
+import metricsRouter from "./server/routes/metrics";
+import notificationsRouter from "./server/routes/notifications";
 type MaybeDefault<T> = { default?: T } | T;
 // handle CJS/ESM default interop safely
 function unwrapDefault<T>(m: MaybeDefault<T>): T {
@@ -107,40 +119,7 @@ function unwrapDefault<T>(m: MaybeDefault<T>): T {
     }
     return m as T;
 }
-const addressRouter = unwrapDefault(addressRouterImport as unknown as MaybeDefault<typeof addressRouterImport>);
-
-// Legacy routes (CommonJS requires - will be converted to ES modules eventually)
-// Use path.join to resolve paths correctly - need to go back to project root
-import * as path from 'path';
-// When running from dist/src/server.js, go back to project root then into routes
-const projectRoot = path.join(__dirname, '../..');
-const routesDir = path.join(projectRoot, 'routes');
-// const addressRouter = require(path.join(routesDir, 'address')); // File doesn't exist
-const adminAuditRouter = require(path.join(routesDir, 'admin-audit'));
-const adminForwardAuditRouter = require(path.join(routesDir, 'admin-forward-audit'));
-const adminMailBulkRouter = require(path.join(routesDir, 'admin-mail-bulk'));
-const adminMailRouter = require(path.join(routesDir, 'admin-mail'));
-const adminRepairRouter = require(path.join(routesDir, 'admin-repair'));
-const adminBlogRouter = require(path.join(routesDir, 'admin-blog'));
-const blogRouter = require(path.join(routesDir, 'blog'));
-const debugRouterLegacy = require(path.join(routesDir, 'debug'));
-const downloadsRouter = require(path.join(routesDir, 'downloads'));
-// const emailPrefsRouter = require(path.join(routesDir, 'email-prefs')); // Now using TypeScript version
-const filesRouter = require(path.join(routesDir, 'files'));
-const gdprExportRouter = require(path.join(routesDir, 'gdpr-export'));
-const kycStartRouter = require(path.join(routesDir, 'kyc-start'));
-const mailForwardRouter = require(path.join(routesDir, 'mail-forward'));
-const mailSearchRouter = require(path.join(routesDir, 'mail-search'));
-const metricsRouter = require(path.join(routesDir, 'metrics'));
-const notificationsRouter = require(path.join(routesDir, 'notifications'));
-const profileResetRouter = require(path.join(routesDir, 'profile-reset'));
-const webhooksGcRouter = require(path.join(routesDir, 'webhooks-gc'));
-// Mount legacy routes that need raw body handling
-// Note: webhooks-postmark and webhooks-sumsub are already imported above
-
-// --- cookie options helper
-const { sessionCookieOptions, isSecureEnv } = require("./lib/cookies");
-
+// End of legacy requires
 // --- init
 const app = express();
 app.set("trust proxy", 1);
@@ -157,6 +136,10 @@ app.post('/api/webhooks-postmark', express.raw({ type: 'application/json' }), po
 const webhooksRouter = Router();
 webhooksRouter.use(gocardlessWebhook);
 webhooksRouter.use(stripeWebhook);
+
+// Sumsub webhook — now fully TypeScript; receives raw Buffer for signature verification
+webhooksRouter.use('/sumsub', sumsubWebhook);
+
 app.use(
     '/api/webhooks',
     express.raw({ type: 'application/json' }),
@@ -514,13 +497,12 @@ async function start() {
     app.use('/api/profile', passwordResetRouter); // Mount password reset endpoints
     app.use('/api/business-owners', businessOwnersRouter); // Mount business owners routes
     app.use('/api/account', accountBusinessesRouter);
-    app.use('/api', sumsubWebhook);
     app.use('/api', publicPlansRouter);
     app.use('/api', blogRouter);
-    logger.info('[mount] /api (blog, public) mounted');
+    logger.info('[mount] /api (blog, public) mounted (TS handler)');
     // Public blog cover images (before mail router so unauthenticated requests succeed)
-    app.use('/api', require(path.join(routesDir, 'admin-media')));
-    logger.info('[mount] /api (media/blog, public) mounted');
+    app.use('/api', adminMediaRouter);
+    logger.info('[mount] /api (media/blog, public) mounted (TS handler)');
     app.use('/api', debugEmailRouter);
 
     // NEW: Mount missing endpoints
@@ -547,23 +529,7 @@ async function start() {
     app.use('/api/payments', paymentsStubRouter);
     logger.info('[mount] /api/payments (stubs) mounted');
 
-    // Only mount KYC stub if Sumsub is not configured (no token/secret in either primary or sandbox vars)
-    const hasSumsubToken =
-        process.env.SUMSUB_APP_TOKEN ||
-        process.env.SUMSUB_APP_TOKEN_SANDBOX;
-    const hasSumsubSecret =
-        process.env.SUMSUB_APP_SECRET ||
-        process.env.SUMSUB_SECRET_KEY ||
-        process.env.SUMSUB_SECRET_KEY_SANDBOX;
-    const sumsubConfigured = !!(hasSumsubToken && hasSumsubSecret);
-
-    if (!sumsubConfigured) {
-        app.use('/api/kyc', kycStubRouter);
-        logger.info('[mount] /api/kyc (stubs) mounted — Sumsub not configured');
-    } else {
-        app.use('/api/kyc', kycStartRouter);
-        logger.info('[mount] /api/kyc (legacy Sumsub start) mounted — Sumsub configured');
-    }
+    // KYC is now fully handled by the unified TS kycRouter
 
     app.use('/api', forwardingRouter);
     logger.info('[mount] /api (forwarding routes) mounted');
@@ -600,12 +566,11 @@ async function start() {
     app.use('/api/admin/exports', adminExportsRouter);
     logger.info('[mount] /api/admin/exports mounted');
     app.use('/api/admin', adminBlogRouter);
-    logger.info('[mount] /api/admin (blog) mounted');
+    logger.info('[mount] /api/admin (blog) mounted (TS handler)');
 
     // Media upload routes (GET /api/media/blog already mounted above for public access)
-    const adminMediaRouter = require(path.join(routesDir, 'admin-media'));
     app.use('/api/admin', adminMediaRouter);
-    logger.info('[mount] /api/admin (media) mounted');
+    logger.info('[mount] /api/admin (media) mounted (TS handler)');
     app.use('/api/companies-house', companiesHouseRouter);
     logger.info('[mount] /api/companies-house mounted');
     app.use('/api', idealPostcodesRouter);
@@ -631,14 +596,10 @@ async function start() {
     app.use('/api', bffMailScanRouter); // compat for /api/legacy/mail-items/:id/download
     logger.info('[mount] /api (legacy mail scan compat) mounted');
 
-    // Test download routes (for testing file downloads)
-    const testDownloadsRouter = require(path.join(routesDir, 'test-downloads'));
-    app.use('/api/test', testDownloadsRouter);
     app.use('/api', migrateRouter);
     app.use('/api', triggerMigrateRouter);
     app.use('/api', webhookMigrateRouter);
     app.use('/api', directMigrateRouter);
-    logger.info('[mount] /api/test (downloads) mounted');
 
     // Dev routes (staging/local only) - disabled in production for security
     if (process.env.NODE_ENV !== 'production') {
@@ -648,68 +609,45 @@ async function start() {
         logger.info('🔒 Dev routes disabled (production)');
     }
 
-    // Mount address router
-    if (addressRouter && typeof addressRouter === 'function') {
-        app.use('/api/address', addressRouter);
-        logger.info('[mount] /api/address mounted');
-    } else {
-        logger.error('[mount] /api/address not mounted (addressRouter not a function)', {
-            type: typeof addressRouter,
-        });
-    }
 
     app.use('/api/admin-audit', adminAuditRouter);
-    logger.info('[mount] /api/admin-audit mounted');
+    logger.info('[mount] /api/admin-audit mounted (TS handler)');
 
     app.use('/api/admin-forward-audit', adminForwardAuditRouter);
-    logger.info('[mount] /api/admin-forward-audit mounted');
+    logger.info('[mount] /api/admin-forward-audit mounted (TS handler)');
 
-    app.use('/api/admin-mail-bulk', adminMailBulkRouter);
-    logger.info('[mount] /api/admin-mail-bulk mounted');
-
-    app.use('/api/admin-mail', adminMailRouter);
-    logger.info('[mount] /api/admin-mail mounted');
 
     app.use('/api/admin-repair', adminRepairRouter);
-    logger.info('[mount] /api/admin-repair mounted');
+    logger.info('[mount] /api/admin-repair mounted (TS handler)');
 
     app.use('/api/debug', debugRouterLegacy);
-    logger.info('[mount] /api/debug mounted');
+    logger.info('[mount] /api/debug mounted (TS handler)');
 
     app.use('/api/downloads', downloadsRouter);
-    logger.info('[mount] /api/downloads mounted');
+    logger.info('[mount] /api/downloads mounted (TS handler)');
 
-    // NOTE: /api/email-prefs is now mounted from the new TypeScript route above (emailPrefsRouterNew)
-    // app.use('/api/email-prefs', emailPrefsRouter);
-    // logger.info('[mount] /api/email-prefs mounted');
 
     app.use('/api/files', filesRouter);
-    logger.info('[mount] /api/files mounted');
+    logger.info('[mount] /api/files mounted (TS handler)');
 
     app.use('/api/gdpr-export', gdprExportRouter);
-    logger.info('[mount] /api/gdpr-export mounted');
+    logger.info('[mount] /api/gdpr-export mounted (TS handler)');
 
     // Global error handler (must be last, after all routes)
     app.use(errorHandler);
     logger.info('[mount] Error handler middleware mounted');
 
     app.use('/api/mail/forward', mailForwardRouter);
-    logger.info('[mount] /api/mail/forward mounted');
+    logger.info('[mount] /api/mail/forward mounted (TS handler)');
 
     app.use('/api/mail-search', mailSearchRouter);
-    logger.info('[mount] /api/mail-search mounted');
+    logger.info('[mount] /api/mail-search mounted (TS handler)');
 
     app.use('/api/metrics', metricsRouter);
-    logger.info('[mount] /api/metrics mounted');
+    logger.info('[mount] /api/metrics mounted (TS handler)');
 
     app.use('/api/notifications', notificationsRouter);
-    logger.info('[mount] /api/notifications mounted');
-
-    app.use('/api', profileResetRouter);
-    logger.info('[mount] /api (profile-reset routes) mounted');
-
-    app.use('/api/webhooks-gc', webhooksGcRouter);
-    logger.info('[mount] /api/webhooks-gc mounted');
+    logger.info('[mount] /api/notifications mounted (TS handler)');
 
     // GoCardless webhook is already mounted above with raw body support
 

@@ -99,4 +99,28 @@ router.get('/forwarding-address', requireAuth, async (req: Request, res: Respons
     }
 });
 
+
+/**
+ * GET /api/debug/export-jobs/ping
+ * Checks if the export_job Postgres table is alive and returns row count.
+ */
+router.get('/export-jobs/ping', async (req: Request, res: Response) => {
+    try {
+        const pool = getPool();
+        const result = await pool.query('SELECT count(*)::int AS count FROM export_job');
+        return res.json({ ok: true, count: result.rows[0]?.count ?? 0 });
+    } catch (e: any) {
+        return res.status(500).json({ ok: false, code: e?.code, message: e?.message });
+    }
+});
+
+/**
+ * POST /api/debug/export-jobs/run-once
+ * Manually trigger GDPR cleanup job.
+ * Note: Deprecated functionality from SQLite port.
+ */
+router.post('/export-jobs/run-once', (_req: Request, res: Response) => {
+    return res.status(410).json({ ok: false, message: 'runCleanupOnceLocked deprecated in TS migration. Postgres jobs run automatically.' });
+});
+
 export default router;

@@ -341,7 +341,6 @@ export function SettingsSection({ }: SettingsSectionProps) {
                                         <SelectContent>
                                             <SelectItem value="stripe">Stripe</SelectItem>
                                             <SelectItem value="paypal">PayPal</SelectItem>
-                                            <SelectItem value="gocardless">GoCardless</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <Button size="sm" variant="outline" onClick={() => handleTestIntegration('payment')}>

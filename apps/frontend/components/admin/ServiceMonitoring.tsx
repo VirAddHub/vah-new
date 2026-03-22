@@ -42,16 +42,14 @@ export function ServiceMonitoring({ className }: ServiceMonitoringProps) {
 
             // Check each service
             const serviceChecks = await Promise.allSettled([
-                checkGoCardless(),
                 checkSumsub(),
                 checkPostmark(),
                 checkOneDrive()
             ]);
 
             const serviceStatuses: ServiceStatus[] = serviceChecks.map((result, index) => {
-                const serviceNames = ['GoCardless', 'Sumsub', 'Postmark', 'OneDrive'];
+                const serviceNames = ['Sumsub', 'Postmark', 'OneDrive'];
                 const serviceUrls = [
-                    'https://manage.gocardless.com',
                     'https://sumsub.com',
                     'https://postmarkapp.com',
                     'https://admin.microsoft.com'
@@ -83,47 +81,7 @@ export function ServiceMonitoring({ className }: ServiceMonitoringProps) {
         }
     };
 
-    const checkGoCardless = async (): Promise<ServiceStatus> => {
-        const startTime = Date.now();
 
-        try {
-            // Check webhook logs for recent GoCardless activity
-            const response = await fetch('/api/admin/service-status/gocardless', {
-                credentials: 'include'
-            });
-
-            const data = await response.json();
-            const responseTime = Date.now() - startTime;
-
-            if (data.ok) {
-                return {
-                    name: 'GoCardless',
-                    status: data.status || 'healthy',
-                    lastCheck: Date.now(),
-                    lastWebhook: data.lastWebhook,
-                    responseTime,
-                    errorCount: data.errorCount || 0,
-                    uptime: data.uptime || 99.9,
-                    description: 'Payment processing and subscription management',
-                    dashboardUrl: 'https://manage.gocardless.com'
-                };
-            } else {
-                throw new Error(data.error || 'Service check failed');
-            }
-        } catch (error) {
-            return {
-                name: 'GoCardless',
-                status: 'down',
-                lastCheck: Date.now(),
-                lastWebhook: null,
-                responseTime: Date.now() - startTime,
-                errorCount: 1,
-                uptime: 0,
-                description: `Payment service error: ${error}`,
-                dashboardUrl: 'https://manage.gocardless.com'
-            };
-        }
-    };
 
     const checkSumsub = async (): Promise<ServiceStatus> => {
         const startTime = Date.now();

@@ -1,5 +1,7 @@
-const crypto = require("crypto");
-const fetch = (...args) => import("node-fetch").then(m => m.default(...args));
+import crypto from 'crypto';
+
+// Use dynamic import for node-fetch to support ESM
+const fetch = (...args: any[]) => import('node-fetch').then(m => m.default(...args as Parameters<typeof m.default>));
 
 // Support both old, new and sandbox env var names for backward compatibility
 const SUMSUB_API =
@@ -9,7 +11,6 @@ const SUMSUB_API =
   process.env.SUMSUB_API_SANDBOX ||
   "https://api.sumsub.com";
 
-// Prefer primary vars, then sandbox variants
 const APP_TOKEN =
   process.env.SUMSUB_APP_TOKEN ||
   process.env.SUMSUB_APP_TOKEN_SANDBOX ||
@@ -23,13 +24,8 @@ const APP_SECRET =
 
 /**
  * Sign Sumsub API requests with HMAC-SHA256
- * @param {string} method - HTTP method
- * @param {string} path - API path
- * @param {string} ts - Timestamp
- * @param {string} body - Request body
- * @returns {string} Hex signature
  */
-function sign(method, path, ts, body = "") {
+function sign(method: string, path: string, ts: string, body: string = ""): string {
   const hmac = crypto.createHmac("sha256", APP_SECRET);
   hmac.update(`${ts}${method}${path}${body}`);
   return hmac.digest("hex");
@@ -37,12 +33,8 @@ function sign(method, path, ts, body = "") {
 
 /**
  * Make authenticated requests to Sumsub API
- * @param {string} method - HTTP method
- * @param {string} path - API path
- * @param {object} bodyObj - Request body object
- * @returns {Promise<object|null>} Response data or null for empty responses
  */
-async function sumsubFetch(method, path, bodyObj) {
+export async function sumsubFetch(method: string, path: string, bodyObj?: any): Promise<any> {
   const body = bodyObj ? JSON.stringify(bodyObj) : "";
   const ts = Math.floor(Date.now() / 1000).toString();
   const sig = sign(method, path, ts, body);
@@ -63,9 +55,6 @@ async function sumsubFetch(method, path, bodyObj) {
     throw new Error(`Sumsub ${method} ${path} ${res.status}: ${text}`);
   }
   
-  // Some endpoints return empty bodies; guard parse
   const ct = res.headers.get("content-type") || "";
   return ct.includes("application/json") ? res.json() : null;
 }
-
-module.exports = { sumsubFetch };

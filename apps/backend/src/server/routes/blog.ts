@@ -1,16 +1,19 @@
-const express = require("express");
-// Use dist path for production, fallback to src for development
-let getPool;
-try {
-    getPool = require("../dist/src/server/db").getPool;
-} catch {
-    getPool = require("../src/server/db").getPool;
-}
+/**
+ * Public Blog API Routes
+ *
+ * GET /api/blog/posts
+ * GET /api/blog/posts/:slug
+ *
+ * These routes serve the published blog posts for public display.
+ */
 
-const router = express.Router();
+import { Router, Request, Response } from 'express';
+import { getPool } from '../db';
+
+const router = Router();
 
 // Helper function to format date
-function formatDate(dateString) {
+function formatDate(dateString: string | Date | number): { long: string; short: string } {
     const date = new Date(dateString);
     return {
         long: date.toLocaleDateString('en-GB', {
@@ -26,15 +29,16 @@ function formatDate(dateString) {
 }
 
 // Helper function to estimate read time
-function estimateReadTime(content) {
+function estimateReadTime(content: string): string {
+    if (!content) return '1 min read';
     const wordsPerMinute = 200;
     const wordCount = content.split(/\s+/).length;
-    const minutes = Math.ceil(wordCount / wordsPerMinute);
+    const minutes = Math.max(1, Math.ceil(wordCount / wordsPerMinute));
     return `${minutes} min read`;
 }
 
 // GET /api/blog/posts - Get published blog posts for public display
-router.get("/blog/posts", async (req, res) => {
+router.get('/blog/posts', async (_req: Request, res: Response) => {
     try {
         const pool = getPool();
         const result = await pool.query(
@@ -76,7 +80,7 @@ router.get("/blog/posts", async (req, res) => {
 });
 
 // GET /api/blog/posts/:slug - Get specific blog post for public display
-router.get("/blog/posts/:slug", async (req, res) => {
+router.get('/blog/posts/:slug', async (req: Request, res: Response) => {
     const { slug } = req.params;
 
     if (!slug || typeof slug !== 'string') {
@@ -130,7 +134,7 @@ router.get("/blog/posts/:slug", async (req, res) => {
         };
 
         return res.json({ ok: true, data: responseData });
-    } catch (error) {
+    } catch (error: any) {
         console.error("[GET /api/blog/posts/:slug] error:", error);
         return res.status(500).json({
             ok: false,
@@ -140,4 +144,4 @@ router.get("/blog/posts/:slug", async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

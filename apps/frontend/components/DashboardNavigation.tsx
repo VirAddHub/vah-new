@@ -64,7 +64,7 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
             document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
             window.stop();
             try {
-                toast({ title: "You've been signed out", duration: 2000 });
+                toast({ title: "You've been signed out", durationMs: 2000 });
             } catch (_) {
                 // ignore so redirect always runs
             }

@@ -122,7 +122,7 @@ iframe {
 }
 
 /* ===========================
-   Claude-like Global Theme (HSL) — place LAST in globals.css
+   Global Theme (HSL) — place LAST in globals.css
    =========================== */
 @layer base {
 
@@ -420,19 +420,11 @@ iframe {
         letter-spacing: 0.01em;
     }
 
-    /* Enhanced card styling */
-    .card,
-    .claude-card {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    /* Standardized component borders */
+    .card {
         border: 1px solid rgba(0, 0, 0, 0.06);
         border-radius: var(--radius-lg);
         transition: all 0.2s ease;
-    }
-
-    .card:hover,
-    .claude-card:hover {
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-        transform: translateY(-1px);
     }
 
     /* Enhanced button styling */

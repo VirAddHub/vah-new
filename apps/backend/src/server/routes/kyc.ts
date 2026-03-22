@@ -5,6 +5,7 @@ import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { sendKycSubmitted } from '../../lib/mailer';
 import { buildAppUrl } from '../../lib/mailer';
+import { sumsubFetch } from '../../lib/sumsub';
 
 const router = Router();
 
@@ -56,94 +57,113 @@ router.get('/status', requireAuth, async (req: Request, res: Response) => {
     }
 });
 
+
 /**
  * POST /api/kyc/start
  * Start KYC verification process with Sumsub
  */
 router.post('/start', requireAuth, async (req: Request, res: Response) => {
-    const userId = req.user!.id;
-    const pool = getPool();
-
     try {
-        // Get user info
-        const userResult = await pool.query(`
-            SELECT id, email, first_name, last_name, kyc_status, sumsub_applicant_id
-            FROM "user"
-            WHERE id = $1
-        `, [userId]);
-
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        if (!req.user || req.user.id == null) {
+            return res.status(401).json({ ok: false, error: "unauthenticated", message: "Please log in to start verification." });
+        }
+        const userId = Number(req.user.id);
+        if (!Number.isFinite(userId)) {
+            return res.status(401).json({ ok: false, error: "unauthenticated", message: "Please log in to start verification." });
         }
 
+        const pool = getPool();
+        const userResult = await pool.query(
+            `SELECT id, email, first_name, last_name, sumsub_applicant_id FROM "user" WHERE id = $1`, 
+            [userId]
+        );
         const user = userResult.rows[0];
+        
+        if (!user) {
+            return res.status(404).json({ ok: false, error: "user_not_found" });
+        }
 
-        // If already has applicant ID, return existing
-        if (user.sumsub_applicant_id) {
-            // TODO: Generate new access token for existing applicant
-            // const sumsubToken = await generateSumsubToken(user.sumsub_applicant_id);
+        // Check if Sumsub credentials are configured
+        // Support old, new and sandbox env var names
+        const appToken = process.env.SUMSUB_APP_TOKEN || process.env.SUMSUB_APP_TOKEN_SANDBOX;
+        const appSecret = process.env.SUMSUB_APP_SECRET || process.env.SUMSUB_SECRET_KEY || process.env.SUMSUB_SECRET_KEY_SANDBOX;
+        const levelName = process.env.SUMSUB_LEVEL || process.env.SUMSUB_LEVEL_NAME || process.env.SUMSUB_LEVEL_NAME_SANDBOX || "basic-kyc";
+        const baseUrl = process.env.SUMSUB_BASE_URL || process.env.SUMSUB_API || process.env.SUMSUB_BASE_URL_SANDBOX || process.env.SUMSUB_API_SANDBOX || "https://api.sumsub.com";
 
-            return res.json({
-                ok: true,
-                applicant_id: user.sumsub_applicant_id,
-                // access_token: sumsubToken,
-                status: user.kyc_status || 'pending',
-                message: 'Using existing KYC application'
+        if (!appToken || !appSecret) {
+            console.error('[kyc/start] Sumsub not configured', {
+                hasAppToken: !!appToken,
+                hasAppSecret: !!appSecret,
+                hasLevelName: !!levelName,
+                hasBaseUrl: !!baseUrl,
+            });
+            return res.status(501).json({
+                ok: false,
+                status: 501,
+                error: 'Sumsub not configured',
+                code: 'SUMSUB_NOT_CONFIGURED',
+                message: 'Sumsub credentials are missing. Please configure SUMSUB_APP_TOKEN and SUMSUB_SECRET_KEY (or SUMSUB_APP_SECRET) environment variables.',
+                debug: { hasAppToken: !!appToken, hasAppSecret: !!appSecret, hasLevelName: !!levelName, hasBaseUrl: !!baseUrl }
             });
         }
 
-        // TODO: Create Sumsub applicant
-        // In production, integrate with Sumsub API:
-        // const sumsub = require('sumsub-api-client');
-        // const applicant = await sumsub.createApplicant({
-        //     externalUserId: userId.toString(),
-        //     email: user.email,
-        //     info: {
-        //         firstName: user.first_name,
-        //         lastName: user.last_name
-        //     }
-        // });
+        // Ensure applicant exists
+        let applicantId = user.sumsub_applicant_id;
+        if (!applicantId) {
+            const payload = {
+                externalUserId: String(user.id),
+                email: user.email,
+                info: {
+                    firstName: user.first_name || "",
+                    lastName: user.last_name || "",
+                    country: "",
+                },
+            };
+            
+            const created = await sumsubFetch("POST", "/resources/applicants", payload);
+            applicantId = created?.id;
+            if (!applicantId) throw new Error("No applicant id from Sumsub");
 
-        // Mock applicant ID for now
-        const mockApplicantId = `APPL${Date.now()}`;
+            await pool.query(
+                `UPDATE "user" SET sumsub_applicant_id = $1 WHERE id = $2`, 
+                [applicantId, user.id]
+            );
 
-        // Update user with applicant ID and set status to pending
-        await pool.query(`
-            UPDATE "user"
-            SET
-                sumsub_applicant_id = $1,
-                kyc_status = 'pending',
-                updated_at = $2
-            WHERE id = $3
-        `, [mockApplicantId, Date.now(), userId]);
+            // Send KYC submitted email (non-blocking) - only for new applicants
+            try {
+                sendKycSubmitted({
+                    email: user.email,
+                    firstName: user.first_name || undefined,
+                    name: user.last_name ? [user.first_name, user.last_name].filter(Boolean).join(' ') : user.first_name || undefined,
+                    cta_url: buildAppUrl('/profile'),
+                }).catch((err: any) => {
+                    console.error('[kyc/start] kyc_submitted_email_failed_nonfatal', err);
+                });
+            } catch (emailError) {
+                console.error('[kyc/start] kyc_submitted_email_error', emailError);
+            }
+        }
 
-        // Create notification
-        await pool.query(`
-            INSERT INTO notification (user_id, type, title, body, read, created_at)
-            VALUES ($1, 'kyc_started', 'KYC Verification Started', 'Your identity verification has been initiated. Please upload your documents.', false, $2)
-        `, [userId, Date.now()]);
+        // Access token for Web SDK / Mobile SDK
+        const tokenBody = {
+            userId: String(user.id),
+            levelName: levelName,
+            ttlInSecs: 600,
+            applicantIdentifiers: {
+                email: user.email,
+            },
+        };
 
-        // Send "KYC submitted" email (user has started verification / submitted for review)
-        sendKycSubmitted({
-            email: user.email,
-            firstName: user.first_name || undefined,
-            name: user.last_name ? [user.first_name, user.last_name].filter(Boolean).join(' ') : user.first_name || undefined,
-            cta_url: buildAppUrl('/account/verification'),
-        }).catch((err) => {
-            console.error('[POST /api/kyc/start] Failed to send KYC submitted email:', err);
-        });
+        const tokenResp = await sumsubFetch("POST", "/resources/accessTokens/sdk", tokenBody);
 
-        return res.json({
-            ok: true,
-            applicant_id: mockApplicantId,
-            // access_token: mockToken,
-            status: 'pending',
-            // sumsub_url: `https://sumsub.com/idensic/...`,
-            message: 'KYC verification started. Please complete the verification process.'
-        });
-    } catch (error: any) {
-        console.error('[POST /api/kyc/start] error:', error);
-        return res.status(500).json({ ok: false, error: 'kyc_start_error', message: error.message });
+        if (!tokenResp?.token) {
+            throw new Error("No token in Sumsub response");
+        }
+
+        return res.json({ ok: true, token: tokenResp.token, applicantId });
+    } catch (e) {
+        console.error("[kyc/start]", e);
+        return res.status(500).json({ ok: false, error: "server_error" });
     }
 });
 

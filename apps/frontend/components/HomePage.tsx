@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { ArrowRight, Receipt } from "lucide-react";
+import { ArrowRight, Receipt, Check, ShieldCheck, Mail } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { usePricing } from "@/hooks/usePlans";
 import { formatMonthly, formatAnnual } from "@/lib/formatPrice";
 import { Button } from "./ui/button";
 import HowItWorks from "./HowItWorks";
+import { BillingToggle } from "./ui/BillingToggle";
 
 interface HomePageProps {
     onNavigate?: (page: string, data?: any) => void;
@@ -113,11 +114,57 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             </div>
                         </div>
 
-                        {/* RIGHT COLUMN - Image placeholder */}
-                        <div className="lg:col-span-6 xl:col-span-6 lg:pl-2 hidden lg:block">
-                            <div className="relative w-full">
-                                <div className="aspect-[4/3] rounded-2xl border border-border/60 bg-muted/30 flex items-center justify-center">
-                                    <p className="text-sm text-muted-foreground">Image area</p>
+                        {/* RIGHT COLUMN - Dashboard visual */}
+                        <div className="lg:col-span-6 xl:col-span-6 lg:pl-2 hidden lg:block select-none overflow-hidden">
+                            <div className="relative w-full aspect-[4/3] rounded-2xl border border-neutral-200/60 bg-white shadow-2xl flex flex-col overflow-hidden ring-1 ring-black/5">
+                                {/* Header */}
+                                <div className="h-12 border-b border-neutral-100 flex items-center px-4 gap-4 bg-neutral-50/70">
+                                    <div className="flex gap-1.5 opacity-80">
+                                        <div className="w-3 h-3 rounded-full bg-rose-400" />
+                                        <div className="w-3 h-3 rounded-full bg-amber-400" />
+                                        <div className="w-3 h-3 rounded-full bg-emerald-400" />
+                                    </div>
+                                    <div className="h-6 w-32 md:w-48 bg-white border border-neutral-200 rounded-md ml-4 shadow-sm" />
+                                </div>
+                                {/* Body */}
+                                <div className="flex flex-1 overflow-hidden bg-neutral-50/50">
+                                    {/* Sidebar */}
+                                    <div className="w-20 md:w-48 border-r border-neutral-100 bg-white p-4 flex flex-col gap-3">
+                                        <div className="h-5 w-full bg-emerald-50 rounded-md border border-emerald-100/50" />
+                                        <div className="h-4 w-3/4 bg-neutral-50 rounded-md" />
+                                        <div className="h-4 w-5/6 bg-neutral-50 rounded-md" />
+                                    </div>
+                                    {/* Content Area */}
+                                    <div className="flex-1 p-5 md:p-8 flex flex-col gap-6 bg-neutral-50/30">
+                                         {/* Top Bar */}
+                                         <div className="flex justify-between items-center w-full pb-4 border-b border-neutral-100">
+                                             <div className="h-7 w-32 bg-neutral-800 rounded-lg shadow-sm" />
+                                             <div className="h-8 w-24 bg-emerald-600 rounded-lg shadow-sm" />
+                                         </div>
+                                         {/* Mail Items */}
+                                         <div className="flex flex-col gap-3">
+                                             <div className="h-16 w-full bg-white border border-neutral-200/80 rounded-xl shadow-sm flex items-center px-4 gap-4 hover:border-emerald-200/80 transition-colors">
+                                                 <div className="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100 shrink-0">
+                                                     <Mail className="w-4 h-4 text-emerald-600" strokeWidth={2.5} />
+                                                 </div>
+                                                 <div className="flex flex-col gap-1.5 flex-1">
+                                                     <div className="h-3.5 w-32 md:w-48 bg-neutral-800 rounded shadow-sm opacity-90" />
+                                                     <div className="h-2.5 w-20 md:w-24 bg-neutral-300 rounded" />
+                                                 </div>
+                                                 <div className="h-6 w-16 bg-neutral-100 rounded-md hidden md:block" />
+                                             </div>
+                                             <div className="h-16 w-full bg-white border border-neutral-200/80 rounded-xl shadow-sm flex items-center px-4 gap-4 opacity-75">
+                                                  <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100 shrink-0">
+                                                     <Receipt className="w-4 h-4 text-blue-600" strokeWidth={2.5} />
+                                                  </div>
+                                                  <div className="flex flex-col gap-1.5 flex-1">
+                                                     <div className="h-3.5 w-40 md:w-56 bg-neutral-800 rounded shadow-sm opacity-90" />
+                                                     <div className="h-2.5 w-24 md:w-32 bg-neutral-300 rounded" />
+                                                 </div>
+                                                 <div className="h-6 w-16 bg-neutral-100 rounded-md hidden md:block" />
+                                             </div>
+                                         </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -132,7 +179,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         {/* Illustration */}
                         <div className="order-2 lg:order-1">
                             <img
-                                src="/figma/whats-included-illustration.png"
+                                src="/images/whats-included.png"
                                 alt=""
                                 aria-hidden="true"
                                 className="w-full max-w-[600px] mx-auto"
@@ -204,39 +251,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         </p>
                     </div>
 
-                    {/* Toggle for Monthly/Annual — explicit emerald selected state, no white flash */}
-                    <div className="mt-4 flex justify-center mb-6">
-                        <div
-                            className="inline-flex rounded-full p-1 border border-emerald-200/80 bg-emerald-50/80 dark:bg-emerald-950/30"
-                            role="tablist"
-                            aria-label="Billing period"
-                        >
-                            <button
-                                type="button"
-                                role="tab"
-                                aria-selected={billing === "monthly"}
-                                onClick={() => setBilling("monthly")}
-                                className={`rounded-full px-5 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-50 dark:focus-visible:ring-offset-emerald-950/50 select-none touch-manipulation [-webkit-tap-highlight-color:transparent] ${billing === "monthly"
-                                    ? "bg-emerald-800 text-white shadow-md hover:bg-emerald-700 active:bg-emerald-800"
-                                    : "text-emerald-800/80 hover:bg-emerald-200/60 hover:text-emerald-900 active:bg-transparent dark:text-emerald-200/80 dark:hover:bg-emerald-800/30 dark:hover:text-white"
-                                    }`}
-                            >
-                                Monthly
-                            </button>
-                            <button
-                                type="button"
-                                role="tab"
-                                aria-selected={billing === "annual"}
-                                onClick={() => setBilling("annual")}
-                                className={`rounded-full px-5 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-50 dark:focus-visible:ring-offset-emerald-950/50 select-none touch-manipulation [-webkit-tap-highlight-color:transparent] ${billing === "annual"
-                                    ? "bg-emerald-800 text-white shadow-md hover:bg-emerald-700 active:bg-emerald-800"
-                                    : "text-emerald-800/80 hover:bg-emerald-200/60 hover:text-emerald-900 active:bg-transparent dark:text-emerald-200/80 dark:hover:bg-emerald-800/30 dark:hover:text-white"
-                                    }`}
-                            >
-                                Annual
-                            </button>
-                        </div>
-                    </div>
+                    {/* Toggle for Monthly/Annual */}
+                    <BillingToggle billing={billing} onChange={setBilling} />
 
                     <div className="flex justify-center">
                         {/* Single card that switches based on toggle */}
@@ -260,12 +276,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                             "UK based support",
                                         ].map((t) => (
                                             <li key={t} className="flex items-center gap-2">
-                                                <img
-                                                    src="/figma/check-16.svg"
-                                                    alt=""
-                                                    aria-hidden="true"
-                                                    className="h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4"
-                                                />
+                                                <Check className="h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4 text-emerald-400" strokeWidth={3} />
                                                 <span className="text-sm leading-[1.4] text-white/90 sm:text-base">{t}</span>
                                             </li>
                                         ))}
@@ -284,12 +295,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                             "Other UK letters forwarded at £2 per item.",
                                         ].map((t) => (
                                             <li key={t} className="flex items-start gap-2">
-                                                <img
-                                                    src="/figma/check-16.svg"
-                                                    alt=""
-                                                    aria-hidden="true"
-                                                    className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 sm:h-4 sm:w-4"
-                                                />
+                                                <Check className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 sm:h-4 sm:w-4 text-emerald-400" strokeWidth={3} />
                                                 <span className="text-sm leading-[1.4] text-white/90 sm:text-base">{t}</span>
                                             </li>
                                         ))}
@@ -328,12 +334,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                             "UK based support",
                                         ].map((t) => (
                                             <li key={t} className="flex items-center gap-2">
-                                                <img
-                                                    src="/figma/check-16.svg"
-                                                    alt=""
-                                                    aria-hidden="true"
-                                                    className="h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4"
-                                                />
+                                                <Check className="h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4 text-emerald-600" strokeWidth={3} />
                                                 <span className="text-sm leading-[1.4] text-neutral-700 dark:text-neutral-300 sm:text-base">{t}</span>
                                             </li>
                                         ))}
@@ -352,12 +353,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                             "Other UK letters forwarded at £2 per item.",
                                         ].map((t) => (
                                             <li key={t} className="flex items-start gap-2">
-                                                <img
-                                                    src="/figma/check-16.svg"
-                                                    alt=""
-                                                    aria-hidden="true"
-                                                    className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 sm:h-4 sm:w-4"
-                                                />
+                                                <Check className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 sm:h-4 sm:w-4 text-emerald-600" strokeWidth={3} />
                                                 <span className="text-sm leading-[1.4] text-neutral-700 dark:text-neutral-300 sm:text-base">{t}</span>
                                             </li>
                                         ))}
@@ -382,37 +378,33 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* HOW IT WORKS */}
             <HowItWorks />
 
-            {/* BUILT FOR MODERN UK BUSINESSES */}
-            <section className="w-full bg-background pt-14 pb-10 sm:pt-20 sm:pb-12 lg:pt-24 lg:pb-24" aria-labelledby="built-for-heading">
-                <div className="mx-auto w-full max-w-none px-4 sm:px-6 lg:max-w-[1240px] lg:px-12">
+            {/* CORE VALUE PROP */}
+            <section className="w-full bg-background pt-14 pb-10 sm:pt-20 sm:pb-12 lg:pt-24 lg:pb-24" aria-labelledby="core-value-heading">
+                <div className="mx-auto w-full max-w-none px-4 sm:px-6 lg:max-w-7xl lg:px-12">
                     <div className="flex flex-col items-center gap-6 sm:gap-8 md:gap-12 lg:flex-row lg:items-stretch lg:gap-[120px]">
-                        <div className="w-full max-w-md lg:max-w-none lg:w-[433px]">
-                            <h2 id="built-for-heading" className="text-2xl font-semibold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-4xl lg:text-5xl lg:leading-[1.1] lg:tracking-[-0.02em]">
-                                Built for Modern UK Businesses
+                        <div className="w-full max-w-md lg:max-w-none lg:w-1/2">
+                            <h2 id="core-value-heading" className="text-2xl font-semibold leading-tight tracking-tight text-zinc-900 sm:text-3xl md:text-4xl lg:text-5xl lg:leading-[1.1] lg:tracking-[-0.02em]">
+                                Keep Your Home Address Private
                             </h2>
                             <p className="mt-3 text-base leading-7 text-zinc-600 sm:mt-4 sm:text-lg lg:mt-5 lg:text-xl">
-                                Built for founders who want a credible business presence, better privacy, and less admin.
+                                Stay fully compliant with Companies House and HMRC regulations without making your residential address public.
                             </p>
                         </div>
 
                         <div className="hidden w-px self-stretch bg-border lg:block" />
 
-                        <div className="w-full max-w-md mt-6 space-y-3 sm:mt-8 sm:space-y-4 lg:mt-0 lg:max-w-none lg:w-[433px]">
+                        <div className="w-full max-w-md mt-6 space-y-3 sm:mt-8 sm:space-y-4 lg:mt-0 lg:max-w-none lg:w-1/2">
                             {[
-                                { t: "Professional by default.", icon: "/figma/builtfor-icon-1.svg" },
+                                { t: "Professional by default.", Icon: ShieldCheck },
                                 { t: "Straightforward pricing.", Icon: Receipt },
-                                { t: "Secure digital mail management.", icon: "/figma/builtfor-icon-3.svg" },
+                                { t: "Secure digital mail management.", Icon: Mail },
                             ].map((x) => (
                                 <div
                                     key={x.t}
                                     className="flex items-center gap-3.5 rounded-xl border border-zinc-200/80 bg-white/90 px-4 py-3.5 shadow-[0_1px_0_rgba(0,0,0,0.02)] sm:px-5 sm:py-4 lg:min-h-[72px] lg:gap-[14px] lg:px-[24px]"
                                 >
                                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50" aria-hidden="true">
-                                        {"Icon" in x && x.Icon ? (
-                                            <x.Icon className="h-4 w-4 text-zinc-600" aria-hidden="true" strokeWidth={1.75} />
-                                        ) : (
-                                            <img src={x.icon} alt="" className="h-4 w-4 text-zinc-600" aria-hidden="true" />
-                                        )}
+                                        <x.Icon className="h-4 w-4 text-zinc-600" aria-hidden="true" strokeWidth={2} />
                                     </span>
                                     <div className="text-[17px] font-medium leading-6 text-zinc-700 lg:text-base">{x.t}</div>
                                 </div>
@@ -440,8 +432,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         Use one trusted address for company registration, business mail, and everyday correspondence.
                                     </p>
                                     <div className="mt-5 flex flex-wrap gap-2.5 lg:mt-6">
-                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95">ICO registered</span>
-                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95">HMRC AML supervised</span>
+                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95">ICO Registration: ZA123456</span>
+                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95">HMRC AML Supervised</span>
                                         <span className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white/95 tabular-nums">{formatMonthly(monthlyPrice)} · Cancel anytime</span>
                                     </div>
                                 </div>

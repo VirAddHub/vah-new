@@ -832,4 +832,81 @@ router.post('/mail-items/test-excel-write', requireAdmin, async (_req: Request, 
     }
 });
 
+
+/**
+ * POST /api/admin/mail-items/bulk
+ * Batch-update mail items (admin only).
+ * Body: { ids: number[], set: { tag?, status?, notes?, deleted? } }
+ *
+ * - Validates ids is a non-empty array of positive integers.
+ * - Validates at least one field in set.
+ * - Writes one mail_audit row per item for traceability.
+ * - Uses a Postgres unnest-based IN clause to avoid dynamic placeholder sprawl.
+ */
+router.post('/mail-items/bulk', requireAdmin, async (req: Request, res: Response) => {
+    const adminId = Number(req.user!.id);
+
+    const rawIds = Array.isArray(req.body?.ids) ? req.body.ids : [];
+    const ids: number[] = rawIds.map(Number).filter((n: number) => Number.isFinite(n) && n > 0);
+    if (!ids.length) {
+        return res.status(400).json({ ok: false, error: 'empty_ids' });
+    }
+
+    const set: Record<string, unknown> = req.body?.set ?? {};
+
+    // Build SET clauses — only accept known, safe fields
+    const updates: string[] = [];
+    const values: unknown[] = [];
+    let p = 1;
+
+    if (typeof set.tag === 'string')    { updates.push(`tag = $${p++}`);    values.push(set.tag); }
+    if (typeof set.status === 'string') { updates.push(`status = $${p++}`); values.push(set.status); }
+    if (typeof set.notes === 'string')  { updates.push(`notes = $${p++}`);  values.push(set.notes); }
+    if (set.deleted === true || set.deleted === false) {
+        updates.push(`deleted = $${p++}`);
+        values.push(set.deleted);
+    }
+
+    // Always stamp who edited and when
+    updates.push(`updated_by = $${p++}`);  values.push(adminId);
+    updates.push(`updated_at = $${p++}`);  values.push(Date.now());
+
+    // Bail if only audit stamps — nothing meaningful to change
+    if (updates.length === 2) {
+        return res.status(400).json({ ok: false, error: 'no_changes' });
+    }
+
+    const pool = getPool();
+
+    try {
+        // Use unnest to pass the id list as a single typed array parameter
+        const updateResult = await pool.query(
+            `UPDATE mail_item
+             SET ${updates.join(', ')}
+             WHERE id = ANY($${p}::int[])`,
+            [...values, ids],
+        );
+
+        // Write one audit row per item (mirrors original JS behaviour)
+        const now = Date.now();
+        const afterJson = JSON.stringify(set).slice(0, 50_000);
+
+        // Use unnest to insert all audit rows in one statement
+        await pool.query(
+            `INSERT INTO mail_audit (item_id, user_id, action, before_json, after_json, created_at)
+             SELECT unnest($1::int[]), $2, 'bulk_update', NULL, $3, $4`,
+            [ids, adminId, afterJson, now],
+        ).catch((err) => {
+            // mail_audit may not exist in all environments — non-fatal, log and continue
+            console.warn('[admin-mail-bulk] mail_audit insert failed (non-fatal):', err?.message ?? err);
+        });
+
+        return res.json({ ok: true, updated: updateResult.rowCount ?? 0, ids });
+    } catch (error: any) {
+        console.error('[POST /api/admin/mail-items/bulk] error:', error);
+        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    }
+});
+
 export default router;
+

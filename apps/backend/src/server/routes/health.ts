@@ -4,6 +4,7 @@
 import { Request, Response, Router } from 'express';
 import { getPool } from '../db';
 import { MAIL_STATUS, ALLOWED } from '../../modules/forwarding/mailStatus';
+import { metrics } from '../../lib/metrics';
 import os from 'os';
 
 const router = Router();
@@ -150,7 +151,6 @@ async function statusGuardHealthCheck(req: Request, res: Response) {
  */
 async function metricsHealthCheck(req: Request, res: Response) {
     try {
-        const { metrics } = require('../../lib/metrics');
         const summary = metrics.getSummary();
 
         const health = {

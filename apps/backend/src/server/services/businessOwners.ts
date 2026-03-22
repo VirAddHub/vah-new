@@ -6,6 +6,7 @@ import { generateEmailChangeToken, hashToken } from '../security/tokens';
 import { getAppUrl } from '../../config/appUrl';
 import { sendTemplateEmail } from '../../lib/mailer';
 import { Templates } from '../../lib/postmark-templates';
+import { sumsubFetch } from '../../lib/sumsub';
 
 /**
  * Create business owner and send verification invite
@@ -272,11 +273,6 @@ export async function createSumsubApplicantForOwner(ownerId: number): Promise<{
     accessToken: string;
 }> {
     const pool = getPool();
-    
-    // Dynamic import of CommonJS module using require (TypeScript-friendly)
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { sumsubFetch } = require('../../lib/sumsub');
-    
     // Get owner details
     const ownerResult = await pool.query(
         'SELECT id, user_id, full_name, email, sumsub_applicant_id FROM business_owner WHERE id = $1',

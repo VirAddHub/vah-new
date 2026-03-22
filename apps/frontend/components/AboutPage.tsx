@@ -148,17 +148,19 @@ export function AboutPage() {
                             </h2>
                             <div className="space-y-4 text-muted-foreground leading-relaxed">
                                 <p>
-                                    VirtualAddressHub was born from a simple observation: starting a UK business shouldn't be complicated,
-                                    expensive, or require physical presence in London. As entrepreneurs ourselves, we experienced firsthand
-                                    the challenges of international business formation.
+                                    VirtualAddressHub was created after we realized how difficult and invasive it was to use a home address 
+                                    to simply register a company in the UK. We wanted a secure, private way to handle our official correspondence 
+                                    without giving up our privacy to the public Companies House register.
                                 </p>
                                 <p>
-                                    We built VirtualAddressHub to provide a seamless, compliant, and professional solution that allows
-                                    businesses worldwide to establish a credible UK presence without the overhead of traditional office space.
+                                    We built VirtualAddressHub to provide a straightforward, compliant solution that acts as a shield between 
+                                    your personal life and public databases. Over the years, we've invested heavily in our own physical mail 
+                                    infrastructure rather than outsourcing to third parties.
                                 </p>
                                 <p>
-                                    Today, we're proud to serve over 1000 businesses across 50+ countries, helping them navigate UK
-                                    regulations while maintaining their global operations.
+                                    Today, we operate our own secure mailroom in Central London. Our vetted, in-house staff process thousands 
+                                    of official letters safely every week, ensuring you never miss a vital HMRC or Companies House deadline while 
+                                    maintaining complete privacy.
                                 </p>
                             </div>
                         </div>
@@ -196,84 +198,40 @@ export function AboutPage() {
                     </div>
 
                     <div className="grid gap-8 md:grid-cols-3">
-                        <Card className="card-modern p-8 text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary rounded-2xl mx-auto mb-6 flex items-center justify-center">
-                                <Shield className="h-8 w-8 text-white" />
+                        <Card className="card p-8 text-center">
+                            <div className="w-16 h-16 bg-emerald-100 rounded-2xl mx-auto mb-6 flex items-center justify-center">
+                                <Shield className="h-8 w-8 text-emerald-800" />
                             </div>
-                            <h3 className="text-xl font-semibold mb-4">Compliance First</h3>
+                            <h3 className="text-xl font-semibold mb-4">Security First</h3>
                             <p className="text-muted-foreground">
-                                We ensure every service meets the highest standards of UK regulation, including the latest ECCT Act 2023 requirements.
+                                We operate our own secure sorting facility. Every piece of mail is processed under strict confidentiality standards by vetted, in-house staff.
                             </p>
                         </Card>
 
-                        <Card className="card-modern p-8 text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-secondary to-secondary/90 rounded-2xl mx-auto mb-6 flex items-center justify-center">
-                                <Heart className="h-8 w-8 text-white" />
+                        <Card className="card p-8 text-center">
+                            <div className="w-16 h-16 bg-emerald-100 rounded-2xl mx-auto mb-6 flex items-center justify-center">
+                                <Building2 className="h-8 w-8 text-emerald-800" />
                             </div>
-                            <h3 className="text-xl font-semibold mb-4">Client Success</h3>
+                            <h3 className="text-xl font-semibold mb-4">Total Privacy</h3>
                             <p className="text-muted-foreground">
-                                Your success is our success. We're committed to providing exceptional service that helps your business thrive.
+                                We act as a firewall between your personal life and the public register. Your residential address stays strictly off the internet.
                             </p>
                         </Card>
 
-                        <Card className="card-modern p-8 text-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl mx-auto mb-6 flex items-center justify-center">
-                                <Clock className="h-8 w-8 text-white" />
+                        <Card className="card p-8 text-center">
+                            <div className="w-16 h-16 bg-emerald-100 rounded-2xl mx-auto mb-6 flex items-center justify-center">
+                                <Clock className="h-8 w-8 text-emerald-800" />
                             </div>
-                            <h3 className="text-xl font-semibold mb-4">Efficiency</h3>
+                            <h3 className="text-xl font-semibold mb-4">Speed & Clarity</h3>
                             <p className="text-muted-foreground">
-                                We streamline complex processes to save you time and effort, so you can focus on growing your business.
-                            </p>
-                        </Card>
-                    </div>
-                </div>
-            </section>
-
-            {/* Team */}
-            <section className="section-mobile">
-                <div className="container-mobile">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold mb-6">
-                            Meet Our <span className="text-gradient">Team</span>
-                        </h2>
-                        <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
-                            Experienced professionals dedicated to making your UK business journey smooth and successful.
-                        </p>
-                    </div>
-
-                    <div className="grid gap-8 md:grid-cols-3">
-                        <Card className="card-modern p-6 text-center">
-                            <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary rounded-full mx-auto mb-4 flex items-center justify-center">
-                                <Users className="h-10 w-10 text-white" />
-                            </div>
-                            <h3 className="text-xl font-semibold mb-2">Expert Team</h3>
-                            <p className="text-muted-foreground">
-                                Our team combines deep knowledge of UK business law with modern technology to deliver exceptional service.
-                            </p>
-                        </Card>
-
-                        <Card className="card-modern p-6 text-center">
-                            <div className="w-20 h-20 bg-gradient-to-br from-secondary to-secondary/90 rounded-full mx-auto mb-4 flex items-center justify-center">
-                                <Award className="h-10 w-10 text-white" />
-                            </div>
-                            <h3 className="text-xl font-semibold mb-2">Certified Professionals</h3>
-                            <p className="text-muted-foreground">
-                                All our team members are certified and regularly trained on the latest UK regulations and compliance requirements.
-                            </p>
-                        </Card>
-
-                        <Card className="card-modern p-6 text-center">
-                            <div className="w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-full mx-auto mb-4 flex items-center justify-center">
-                                <Mail className="h-10 w-10 text-white" />
-                            </div>
-                            <h3 className="text-xl font-semibold mb-2">24/7 Support</h3>
-                            <p className="text-muted-foreground">
-                                Our support team is available to help you with any questions or concerns, ensuring you're never alone in your journey.
+                                When a letter from HMRC or Companies House arrives, it's scanned and uploaded to your dashboard the exact same day. No waiting, no lost mail.
                             </p>
                         </Card>
                     </div>
                 </div>
             </section>
+
+
 
             {/* Contact Section */}
             <section className="section-padding bg-gradient-to-b from-background to-muted/30">
