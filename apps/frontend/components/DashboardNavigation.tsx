@@ -89,12 +89,12 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
                     >
                         <Menu className="h-5 w-5 shrink-0" strokeWidth={2} />
                     </button>
-                    <div className="flex h-10 min-h-[2.5rem] w-[180px] min-w-[180px] items-center justify-start rounded-md border border-transparent bg-neutral-50/80 px-1 sm:px-2 sm:h-12 sm:min-h-[3rem] sm:w-[200px] sm:min-w-[200px]" data-dashboard-logo-slot>
+                    <div className="flex h-8 min-h-[2rem] w-[150px] min-w-[150px] items-center justify-start rounded-md border border-transparent bg-neutral-50/80 px-1 sm:px-2 sm:h-9 sm:min-h-[2.25rem] sm:w-[160px] sm:min-w-[160px]" data-dashboard-logo-slot>
                         <VAHLogo
                             onNavigate={onNavigate}
-                            size="lg"
-                            className="h-10 w-full min-w-0 max-w-full shrink-0 sm:h-12"
-                            imgClassName="h-10 w-full max-w-full object-contain object-left sm:h-12"
+                            size="md"
+                            className="h-8 w-full min-w-0 max-w-full shrink-0 sm:h-9"
+                            imgClassName="h-8 w-full max-w-full object-contain object-left sm:h-9"
                         />
                     </div>
                 </div>

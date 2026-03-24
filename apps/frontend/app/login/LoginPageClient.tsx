@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
+import { VAHLogo } from '@/components/VAHLogo';
 
 // Map backend error codes to user-friendly messages
 function getLoginErrorMessage(
@@ -186,14 +187,14 @@ export function LoginPageClient() {
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 flex flex-col flex-1">
-        {/* Back to homepage - pill, aligned with container */}
-        <div className="pt-4 sm:pt-6 pb-2 z-10">
+        {/* Header row: logo left, contact button right */}
+        <div className="flex items-center justify-between gap-4 pt-4 sm:pt-6 pb-2 z-10">
+          <VAHLogo size="sm" href="/" className="shrink min-w-0" />
           <Link
-            href="/"
-            className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-700 shadow-sm hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
+            href="/contact"
+            className="shrink-0 inline-flex items-center justify-center rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
           >
-            <ArrowLeft className="h-4 w-4 shrink-0" />
-            Back to homepage
+            Contact us
           </Link>
         </div>
 
@@ -278,9 +279,7 @@ export function LoginPageClient() {
                   {loading ? 'Signing in...' : 'Sign In'}
                 </Button>
 
-                <p className="text-xs text-zinc-400 text-center pt-0.5">
-                  Secure sign in • UK GDPR compliant
-                </p>
+
               </form>
 
               {/* Forgot password then Sign up */}

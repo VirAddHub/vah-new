@@ -179,7 +179,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         {/* Illustration */}
                         <div className="order-2 lg:order-1">
                             <img
-                                src="/images/whats-included.png"
+                                src="/figma/whats-included-illustration.png"
                                 alt=""
                                 aria-hidden="true"
                                 className="w-full max-w-[600px] mx-auto"
@@ -455,9 +455,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                             View pricing
                                         </Button>
                                     </div>
-                                    <p className="mt-3 text-sm text-emerald-100/90">
-                                        Setup takes a few minutes.
-                                    </p>
                                 </div>
                             </div>
                         </div>

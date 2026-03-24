@@ -219,26 +219,26 @@ const SignupSchema = z.object({
         .regex(/[a-z]/, "password must contain a lowercase letter")
         .regex(/[A-Z]/, "password must contain an uppercase letter")
         .regex(/\d/, "password must contain a number"),
-    phone: z.string().optional(),
+    phone: z.string().nullable().optional(),
 
     // Company
     business_type: z.enum(["limited_company", "llp", "lp", "sole_trader", "partnership", "charity", "other"]),
     country_of_incorporation: z.enum(["GB", "IE", "US", "CA", "AU"]),
-    company_number: z.string().optional(),
+    company_number: z.string().nullable().optional(),
     company_name: z.string().min(1).max(100),
 
     // Forwarding address
     forward_to_first_name: z.string().min(1).max(50),
     forward_to_last_name: z.string().min(1).max(50),
     address_line1: z.string().min(1).max(200),
-    address_line2: z.string().optional(),
+    address_line2: z.string().nullable().optional(),
     city: z.string().min(1).max(100),
     postcode: z.string().min(1).max(20),
     forward_country: z.enum(["GB", "IE", "US", "CA", "AU"]),
 
     // Step 1/3 fields that backend can ignore or store if you already do
-    billing: z.enum(["monthly", "annual"]).optional(),
-    price: z.string().optional(), // frontend-calculated
+    billing: z.enum(["monthly", "annual"]).nullable().optional(),
+    price: z.string().nullable().optional(), // frontend-calculated
 
     // Controllers declaration (REQUIRED during signup)
     isSoleController: z.boolean(),
@@ -248,8 +248,8 @@ const SignupSchema = z.object({
     additionalOwners: z.array(z.object({
         fullName: z.string().min(1).max(200),
         email: z.string().email().trim().toLowerCase(),
-    })).optional(),
-    ownersPendingInfo: z.boolean().optional(),
+    })).nullable().optional(),
+    ownersPendingInfo: z.boolean().nullable().optional(),
 });
 
 router.post("/signup", async (req, res) => {
