@@ -175,21 +175,21 @@ export default function StatusGuardCard() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {getStatusIcon(statusGuardHealth?.flags.STRICT_STATUS_GUARD === '1')}
-                <span className="text-sm">Strict Status Guard</span>
+                <span className="text-body-sm">Strict Status Guard</span>
               </div>
               {getStatusBadge(statusGuardHealth?.flags.STRICT_STATUS_GUARD === '1')}
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {getStatusIcon(statusGuardHealth?.flags.BFF_READS_ONLY === '1')}
-                <span className="text-sm">BFF Reads Only</span>
+                <span className="text-body-sm">BFF Reads Only</span>
               </div>
               {getStatusBadge(statusGuardHealth?.flags.BFF_READS_ONLY === '1')}
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {getStatusIcon(statusGuardHealth?.flags.PERF_OPTIMIZATIONS === '0')}
-                <span className="text-sm">Performance Optimizations</span>
+                <span className="text-body-sm">Performance Optimizations</span>
               </div>
               {getStatusBadge(statusGuardHealth?.flags.PERF_OPTIMIZATIONS === '0')}
             </div>
@@ -202,22 +202,22 @@ export default function StatusGuardCard() {
             <h4 className="font-medium mb-2">Last 24h Activity</h4>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-h2 font-bold text-blue-600">
                   {metricsHealth.metrics.totalStatusTransitions}
                 </div>
-                <div className="text-xs text-gray-600">Transitions</div>
+                <div className="text-caption text-muted-foreground">Transitions</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-red-600">
+                <div className="text-h2 font-bold text-red-600">
                   {metricsHealth.metrics.totalIllegalAttempts}
                 </div>
-                <div className="text-xs text-gray-600">Illegal Attempts</div>
+                <div className="text-caption text-muted-foreground">Illegal Attempts</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-orange-600">
+                <div className="text-h2 font-bold text-orange-600">
                   {metricsHealth.metrics.totalApiErrors}
                 </div>
-                <div className="text-xs text-gray-600">API Errors</div>
+                <div className="text-caption text-muted-foreground">API Errors</div>
               </div>
             </div>
           </div>
@@ -229,7 +229,7 @@ export default function StatusGuardCard() {
             <h4 className="font-medium mb-2">Allowed Transitions</h4>
             <div className="space-y-1">
               {Object.entries(statusGuardHealth.statusGuard.allowedTransitions).map(([from, to]) => (
-                <div key={from} className="text-xs text-gray-600">
+                <div key={from} className="text-caption text-muted-foreground">
                   <span className="font-medium">{from}</span> → {to.join(', ') || 'none'}
                 </div>
               ))}
@@ -240,7 +240,7 @@ export default function StatusGuardCard() {
         {/* System Info */}
         {statusGuardHealth && (
           <div className="pt-2 border-t">
-            <div className="text-xs text-gray-500 space-y-1">
+            <div className="text-caption text-muted-foreground space-y-1">
               <div>Git SHA: {statusGuardHealth.system.gitSha.substring(0, 8)}</div>
               <div>Uptime: {Math.floor(statusGuardHealth.system.uptime / 3600)}h</div>
               <div>Host: {statusGuardHealth.system.hostname}</div>
@@ -257,9 +257,9 @@ export default function StatusGuardCard() {
                 {metricsHealth.indicators.hasRecentActivity ? (
                   <CheckCircle className="h-3 w-3 text-green-500" />
                 ) : (
-                  <XCircle className="h-3 w-3 text-gray-400" />
+                  <XCircle className="h-3 w-3 text-muted-foreground" />
                 )}
-                <span className="text-xs">Recent Activity</span>
+                <span className="text-caption">Recent Activity</span>
               </div>
               <div className="flex items-center gap-2">
                 {metricsHealth.indicators.hasIllegalAttempts ? (
@@ -267,7 +267,7 @@ export default function StatusGuardCard() {
                 ) : (
                   <CheckCircle className="h-3 w-3 text-green-500" />
                 )}
-                <span className="text-xs">No Illegal Attempts</span>
+                <span className="text-caption">No Illegal Attempts</span>
               </div>
               <div className="flex items-center gap-2">
                 {metricsHealth.indicators.hasApiErrors ? (
@@ -275,7 +275,7 @@ export default function StatusGuardCard() {
                 ) : (
                   <CheckCircle className="h-3 w-3 text-green-500" />
                 )}
-                <span className="text-xs">No API Errors</span>
+                <span className="text-caption">No API Errors</span>
               </div>
             </div>
           </div>

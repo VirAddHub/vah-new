@@ -225,7 +225,7 @@ export function BillingSection({ }: BillingSectionProps) {
             case "pending": return <Clock className="h-4 w-4 text-yellow-500" />;
             case "failed": return <AlertTriangle className="h-4 w-4 text-red-500" />;
             case "refunded": return <CreditCard className="h-4 w-4 text-blue-500" />;
-            default: return <Clock className="h-4 w-4 text-gray-500" />;
+            default: return <Clock className="h-4 w-4 text-muted-foreground" />;
         }
     };
 
@@ -235,7 +235,7 @@ export function BillingSection({ }: BillingSectionProps) {
             case "pending": return "bg-yellow-100 text-yellow-800";
             case "failed": return "bg-red-100 text-red-800";
             case "refunded": return "bg-blue-100 text-blue-800";
-            default: return "bg-gray-100 text-gray-800";
+            default: return "bg-muted text-foreground";
         }
     };
 
@@ -244,7 +244,7 @@ export function BillingSection({ }: BillingSectionProps) {
             case "subscription": return "bg-purple-100 text-purple-800";
             case "one_time": return "bg-blue-100 text-blue-800";
             case "refund": return "bg-red-100 text-red-800";
-            default: return "bg-gray-100 text-gray-800";
+            default: return "bg-muted text-foreground";
         }
     };
 
@@ -252,7 +252,7 @@ export function BillingSection({ }: BillingSectionProps) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">Billing & Revenue</h1>
+                    <h1 className="text-h2 font-bold">Billing & Revenue</h1>
                     <p className="text-muted-foreground">Monitor payments, invoices, and revenue metrics</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -296,11 +296,11 @@ export function BillingSection({ }: BillingSectionProps) {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-muted-foreground">Monthly Revenue</p>
-                                    <p className="text-2xl font-bold">
+                                    <p className="text-body-sm text-muted-foreground">Monthly Revenue</p>
+                                    <p className="text-h2 font-bold">
                                         £{safe(billing?.monthly_revenue_pence, 0) / 100}
                                     </p>
-                                    <p className="text-xs text-green-600 flex items-center gap-1">
+                                    <p className="text-caption text-green-600 flex items-center gap-1">
                                         <ArrowUp className="h-3 w-3" />
                                         +{safe(billing?.revenue_growth, 0)}% from last month
                                     </p>
@@ -314,11 +314,11 @@ export function BillingSection({ }: BillingSectionProps) {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-muted-foreground">Outstanding Invoices</p>
-                                    <p className="text-2xl font-bold">
+                                    <p className="text-body-sm text-muted-foreground">Outstanding Invoices</p>
+                                    <p className="text-h2 font-bold">
                                         £{safe(billing?.outstanding_invoices_pence, 0) / 100}
                                     </p>
-                                    <p className="text-xs text-orange-600">
+                                    <p className="text-caption text-orange-600">
                                         {safe(billing?.pending_count, 0)} pending payments
                                     </p>
                                 </div>
@@ -331,9 +331,9 @@ export function BillingSection({ }: BillingSectionProps) {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-muted-foreground">Churn Rate</p>
-                                    <p className="text-2xl font-bold">{safe(billing?.churn_rate, 0)}%</p>
-                                    <p className="text-xs text-green-600 flex items-center gap-1">
+                                    <p className="text-body-sm text-muted-foreground">Churn Rate</p>
+                                    <p className="text-h2 font-bold">{safe(billing?.churn_rate, 0)}%</p>
+                                    <p className="text-caption text-green-600 flex items-center gap-1">
                                         <ArrowDown className="h-3 w-3" />
                                         {safe(billing?.churn_change, 0)}% from last month
                                     </p>
@@ -379,7 +379,7 @@ export function BillingSection({ }: BillingSectionProps) {
                                         <TableCell>
                                             <div>
                                                 <div className="font-medium">{transaction.userName}</div>
-                                                <div className="text-sm text-muted-foreground">ID: {transaction.userId}</div>
+                                                <div className="text-body-sm text-muted-foreground">ID: {transaction.userId}</div>
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -401,10 +401,10 @@ export function BillingSection({ }: BillingSectionProps) {
                                             </div>
                                         </TableCell>
                                         <TableCell>{transaction.description}</TableCell>
-                                        <TableCell className="text-sm text-muted-foreground">
+                                        <TableCell className="text-body-sm text-muted-foreground">
                                             {transaction.paymentMethod}
                                         </TableCell>
-                                        <TableCell className="text-sm text-muted-foreground">
+                                        <TableCell className="text-body-sm text-muted-foreground">
                                             {transaction.createdAt}
                                         </TableCell>
                                         <TableCell>
@@ -457,7 +457,7 @@ export function BillingSection({ }: BillingSectionProps) {
                     <div className="text-center">
                         <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <p className="text-muted-foreground">Revenue trends chart would be displayed here</p>
-                        <p className="text-sm text-muted-foreground mt-2">
+                        <p className="text-body-sm text-muted-foreground mt-2">
                             Integration with charting library (Chart.js, Recharts, etc.)
                         </p>
                     </div>

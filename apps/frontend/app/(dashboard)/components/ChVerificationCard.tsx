@@ -171,7 +171,7 @@ export function ChVerificationCard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">Checking your Companies House status…</p>
+          <p className="text-body-sm text-muted-foreground">Checking your Companies House status…</p>
         </CardContent>
       </Card>
     );
@@ -187,7 +187,7 @@ export function ChVerificationCard() {
       <CardHeader>
         <CardTitle className="flex items-center justify-between gap-2">
           <span>Companies House identity verification</span>
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-caption">
             {statusLabel(statusCode)}
           </Badge>
         </CardTitle>
@@ -202,17 +202,17 @@ export function ChVerificationCard() {
         )}
         {renderStatusAlert({ statusCode, submittedAt, reviewedAt, adminNotes })}
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             Companies House now requires identity verification for all directors and Persons With Significant Control (PSCs) before a Registered Office address can be used.
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             Please complete the identity check via GOV.UK / Companies House, then upload a quick screenshot or confirmation below. Uploading another file will replace your previous submission.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="ch-verification-file" className="block text-sm font-medium mb-2">
+            <label htmlFor="ch-verification-file" className="block text-body-sm font-medium mb-2">
               Upload verification proof
             </label>
             <input
@@ -221,10 +221,10 @@ export function ChVerificationCard() {
               name="file"
               accept="image/*,application/pdf"
               onChange={handleFileChange}
-              className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+              className="block w-full text-body-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-body-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
               disabled={uploading}
             />
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-caption text-muted-foreground">
               Accepted: Images (JPG, PNG, GIF, WEBP) or PDF. Max 10MB.
             </p>
           </div>
@@ -245,7 +245,7 @@ export function ChVerificationCard() {
         </form>
 
         {proxyProofUrl && (
-          <div className="text-sm">
+          <div className="text-body-sm">
             <a
               href={proxyProofUrl}
               target="_blank"
@@ -260,9 +260,9 @@ export function ChVerificationCard() {
         {error && (
           <div className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
             <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-            <div className="text-sm text-destructive">
+            <div className="text-body-sm text-destructive">
               <p className="font-medium">Failed to load verification status</p>
-              <p className="text-xs mt-1">Please refresh the page or contact support if this persists.</p>
+              <p className="text-caption mt-1">Please refresh the page or contact support if this persists.</p>
             </div>
           </div>
         )}
@@ -328,7 +328,7 @@ function renderStatusAlert({
         <AlertTitle>Needs attention</AlertTitle>
         <AlertDescription className="space-y-1">
           <p>Your previous upload was rejected {reviewedAt ? `on ${reviewedAt}` : ''}. Please upload a clearer confirmation.</p>
-          {adminNotes && <p className="text-sm font-medium">Reason: {adminNotes}</p>}
+          {adminNotes && <p className="text-body-sm font-medium">Reason: {adminNotes}</p>}
         </AlertDescription>
       </Alert>
     );

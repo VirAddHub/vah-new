@@ -181,7 +181,7 @@ export default function AdminMailDetailPage() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <h1 className="text-3xl font-bold">Mail Item Details</h1>
+          <h1 className="text-h2 font-bold">Mail Item Details</h1>
           <p className="text-muted-foreground mt-1">Mail ID: {id}</p>
         </div>
 
@@ -239,49 +239,49 @@ export default function AdminMailDetailPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Mail ID</p>
+                    <p className="text-body-sm text-muted-foreground">Mail ID</p>
                     <p className="font-medium">#{mailItem.id}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Status</p>
+                    <p className="text-body-sm text-muted-foreground">Status</p>
                     <Badge variant="outline" className="capitalize">
                       {mailItem.status || "received"}
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">User</p>
+                    <p className="text-body-sm text-muted-foreground">User</p>
                     <p className="font-medium">
                       {mailItem.first_name || mailItem.last_name
                         ? `${mailItem.first_name || ""} ${mailItem.last_name || ""}`.trim()
                         : "Unknown"}
                     </p>
-                    <p className="text-sm text-muted-foreground">{mailItem.user_email}</p>
+                    <p className="text-body-sm text-muted-foreground">{mailItem.user_email}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">User ID</p>
+                    <p className="text-body-sm text-muted-foreground">User ID</p>
                     <p className="font-medium">#{mailItem.user_id}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Sender</p>
+                    <p className="text-body-sm text-muted-foreground">Sender</p>
                     <p className="font-medium">{mailItem.sender_name || "—"}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Subject</p>
+                    <p className="text-body-sm text-muted-foreground">Subject</p>
                     <p className="font-medium">{mailItem.subject || "—"}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Tag</p>
+                    <p className="text-body-sm text-muted-foreground">Tag</p>
                     <Badge variant="outline">{mailItem.tag || "—"}</Badge>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Received</p>
+                    <p className="text-body-sm text-muted-foreground">Received</p>
                     <p className="font-medium">
                       {receivedDate ? dateFmt.format(receivedDate) : "—"}
                     </p>
                   </div>
                   {isDestroyed && (
                     <div className="md:col-span-2">
-                      <p className="text-sm text-muted-foreground">Physical Destruction Date</p>
+                      <p className="text-body-sm text-muted-foreground">Physical Destruction Date</p>
                       <div className="flex items-center gap-2 mt-1">
                         <CheckCircle className="h-4 w-4 text-green-600" />
                         <p className="font-medium text-green-600">
@@ -289,7 +289,7 @@ export default function AdminMailDetailPage() {
                         </p>
                       </div>
                       {mailItem.destroyed_by_email && (
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-caption text-muted-foreground mt-1">
                           Marked as destroyed by:{" "}
                           <span className="font-medium">
                             {mailItem.destroyed_by_first_name || mailItem.destroyed_by_last_name
@@ -303,7 +303,7 @@ export default function AdminMailDetailPage() {
                           )}
                         </p>
                       )}
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-caption text-muted-foreground mt-1">
                         This mail item has been marked as physically destroyed and logged in the audit trail.
                       </p>
                     </div>
@@ -312,8 +312,8 @@ export default function AdminMailDetailPage() {
 
                 {mailItem.notes && (
                   <div className="pt-4 border-t">
-                    <p className="text-sm text-muted-foreground mb-2">Notes</p>
-                    <p className="text-sm whitespace-pre-wrap">{mailItem.notes}</p>
+                    <p className="text-body-sm text-muted-foreground mb-2">Notes</p>
+                    <p className="text-body-sm whitespace-pre-wrap">{mailItem.notes}</p>
                   </div>
                 )}
               </CardContent>
@@ -328,11 +328,11 @@ export default function AdminMailDetailPage() {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">File Name</p>
+                      <p className="text-body-sm text-muted-foreground">File Name</p>
                       <p className="font-medium">{mailItem.file_name}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">File Size</p>
+                      <p className="text-body-sm text-muted-foreground">File Size</p>
                       <p className="font-medium">
                         {mailItem.file_size
                           ? `${(mailItem.file_size / 1024).toFixed(2)} KB`
@@ -340,12 +340,12 @@ export default function AdminMailDetailPage() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">MIME Type</p>
+                      <p className="text-body-sm text-muted-foreground">MIME Type</p>
                       <p className="font-medium">{mailItem.file_mime || "—"}</p>
                     </div>
                     {mailItem.file_url && (
                       <div>
-                        <p className="text-sm text-muted-foreground mb-2">File URL</p>
+                        <p className="text-body-sm text-muted-foreground mb-2">File URL</p>
                         <Button
                           variant="outline"
                           size="sm"

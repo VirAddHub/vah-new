@@ -108,8 +108,8 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
         return (
             <div className="min-h-screen bg-background py-12">
                 <div className="container mx-auto px-4 text-center">
-                    <h1 className="font-bold text-[clamp(1.75rem,4.5vw,3.5rem)] tracking-tight mb-6">Blog Post Not Found</h1>
-                    <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+                    <h1 className="text-h1 lg:text-display tracking-tight mb-6">Blog Post Not Found</h1>
+                    <p className="text-body-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
                         {error || "The blog post you're looking for doesn't exist."}
                     </p>
                     <Button onClick={onBack} variant="outline" className="px-6 py-3 bg-background/90 backdrop-blur-sm border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200">
@@ -139,12 +139,12 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                 {/* Article Header */}
                 <div className="max-w-4xl mx-auto mb-12">
                     <div className="mb-8">
-                        <h1 className="font-bold text-[clamp(1.75rem,4.5vw,3.5rem)] tracking-tight mb-6 text-foreground leading-tight">
+                        <h1 className="text-h1 lg:text-display tracking-tight mb-6 text-foreground">
                             {post.title}
                         </h1>
 
                         {/* Post Meta Information */}
-                        <div className="text-sm text-muted-foreground space-y-1 mb-4">
+                        <div className="text-body-sm text-muted-foreground space-y-1 mb-4">
                             {post.updated && post.updated !== post.date && (
                                 <div>
                                     <span className="font-medium">Updated On:</span>{' '}
@@ -169,7 +169,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                         </div>
 
                         {/* Read time and share */}
-                        <div className="flex items-center gap-6 text-sm text-muted-foreground mt-4">
+                        <div className="flex items-center gap-6 text-body-sm text-muted-foreground mt-4">
                             {post.readTime && (
                                 <div className="flex items-center gap-2">
                                     <Clock className="h-4 w-4" />
@@ -221,7 +221,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                         />
                         <div>
                             <p className="font-semibold">{post.authorName || "Liban Adan"}</p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-body-sm text-muted-foreground">
                                 {post.authorTitle || "Founder, VirtualAddressHub"}
                             </p>
                         </div>

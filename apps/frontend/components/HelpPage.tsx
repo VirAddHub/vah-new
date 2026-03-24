@@ -470,7 +470,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
   }, []);
 
   return (
-    <div className="w-full bg-white relative z-0">
+    <div className="w-full bg-background relative z-0">
       {/* JSON-LD for SEO */}
       <script
         type="application/ld+json"
@@ -482,10 +482,10 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 lg:py-24">
         {/* Hero Section - Clean, spacious */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl lg:text-5xl font-semibold text-neutral-900 leading-tight tracking-tight">
+          <h1 className="text-h1 lg:text-display text-foreground tracking-tight">
             Got questions? We've got answers.
           </h1>
-          <p className="mt-4 text-lg text-neutral-600 leading-relaxed max-w-2xl mx-auto">
+          <p className="mt-4 text-body-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
             Establish your business presence with a prestigious London address. Powered by our professional office near Tower Bridge.
           </p>
         </div>
@@ -494,7 +494,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
         <div className="grid lg:grid-cols-[280px_1fr] gap-8 lg:gap-12 items-start">
           {/* Left Sidebar - Category Navigation */}
           <div className="lg:sticky lg:top-24">
-            <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-6">
+            <div className="bg-muted/50 border border-border rounded-lg p-6">
               <nav className="space-y-1">
                 {sidebarCategories.map((category) => {
                   const isActive = category === activeCategory;
@@ -502,10 +502,10 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
                       <button
                       key={category}
                         onClick={() => setActiveCategory(category)}
-                      className={`w-full text-left px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      className={`w-full text-left px-3 py-2 text-body-sm font-medium rounded-lg transition-colors ${
                           isActive 
-                          ? 'bg-white text-neutral-900 shadow-sm' 
-                          : 'text-neutral-600 hover:text-neutral-900 hover:bg-white/50'
+                          ? 'bg-card text-foreground shadow-sm' 
+                          : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
                         }`}
                       >
                         {category}
@@ -518,7 +518,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
 
           {/* Right Column - FAQ Accordions */}
           <div>
-            <h2 className="text-2xl font-semibold text-neutral-900 mb-6">
+            <h2 className="text-h2 text-foreground mb-6">
                   {activeCategory}
                 </h2>
             <div className="space-y-3">
@@ -527,28 +527,28 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
                     return (
                       <div
                         key={f.id}
-                    className={`border border-neutral-200 rounded-lg overflow-hidden transition-colors ${
-                      isOpen ? 'bg-neutral-50' : 'bg-white'
+                    className={`border border-border rounded-lg overflow-hidden transition-colors ${
+                      isOpen ? 'bg-muted/50' : 'bg-card'
                         }`}
                       >
                         <button
                           onClick={() => toggleItem(f.id)}
                       className="w-full flex items-center justify-between p-4 lg:p-5 text-left group"
                         >
-                      <span className="text-sm lg:text-base font-medium text-neutral-900 leading-snug flex-1 pr-4">
+                      <span className="text-body-sm lg:text-body font-medium text-foreground leading-snug flex-1 pr-4">
                             {f.q}
                           </span>
                       <div className="flex-shrink-0">
                             {isOpen ? (
-                          <Minus className="w-5 h-5 text-neutral-600" strokeWidth={2} />
+                          <Minus className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
                             ) : (
-                          <Plus className="w-5 h-5 text-neutral-600" strokeWidth={2} />
+                          <Plus className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
                             )}
                           </div>
                         </button>
                         {isOpen && (
                       <div className="px-4 lg:px-5 pb-4 lg:pb-5">
-                        <div className="text-sm lg:text-base text-neutral-600 leading-relaxed">
+                        <div className="text-body-sm lg:text-body text-muted-foreground leading-relaxed">
                               {typeof f.a === 'string' ? (
                             <div className="whitespace-pre-line">{f.a}</div>
                               ) : (

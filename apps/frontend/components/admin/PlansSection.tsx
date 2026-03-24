@@ -213,8 +213,8 @@ export default function PlansSection() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Plans Management</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-h2 font-bold">Plans Management</h2>
+          <p className="text-body-sm text-muted-foreground">
             Create and manage subscription plans
           </p>
         </div>
@@ -261,7 +261,7 @@ export default function PlansSection() {
                   <TableRow key={plan.id}>
                     <TableCell className="font-medium">{plan.name}</TableCell>
                     <TableCell>
-                      <code className="text-xs bg-muted px-2 py-1 rounded">{plan.slug}</code>
+                      <code className="text-caption bg-muted px-2 py-1 rounded">{plan.slug}</code>
                     </TableCell>
                     <TableCell>{formatPrice(plan.price_pence, plan.currency)}</TableCell>
                     <TableCell className="capitalize">{plan.interval}</TableCell>

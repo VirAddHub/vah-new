@@ -58,7 +58,7 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                         <div className="flex items-center justify-center gap-3 sm:gap-4 mb-2.5 sm:mb-3">
                             <button
                                 onClick={onBack}
-                                className="inline-flex items-center justify-center border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-8 rounded-md gap-1.5 px-3 text-sm font-medium transition-all"
+                                className="inline-flex items-center justify-center border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-8 rounded-md gap-1.5 px-3 text-body-sm font-medium transition-all"
                             >
                                 <ArrowLeft className="h-4 w-4 mr-2" />
                                 Back
@@ -66,22 +66,22 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
 
                             {/* Progress indicator */}
                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-body-sm font-medium">
                                     1
                                 </div>
                                 <div className="w-8 h-1 bg-muted rounded-full"></div>
-                                <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-sm font-medium">
+                                <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-body-sm font-medium">
                                     2
                                 </div>
                                 <div className="w-8 h-1 bg-muted rounded-full"></div>
-                                <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-sm font-medium">
+                                <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-body-sm font-medium">
                                     3
                                 </div>
                             </div>
                         </div>
 
-                        <h1 className="mb-1.5 text-xl font-semibold sm:mb-2 sm:text-2xl">Choose Your Plan</h1>
-                        <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto">
+                        <h1 className="mb-1.5 text-h3 sm:mb-2 sm:text-h2">Choose Your Plan</h1>
+                        <p className="text-muted-foreground text-body-sm sm:text-body max-w-xl mx-auto">
                             One plan. Monthly or annual — switch anytime.
                         </p>
 
@@ -90,7 +90,7 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                             <div className="inline-flex rounded-xl border bg-card p-1 shadow-sm">
                                 <button
                                     onClick={() => setBilling('monthly')}
-                                    className={`inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all h-9 py-2 rounded-lg px-4 ${billing === 'monthly'
+                                    className={`inline-flex items-center justify-center gap-2 whitespace-nowrap text-body-sm font-medium transition-all h-9 py-2 rounded-lg px-4 ${billing === 'monthly'
                                         ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                                         : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                                         }`}
@@ -99,14 +99,14 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                                 </button>
                                 <button
                                     onClick={() => setBilling('annual')}
-                                    className={`inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all h-9 py-2 rounded-lg px-4 ${billing === 'annual'
+                                    className={`inline-flex items-center justify-center gap-2 whitespace-nowrap text-body-sm font-medium transition-all h-9 py-2 rounded-lg px-4 ${billing === 'annual'
                                         ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                                         : 'text-muted-foreground'
                                         }`}
                                 >
                                     Annual
                                     {billing !== 'annual' && (
-                                        <span className="items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 gap-1 transition-[color,box-shadow] overflow-hidden hidden sm:inline-flex bg-primary/10 text-primary border-primary/20">
+                                        <span className="items-center justify-center rounded-md border px-2 py-0.5 text-caption font-medium w-fit whitespace-nowrap shrink-0 gap-1 transition-[color,box-shadow] overflow-hidden hidden sm:inline-flex bg-primary/10 text-primary border-primary/20">
                                             Save 2 months
                                         </span>
                                     )}
@@ -121,15 +121,15 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                             {/* Badge - varies by billing type */}
                             <div className="absolute -top-3 left-4">
                                 {billing === 'monthly' ? (
-                                    <span className="inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 gap-1 transition-[color,box-shadow] overflow-hidden border-transparent bg-primary text-white">
+                                    <span className="inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-caption font-medium w-fit whitespace-nowrap shrink-0 gap-1 transition-[color,box-shadow] overflow-hidden border-transparent bg-primary text-primary-foreground">
                                         Most Popular
                                     </span>
                                 ) : (
                                     <div className="flex gap-2">
-                                        <span className="inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 gap-1 transition-[color,box-shadow] overflow-hidden border-transparent bg-primary text-white">
+                                        <span className="inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-caption font-medium w-fit whitespace-nowrap shrink-0 gap-1 transition-[color,box-shadow] overflow-hidden border-transparent bg-primary text-primary-foreground">
                                             Save 2 months
                                         </span>
-                                        <span className="inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 gap-1 transition-[color,box-shadow] overflow-hidden border-transparent bg-primary text-white">
+                                        <span className="inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-caption font-medium w-fit whitespace-nowrap shrink-0 gap-1 transition-[color,box-shadow] overflow-hidden border-transparent bg-primary text-primary-foreground">
                                             Best Value
                                         </span>
                                     </div>
@@ -140,16 +140,16 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
 
                             <div className="mt-3 sm:mt-4">
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-4xl font-extrabold text-neutral-900">
+                                    <span className="text-display font-extrabold text-foreground">
                                         {billing === 'monthly' ? `£${getPlanPrice('monthly')}/month` : `£${getPlanPrice('annual')}/year`}
                                     </span>
                                 </div>
                                 {billing === 'annual' && (
-                                    <p className="text-sm text-muted-foreground mt-1">
+                                    <p className="text-body-sm text-muted-foreground mt-1">
                                         ≈ £{getMonthlyEquivalent()}/month • 2 months free
                                     </p>
                                 )}
-                                <p className="text-sm text-muted-foreground mt-1">
+                                <p className="text-body-sm text-muted-foreground mt-1">
                                     {billing === 'monthly'
                                         ? 'Billed monthly • Cancel anytime'
                                         : `Billed yearly • ≈ £${getMonthlyEquivalent()}/month • Cancel at renewal`
@@ -162,7 +162,7 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                         <div className="px-5 pb-5 sm:px-6 sm:pb-6">
                             <ul className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
                                 {planFeatures.map((feature, index) => (
-                                    <li key={index} className="flex items-start gap-3 text-sm">
+                                    <li key={index} className="flex items-start gap-3 text-body-sm">
                                         <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                                             <Check className="h-3 w-3 text-primary" />
                                         </span>
@@ -177,7 +177,7 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                     <div className="text-center">
                         <ScrollToTopButton
                             onClick={handleContinue}
-                            className="w-full flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-lg px-6 shadow-sm"
+                            className="w-full flex items-center justify-center gap-2 whitespace-nowrap text-body-sm font-semibold transition-all bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-lg px-6 shadow-sm"
                         >
                             Continue — £{getPlanPrice(billing)}{billing === 'monthly' ? '/month' : '/year'}
                         </ScrollToTopButton>

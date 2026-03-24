@@ -132,11 +132,11 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
 
   return (
     <>
-      <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white min-w-0">
+      <Card className="rounded-xl sm:rounded-2xl border border-border bg-card min-w-0">
         <CardHeader className="p-4 sm:p-6">
           <div className="flex items-center gap-3 min-w-0">
             <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-primary shrink-0" strokeWidth={2} />
-            <CardTitle className="text-lg sm:text-xl font-semibold text-neutral-900 truncate">
+            <CardTitle className="text-body-lg sm:text-h3 font-semibold text-foreground truncate">
               Email Address
             </CardTitle>
           </div>
@@ -144,9 +144,9 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
         <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
           {/* Current Email */}
           <div className="space-y-2">
-            <Label className="text-sm text-neutral-500">Current email address</Label>
+            <Label className="text-body-sm text-muted-foreground">Current email address</Label>
             <div className="flex items-center gap-2">
-              <p className="text-base font-medium text-neutral-900">{currentEmail || 'Not set'}</p>
+              <p className="text-body font-medium text-foreground">{currentEmail || 'Not set'}</p>
               {!pendingEmail && (
                 <CheckCircle2 className="w-4 h-4 text-green-600" strokeWidth={2} />
               )}
@@ -159,10 +159,10 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" strokeWidth={2} />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-yellow-900">
+                  <p className="text-body-sm font-medium text-yellow-900">
                     Email change pending
                   </p>
-                  <p className="text-sm text-yellow-700 mt-1">
+                  <p className="text-body-sm text-yellow-700 mt-1">
                     A confirmation link has been sent to <strong>{pendingEmail}</strong>. 
                     Your email won't change until you confirm.
                   </p>
@@ -174,7 +174,7 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
                   size="sm"
                   onClick={handleResendConfirmation}
                   disabled={isChangingEmail}
-                  className="text-sm"
+                  className="text-body-sm"
                 >
                   {isChangingEmail ? 'Sending...' : 'Resend confirmation email'}
                 </Button>
@@ -193,7 +193,7 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
             {pendingEmail ? 'Email change pending' : 'Change email address'}
           </Button>
 
-          <p className="text-xs text-neutral-500">
+          <p className="text-caption text-muted-foreground">
             We'll send a confirmation link to your new email address. Your email won't update until you confirm.
           </p>
         </CardContent>
@@ -231,14 +231,14 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
                 disabled={isChangingEmail}
               />
               {newEmail && confirmEmail && !emailsMatch && (
-                <p className="text-xs text-destructive">Email addresses must match</p>
+                <p className="text-caption text-destructive">Email addresses must match</p>
               )}
               {newEmail && newEmail === currentEmail && (
-                <p className="text-xs text-destructive">This is your current email address</p>
+                <p className="text-caption text-destructive">This is your current email address</p>
               )}
             </div>
             <div className="bg-muted/50 border border-muted rounded-lg p-3">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 We'll send a confirmation link to your new email address. Your email won't update until you confirm.
               </p>
             </div>

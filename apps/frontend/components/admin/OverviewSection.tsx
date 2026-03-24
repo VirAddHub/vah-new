@@ -171,7 +171,7 @@ export function OverviewSection() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">Admin Overview</h1>
+                    <h1 className="text-h2 font-bold">Admin Overview</h1>
                     <p className="text-muted-foreground">Real-time system status and key performance metrics</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -210,9 +210,9 @@ export function OverviewSection() {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-muted-foreground">Total Users</p>
-                                    <p className="text-2xl font-bold">{stats.totalUsers || 0}</p>
-                                    <p className="text-xs text-green-600 flex items-center gap-1">
+                                    <p className="text-body-sm text-muted-foreground">Total Users</p>
+                                    <p className="text-h2 font-bold">{stats.totalUsers || 0}</p>
+                                    <p className="text-caption text-green-600 flex items-center gap-1">
                                         <ArrowUp className="h-3 w-3" />
                                         +{stats.userGrowth || 0}%
                                     </p>
@@ -226,9 +226,9 @@ export function OverviewSection() {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-muted-foreground">Monthly Revenue</p>
-                                    <p className="text-2xl font-bold">£{stats.monthlyRevenue?.toLocaleString() || "0"}</p>
-                                    <p className="text-xs text-green-600 flex items-center gap-1">
+                                    <p className="text-body-sm text-muted-foreground">Monthly Revenue</p>
+                                    <p className="text-h2 font-bold">£{stats.monthlyRevenue?.toLocaleString() || "0"}</p>
+                                    <p className="text-caption text-green-600 flex items-center gap-1">
                                         <ArrowUp className="h-3 w-3" />
                                         +{stats.revenueGrowth || 0}%
                                     </p>
@@ -242,9 +242,9 @@ export function OverviewSection() {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-muted-foreground">Mail Processed</p>
-                                    <p className="text-2xl font-bold">{stats.mailProcessed?.toLocaleString() || "0"}</p>
-                                    <p className="text-xs text-green-600 flex items-center gap-1">
+                                    <p className="text-body-sm text-muted-foreground">Mail Processed</p>
+                                    <p className="text-h2 font-bold">{stats.mailProcessed?.toLocaleString() || "0"}</p>
+                                    <p className="text-caption text-green-600 flex items-center gap-1">
                                         <ArrowUp className="h-3 w-3" />
                                         +{stats.mailGrowth || 0}%
                                     </p>
@@ -258,9 +258,9 @@ export function OverviewSection() {
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-muted-foreground">Active Forwards</p>
-                                    <p className="text-2xl font-bold">{stats.activeForwards || 0}</p>
-                                    <p className="text-xs text-red-600 flex items-center gap-1">
+                                    <p className="text-body-sm text-muted-foreground">Active Forwards</p>
+                                    <p className="text-h2 font-bold">{stats.activeForwards || 0}</p>
+                                    <p className="text-caption text-red-600 flex items-center gap-1">
                                         <ArrowDown className="h-3 w-3" />
                                         {stats.forwardGrowth || 0}%
                                     </p>
@@ -278,9 +278,9 @@ export function OverviewSection() {
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-muted-foreground">New Signups Today</p>
-                                <p className="text-2xl font-bold">{todayStats.newSignups}</p>
-                                <p className="text-xs text-blue-600">
+                                <p className="text-body-sm text-muted-foreground">New Signups Today</p>
+                                <p className="text-h2 font-bold">{todayStats.newSignups}</p>
+                                <p className="text-caption text-blue-600">
                                     Since midnight
                                 </p>
                             </div>
@@ -293,9 +293,9 @@ export function OverviewSection() {
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-muted-foreground">Mail Processed Today</p>
-                                <p className="text-2xl font-bold">{todayStats.mailProcessed}</p>
-                                <p className="text-xs text-green-600">
+                                <p className="text-body-sm text-muted-foreground">Mail Processed Today</p>
+                                <p className="text-h2 font-bold">{todayStats.mailProcessed}</p>
+                                <p className="text-caption text-green-600">
                                     Since midnight
                                 </p>
                             </div>
@@ -308,9 +308,9 @@ export function OverviewSection() {
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-muted-foreground">Forwarding Requests Today</p>
-                                <p className="text-2xl font-bold">{todayStats.forwardingRequests}</p>
-                                <p className="text-xs text-orange-600">
+                                <p className="text-body-sm text-muted-foreground">Forwarding Requests Today</p>
+                                <p className="text-h2 font-bold">{todayStats.forwardingRequests}</p>
+                                <p className="text-caption text-orange-600">
                                     Since midnight
                                 </p>
                             </div>
@@ -336,7 +336,7 @@ export function OverviewSection() {
             {/* Recent Activity */}
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-lg">Recent Activity</CardTitle>
+                    <CardTitle className="text-body-lg">Recent Activity</CardTitle>
                     <Button variant="outline" size="sm" onClick={handleViewAllActivity}>
                         View All
                     </Button>
@@ -354,9 +354,9 @@ export function OverviewSection() {
                                         {getActivityIcon(item.icon)}
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-sm font-medium">{item.title}</p>
-                                        <p className="text-xs text-muted-foreground">{item.description}</p>
-                                        <p className="text-xs text-muted-foreground">{item.time}</p>
+                                        <p className="text-body-sm font-medium">{item.title}</p>
+                                        <p className="text-caption text-muted-foreground">{item.description}</p>
+                                        <p className="text-caption text-muted-foreground">{item.time}</p>
                                     </div>
                                 </div>
                             ))}

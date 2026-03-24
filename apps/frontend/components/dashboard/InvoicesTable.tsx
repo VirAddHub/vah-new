@@ -62,8 +62,8 @@ export function InvoicesTable() {
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full text-sm text-left">
-        <thead className="border-b border-gray-100 text-xs font-medium text-gray-500 uppercase">
+      <table className="min-w-full text-body-sm text-left">
+        <thead className="border-b border-border text-caption font-medium text-muted-foreground uppercase">
           <tr>
             <th className="py-3 px-4 font-medium">Invoice No.</th>
             <th className="py-3 px-4 font-medium">Description</th>
@@ -73,10 +73,10 @@ export function InvoicesTable() {
             <th className="py-3 px-4 font-medium"></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-border">
           {isLoading && (
             <tr>
-              <td colSpan={6} className="py-8 px-4 text-center text-gray-500">
+              <td colSpan={6} className="py-8 px-4 text-center text-muted-foreground">
                 Loading invoices…
               </td>
             </tr>
@@ -84,7 +84,7 @@ export function InvoicesTable() {
 
           {error && !isLoading && (
             <tr>
-              <td colSpan={6} className="py-8 px-4 text-center text-gray-500">
+              <td colSpan={6} className="py-8 px-4 text-center text-muted-foreground">
                 Could not load invoices. Please try again.
               </td>
             </tr>
@@ -92,7 +92,7 @@ export function InvoicesTable() {
 
           {!isLoading && !error && invoices.length === 0 && (
             <tr>
-              <td colSpan={6} className="py-8 px-4 text-center text-gray-500">
+              <td colSpan={6} className="py-8 px-4 text-center text-muted-foreground">
                 No invoices yet. Your first invoice will appear after your first payment.
               </td>
             </tr>
@@ -105,29 +105,29 @@ export function InvoicesTable() {
             const displayDate = inv.period_end || inv.date || inv.created_at;
 
             return (
-              <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
-                <td className="py-3 px-4 text-gray-900 font-medium">
+              <tr key={inv.id} className="hover:bg-muted/50 transition-colors">
+                <td className="py-3 px-4 text-foreground font-medium">
                   {invoiceNumber}
                 </td>
-                <td className="py-3 px-4 text-gray-700">
+                <td className="py-3 px-4 text-foreground">
                   Digital Mailbox Plan
                 </td>
-                <td className="py-3 px-4 text-gray-900 font-medium">
+                <td className="py-3 px-4 text-foreground font-medium">
                   {formatMoney(inv.amount_pence, inv.currency)}
                 </td>
                 <td className="py-3 px-4">
                   <span
                     className={cn(
-                      "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium border",
+                      "inline-flex items-center rounded-full px-2.5 py-1 text-caption font-medium border",
                       isPaid
-                        ? "bg-green-50 text-green-800 border-green-200"
-                        : "bg-gray-50 text-gray-700 border-gray-200"
+                        ? "bg-primary/10 text-primary border-primary/20"
+                        : "bg-muted/50 text-foreground border-border"
                     )}
                   >
                     {isPaid ? "Paid" : inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
                   </span>
                 </td>
-                <td className="py-3 px-4 text-gray-700">
+                <td className="py-3 px-4 text-foreground">
                   {formatDate(displayDate)}
                 </td>
                 <td className="py-3 px-4">
@@ -136,7 +136,7 @@ export function InvoicesTable() {
                       href={inv.pdf_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300 transition"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-border transition"
                       title="Download invoice PDF"
                     >
                       <Download className="h-4 w-4" />
@@ -144,7 +144,7 @@ export function InvoicesTable() {
                   ) : (
                     <button
                       disabled
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-gray-300 opacity-40 cursor-not-allowed"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground opacity-40 cursor-not-allowed"
                       title="PDF not available"
                     >
                       <Download className="h-4 w-4" />

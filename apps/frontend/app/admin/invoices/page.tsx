@@ -303,7 +303,7 @@ export default function AdminInvoicesPage() {
       <main id="main-content" role="main" className="p-6">
         <div className="max-w-6xl mx-auto space-y-6">
           <div>
-            <h1 className="text-3xl font-bold">Invoices</h1>
+            <h1 className="text-h2 font-bold">Invoices</h1>
             <p className="text-muted-foreground">Search invoices across all customers</p>
           </div>
 
@@ -314,7 +314,7 @@ export default function AdminInvoicesPage() {
             <CardContent className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <div className="text-sm text-muted-foreground mb-1">User (email or ID)</div>
+                  <div className="text-body-sm text-muted-foreground mb-1">User (email or ID)</div>
                   <Input
                     value={userQuery}
                     onChange={(e) => {
@@ -324,7 +324,7 @@ export default function AdminInvoicesPage() {
                     placeholder="Search a user…"
                   />
                   {selectedUser ? (
-                    <div className="text-xs text-muted-foreground mt-1">
+                    <div className="text-caption text-muted-foreground mt-1">
                       Selected: <span className="font-medium">{selectedUser.email}</span> (ID {selectedUser.id})
                     </div>
                   ) : null}
@@ -334,7 +334,7 @@ export default function AdminInvoicesPage() {
                         <button
                           key={u.id}
                           type="button"
-                          className="w-full text-left px-3 py-2 hover:bg-muted text-sm"
+                          className="w-full text-left px-3 py-2 hover:bg-muted text-body-sm"
                           onClick={() => {
                             setSelectedUser({ id: Number(u.id), email: String(u.email || "") });
                             setUserQuery(String(u.email || u.id));
@@ -343,22 +343,22 @@ export default function AdminInvoicesPage() {
                           }}
                         >
                           <div className="font-medium">{u.email || "—"}</div>
-                          <div className="text-xs text-muted-foreground">User {u.id}</div>
+                          <div className="text-caption text-muted-foreground">User {u.id}</div>
                         </button>
                       ))}
                     </div>
                   ) : null}
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground mb-1">Invoice number</div>
+                  <div className="text-body-sm text-muted-foreground mb-1">Invoice number</div>
                   <Input value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} placeholder="VAH-2025-000001" />
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground mb-1">From (YYYY-MM-DD)</div>
+                  <div className="text-body-sm text-muted-foreground mb-1">From (YYYY-MM-DD)</div>
                   <Input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="2025-01-01" />
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground mb-1">To (YYYY-MM-DD)</div>
+                  <div className="text-body-sm text-muted-foreground mb-1">To (YYYY-MM-DD)</div>
                   <Input value={to} onChange={(e) => setTo(e.target.value)} placeholder="2025-12-31" />
                 </div>
                 <div className="flex items-end gap-2">
@@ -383,7 +383,7 @@ export default function AdminInvoicesPage() {
                 </div>
               </div>
 
-              {error ? <div className="text-sm text-red-600">{error}</div> : null}
+              {error ? <div className="text-body-sm text-red-600">{error}</div> : null}
             </CardContent>
           </Card>
 
@@ -422,18 +422,18 @@ export default function AdminInvoicesPage() {
                         <TableRow key={inv.id}>
                           <TableCell className="font-medium">
                             {inv.invoice_number || `Invoice #${inv.id}`}
-                            <div className="text-xs text-muted-foreground">ID: {inv.id}</div>
+                            <div className="text-caption text-muted-foreground">ID: {inv.id}</div>
                           </TableCell>
                           <TableCell>
                             <div className="font-medium">{inv.email}</div>
-                            <div className="text-xs text-muted-foreground">User {inv.user_id}</div>
+                            <div className="text-caption text-muted-foreground">User {inv.user_id}</div>
                           </TableCell>
                           <TableCell>
                             <Badge variant={inv.status === "paid" ? "default" : "secondary"}>{inv.status}</Badge>
                           </TableCell>
                           <TableCell className="text-right">{amount}</TableCell>
                           <TableCell>
-                            <div className="text-sm">{inv.period_start} → {inv.period_end}</div>
+                            <div className="text-body-sm">{inv.period_start} → {inv.period_end}</div>
                           </TableCell>
                           <TableCell>{createdLabel}</TableCell>
                           <TableCell className="text-right space-x-2">
@@ -452,7 +452,7 @@ export default function AdminInvoicesPage() {
               </Table>
 
               <div className="flex items-center justify-between mt-4">
-                <div className="text-sm text-muted-foreground">
+                <div className="text-body-sm text-muted-foreground">
                   Page {page}
                 </div>
                 <div className="flex gap-2">

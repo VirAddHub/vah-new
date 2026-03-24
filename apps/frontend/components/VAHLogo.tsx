@@ -23,10 +23,10 @@ const logoVariants = cva(
     {
         variants: {
             size: {
-                sm: "text-xs",
-                md: "text-sm",
-                lg: "text-base",
-                xl: "text-xl",
+                sm: "text-caption",
+                md: "text-body-sm",
+                lg: "text-body",
+                xl: "text-h3",
             },
         },
         defaultVariants: {
@@ -89,7 +89,7 @@ export function VAHLogo({
     const inner = (
         <span className="inline-flex min-h-[2rem] min-w-[80px] shrink-0 items-center" data-vah-logo>
             {imgFailed ? (
-                <span className="font-semibold text-neutral-800 text-base tracking-tight">{fullName}</span>
+                <span className="font-semibold text-foreground text-body tracking-tight">{fullName}</span>
             ) : (
                 <img
                     src="/images/logo.svg"

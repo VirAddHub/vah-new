@@ -30,17 +30,17 @@ type SearchResponse =
   | { ok: false; error?: string; message?: string };
 
 const PLAN_STATUS_CLASSES: Record<string, string> = {
-  active: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  active: "bg-primary/10 text-primary border border-primary/20",
   pending_payment: "bg-amber-50 text-amber-800 border border-amber-200",
-  cancelled: "bg-rose-50 text-rose-700 border border-rose-200",
+  cancelled: "bg-destructive/10 text-destructive border border-destructive/20",
   trialing: "bg-sky-50 text-sky-700 border border-sky-200",
 };
 
 const KYC_CLASSES: Record<string, string> = {
-  approved: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-  verified: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  approved: "bg-primary/10 text-primary border border-primary/20",
+  verified: "bg-primary/10 text-primary border border-primary/20",
   pending: "bg-amber-50 text-amber-800 border border-amber-200",
-  rejected: "bg-rose-50 text-rose-700 border border-rose-200",
+  rejected: "bg-destructive/10 text-destructive border border-destructive/20",
 };
 
 const todayString = () => {
@@ -254,11 +254,11 @@ export default function FilenameGeneratorPage() {
       {/* Main Content */}
       <main id="main-content" role="main" className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-10">
         <header className="space-y-2">
-          <h1 className="text-3xl font-semibold">Mail filename generator</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-h2 font-semibold">Mail filename generator</h1>
+          <p className="text-body-sm text-muted-foreground">
             Generate the exact filename format we require before uploading scans.
           </p>
-          <p className="text-xs text-muted-foreground font-mono bg-muted/60 inline-block px-2 py-1 rounded">
+          <p className="text-caption text-muted-foreground font-mono bg-muted/60 inline-block px-2 py-1 rounded">
             user&#123;ID&#125;_&#123;DD-MM-YY&#125;_&#123;TAG&#125;.pdf
           </p>
         </header>
@@ -291,7 +291,7 @@ export default function FilenameGeneratorPage() {
               )}
             </Button>
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p className="text-body-sm text-destructive">{error}</p>}
 
           {results.length > 0 && (
             <div className="divide-y rounded-lg border bg-card shadow-sm">
@@ -306,14 +306,14 @@ export default function FilenameGeneratorPage() {
                     )}
                     onClick={() => setSelectedUser(user)}
                   >
-                    <span className="text-sm font-medium">
+                    <span className="text-body-sm font-medium">
                       {user.company_name ||
                         [user.first_name, user.last_name]
                           .filter(Boolean)
                           .join(" ") ||
                         user.email}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-caption text-muted-foreground">
                       ID {user.id} • {user.email}
                     </span>
                   </button>
@@ -326,13 +326,13 @@ export default function FilenameGeneratorPage() {
         {selectedUser && (
           <section className="space-y-4 rounded-xl border bg-card p-5 shadow-sm">
             <div className="flex flex-col gap-1">
-              <h2 className="text-lg font-medium">Selected user</h2>
-              <p className="text-sm text-muted-foreground font-mono">
+              <h2 className="text-body-lg font-medium">Selected user</h2>
+              <p className="text-body-sm text-muted-foreground font-mono">
                 user#{selectedUser.id}
               </p>
             </div>
 
-            <div className="grid gap-3 text-sm md:grid-cols-2">
+            <div className="grid gap-3 text-body-sm md:grid-cols-2">
               <div className="space-y-1">
                 <p className="font-medium text-muted-foreground">Name</p>
                 <p>
@@ -343,7 +343,7 @@ export default function FilenameGeneratorPage() {
               </div>
               <div className="space-y-1">
                 <p className="font-medium text-muted-foreground">Email</p>
-                <p className="font-mono text-xs">{selectedUser.email}</p>
+                <p className="font-mono text-caption">{selectedUser.email}</p>
               </div>
               <div className="space-y-1">
                 <p className="font-medium text-muted-foreground">Company</p>
@@ -355,12 +355,12 @@ export default function FilenameGeneratorPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 text-xs">
+            <div className="flex flex-wrap gap-2 text-caption">
               <Badge
                 variant="outline"
                 className={
                   PLAN_STATUS_CLASSES[selectedUser.plan_status ?? ""] ??
-                  "bg-slate-100 text-slate-700 border border-slate-200"
+                  "bg-muted text-muted-foreground border border-border"
                 }
               >
                 Plan: {selectedUser.plan_status ?? "unknown"}
@@ -369,7 +369,7 @@ export default function FilenameGeneratorPage() {
                 variant="outline"
                 className={
                   KYC_CLASSES[selectedUser.kyc_status ?? ""] ??
-                  "bg-slate-100 text-slate-700 border border-slate-200"
+                  "bg-muted text-muted-foreground border border-border"
                 }
               >
                 KYC: {selectedUser.kyc_status ?? "pending"}
@@ -428,7 +428,7 @@ export default function FilenameGeneratorPage() {
                     />
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-caption text-muted-foreground">
                   {tagInputMode === 'select' 
                     ? "Select a common tag or choose 'Custom tag...' to enter your own."
                     : "Spaces will be removed automatically."}
@@ -440,7 +440,7 @@ export default function FilenameGeneratorPage() {
               <Label>Generated filename</Label>
               {generatedFilename ? (
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <code className="flex-1 rounded-lg bg-muted px-3 py-2 text-sm">
+                  <code className="flex-1 rounded-lg bg-muted px-3 py-2 text-body-sm">
                     {generatedFilename}
                   </code>
                   <Button
@@ -463,7 +463,7 @@ export default function FilenameGeneratorPage() {
                   </Button>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body-sm text-muted-foreground">
                   Enter both a date and a tag to see the filename.
                 </p>
               )}

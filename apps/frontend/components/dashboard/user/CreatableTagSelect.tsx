@@ -131,7 +131,7 @@ export function CreatableTagSelect({
           setIsOpen(!isOpen);
         }}
         className={cn(
-          'h-9 w-[140px] text-sm border-neutral-200 bg-white hover:bg-neutral-50 justify-start transition-colors duration-150',
+          'h-9 w-[140px] text-body-sm border-border bg-card hover:bg-muted/50 justify-start transition-colors duration-150',
           'focus:ring-1 focus:ring-primary'
         )}
       >
@@ -145,11 +145,11 @@ export function CreatableTagSelect({
       {/* Dropdown */}
       {isOpen && (
         <div
-          className="absolute z-50 mt-1 w-[240px] rounded-md border border-neutral-200 bg-white shadow-lg"
+          className="absolute z-50 mt-1 w-[240px] rounded-md border border-border bg-card shadow-lg"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Input Field */}
-          <div className="p-2 border-b border-neutral-200">
+          <div className="p-2 border-b border-border">
             <Input
               ref={inputRef}
               type="text"
@@ -157,11 +157,11 @@ export function CreatableTagSelect({
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Type to search or create..."
-              className="h-8 text-sm"
+              className="h-8 text-body-sm"
               autoFocus
             />
             {isCreatingNew && normalizedInput && (
-              <div className="mt-1 text-xs text-neutral-600 flex items-center gap-1">
+              <div className="mt-1 text-caption text-muted-foreground flex items-center gap-1">
                 <Plus className="h-3 w-3" strokeWidth={2} />
                 <span>Press Enter to create "{normalizedInput}"</span>
               </div>
@@ -175,12 +175,12 @@ export function CreatableTagSelect({
               type="button"
               onClick={() => handleSelectTag(null)}
               className={cn(
-                'w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 transition-colors duration-150',
+                'w-full px-3 py-2 text-left text-body-sm hover:bg-muted/50 transition-colors duration-150',
                 'flex items-center gap-1.5',
-                !currentTag && 'bg-neutral-50'
+                !currentTag && 'bg-muted/50'
               )}
             >
-              <div className="h-2 w-2 rounded-full bg-gray-300" />
+              <div className="h-2 w-2 rounded-full bg-muted" />
               <span>Untagged</span>
             </button>
 
@@ -193,9 +193,9 @@ export function CreatableTagSelect({
                     type="button"
                     onClick={() => handleSelectTag(tag)}
                     className={cn(
-                      'w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 transition-colors duration-150',
+                      'w-full px-3 py-2 text-left text-body-sm hover:bg-muted/50 transition-colors duration-150',
                       'flex items-center gap-1.5',
-                      currentTag === tag && 'bg-neutral-50'
+                      currentTag === tag && 'bg-muted/50'
                     )}
                   >
                     <div className={cn('h-2 w-2 rounded-full', getTagColor(tag))} />
@@ -207,7 +207,7 @@ export function CreatableTagSelect({
 
             {/* No matches message */}
             {inputValue.trim() && filteredTags.length === 0 && !isCreatingNew && (
-              <div className="px-3 py-2 text-xs text-neutral-500 text-center">
+              <div className="px-3 py-2 text-caption text-muted-foreground text-center">
                 No matching tags
               </div>
             )}

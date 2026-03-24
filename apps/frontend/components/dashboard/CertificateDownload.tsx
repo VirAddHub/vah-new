@@ -119,9 +119,9 @@ export function CertificateDownload({ profile, compliance }: CertificateDownload
     };
 
     return (
-        <div className="px-3 sm:px-4 pb-4 sm:pb-6 pt-3 sm:pt-4 border-t border-[#E5E7EB]">
+        <div className="px-3 sm:px-4 pb-4 sm:pb-6 pt-3 sm:pt-4 border-t border-border">
             <div className="flex flex-col gap-3">
-                <p className="text-xs font-semibold text-[#374151]">
+                <p className="text-caption font-semibold text-foreground">
                     Letter of Certification
                 </p>
                 {canDownload ? (
@@ -129,7 +129,7 @@ export function CertificateDownload({ profile, compliance }: CertificateDownload
                         <Button
                             onClick={handleDownloadCertification}
                             disabled={isCertBusy}
-                            className="w-full min-h-[44px] sm:min-h-0 bg-[#206039] text-white hover:bg-[#206039]/90 text-sm font-medium py-2.5 sm:py-2.5 touch-manipulation"
+                            className="w-full min-h-[44px] sm:min-h-0 bg-primary text-primary-foreground hover:bg-primary/90 text-body-sm font-medium py-2.5 sm:py-2.5 touch-manipulation"
                         >
                             {isCertBusy ? (
                                 <>
@@ -143,7 +143,7 @@ export function CertificateDownload({ profile, compliance }: CertificateDownload
                                 </>
                             )}
                         </Button>
-                        <p className="text-[10px] text-[#6b7280] leading-relaxed">
+                        <p className="text-caption text-muted-foreground leading-relaxed">
                             Use for banks, payment providers and professional contacts.
                         </p>
                     </>
@@ -153,14 +153,14 @@ export function CertificateDownload({ profile, compliance }: CertificateDownload
                         : (!isKycApproved ? 'primary' : 'company');
                     const meta = getCertificateBlockMeta(reason);
                     return (
-                        <div className="rounded-[8px] bg-[#FEF3C7] border border-[#FCD34D] p-3">
+                        <div className="rounded-md bg-amber-50 border border-amber-200 p-3">
                             <div className="flex items-start gap-2">
-                                <AlertCircle className="w-4 h-4 text-[#92400E] mt-0.5 flex-shrink-0" />
+                                <AlertCircle className="w-4 h-4 text-amber-900 mt-0.5 flex-shrink-0" />
                                 <div className="flex flex-col gap-1">
-                                    <p className="text-[11px] font-medium text-[#92400E] leading-tight">
+                                    <p className="text-caption font-medium text-amber-900 leading-tight">
                                         {meta.title}
                                     </p>
-                                    <p className="text-[10px] text-[#92400E]/80 leading-tight">
+                                    <p className="text-caption text-amber-900/80 leading-tight">
                                         {meta.description}
                                     </p>
                                 </div>

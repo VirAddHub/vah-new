@@ -253,7 +253,7 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
                             placeholder="Start typing your postcode to search..."
                           />
                           {address && (
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="text-caption text-muted-foreground mt-1">
                               Current address will be replaced when you select a new one.
                             </p>
                           )}
@@ -261,7 +261,7 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
                       )}
 
                       <div className="flex items-center justify-between pt-2 border-t">
-                        <span className="text-sm text-muted-foreground">Can't find your address?</span>
+                        <span className="text-body-sm text-muted-foreground">Can't find your address?</span>
                         <Button
                           type="button"
                           variant="link"
@@ -366,7 +366,7 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
                       )}
 
                       <div className="flex items-center justify-between pt-2 border-t">
-                        <span className="text-sm text-muted-foreground">Can't find your address?</span>
+                        <span className="text-body-sm text-muted-foreground">Can't find your address?</span>
                         <Button
                           type="button"
                           variant="link"

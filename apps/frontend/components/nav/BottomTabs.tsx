@@ -45,7 +45,7 @@ export function BottomTabs({ tabs = defaultTabs, className }: BottomTabsProps) {
         <nav
             className={cn(
                 'fixed bottom-0 inset-x-0 z-40',
-                'bg-white/95 dark:bg-neutral-900/90 backdrop-blur-md',
+                'bg-background/95 backdrop-blur-md',
                 'border-t border-border',
                 'pb-[calc(0.5rem+var(--safe-bottom))]',
                 'md:hidden', // Hide on desktop
@@ -64,7 +64,7 @@ export function BottomTabs({ tabs = defaultTabs, className }: BottomTabsProps) {
                                 href={tab.href}
                                 className={cn(
                                     'flex flex-col items-center py-2 px-1',
-                                    'text-xs leading-tight',
+                                    'text-caption leading-tight',
                                     'transition-colors',
                                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                                     'rounded-lg',

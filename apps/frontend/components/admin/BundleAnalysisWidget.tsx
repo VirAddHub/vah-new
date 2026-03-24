@@ -39,7 +39,7 @@ export function BundleAnalysisWidget({ onViewDetails }: BundleWidgetProps) {
       case 'critical':
         return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted text-foreground border-border';
     }
   };
 
@@ -74,7 +74,7 @@ export function BundleAnalysisWidget({ onViewDetails }: BundleWidgetProps) {
     return (
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="text-body-lg flex items-center gap-2">
             <Package className="h-5 w-5" />
             Bundle Analysis
           </CardTitle>
@@ -95,7 +95,7 @@ export function BundleAnalysisWidget({ onViewDetails }: BundleWidgetProps) {
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="text-body-lg flex items-center gap-2">
             <Package className="h-5 w-5" />
             Bundle Analysis
           </CardTitle>
@@ -109,22 +109,22 @@ export function BundleAnalysisWidget({ onViewDetails }: BundleWidgetProps) {
         {/* Summary */}
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-lg font-bold text-blue-600">
+            <div className="text-body-lg font-bold text-blue-600">
               {formatBytes(bundleData.totalSize)}
             </div>
-            <div className="text-xs text-muted-foreground">Total Size</div>
+            <div className="text-caption text-muted-foreground">Total Size</div>
           </div>
           <div>
-            <div className="text-lg font-bold text-green-600">
+            <div className="text-body-lg font-bold text-green-600">
               {bundleData.bundles.length - criticalBundles - warningBundles}
             </div>
-            <div className="text-xs text-muted-foreground">Good</div>
+            <div className="text-caption text-muted-foreground">Good</div>
           </div>
           <div>
-            <div className="text-lg font-bold text-yellow-600">
+            <div className="text-body-lg font-bold text-yellow-600">
               {warningBundles + criticalBundles}
             </div>
-            <div className="text-xs text-muted-foreground">Issues</div>
+            <div className="text-caption text-muted-foreground">Issues</div>
           </div>
         </div>
 
@@ -136,7 +136,7 @@ export function BundleAnalysisWidget({ onViewDetails }: BundleWidgetProps) {
 
             return (
               <div key={bundle.name} className="space-y-1">
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-body-sm">
                   <span className="font-medium">{bundle.name}</span>
                   <span className="text-muted-foreground">
                     {formatBytes(bundle.size)} / {formatBytes(bundle.limit)}
@@ -147,7 +147,7 @@ export function BundleAnalysisWidget({ onViewDetails }: BundleWidgetProps) {
                   className="h-1"
                 />
                 {isOverLimit && (
-                  <div className="text-xs text-red-600">
+                  <div className="text-caption text-red-600">
                     ⚠️ Exceeds limit
                   </div>
                 )}

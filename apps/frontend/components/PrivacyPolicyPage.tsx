@@ -8,15 +8,15 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
   return (
     <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-4xl px-6 py-12 space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight text-primary">Privacy Policy</h1>
-        <p className="text-sm text-muted-foreground italic">Last updated: [INSERT DATE]</p>
+        <h1 className="text-h1 tracking-tight text-primary">Privacy Policy</h1>
+        <p className="text-body-sm text-muted-foreground italic">Last updated: [INSERT DATE]</p>
 
           <p className="text-muted-foreground">
           At VirtualAddressHub, your privacy matters. We only collect the information required to provide your service securely, legally, and efficiently. This policy explains how we handle your data under the UK GDPR, the Data Protection Act 2018, and HMRC Anti-Money Laundering (AML) regulations.
           </p>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">1. Who We Are</h2>
+          <h2 className="text-h3">1. Who We Are</h2>
           <p className="text-muted-foreground">
             <strong>Business name:</strong> VirtualAddressHub Ltd
             <br />
@@ -31,7 +31,7 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">2. What We Collect</h2>
+          <h2 className="text-h3">2. What We Collect</h2>
           <p className="text-muted-foreground">We only collect the information needed to run your service:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
             <li>Name</li>
@@ -51,7 +51,7 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">3. Why We Use Your Data</h2>
+          <h2 className="text-h3">3. Why We Use Your Data</h2>
           <p className="text-muted-foreground">We use your information to:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
             <li>Provide your virtual address and mail-handling service</li>
@@ -65,7 +65,7 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">4. Legal Basis</h2>
+          <h2 className="text-h3">4. Legal Basis</h2>
           <p className="text-muted-foreground">We process data under:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
             <li>
@@ -81,7 +81,7 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">5. Retention</h2>
+          <h2 className="text-h3">5. Retention</h2>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
             <li>
               <strong>Scanned mail:</strong> deleted <strong>30 days after cancellation</strong>
@@ -99,7 +99,7 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">6. Cookies</h2>
+          <h2 className="text-h3">6. Cookies</h2>
           <p className="text-muted-foreground">We use <strong>strictly necessary cookies only</strong>, to:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
             <li>Keep you securely logged in</li>
@@ -115,7 +115,7 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">7. Your Rights</h2>
+          <h2 className="text-h3">7. Your Rights</h2>
           <p className="text-muted-foreground">You can request:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
             <li>Access to your data</li>
@@ -134,7 +134,7 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">8. Security</h2>
+          <h2 className="text-h3">8. Security</h2>
           <p className="text-muted-foreground">We use strong administrative, technical, and physical measures to protect your data, including:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
             <li>Secure UK/EEA data storage locations</li>
@@ -147,14 +147,14 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">9. Payments</h2>
+          <h2 className="text-h3">9. Payments</h2>
           <p className="text-muted-foreground">
             Payments are handled by <strong>Stripe</strong>, a regulated payment provider. We only receive confirmation of payment status — never your full card or banking information.
           </p>
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">10. Sharing Your Data</h2>
+          <h2 className="text-h3">10. Sharing Your Data</h2>
           <p className="text-muted-foreground">We only share your information with essential service providers who help us deliver your service:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
             <li>
@@ -174,28 +174,28 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">11. International Transfers</h2>
+          <h2 className="text-h3">11. International Transfers</h2>
           <p className="text-muted-foreground">
             We aim to store data in the UK or EEA. If personal data is transferred outside the UK/EEA, we use legally required safeguards such as <strong>Standard Contractual Clauses (SCCs)</strong> or the <strong>UK Addendum</strong>.
           </p>
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">12. External Services</h2>
+          <h2 className="text-h3">12. External Services</h2>
           <p className="text-muted-foreground">
             If you interact with third-party services through our platform (e.g., identity verification, payment links), their own privacy policies apply.
           </p>
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">13. Contact Us</h2>
+          <h2 className="text-h3">13. Contact Us</h2>
           <p className="text-muted-foreground">
             If you have any questions about this policy: <strong>support@virtualaddresshub.co.uk</strong>
           </p>
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold">14. Updates</h2>
+          <h2 className="text-h3">14. Updates</h2>
           <p className="text-muted-foreground">We may update this privacy policy from time to time. The latest version will always be published on our website.</p>
         </section>
       </main>

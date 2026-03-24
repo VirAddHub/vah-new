@@ -41,7 +41,7 @@ export function MailList({
             <div className="hidden sm:block px-6 py-3 border-b bg-muted/30">
                 <button
                     onClick={toggleSelectAll}
-                    className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+                    className="flex items-center gap-2 text-body-sm font-medium hover:text-primary transition-colors"
                     disabled={mailItems.length === 0}
                     type="button"
                 >
@@ -78,7 +78,7 @@ export function MailList({
                 <div className="px-6 py-12 text-center">
                     <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive opacity-50" />
                     <h3 className="font-medium mb-2">Failed to load mail</h3>
-                    <p className="text-sm text-muted-foreground mb-4">{mailError.message}</p>
+                    <p className="text-body-sm text-muted-foreground mb-4">{mailError.message}</p>
                     <Button onClick={() => refreshMail()}>
                         <RefreshCw className="h-4 w-4 mr-2" />
                         Try Again
@@ -89,7 +89,7 @@ export function MailList({
                 <div className="px-6 py-12 text-center">
                     <Mail className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                     <h3 className="font-medium mb-2">No mail yet</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-body-sm text-muted-foreground">
                         Your mail will appear here when it arrives at your virtual address
                     </p>
                 </div>
@@ -108,7 +108,7 @@ export function MailList({
             {isSomeSelected && (
                 <div className="sm:hidden p-4 border-t">
                     <div className="flex flex-wrap items-center gap-2 mb-3">
-                        <Badge variant="default" className="text-sm">
+                        <Badge variant="default" className="text-body-sm">
                             {selectedMail.length} selected
                         </Badge>
                         <Button size="sm" variant="outline">

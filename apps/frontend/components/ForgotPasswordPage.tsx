@@ -158,16 +158,16 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
         <button
           type="button"
           onClick={onGoBack}
-          className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground shadow-sm hover:bg-accent"
+          className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-body-sm font-medium text-foreground shadow-sm hover:bg-accent"
         >
           <span aria-hidden="true">←</span>
           Back
         </button>
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-h2 sm:text-h1 tracking-tight text-foreground">
             Reset Your Password
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-body-sm text-muted-foreground">
             Enter your email address and we&apos;ll send you instructions to reset your password
           </p>
         </div>
@@ -176,7 +176,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
       {/* Form */}
       <form onSubmit={handleSendResetLink} className="space-y-4 sm:space-y-6">
         <div>
-          <Label htmlFor="email" className="text-sm sm:text-base font-medium">
+          <Label htmlFor="email" className="text-body-sm sm:text-body font-medium">
             Email Address
           </Label>
           <div className="mt-2 relative">
@@ -186,7 +186,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email address"
-              className="pl-12 h-11 sm:h-12 text-base"
+              className="pl-12 h-11 sm:h-12 text-body"
               disabled={loading}
               autoComplete="email"
               autoFocus
@@ -197,7 +197,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
 
         <Button
           type="submit"
-          className="w-full h-11 sm:h-12 text-sm sm:text-base font-medium"
+          className="w-full h-11 sm:h-12 text-body-sm sm:text-body font-medium"
           disabled={loading || !email.trim()}
         >
           {loading ? (
@@ -213,7 +213,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
 
       {/* Additional Info */}
       <div className="mt-6 sm:mt-8 space-y-4 text-center">
-        <div className="text-xs sm:text-sm text-muted-foreground">
+        <div className="text-caption sm:text-body-sm text-muted-foreground">
           <p>Don't have an account?
             <button
               onClick={() => onNavigate('signup')}
@@ -225,13 +225,13 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
         </div>
 
         <div className="pt-4 border-t border-border">
-          <p className="text-xs sm:text-sm text-muted-foreground mb-3">
+          <p className="text-caption sm:text-body-sm text-muted-foreground mb-3">
             Having trouble? Our support team is here to help.
           </p>
           <Button
             variant="outline"
             onClick={() => onNavigate('contact')}
-            className="text-xs sm:text-sm h-10 sm:h-11"
+            className="text-caption sm:text-body-sm h-10 sm:h-11"
           >
             Contact Support
           </Button>
@@ -247,16 +247,16 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
         <button
           type="button"
           onClick={onGoBack}
-          className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground shadow-sm hover:bg-accent"
+          className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-body-sm font-medium text-foreground shadow-sm hover:bg-accent"
         >
           <span aria-hidden="true">←</span>
           Back
         </button>
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-h2 sm:text-h1 tracking-tight text-foreground">
             Check Your Email
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-body-sm text-muted-foreground">
             We&apos;ve sent password reset instructions to your email address
           </p>
         </div>
@@ -267,18 +267,18 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
 
       {/* Instructions */}
       <Card className="p-4 sm:p-6 bg-muted/30 border-border/50 mb-6">
-        <h3 className="font-semibold mb-3 text-sm sm:text-base">What to do next:</h3>
-        <ol className="text-xs sm:text-sm text-muted-foreground space-y-2">
+        <h3 className="font-semibold mb-3 text-body-sm sm:text-body">What to do next:</h3>
+        <ol className="text-caption sm:text-body-sm text-muted-foreground space-y-2">
           <li className="flex items-start gap-2">
-            <span className="bg-primary text-primary-foreground w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium mt-0.5">1</span>
+            <span className="bg-primary text-primary-foreground w-5 h-5 rounded-full flex items-center justify-center text-caption font-medium mt-0.5">1</span>
             <span>Check your email inbox for a message from VirtualAddressHub</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="bg-primary text-primary-foreground w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium mt-0.5">2</span>
+            <span className="bg-primary text-primary-foreground w-5 h-5 rounded-full flex items-center justify-center text-caption font-medium mt-0.5">2</span>
             <span>Click the "Reset Password" link in the email</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="bg-primary text-primary-foreground w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium mt-0.5">3</span>
+            <span className="bg-primary text-primary-foreground w-5 h-5 rounded-full flex items-center justify-center text-caption font-medium mt-0.5">3</span>
             <span>Create a new secure password for your account</span>
           </li>
         </ol>
@@ -286,7 +286,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
 
       {/* Actions */}
       <div className="space-y-4">
-        <div className="text-center text-xs sm:text-sm text-muted-foreground">
+        <div className="text-center text-caption sm:text-body-sm text-muted-foreground">
           <p>Didn't receive the email? Check your spam folder or
             <button
               onClick={() => onNavigate('reset-password')}
@@ -301,14 +301,14 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
           <Button
             variant="outline"
             onClick={() => onNavigate('login')}
-            className="flex-1 h-10 sm:h-11 text-xs sm:text-sm"
+            className="flex-1 h-10 sm:h-11 text-caption sm:text-body-sm"
           >
             Back to Login
           </Button>
           <Button
             onClick={() => onNavigate('contact')}
             variant="outline"
-            className="flex-1 h-10 sm:h-11 text-xs sm:text-sm"
+            className="flex-1 h-10 sm:h-11 text-caption sm:text-body-sm"
           >
             Contact Support
           </Button>
@@ -324,16 +324,16 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
         <button
           type="button"
           onClick={onGoBack}
-          className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground shadow-sm hover:bg-accent"
+          className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-body-sm font-medium text-foreground shadow-sm hover:bg-accent"
         >
           <span aria-hidden="true">←</span>
           Back
         </button>
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-h2 sm:text-h1 tracking-tight text-foreground">
             Create New Password
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-body-sm text-muted-foreground">
             Enter a strong new password for your account
           </p>
         </div>
@@ -342,7 +342,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
       {/* Form */}
       <form onSubmit={handleResetPassword} className="space-y-4 sm:space-y-6">
         <div>
-          <Label htmlFor="password" className="text-sm sm:text-base font-medium">
+          <Label htmlFor="password" className="text-body-sm sm:text-body font-medium">
             New Password
           </Label>
           <Input
@@ -351,18 +351,18 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your new password"
-            className="mt-2 h-11 sm:h-12 text-base"
+            className="mt-2 h-11 sm:h-12 text-body"
             disabled={loading}
             autoComplete="new-password"
             autoFocus
           />
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+          <p className="text-caption sm:text-body-sm text-muted-foreground mt-1">
             Must be at least 8 characters with at least one letter and one number
           </p>
         </div>
 
         <div>
-          <Label htmlFor="confirm-password" className="text-sm sm:text-base font-medium">
+          <Label htmlFor="confirm-password" className="text-body-sm sm:text-body font-medium">
             Confirm New Password
           </Label>
           <Input
@@ -371,7 +371,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Confirm your new password"
-            className="mt-2 h-11 sm:h-12 text-base"
+            className="mt-2 h-11 sm:h-12 text-body"
             disabled={loading}
             autoComplete="new-password"
           />
@@ -379,7 +379,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
 
         <Button
           type="submit"
-          className="w-full h-11 sm:h-12 text-sm sm:text-base font-medium"
+          className="w-full h-11 sm:h-12 text-body-sm sm:text-body font-medium"
           disabled={loading || !password.trim() || !confirmPassword.trim()}
         >
           {loading ? (
@@ -397,7 +397,7 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
       <Card className="mt-6 p-3 sm:p-4 bg-primary/5 border-primary/20">
         <div className="flex items-start gap-2 sm:gap-3">
           <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 flex-shrink-0" />
-          <div className="text-xs sm:text-sm">
+          <div className="text-caption sm:text-body-sm">
             <p className="font-medium text-foreground mb-1">Security Tip</p>
             <p className="text-muted-foreground">
               Password must be at least 8 characters long and include uppercase letters, lowercase letters, and numbers.
@@ -444,19 +444,19 @@ export function ForgotPasswordPage({ onNavigate, onGoBack, step = 'email', token
       {/* Fixed Footer */}
       <footer className="fixed bottom-0 left-0 right-0 py-4 px-6 bg-transparent z-10">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-center md:justify-end gap-3 text-xs text-neutral-500">
+          <div className="flex items-center justify-center md:justify-end gap-3 text-caption text-muted-foreground">
             <button
               type="button"
               onClick={() => onNavigate('terms')}
-              className="hover:text-neutral-700 transition-colors"
+              className="hover:text-foreground transition-colors"
             >
               Terms of Service
             </button>
-            <span className="text-neutral-400">·</span>
+            <span className="text-muted-foreground/50">·</span>
             <button
               type="button"
               onClick={() => onNavigate('privacy')}
-              className="hover:text-neutral-700 transition-colors"
+              className="hover:text-foreground transition-colors"
             >
               Privacy Policy
             </button>

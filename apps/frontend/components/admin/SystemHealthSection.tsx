@@ -78,7 +78,7 @@ export function SystemHealthSection() {
             case 'down':
                 return <AlertTriangle className="h-4 w-4 text-red-500" />;
             default:
-                return <Server className="h-4 w-4 text-gray-500" />;
+                return <Server className="h-4 w-4 text-muted-foreground" />;
         }
     };
 
@@ -105,7 +105,7 @@ export function SystemHealthSection() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">System Health</h1>
+                    <h1 className="text-h2 font-bold">System Health</h1>
                     <p className="text-muted-foreground">Real-time system status and service uptime monitoring</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -119,7 +119,7 @@ export function SystemHealthSection() {
                         <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                         Refresh
                     </Button>
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-caption">
                         Last updated: {lastRefresh.toLocaleTimeString()}
                     </Badge>
                 </div>
@@ -141,14 +141,14 @@ export function SystemHealthSection() {
                                     {getStatusIcon(service.status)}
                                     <div>
                                         <h3 className="font-semibold">{service.name}</h3>
-                                        <p className="text-sm text-muted-foreground">{service.description}</p>
+                                        <p className="text-body-sm text-muted-foreground">{service.description}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className={`text-lg font-bold ${getUptimeColor(service.uptime)}`}>
+                                    <div className={`text-body-lg font-bold ${getUptimeColor(service.uptime)}`}>
                                         {service.uptime.toFixed(2)}%
                                     </div>
-                                    <div className="text-xs text-muted-foreground">Uptime</div>
+                                    <div className="text-caption text-muted-foreground">Uptime</div>
                                     {getStatusBadge(service.status)}
                                 </div>
                             </div>
@@ -171,12 +171,12 @@ export function SystemHealthSection() {
                             <CheckCircle className="h-4 w-4 text-green-500" />
                             <div>
                                 <h3 className="font-semibold">PostgreSQL Database</h3>
-                                <p className="text-sm text-muted-foreground">Primary data storage and query processing</p>
+                                <p className="text-body-sm text-muted-foreground">Primary data storage and query processing</p>
                             </div>
                         </div>
                         <div className="text-right">
-                            <div className="text-lg font-bold text-green-600">97.82%</div>
-                            <div className="text-xs text-muted-foreground">Uptime</div>
+                            <div className="text-body-lg font-bold text-green-600">97.82%</div>
+                            <div className="text-caption text-muted-foreground">Uptime</div>
                             <Badge variant="outline" className="border-green-500 text-green-700">Healthy</Badge>
                         </div>
                     </div>

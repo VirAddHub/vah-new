@@ -25,9 +25,9 @@ const PLAN_STATUS_OPTIONS = [
 ] as const;
 
 const PLAN_STATUS_STYLES: Record<string, string> = {
-  active: 'bg-emerald-50 text-emerald-700',
+  active: 'bg-primary/10 text-primary',
   pending_payment: 'bg-amber-50 text-amber-800',
-  cancelled: 'bg-rose-50 text-rose-700',
+  cancelled: 'bg-destructive/10 text-destructive',
   trialing: 'bg-sky-50 text-sky-700',
 };
 
@@ -323,19 +323,19 @@ export default function UsersSection({ users, loading, error, total, page, pageS
     <div className="space-y-4">
       {/* User stats badges */}
       {stats && (
-        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+        <div className="flex flex-wrap gap-3 text-body-sm text-muted-foreground">
           <span>Total: {stats.total}</span>
           <span>Active: {stats.active}</span>
           <span>Suspended: {stats.suspended}</span>
           <span>Pending: {stats.pending}</span>
-          <span className="text-red-600">Deleted: {stats.deleted}</span>
+          <span className="text-destructive">Deleted: {stats.deleted}</span>
         </div>
       )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4 p-4 bg-muted/50 rounded-lg">
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium">Status:</label>
+          <label className="text-body-sm font-medium">Status:</label>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-32">
               <SelectValue placeholder="All" />
@@ -350,7 +350,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium">Plan:</label>
+          <label className="text-body-sm font-medium">Plan:</label>
           <Select value={planFilter} onValueChange={setPlanFilter}>
             <SelectTrigger className="w-40">
               <SelectValue placeholder="All" />
@@ -364,7 +364,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium">KYC:</label>
+          <label className="text-body-sm font-medium">KYC:</label>
           <Select value={kycFilter} onValueChange={setKycFilter}>
             <SelectTrigger className="w-32">
               <SelectValue placeholder="All" />
@@ -397,8 +397,8 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Users</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-h4 font-semibold">Users</h2>
+          <p className="text-body-sm text-muted-foreground">
             {showDeleted ? `Showing ${users.length + deletedUsers.length} users (${users.length} active + ${deletedUsers.length} deleted)` : `Total: ${users.length}`}
           </p>
         </div>
@@ -413,7 +413,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
             className="gap-2"
           >
             {showDeleted ? "Hide Deleted" : "Show Deleted"}
-            {deletedUsersLoading && <div className="animate-spin rounded-full h-3 w-3 border-b border-white"></div>}
+            {deletedUsersLoading && <div className="animate-spin rounded-full h-3 w-3 border-b border-background"></div>}
           </Button>
           <Input
             placeholder="Search ID, name or email…"
@@ -426,18 +426,18 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
       {/* Status row */}
       {loading || deletedUsersLoading && (
-        <div className="text-center py-2 text-sm text-muted-foreground">
+        <div className="text-center py-2 text-body-sm text-muted-foreground">
           Loading users…
         </div>
       )}
       {error && (
         <div className="text-center py-2">
-          <div className="text-sm text-red-600 mb-2">{error}</div>
+          <div className="text-body-sm text-destructive mb-2">{error}</div>
         </div>
       )}
       {!loading && !deletedUsersLoading && !error && displayUsers.length === 0 && (
         <div className="text-center py-2">
-          <div className="text-sm text-muted-foreground mb-2">No users yet.</div>
+          <div className="text-body-sm text-muted-foreground mb-2">No users yet.</div>
         </div>
       )}
 
@@ -468,23 +468,23 @@ export default function UsersSection({ users, loading, error, total, page, pageS
               ) : (
                 displayUsers.map((u) => {
                   const planStatusValue = u.plan_status ?? 'pending_payment';
-                  const planStatusClass = PLAN_STATUS_STYLES[planStatusValue] ?? 'bg-neutral-100 text-neutral-700';
+                  const planStatusClass = PLAN_STATUS_STYLES[planStatusValue] ?? 'bg-muted text-muted-foreground';
                   return (
-                  <TableRow key={u.id} className={u.deleted_at ? "opacity-60 bg-red-50" : ""}>
-                    <TableCell className="font-mono text-sm">
+                  <TableRow key={u.id} className={u.deleted_at ? "opacity-60 bg-destructive/10" : ""}>
+                    <TableCell className="font-mono text-body-sm">
                       {u.id}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span>{u.email}</span>
-                        {u.deleted_at && <Badge variant="destructive" className="text-xs">Deleted</Badge>}
+                        {u.deleted_at && <Badge variant="destructive" className="text-caption">Deleted</Badge>}
                       </div>
                     </TableCell>
                     <TableCell>
                       {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}
                     </TableCell>
                     <TableCell>
-                      {u.company_name || <span className="text-sm text-muted-foreground">—</span>}
+                      {u.company_name || <span className="text-body-sm text-muted-foreground">—</span>}
                     </TableCell>
                     <TableCell>
                       <Badge variant={u.status === "active" ? "default" : u.status === "suspended" ? "destructive" : "secondary"}>
@@ -494,17 +494,17 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                     <TableCell>
                       {u.plan_name ? (
                         <div className="flex flex-col gap-1">
-                          <span className="text-sm font-medium">{u.plan_name}</span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-body-sm font-medium">{u.plan_name}</span>
+                          <span className="text-caption text-muted-foreground">
                             £{((u.plan_price || 0) / 100).toFixed(2)}/{u.plan_interval}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-sm text-muted-foreground">No plan</span>
+                        <span className="text-body-sm text-muted-foreground">No plan</span>
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${planStatusClass}`}>
+                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-caption font-medium ${planStatusClass}`}>
                         {formatPlanStatus(planStatusValue)}
                       </span>
                     </TableCell>
@@ -556,17 +556,17 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                                   className="cursor-pointer"
                                 >
                                   <div className="w-full">
-                                    <div className="font-medium text-gray-900">Soft Delete</div>
-                                    <div className="text-xs text-gray-500 mt-0.5">Can be restored later</div>
+                                    <div className="font-medium text-foreground">Soft Delete</div>
+                                    <div className="text-caption text-muted-foreground mt-0.5">Can be restored later</div>
                                   </div>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => setDeleteModal({ id: u.id, email: u.email, permanent: true })}
-                                  className="cursor-pointer text-red-700 focus:text-red-700 focus:bg-red-50"
+                                  className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
                                 >
                                   <div className="w-full">
                                     <div className="font-bold">⚠️ Permanent Delete</div>
-                                    <div className="text-xs text-red-600 mt-0.5 font-semibold">Cannot be undone!</div>
+                                    <div className="text-caption text-destructive mt-0.5 font-semibold">Cannot be undone!</div>
                                   </div>
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
@@ -585,14 +585,14 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         {/* Loading overlay */}
         {loading || deletedUsersLoading && (
           <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center">
-            <span className="text-sm">Loading…</span>
+            <span className="text-body-sm">Loading…</span>
           </div>
         )}
       </div>
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
+        <div className="text-body-sm text-muted-foreground">
           Page {page} • {totalFiltered} total
         </div>
         <div className="flex gap-2">
@@ -622,20 +622,20 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       {/* Delete confirmation modal */}
       {deleteModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className={`bg-card border-2 rounded-2xl p-6 w-full max-w-md ${deleteModal.permanent ? 'border-red-300' : 'border-yellow-200'}`}>
-            <h3 className={`font-semibold text-lg mb-2 ${deleteModal.permanent ? 'text-red-700' : ''}`}>
+          <div className={`bg-card border-2 rounded-2xl p-6 w-full max-w-md ${deleteModal.permanent ? 'border-destructive/30' : 'border-yellow-200'}`}>
+            <h3 className={`font-semibold text-body-lg mb-2 ${deleteModal.permanent ? 'text-destructive' : ''}`}>
               {deleteModal.permanent ? '⚠️ Permanent Delete User' : 'Delete User'}
             </h3>
             <div className="space-y-4">
               {deleteModal.permanent ? (
-                <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4 space-y-2">
-                  <p className="text-sm font-semibold text-red-900">
+                <div className="bg-destructive/10 border-2 border-destructive/20 rounded-lg p-4 space-y-2">
+                  <p className="text-body-sm font-semibold text-destructive">
                     ⚠️ WARNING: PERMANENT DELETION ⚠️
                   </p>
-                  <p className="text-sm text-red-800">
+                  <p className="text-body-sm text-destructive">
                     This will <strong>PERMANENTLY</strong> delete user <span className="font-mono font-semibold">{deleteModal.email}</span> and <strong>ALL</strong> their data from the database.
                   </p>
-                  <ul className="text-xs text-red-700 list-disc list-inside space-y-1 ml-2">
+                  <ul className="text-caption text-destructive list-disc list-inside space-y-1 ml-2">
                     <li>User account will be completely removed</li>
                     <li>All mail items will be deleted</li>
                     <li>All subscriptions will be deleted</li>
@@ -645,15 +645,15 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 </div>
               ) : (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-sm text-yellow-900">
+                  <p className="text-body-sm text-yellow-900">
                     This will <strong>soft-delete</strong> user <span className="font-mono">{deleteModal.email}</span>.
                   </p>
-                  <p className="text-xs text-yellow-800 mt-1">
+                  <p className="text-caption text-yellow-800 mt-1">
                     The user can be restored later. Their data will be hidden but not permanently removed.
                   </p>
                 </div>
               )}
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body-sm text-muted-foreground">
                 Type the email <span className="font-mono font-semibold">{deleteModal.email}</span> to confirm:
               </p>
               <input
@@ -674,7 +674,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 variant={deleteModal.permanent ? "destructive" : "secondary"}
                 onClick={() => handleDeleteUser(deleteModal.id, deleteModal.permanent || false)}
                 disabled={isMutating || deleteConfirm.trim().toLowerCase() !== deleteModal.email.toLowerCase()}
-                className={deleteModal.permanent ? "bg-red-600 hover:bg-red-700" : ""}
+                className={deleteModal.permanent ? "bg-destructive hover:bg-destructive/90" : ""}
               >
                 {isMutating 
                   ? (deleteModal.permanent ? 'Permanently Deleting…' : 'Deleting…') 
@@ -690,8 +690,8 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       {restoreModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-card border rounded-2xl p-6 w-full max-w-md">
-            <h3 className="font-semibold text-lg mb-2">Restore Deleted User</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <h3 className="font-semibold text-body-lg mb-2">Restore Deleted User</h3>
+            <p className="text-body-sm text-muted-foreground mb-4">
               This will restore the user account and allow them to log in again.
               Provide a new unique email address for the restored account.
             </p>
@@ -716,7 +716,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                   onChange={e => setRestoreForm(f => ({ ...f, last_name: e.target.value }))}
                 />
               </div>
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-body-sm">
                 <input
                   type="checkbox"
                   checked={restoreForm.reactivate}
@@ -742,14 +742,14 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-card border rounded-2xl p-6 w-full max-w-md space-y-5">
             <div>
-              <h3 className="font-semibold text-lg mb-1">Update plan status</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="font-semibold text-body-lg mb-1">Update plan status</h3>
+              <p className="text-body-sm text-muted-foreground">
                 Adjust billing/state enforcement for {planStatusModal.email}.
             </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Plan status</label>
+              <label className="text-body-sm font-medium">Plan status</label>
                 <select
                   className="w-full border rounded-md px-3 py-2 bg-background"
                 value={planStatusValue}
@@ -764,12 +764,12 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                   {(() => {
                 const option = PLAN_STATUS_OPTIONS.find((opt) => opt.value === planStatusValue);
                 return option ? (
-                  <p className="text-xs text-muted-foreground">{option.description}</p>
+                  <p className="text-caption text-muted-foreground">{option.description}</p>
                 ) : null;
                   })()}
                 </div>
 
-            <div className="bg-muted/40 rounded-lg px-3 py-2 text-xs text-muted-foreground">
+            <div className="bg-muted/40 rounded-lg px-3 py-2 text-caption text-muted-foreground">
               <p>
                 This value is what the mail ingest worker checks before accepting PDFs.
               </p>
@@ -839,8 +839,8 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-card border rounded-2xl p-6 w-full max-w-md space-y-5">
             <div>
-              <h3 className="text-lg font-semibold mb-1">Update KYC status</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="text-body-lg font-semibold mb-1">Update KYC status</h3>
+              <p className="text-body-sm text-muted-foreground">
                 Change KYC status for {kycModal.email}.
               </p>
             </div>

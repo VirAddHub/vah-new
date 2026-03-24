@@ -67,7 +67,7 @@ export function RightPanel({
       <div className="fixed right-0 top-0 h-full w-full max-w-2xl lg:static lg:h-auto lg:max-w-none bg-background shadow-xl lg:shadow-none border-l border-border overflow-y-auto">
         <Card className="h-full lg:h-auto border-0 lg:border rounded-lg">
           <CardHeader className="sticky top-0 bg-background z-10 border-b flex flex-row items-center justify-between space-y-0 pb-4">
-            <CardTitle className="text-xl font-semibold">
+            <CardTitle className="text-h3 font-semibold">
               {view === 'mail-detail' && 'Mail Details'}
               {view === 'forwarding' && 'Forwarding Requests'}
               {view === 'account' && 'Account'}
@@ -157,7 +157,7 @@ function ForwardingView({
         {forwardingRequests.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground font-medium mb-2">No forwarding requests yet</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body-sm text-muted-foreground">
               Select a mail item and click "Forward" to create a forwarding request.
             </p>
           </div>
@@ -170,12 +170,12 @@ function ForwardingView({
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-3">
-                      <h3 className="font-medium text-base">Request #{String(r.id)}</h3>
+                      <h3 className="font-medium text-body">Request #{String(r.id)}</h3>
                       <Badge className={getStatusColor(String(r.status ?? ''))}>
                         {String(r.status ?? '')}
                       </Badge>
                     </div>
-                    <div className="space-y-1 text-sm text-muted-foreground">
+                    <div className="space-y-1 text-body-sm text-muted-foreground">
                       <p>
                         <span className="font-medium text-foreground">To:</span> {String(r.to_name ?? '')}
                       </p>
@@ -192,7 +192,7 @@ function ForwardingView({
                           <span className="font-medium text-foreground">Courier:</span> {String(r.courier)}
                         </p>
                       )}
-                      <p className="text-xs mt-2">
+                      <p className="text-caption mt-2">
                         Requested: {formatDate(Number(r.created_at))}
                       </p>
                     </div>
@@ -215,7 +215,7 @@ function AccountView({ userProfile }: { userProfile?: unknown }) {
       <div className="space-y-4">
         <div>
           <h3 className="font-semibold mb-2">Account Information</h3>
-          <div className="space-y-2 text-sm">
+          <div className="space-y-2 text-body-sm">
             <p><span className="font-medium">Email:</span> {(p?.email as string) || '—'}</p>
             <p><span className="font-medium">Name:</span> {p?.first_name as string} {p?.last_name as string}</p>
             {(p?.company_name != null) && (
@@ -224,20 +224,20 @@ function AccountView({ userProfile }: { userProfile?: unknown }) {
           </div>
         </div>
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             To update your details, use the links below:
           </p>
           <div className="flex flex-col gap-2">
             <Link
               href="/account/settings"
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+              className="inline-flex items-center gap-2 text-body-sm font-medium text-primary hover:underline"
             >
               <Settings className="h-4 w-4 shrink-0" />
               Edit profile &amp; phone (Settings)
             </Link>
             <Link
               href="/account/addresses"
-              className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+              className="inline-flex items-center gap-2 text-body-sm font-medium text-primary hover:underline"
             >
               <MapPin className="h-4 w-4 shrink-0" />
               Edit forwarding address (Addresses)

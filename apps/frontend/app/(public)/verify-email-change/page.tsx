@@ -130,14 +130,14 @@ function VerifyEmailChangeContent() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground text-center">
+          <p className="text-body-sm text-muted-foreground text-center">
             {message}
           </p>
 
           {status === 'success' && (
             <div className="space-y-3">
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                <p className="text-sm text-green-800 dark:text-green-200">
+                <p className="text-body-sm text-green-800 dark:text-green-200">
                   Your email address has been updated. You have been logged out for security. Please log in with your new email address.
                 </p>
               </div>
@@ -153,7 +153,7 @@ function VerifyEmailChangeContent() {
           {(status === 'error' || status === 'invalid') && (
             <div className="space-y-3">
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                <p className="text-sm text-destructive">
+                <p className="text-body-sm text-destructive">
                   {status === 'invalid' 
                     ? 'This link is invalid. Please check your email and use the link provided.'
                     : 'This link may have expired (links are valid for 30 minutes) or has already been used.'}
@@ -162,10 +162,10 @@ function VerifyEmailChangeContent() {
               
               {resendSent ? (
                 <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                  <p className="text-sm text-green-800 dark:text-green-200">
+                  <p className="text-body-sm text-green-800 dark:text-green-200">
                     Sent — check your inbox.
                   </p>
-                  <p className="text-xs text-green-700 dark:text-green-300 mt-2">
+                  <p className="text-caption text-green-700 dark:text-green-300 mt-2">
                     If you still can't find it, reply to this email.
                   </p>
                 </div>
@@ -194,7 +194,7 @@ function VerifyEmailChangeContent() {
 
           {status === 'loading' && (
             <div className="text-center">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 This may take a few seconds...
               </p>
             </div>
@@ -212,7 +212,7 @@ export default function VerifyEmailChangePage() {
         <Card className="w-full max-w-md">
           <CardContent className="py-12 text-center">
             <Loader2 className="h-8 w-8 mx-auto mb-4 text-primary animate-spin" />
-            <p className="text-sm text-muted-foreground">Loading...</p>
+            <p className="text-body-sm text-muted-foreground">Loading...</p>
           </CardContent>
         </Card>
       </div>

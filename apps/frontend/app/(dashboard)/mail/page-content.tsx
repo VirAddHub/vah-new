@@ -845,15 +845,15 @@ export default function MailInboxPage() {
         const isNew = !item.is_read && !isForwarded;
 
         if (isForwarded) {
-            return { label: "Forwarded", badgeClass: "bg-emerald-600 text-white border-transparent" };
+            return { label: "Forwarded", badgeClass: "bg-primary text-primary-foreground border-transparent" };
         }
         if (isScanned) {
-            return { label: "Scanned", badgeClass: "bg-neutral-200 text-neutral-700 border-transparent" };
+            return { label: "Scanned", badgeClass: "bg-muted text-foreground border-transparent" };
         }
         if (isNew) {
-            return { label: "New", badgeClass: "bg-blue-600 text-white border-transparent" };
+            return { label: "New", badgeClass: "bg-blue-600 text-primary-foreground border-transparent" };
         }
-        return { label: "Received", badgeClass: "bg-neutral-200 text-neutral-700 border-transparent" };
+        return { label: "Received", badgeClass: "bg-muted text-foreground border-transparent" };
     }, []);
 
     // Load PDF preview for selected mail
@@ -936,35 +936,35 @@ export default function MailInboxPage() {
             {/* Page title + count: compact single row on mobile */}
             <div className="flex flex-col sm:block mb-3 md:mb-6">
                 <div className="flex items-baseline gap-2 flex-wrap">
-                    <h1 className="text-lg sm:text-2xl md:text-3xl font-semibold text-neutral-900 tracking-tight">
+                    <h1 className="text-h4 sm:text-h2 md:text-h1 text-foreground tracking-tight">
                         Mail
                     </h1>
-                    <span className="text-xs text-neutral-500 font-normal tabular-nums">{inboxCount} items</span>
+                    <span className="text-caption text-muted-foreground tabular-nums">{inboxCount} items</span>
                 </div>
             </div>
 
             {/* Search: compact bar on mobile, full width */}
             <div className="relative w-full mb-3 md:mb-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-400 pointer-events-none shrink-0" strokeWidth={2} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none shrink-0" strokeWidth={2} />
                 <Input
                     type="text"
                     placeholder="Search mail..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 h-9 md:h-10 rounded-lg border-neutral-200 bg-white text-sm placeholder:text-neutral-400 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary border transition-colors md:w-80"
+                    className="pl-9 h-9 md:h-10 rounded-lg border-border bg-card text-body-sm placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary border transition-colors md:w-80"
                 />
             </div>
 
             {/* Tag filter chip */}
             {selectedTagFilter && activeTab === 'inbox' && (
-                <div className="mb-3 flex items-center gap-2 py-2 px-3 rounded-lg bg-neutral-100 border border-neutral-200/80">
-                    <span className="text-xs text-neutral-600">Filtered by:</span>
+                <div className="mb-3 flex items-center gap-2 py-2 px-3 rounded-lg bg-muted border border-border/80">
+                    <span className="text-caption text-muted-foreground">Filtered by:</span>
                     <TagDot tag={selectedTagFilter} label={getTagLabel(selectedTagFilter)} />
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={clearTagFilter}
-                        className="h-7 px-2 text-xs text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/60 ml-auto rounded-md"
+                        className="h-7 px-2 text-caption text-muted-foreground hover:text-foreground hover:bg-muted/60 ml-auto rounded-md"
                     >
                         <X className="h-3 w-3 mr-1 shrink-0" strokeWidth={2} />
                         Clear
@@ -977,18 +977,18 @@ export default function MailInboxPage() {
                 setActiveTab(v as 'inbox' | 'archived' | 'tags');
                 if (v !== 'inbox') setSelectedTagFilter(null);
             }} className="mb-3 md:mb-6">
-                <div className="sticky top-[3rem] md:top-0 z-20 bg-[#F6F6F7] md:bg-transparent -mx-4 px-4 md:mx-0 md:px-0 pb-2 md:pb-0 border-b-0 md:border-b md:border-neutral-200">
+                <div className="sticky top-[3rem] md:top-0 z-20 bg-background md:bg-transparent -mx-4 px-4 md:mx-0 md:px-0 pb-2 md:pb-0 border-b-0 md:border-b md:border-border">
                     <TabsList className={cn(
-                        "inline-flex w-full md:w-auto h-8 md:h-auto p-0.5 rounded-lg md:rounded-none bg-neutral-200/60 md:bg-transparent border-0 gap-0",
-                        "md:border-b md:border-neutral-200"
+                        "inline-flex w-full md:w-auto h-8 md:h-auto p-0.5 rounded-lg md:rounded-none bg-muted/60 md:bg-transparent border-0 gap-0",
+                        "md:border-b md:border-border"
                     )}>
                         <TabsTrigger
                             value="inbox"
                             className={cn(
-                                "flex-1 md:flex-none h-7 md:h-auto px-3 md:px-5 py-1.5 md:py-3 text-xs md:text-sm font-medium rounded-md md:rounded-none border-0 md:border-b-2 md:border-transparent",
-                                "data-[state=active]:bg-white data-[state=active]:text-neutral-900 data-[state=active]:shadow-sm data-[state=active]:ring-0",
+                                "flex-1 md:flex-none h-7 md:h-auto px-3 md:px-5 py-1.5 md:py-3 text-caption md:text-body-sm font-medium rounded-md md:rounded-none border-0 md:border-b-2 md:border-transparent",
+                                "data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-0",
                                 "md:data-[state=active]:bg-transparent md:data-[state=active]:text-primary md:data-[state=active]:border-primary",
-                                "text-neutral-600 hover:text-neutral-800 md:hover:text-neutral-900",
+                                "text-muted-foreground hover:text-foreground md:hover:text-foreground",
                                 "transition-colors touch-manipulation"
                             )}
                         >
@@ -998,10 +998,10 @@ export default function MailInboxPage() {
                         <TabsTrigger
                             value="archived"
                             className={cn(
-                                "flex-1 md:flex-none h-7 md:h-auto px-3 md:px-5 py-1.5 md:py-3 text-xs md:text-sm font-medium rounded-md md:rounded-none border-0 md:border-b-2 md:border-transparent",
-                                "data-[state=active]:bg-white data-[state=active]:text-neutral-900 data-[state=active]:shadow-sm data-[state=active]:ring-0",
+                                "flex-1 md:flex-none h-7 md:h-auto px-3 md:px-5 py-1.5 md:py-3 text-caption md:text-body-sm font-medium rounded-md md:rounded-none border-0 md:border-b-2 md:border-transparent",
+                                "data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-0",
                                 "md:data-[state=active]:bg-transparent md:data-[state=active]:text-primary md:data-[state=active]:border-primary",
-                                "text-neutral-600 hover:text-neutral-800 md:hover:text-neutral-900",
+                                "text-muted-foreground hover:text-foreground md:hover:text-foreground",
                                 "transition-colors touch-manipulation"
                             )}
                         >
@@ -1011,10 +1011,10 @@ export default function MailInboxPage() {
                         <TabsTrigger
                             value="tags"
                             className={cn(
-                                "flex-1 md:flex-none h-7 md:h-auto px-3 md:px-5 py-1.5 md:py-3 text-xs md:text-sm font-medium rounded-md md:rounded-none border-0 md:border-b-2 md:border-transparent",
-                                "data-[state=active]:bg-white data-[state=active]:text-neutral-900 data-[state=active]:shadow-sm data-[state=active]:ring-0",
+                                "flex-1 md:flex-none h-7 md:h-auto px-3 md:px-5 py-1.5 md:py-3 text-caption md:text-body-sm font-medium rounded-md md:rounded-none border-0 md:border-b-2 md:border-transparent",
+                                "data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-0",
                                 "md:data-[state=active]:bg-transparent md:data-[state=active]:text-primary md:data-[state=active]:border-primary",
-                                "text-neutral-600 hover:text-neutral-800 md:hover:text-neutral-900",
+                                "text-muted-foreground hover:text-foreground md:hover:text-foreground",
                                 "transition-colors touch-manipulation"
                             )}
                         >
@@ -1028,7 +1028,7 @@ export default function MailInboxPage() {
             {/* In-place replacement: Show list OR detail, not both */}
             {selectedMailDetail ? (
                 /* Mail Detail View - Full-screen on mobile, in-place on desktop */
-                <div className="w-full md:relative fixed inset-0 md:inset-auto bg-white md:bg-transparent z-50 md:z-auto overflow-y-auto md:overflow-visible md:static">
+                <div className="w-full md:relative fixed inset-0 md:inset-auto bg-card md:bg-transparent z-50 md:z-auto overflow-y-auto md:overflow-visible md:static">
                     <div className="px-4 py-3 md:p-0 max-w-full md:max-w-none pb-8 md:pb-0">
                         <MailDetail
                             item={selectedMailDetail}
@@ -1065,19 +1065,19 @@ export default function MailInboxPage() {
                     {mailLoading ? (
                         <div className="py-12 md:py-16 text-center">
                             <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-primary border-r-transparent mb-3" />
-                            <p className="text-sm text-neutral-500">Loading mail...</p>
+                            <p className="text-body-sm text-muted-foreground">Loading mail...</p>
                         </div>
                     ) : mailError ? (
                         <div className="py-12 md:py-16 text-center">
-                            <Mail className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 text-neutral-300" strokeWidth={1.5} />
-                            <p className="text-sm font-medium text-neutral-700 mb-0.5">Failed to load mail</p>
-                            <p className="text-xs text-neutral-500">Please refresh the page to try again</p>
+                            <Mail className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 text-muted-foreground" strokeWidth={1.5} />
+                            <p className="text-body-sm font-medium text-foreground mb-0.5">Failed to load mail</p>
+                            <p className="text-caption text-muted-foreground">Please refresh the page to try again</p>
                         </div>
                     ) : filteredItems.length === 0 ? (
                         <div className="py-12 md:py-16 text-center">
-                            <Mail className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 text-neutral-300" strokeWidth={1.5} />
-                            <p className="text-sm font-medium text-neutral-700 mb-0.5">No mail items</p>
-                            <p className="text-xs text-neutral-500">Your mail will appear here when it arrives</p>
+                            <Mail className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 text-muted-foreground" strokeWidth={1.5} />
+                            <p className="text-body-sm font-medium text-foreground mb-0.5">No mail items</p>
+                            <p className="text-caption text-muted-foreground">Your mail will appear here when it arrives</p>
                         </div>
                     ) : activeTab === 'tags' && groupedByTag && groupedByTag.length > 0 ? (
                         /* Grouped Tags View */
@@ -1104,29 +1104,29 @@ export default function MailInboxPage() {
                                 return (
                                     <div key={tag} className="space-y-3">
                                         {/* Tag Header */}
-                                        <div className="sticky top-[3rem] md:top-0 z-10 bg-white py-2 md:py-2 border-b border-neutral-200">
+                                        <div className="sticky top-[3rem] md:top-0 z-10 bg-card py-2 md:py-2 border-b border-border">
                                             <div className="flex items-center gap-3">
                                                 <button
                                                     onClick={(e) => handleCollapseToggle(tag, e)}
-                                                    className="flex-shrink-0 p-1.5 hover:bg-neutral-100 rounded-md transition-colors duration-150"
+                                                    className="flex-shrink-0 p-1.5 hover:bg-muted rounded-md transition-colors duration-150"
                                                     aria-label={isCollapsed ? "Expand" : "Collapse"}
                                                 >
                                                     {isCollapsed ? (
-                                                        <ChevronRight className="h-4 w-4 text-neutral-500" strokeWidth={2} />
+                                                        <ChevronRight className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
                                                     ) : (
-                                                        <ChevronDown className="h-4 w-4 text-neutral-500" strokeWidth={2} />
+                                                        <ChevronDown className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
                                                     )}
                                                 </button>
                                                 <button
                                                     onClick={() => handleTagHeaderClick(tag)}
-                                                    className="flex-1 flex items-center gap-2.5 hover:bg-neutral-50 -mx-1 px-2 py-1.5 rounded-md transition-colors duration-150 group text-left"
+                                                    className="flex-1 flex items-center gap-2.5 hover:bg-muted/50 -mx-1 px-2 py-1.5 rounded-md transition-colors duration-150 group text-left"
                                                 >
                                                     <div className={cn('h-2 w-2 rounded-full flex-shrink-0', colorClass)} />
                                                     <div className="flex items-baseline gap-2">
-                                                        <h2 className="text-base font-semibold text-neutral-900 tracking-tight">
+                                                        <h2 className="text-body font-semibold text-foreground tracking-tight">
                                                             {getTagLabel(tag)}
                                                         </h2>
-                                                        <span className="text-sm font-normal text-neutral-500">{count} items</span>
+                                                        <span className="text-body-sm text-muted-foreground">{count} items</span>
                                                     </div>
                                                 </button>
                                             </div>
@@ -1149,8 +1149,8 @@ export default function MailInboxPage() {
                                                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleMailClick(item); } }}
                                                             className={cn(
                                                                 "flex items-center gap-2.5 md:gap-5 rounded-lg border px-3 py-2 md:px-6 md:py-4",
-                                                                "bg-white hover:bg-neutral-50 active:bg-neutral-100/80 transition-colors",
-                                                                "border-neutral-200 hover:border-neutral-300 md:hover:border-primary/30",
+                                                                "bg-card hover:bg-muted/50 active:bg-muted/80 transition-colors",
+                                                                "border-border hover:border-border md:hover:border-primary/30",
                                                                 "cursor-pointer touch-manipulation md:shadow-sm md:hover:shadow"
                                                             )}
                                                         >
@@ -1158,24 +1158,24 @@ export default function MailInboxPage() {
                                                             <div className="flex items-center gap-2.5 flex-1 min-w-0 md:hidden">
                                                                 <div className={cn(
                                                                     "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center",
-                                                                    isRead ? "bg-neutral-100" : "bg-primary/10"
+                                                                    isRead ? "bg-muted" : "bg-primary/10"
                                                                 )}>
                                                                     <Icon className={cn(
                                                                         "h-4 w-4 shrink-0",
-                                                                        isRead ? 'text-neutral-500' : 'text-primary'
+                                                                        isRead ? 'text-muted-foreground' : 'text-primary'
                                                                     )} strokeWidth={2} />
                                                                 </div>
                                                                 <p className={cn(
-                                                                    "flex-1 min-w-0 text-sm leading-tight truncate",
-                                                                    isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
+                                                                    "flex-1 min-w-0 text-body-sm leading-tight truncate",
+                                                                    isRead ? 'font-medium text-foreground' : 'font-semibold text-foreground'
                                                                 )}>
                                                                     {displayTitle}
                                                                 </p>
                                                                 {item.tag ? (
-                                                                    <span className="text-xs text-neutral-500 truncate shrink-0 max-w-[80px]">{getTagLabel(item.tag)}</span>
+                                                                    <span className="text-caption text-muted-foreground truncate shrink-0 max-w-[80px]">{getTagLabel(item.tag)}</span>
                                                                 ) : null}
-                                                                <span className="text-xs text-neutral-400 tabular-nums shrink-0">{date}</span>
-                                                                <ChevronRight className="h-4 w-4 text-neutral-400 shrink-0" strokeWidth={2} />
+                                                                <span className="text-caption text-muted-foreground tabular-nums shrink-0">{date}</span>
+                                                                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" strokeWidth={2} />
                                                             </div>
 
                                                             {/* Desktop: single-line title + date */}
@@ -1183,16 +1183,16 @@ export default function MailInboxPage() {
                                                                 <div className="flex-shrink-0">
                                                                     <Icon className={cn(
                                                                         "h-5 w-5",
-                                                                        isRead ? 'text-neutral-400' : 'text-neutral-700'
+                                                                        isRead ? 'text-muted-foreground' : 'text-foreground'
                                                                     )} strokeWidth={2} />
                                                                 </div>
                                                                 <p className={cn(
-                                                                    "flex-1 min-w-0 text-[15px] leading-tight truncate",
-                                                                    isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
+                                                                    "flex-1 min-w-0 text-body-sm leading-tight truncate",
+                                                                    isRead ? 'font-medium text-foreground' : 'font-semibold text-foreground'
                                                                 )}>
                                                                     {displayTitle}
                                                                 </p>
-                                                                <span className="text-xs text-neutral-500 whitespace-nowrap min-w-[72px] text-right tabular-nums shrink-0">
+                                                                <span className="text-caption text-muted-foreground whitespace-nowrap min-w-[72px] text-right tabular-nums shrink-0">
                                                                     {date}
                                                                 </span>
                                                             </div>
@@ -1210,7 +1210,7 @@ export default function MailInboxPage() {
                                                                         variant="ghost"
                                                                         size="sm"
                                                                         onClick={(e) => handleUnarchive(item, e)}
-                                                                        className="h-9 px-3 text-sm text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F9]"
+                                                                        className="h-9 px-3 text-body-sm text-muted-foreground hover:text-foreground hover:bg-muted"
                                                                     >
                                                                         <ArchiveRestore className="h-4 w-4 mr-1.5" />
                                                                         Unarchive
@@ -1220,13 +1220,13 @@ export default function MailInboxPage() {
                                                                         variant="ghost"
                                                                         size="sm"
                                                                         onClick={(e) => handleArchive(item, e)}
-                                                                        className="h-9 px-3 text-sm text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F9]"
+                                                                        className="h-9 px-3 text-body-sm text-muted-foreground hover:text-foreground hover:bg-muted"
                                                                     >
                                                                         <Archive className="h-4 w-4 mr-1.5" />
                                                                         Archive
                                                                     </Button>
                                                                 )}
-                                                                <span className="text-xs text-[#999999] whitespace-nowrap">
+                                                                <span className="text-caption text-muted-foreground whitespace-nowrap">
                                                                     {date}
                                                                 </span>
                                                             </div>
@@ -1256,8 +1256,8 @@ export default function MailInboxPage() {
                                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleMailClick(item); } }}
                                     className={cn(
                                         "flex items-center gap-2.5 md:gap-5 rounded-lg border px-3 py-2 md:px-6 md:py-4",
-                                        "bg-white hover:bg-neutral-50 active:bg-neutral-100/80 transition-colors",
-                                        "border-neutral-200 hover:border-neutral-300 md:hover:border-primary/30",
+                                        "bg-card hover:bg-muted/50 active:bg-muted/80 transition-colors",
+                                        "border-border hover:border-border md:hover:border-primary/30",
                                         "cursor-pointer touch-manipulation md:shadow-sm md:hover:shadow"
                                     )}
                                 >
@@ -1265,24 +1265,24 @@ export default function MailInboxPage() {
                                     <div className="flex items-center gap-2.5 flex-1 min-w-0 md:hidden">
                                         <div className={cn(
                                             "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center",
-                                            isRead ? "bg-neutral-100" : "bg-primary/10"
+                                            isRead ? "bg-muted" : "bg-primary/10"
                                         )}>
                                             <Icon className={cn(
                                                 "h-4 w-4 shrink-0",
-                                                isRead ? 'text-neutral-500' : 'text-primary'
+                                                isRead ? 'text-muted-foreground' : 'text-primary'
                                             )} strokeWidth={2} />
                                         </div>
                                         <p className={cn(
-                                            "flex-1 min-w-0 text-sm leading-tight truncate",
-                                            isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
+                                            "flex-1 min-w-0 text-body-sm leading-tight truncate",
+                                            isRead ? 'font-medium text-foreground' : 'font-semibold text-foreground'
                                         )}>
                                             {displayTitle}
                                         </p>
                                         {item.tag ? (
-                                            <span className="text-xs text-neutral-500 truncate shrink-0 max-w-[80px]">{getTagLabel(item.tag)}</span>
+                                            <span className="text-caption text-muted-foreground truncate shrink-0 max-w-[80px]">{getTagLabel(item.tag)}</span>
                                         ) : null}
-                                        <span className="text-xs text-neutral-400 tabular-nums shrink-0">{date}</span>
-                                        <ChevronRight className="h-4 w-4 text-neutral-400 shrink-0" strokeWidth={2} />
+                                        <span className="text-caption text-muted-foreground tabular-nums shrink-0">{date}</span>
+                                        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" strokeWidth={2} />
                                     </div>
 
                                     {/* Desktop: single-line title */}
@@ -1290,16 +1290,16 @@ export default function MailInboxPage() {
                                         <div className="flex-shrink-0">
                                             <Icon className={cn(
                                                 "h-5 w-5",
-                                                isRead ? 'text-neutral-400' : 'text-neutral-700'
+                                                isRead ? 'text-muted-foreground' : 'text-foreground'
                                             )} strokeWidth={2} />
                                         </div>
                                         <p className={cn(
-                                            "flex-1 min-w-0 text-[15px] leading-tight truncate",
-                                            isRead ? 'font-medium text-neutral-700' : 'font-semibold text-neutral-900'
+                                            "flex-1 min-w-0 text-body-sm leading-tight truncate",
+                                            isRead ? 'font-medium text-foreground' : 'font-semibold text-foreground'
                                         )}>
                                             {displayTitle}
                                         </p>
-                                        <span className="text-xs text-neutral-500 whitespace-nowrap min-w-[72px] text-right tabular-nums shrink-0">
+                                        <span className="text-caption text-muted-foreground whitespace-nowrap min-w-[72px] text-right tabular-nums shrink-0">
                                             {date}
                                         </span>
                                     </div>
@@ -1317,7 +1317,7 @@ export default function MailInboxPage() {
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={(e) => handleUnarchive(item, e)}
-                                                className="h-8 px-3 text-sm text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100"
+                                                className="h-8 px-3 text-body-sm text-muted-foreground hover:text-foreground hover:bg-muted"
                                             >
                                                 <ArchiveRestore className="h-4 w-4 mr-1.5" strokeWidth={2} />
                                                 Unarchive
@@ -1327,13 +1327,13 @@ export default function MailInboxPage() {
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={(e) => handleArchive(item, e)}
-                                                className="h-8 px-3 text-sm text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100"
+                                                className="h-8 px-3 text-body-sm text-muted-foreground hover:text-foreground hover:bg-muted"
                                             >
                                                 <Archive className="h-4 w-4 mr-1.5" strokeWidth={2} />
                                                 Archive
                                             </Button>
                                         )}
-                                        <span className="text-xs text-neutral-500 whitespace-nowrap min-w-[72px] text-right tabular-nums">
+                                        <span className="text-caption text-muted-foreground whitespace-nowrap min-w-[72px] text-right tabular-nums">
                                             {date}
                                         </span>
                                     </div>
@@ -1495,7 +1495,7 @@ export default function MailInboxPage() {
                                             ))}
                                     </SelectContent>
                                 </Select>
-                                <p className="text-xs text-[#666666]">
+                                <p className="text-caption text-muted-foreground">
                                     All items with "{getTagLabel(selectedTagForManage)}" will be moved to the selected tag.
                                 </p>
                             </div>
@@ -1521,11 +1521,11 @@ export default function MailInboxPage() {
                         /* Delete Tag Confirmation */
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                                <p className="text-sm text-[#666666]">
+                                <p className="text-body-sm text-muted-foreground">
                                     This will remove the tag <strong>"{getTagLabel(selectedTagForManage)}"</strong> from all active mail items.
                                     Archived mail is unaffected.
                                 </p>
-                                <p className="text-sm font-medium text-destructive">
+                                <p className="text-body-sm font-medium text-destructive">
                                     This action cannot be undone.
                                 </p>
                             </div>

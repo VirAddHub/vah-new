@@ -165,7 +165,7 @@ export function DashboardSidebar() {
     const isMailActive = pathname === '/mail' || pathname === '/mail/';
 
     const SidebarContent = () => (
-        <aside className="hidden lg:flex lg:w-[240px] lg:flex-shrink-0 lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:border-r lg:border-neutral-200 bg-white">
+        <aside className="hidden lg:flex lg:w-[240px] lg:flex-shrink-0 lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:border-r lg:border-border bg-card">
             <div className="flex h-[calc(100dvh-4rem)] flex-col w-full">
                 {/* Nav area - scrollable if needed */}
                 <nav className="flex-1 overflow-y-auto px-4 py-4">
@@ -176,10 +176,10 @@ export function DashboardSidebar() {
                         <button
                                 onClick={handleMailClick}
                             className={cn(
-                                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full",
+                                "flex items-center gap-3 px-3 py-2 rounded-lg text-body-sm font-medium transition-colors text-left w-full",
                                 isMailActive
                                     ? "bg-primary/10 text-primary"
-                                    : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                             )}
                         >
                             <Mail className="w-5 h-5" strokeWidth={2} />
@@ -189,9 +189,9 @@ export function DashboardSidebar() {
                 </div>
 
                                     {/* Account Section */}
-                                <div className="mt-4 pt-4 border-t border-neutral-200">
+                                <div className="mt-4 pt-4 border-t border-border">
                                         <div className="px-3 mb-2">
-                                            <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                            <h3 className="text-caption font-medium text-muted-foreground uppercase tracking-wider">
                                                 Account
                                             </h3>
                                         </div>
@@ -206,10 +206,10 @@ export function DashboardSidebar() {
                                                         href={item.href}
                                                         onClick={() => setIsMobileSidebarOpen(false)}
                                                         className={cn(
-                                                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                                                            "flex items-center gap-3 px-3 py-2 rounded-lg text-body-sm font-medium transition-colors",
                                                             active
                                                                 ? "bg-primary/10 text-primary"
-                                                                : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                                                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                                                         )}
                                                     >
                                                         <Icon className="w-5 h-5" strokeWidth={2} />
@@ -221,9 +221,9 @@ export function DashboardSidebar() {
                                     </div>
 
                                     {/* Settings Section */}
-                                    <div className="mt-4 pt-4 border-t border-neutral-200">
+                                    <div className="mt-4 pt-4 border-t border-border">
                                         <div className="px-3 mb-2">
-                                            <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                            <h3 className="text-caption font-medium text-muted-foreground uppercase tracking-wider">
                                                 Settings
                                             </h3>
                                         </div>
@@ -238,10 +238,10 @@ export function DashboardSidebar() {
                                                         href={item.href}
                                                         onClick={() => setIsMobileSidebarOpen(false)}
                                                         className={cn(
-                                                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                                                            "flex items-center gap-3 px-3 py-2 rounded-lg text-body-sm font-medium transition-colors",
                                                             active
                                                                 ? "bg-primary/10 text-primary"
-                                                                : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                                                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                                                         )}
                                                     >
                                                         <Icon className="w-5 h-5" strokeWidth={2} />
@@ -254,7 +254,7 @@ export function DashboardSidebar() {
                 </nav>
 
                 {/* Certificate Download - Pinned to bottom */}
-                <div className="shrink-0 bg-white">
+                <div className="shrink-0 bg-card">
                     <CertificateDownload profile={profile} compliance={profile?.compliance} />
                 </div>
             </div>
@@ -350,10 +350,10 @@ export function DashboardSidebar() {
                         aria-modal="true"
                         aria-label="Navigation Menu"
                     >
-                        <div className="flex h-[100dvh] flex-col bg-white shadow-xl">
+                        <div className="flex h-[100dvh] flex-col bg-card shadow-xl">
                             {/* Header - Fixed at top, touch-friendly */}
-                            <div className="shrink-0 flex items-center justify-between px-4 py-4 sm:p-5 border-b border-neutral-200">
-                                    <h2 className="text-lg font-semibold text-neutral-900">Menu</h2>
+                            <div className="shrink-0 flex items-center justify-between px-4 py-4 sm:p-5 border-b border-border">
+                                    <h2 className="text-body-lg font-semibold text-foreground">Menu</h2>
                                     <Button
                                         variant="ghost"
                                         size="icon"
@@ -375,10 +375,10 @@ export function DashboardSidebar() {
                                                     setIsMobileSidebarOpen(false);
                                                 }}
                                                 className={cn(
-                                                    "flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-sm font-medium transition-colors text-left w-full touch-manipulation",
+                                                    "flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-body-sm font-medium transition-colors text-left w-full touch-manipulation",
                                                     isMailActive
                                                         ? "bg-primary/10 text-primary"
-                                                        : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                                                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                                                 )}
                                             >
                                                 <Mail className="w-5 h-5 shrink-0" strokeWidth={2} />
@@ -388,9 +388,9 @@ export function DashboardSidebar() {
                                     </div>
 
                                     {/* Account Section */}
-                                    <div className="mt-2 pt-4 border-t border-neutral-200">
+                                    <div className="mt-2 pt-4 border-t border-border">
                                         <div className="px-3 mb-2">
-                                            <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                            <h3 className="text-caption font-medium text-muted-foreground uppercase tracking-wider">
                                                 Account
                                             </h3>
                                         </div>
@@ -404,10 +404,10 @@ export function DashboardSidebar() {
                                                         href={item.href}
                                                         onClick={() => setIsMobileSidebarOpen(false)}
                                                         className={cn(
-                                                            "flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-sm font-medium transition-colors touch-manipulation",
+                                                            "flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-body-sm font-medium transition-colors touch-manipulation",
                                                             active
                                                                 ? "bg-primary/10 text-primary"
-                                                                : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                                                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                                                         )}
                                                     >
                                                         <Icon className="w-5 h-5 shrink-0" strokeWidth={2} />
@@ -419,9 +419,9 @@ export function DashboardSidebar() {
                                     </div>
 
                                     {/* Settings Section */}
-                                    <div className="mt-2 pt-4 border-t border-neutral-200">
+                                    <div className="mt-2 pt-4 border-t border-border">
                                         <div className="px-3 mb-2">
-                                            <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                                            <h3 className="text-caption font-medium text-muted-foreground uppercase tracking-wider">
                                                 Settings
                                             </h3>
                                         </div>
@@ -435,10 +435,10 @@ export function DashboardSidebar() {
                                                         href={item.href}
                                                         onClick={() => setIsMobileSidebarOpen(false)}
                                                         className={cn(
-                                                            "flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-sm font-medium transition-colors touch-manipulation",
+                                                            "flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-body-sm font-medium transition-colors touch-manipulation",
                                                             active
                                                                 ? "bg-primary/10 text-primary"
-                                                                : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                                                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                                                         )}
                                                     >
                                                         <Icon className="w-5 h-5 shrink-0" strokeWidth={2} />
@@ -451,7 +451,7 @@ export function DashboardSidebar() {
                                 </div>
 
                             {/* Footer with Certificate Download and Sign Out - Pinned to bottom */}
-                            <div className="shrink-0 border-t border-neutral-200 bg-white">
+                            <div className="shrink-0 border-t border-border bg-card">
                                 <CertificateDownload profile={profile} compliance={profile?.compliance} />
                                 
                                 {/* Sign Out */}
@@ -461,7 +461,7 @@ export function DashboardSidebar() {
                                 >
                                     <button
                                         onClick={handleLogout}
-                                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left w-full text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50"
+                                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-body-sm font-medium transition-colors text-left w-full text-muted-foreground hover:text-foreground hover:bg-muted/50"
                                     >
                                         <LogOut className="w-5 h-5" strokeWidth={2} />
                                         Sign out

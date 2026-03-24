@@ -27,11 +27,11 @@ export function OwnersCard({ owners }: OwnersCardProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             A Person with Significant Control (PSC) is someone who owns or controls the company.
             Verification is only required when someone meets the legal PSC thresholds.
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             PSC details are not currently collected in the dashboard. This section will be updated
             when owner management features become available.
           </p>
@@ -59,7 +59,7 @@ export function OwnersCard({ owners }: OwnersCardProps) {
                           {owner.first_name} {owner.middle_names} {owner.last_name}
                         </div>
                         {owner.email && (
-                          <div className="text-sm text-muted-foreground">{owner.email}</div>
+                          <div className="text-body-sm text-muted-foreground">{owner.email}</div>
                         )}
                       </div>
                     </TableCell>

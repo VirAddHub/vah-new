@@ -158,7 +158,7 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
                         </Button>
                         <div className="flex items-center gap-2">
                             <User className="h-5 w-5 text-primary" />
-                            <h1 className="text-2xl font-semibold">Profile Settings</h1>
+                            <h1 className="text-h2 font-semibold">Profile Settings</h1>
                         </div>
                     </div>
                 </div>
@@ -194,7 +194,7 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
                                         placeholder="Enter your first name"
                                     />
                                     {profile?.kyc_status === 'verified' && (
-                                        <p className="text-xs text-muted-foreground mt-1">
+                                        <p className="text-caption text-muted-foreground mt-1">
                                             Name cannot be changed after KYC verification
                                         </p>
                                     )}
@@ -209,7 +209,7 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
                                         placeholder="Enter your last name"
                                     />
                                     {profile?.kyc_status === 'verified' && (
-                                        <p className="text-xs text-muted-foreground mt-1">
+                                        <p className="text-caption text-muted-foreground mt-1">
                                             Name cannot be changed after KYC verification
                                         </p>
                                     )}
@@ -226,7 +226,7 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
                                     disabled={!editing}
                                     placeholder="your.email@example.com"
                                 />
-                                <p className="text-xs text-muted-foreground mt-1">
+                                <p className="text-caption text-muted-foreground mt-1">
                                     This is your account email address. You'll use this to log in.
                                 </p>
                             </div>
@@ -277,8 +277,8 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="p-4 bg-blue-50 rounded-lg">
-                                <h4 className="font-medium text-sm text-blue-900 mb-2">Important</h4>
-                                <p className="text-sm text-blue-800">
+                                <h4 className="font-medium text-body-sm text-blue-900 mb-2">Important</h4>
+                                <p className="text-body-sm text-blue-800">
                                     This address will be used for all mail forwarding requests.
                                     Make sure it's accurate and complete.
                                 </p>
@@ -286,8 +286,8 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
 
                             <div className="space-y-4">
                                 <div>
-                                    <Label className="text-base font-medium">Forwarding Address</Label>
-                                    <p className="text-sm text-muted-foreground mb-4">
+                                    <Label className="text-body font-medium">Forwarding Address</Label>
+                                    <p className="text-body-sm text-muted-foreground mb-4">
                                         This address will be used automatically when you request mail forwarding.
                                         Make sure it's accurate and complete.
                                     </p>
@@ -397,7 +397,7 @@ export function ProfilePage({ onNavigate, onGoBack }: ProfilePageProps) {
                             </div>
                             <div>
                                 <Label>Member Since</Label>
-                                <p className="text-sm text-muted-foreground mt-1">
+                                <p className="text-body-sm text-muted-foreground mt-1">
                                     {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Unknown'}
                                 </p>
                             </div>

@@ -315,15 +315,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     const isNew = !item.is_read && !isForwarded;
 
     if (isForwarded) {
-      return { label: "Forwarded", badgeClass: "bg-emerald-600 text-white border-transparent" };
+      return { label: "Forwarded", badgeClass: "bg-primary text-primary-foreground border-transparent" };
     }
     if (isScanned) {
-      return { label: "Scanned", badgeClass: "bg-neutral-200 text-neutral-700 border-transparent" };
+      return { label: "Scanned", badgeClass: "bg-muted text-foreground border-transparent" };
     }
     if (isNew) {
-      return { label: "New", badgeClass: "bg-blue-600 text-white border-transparent" };
+      return { label: "New", badgeClass: "bg-blue-600 text-primary-foreground border-transparent" };
     }
-    return { label: "Received", badgeClass: "bg-neutral-200 text-neutral-700 border-transparent" };
+    return { label: "Received", badgeClass: "bg-muted text-foreground border-transparent" };
   };
 
   const mailTypeIcon = (item: MailItem) => {
@@ -823,8 +823,8 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             {(!compliance.isKycApproved || userProfile?.kyc_status === 'pending' || userProfile?.kyc_status === null) && (
               <Card className="border-primary/20 bg-primary/5 shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-lg">Complete Identity Verification</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <CardTitle className="text-body-lg">Complete Identity Verification</CardTitle>
+                  <p className="text-body-sm text-muted-foreground mt-1">
                     Verify your identity to fully activate your VirtualAddressHub account and access all features.
                   </p>
                 </CardHeader>
@@ -835,15 +835,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             )}
 
             {/* Mail Inbox Section */}
-            <Card className="border-neutral-200 shadow-sm order-1 md:order-2">
+            <Card className="border-border shadow-sm order-1 md:order-2">
               <CardHeader className="pb-4">
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <h2 className="text-lg md:text-2xl font-semibold text-neutral-800 truncate">
+                      <h2 className="text-body-lg md:text-h2 font-semibold text-foreground truncate">
                         Inbox
                       </h2>
-                      <p className="text-xs md:text-sm text-neutral-500 mt-1">
+                      <p className="text-caption md:text-body-sm text-muted-foreground mt-1">
                         {totalItems} {totalItems === 1 ? 'item' : 'items'}
                         {mailLoading && <RefreshCw className="h-3 w-3 ml-2 inline animate-spin" />}
                       </p>
@@ -875,20 +875,20 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                       </Button>
                     </div>
                   </div>
-                  <p className="hidden md:block text-sm text-neutral-500">
+                  <p className="hidden md:block text-body-sm text-muted-foreground">
                     Click on any mail item to view full details and scans
                   </p>
 
                   {/* Summary row (inbox-first) */}
                   <div className="rounded-xl border border-border bg-background px-3 py-2 inline-block">
-                    <div className="text-[11px] font-semibold text-neutral-500">New</div>
-                    <div className="mt-1 text-base font-semibold text-neutral-900">{summary.newCount}</div>
+                    <div className="text-caption font-semibold text-muted-foreground">New</div>
+                    <div className="mt-1 text-body font-semibold text-foreground">{summary.newCount}</div>
                   </div>
 
                   {/* Bulk Actions - Show when items selected */}
                   {isSomeSelected && (
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="default" className="text-sm">
+                      <Badge variant="default" className="text-body-sm">
                         {selectedMail.length} selected
                       </Badge>
                       <Button size="sm" variant="outline">
@@ -925,27 +925,27 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             {/* Mobile: Certificate CTA (replaces sidebar content) */}
             <Card className="md:hidden order-3 border-border shadow-sm">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold text-neutral-900">Your Business Address</CardTitle>
+                <CardTitle className="text-body font-semibold text-foreground">Your Business Address</CardTitle>
               </CardHeader>
               <CardContent className="pt-0 space-y-4">
                 {/* Company + address */}
                 <div className="space-y-1">
-                  <div className="text-sm font-semibold text-neutral-900">
+                  <div className="text-body-sm font-semibold text-foreground">
                     {(userProfile as any)?.company_name || "Your Company"}
                   </div>
-                  <div className="text-sm font-semibold text-neutral-900">
+                  <div className="text-body-sm font-semibold text-foreground">
                     {businessAddressLine1}
                   </div>
-                  <div className="text-xs text-neutral-500">{businessAddressLine2}</div>
-                  <div className="text-xs text-neutral-500">
+                  <div className="text-caption text-muted-foreground">{businessAddressLine2}</div>
+                  <div className="text-caption text-muted-foreground">
                     {businessAddressLine3}
                   </div>
-                  <div className="text-xs text-neutral-500">{businessAddressLine4}</div>
+                  <div className="text-caption text-muted-foreground">{businessAddressLine4}</div>
                 </div>
 
                 {/* Letter of Certification */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold text-[#374151]">
+                  <p className="text-caption font-semibold text-foreground">
                     Letter of Certification
                   </p>
                   <Button
@@ -956,14 +956,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   >
                     {isCertBusy ? "Preparing…" : "Download PDF"}
                   </Button>
-                  <p className="text-xs text-neutral-500 leading-relaxed">
+                  <p className="text-caption text-muted-foreground leading-relaxed">
                     Use for banks, payment providers and professional contacts.
                   </p>
                 </div>
 
                 {/* Locked state message */}
                 {!canUseAddress && (
-                  <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground leading-relaxed">
+                  <div className="rounded-lg bg-muted/40 p-3 text-caption text-muted-foreground leading-relaxed">
                     Available once identity verification (KYC) is complete.
                   </div>
                 )}
@@ -1036,29 +1036,29 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 userProfile={userProfile}
               />
             ) : (
-              <Card className="border-neutral-200 shadow-sm">
+              <Card className="border-border shadow-sm">
                 <CardHeader className="pb-3">
-                  <div className="text-[11px] font-semibold text-neutral-500 tracking-wider">
+                  <div className="text-caption font-semibold text-muted-foreground tracking-wider">
                     ADDRESSES
                   </div>
-                  <CardTitle className="text-xl font-semibold text-neutral-900">
+                  <CardTitle className="text-h3 font-semibold text-foreground">
                     Your Business Address
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Company + address */}
                   <div className="space-y-1">
-                    <div className="text-sm font-semibold text-neutral-900">
+                    <div className="text-body-sm font-semibold text-foreground">
                       {(userProfile as any)?.company_name || "Your Company"}
                     </div>
-                    <div className="text-sm font-semibold text-neutral-900">
+                    <div className="text-body-sm font-semibold text-foreground">
                       {businessAddressLine1}
                     </div>
-                    <div className="text-xs text-neutral-500">{businessAddressLine2}</div>
-                    <div className="text-xs text-neutral-500">
+                    <div className="text-caption text-muted-foreground">{businessAddressLine2}</div>
+                    <div className="text-caption text-muted-foreground">
                       {businessAddressLine3}
                     </div>
-                    <div className="text-xs text-neutral-500">{businessAddressLine4}</div>
+                    <div className="text-caption text-muted-foreground">{businessAddressLine4}</div>
                   </div>
 
                   {/* Primary action */}
@@ -1072,14 +1072,14 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     >
                       {isCertBusy ? "Preparing your letter…" : "Download Letter of Certification (PDF)"}
                     </Button>
-                    <p className="text-xs text-neutral-500 leading-relaxed">
+                    <p className="text-caption text-muted-foreground leading-relaxed">
                       Use this letter for banks, payment providers, and professional contacts.
                     </p>
                   </div>
 
                   {/* Locked state message */}
                   {!canUseAddress && (
-                    <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground leading-relaxed">
+                    <div className="rounded-lg bg-muted/40 p-3 text-caption text-muted-foreground leading-relaxed">
                       Available once identity verification (KYC) is complete.
                     </div>
                   )}
@@ -1094,7 +1094,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       {/* Help Text (bottom of dashboard) */}
       <div className="safe-pad mx-auto max-w-screen-xl pb-10">
         <div className="text-center py-6 space-y-2">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             Need help? Visit our{" "}
             {/* Standardized to "Help Centre" for consistency across all pages */}
             <button onClick={() => window.open('/help', '_blank', 'noopener,noreferrer')} className="text-primary hover:underline">Help Centre</button>

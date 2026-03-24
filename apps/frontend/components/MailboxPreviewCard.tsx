@@ -20,7 +20,7 @@ export function MailboxPreviewCard({
     const price = priceProp || dynamicPrice || "Loading...";
     return (
         <div className="relative">
-            <div className="shadow-neutral-900/10 bg-card border-border border rounded-2xl pt-6 pr-6 pb-6 pl-6 relative shadow-2xl backdrop-blur-xl">
+            <div className="shadow-lg bg-card border-border border rounded-2xl pt-6 pr-6 pb-6 pl-6 relative backdrop-blur-xl">
                 {/* Header */}
                 <div className="flex items-center justify-between pb-4 border-b border-border mb-4">
                     <div className="flex items-center gap-3">
@@ -33,11 +33,11 @@ export function MailboxPreviewCard({
                             </svg>
                         </div>
                         <div>
-                            <p className="font-semibold text-sm text-foreground">Your Mail Dashboard</p>
-                            <p className="text-xs text-muted-foreground">Real-time updates</p>
+                            <p className="font-semibold text-body-sm text-foreground">Your Mail Dashboard</p>
+                            <p className="text-caption text-muted-foreground">Real-time updates</p>
                         </div>
                     </div>
-                    <span className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full">3 New</span>
+                    <span className="px-2.5 py-1 bg-primary/10 text-primary text-caption font-semibold rounded-full">3 New</span>
                 </div>
 
                 {/* Mail Items */}
@@ -56,10 +56,10 @@ export function MailboxPreviewCard({
                             </svg>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-foreground truncate">HMRC</p>
-                            <p className="text-xs text-muted-foreground truncate">VAT Return Notice</p>
+                            <p className="font-medium text-body-sm text-foreground truncate">HMRC</p>
+                            <p className="text-caption text-muted-foreground truncate">VAT Return Notice</p>
                         </div>
-                        <span className="px-2 py-1 bg-accent text-accent-foreground text-xs font-medium rounded-md flex-shrink-0">Free Forward</span>
+                        <span className="px-2 py-1 bg-accent text-accent-foreground text-caption font-medium rounded-md flex-shrink-0">Free Forward</span>
                     </div>
 
                     <div
@@ -76,10 +76,10 @@ export function MailboxPreviewCard({
                             </svg>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-foreground truncate">Companies House</p>
-                            <p className="text-xs text-muted-foreground truncate">Annual Confirmation</p>
+                            <p className="font-medium text-body-sm text-foreground truncate">Companies House</p>
+                            <p className="text-caption text-muted-foreground truncate">Annual Confirmation</p>
                         </div>
-                        <span className="px-2 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-md flex-shrink-0">Scanned</span>
+                        <span className="px-2 py-1 bg-muted text-muted-foreground text-caption font-medium rounded-md flex-shrink-0">Scanned</span>
                     </div>
 
                     <div
@@ -99,16 +99,16 @@ export function MailboxPreviewCard({
                             </svg>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-foreground truncate">Barclays Bank</p>
-                            <p className="text-xs text-muted-foreground truncate">Account Statement</p>
+                            <p className="font-medium text-body-sm text-foreground truncate">Barclays Bank</p>
+                            <p className="text-caption text-muted-foreground truncate">Account Statement</p>
                         </div>
-                        <span className="px-2 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-md flex-shrink-0">Today</span>
+                        <span className="px-2 py-1 bg-muted text-muted-foreground text-caption font-medium rounded-md flex-shrink-0">Today</span>
                     </div>
                 </div>
 
                 {/* Footer */}
                 <div className="flex items-center justify-between pt-4 border-t border-border">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5 text-caption text-muted-foreground">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             data-lucide="clock" className="lucide lucide-clock w-3.5 h-3.5">
@@ -117,7 +117,7 @@ export function MailboxPreviewCard({
                         </svg>
                         <span>Scanned today</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5 text-caption text-muted-foreground">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             data-lucide="shield" className="lucide lucide-shield w-3.5 h-3.5">
@@ -133,10 +133,10 @@ export function MailboxPreviewCard({
             {/* Floating badge */}
             {showPriceBadge && (
                 <div className="absolute -bottom-4 -right-4 bg-accent text-accent-foreground px-6 py-3 rounded-2xl shadow-lg">
-                    <p className="text-xs uppercase tracking-wide opacity-90">
+                    <p className="text-caption uppercase tracking-wide opacity-90">
                         Live in Minutes
                     </p>
-                    <p className="text-2xl font-bold">{price}</p>
+                    <p className="text-h2 font-bold">{price}</p>
                 </div>
             )}
         </div>

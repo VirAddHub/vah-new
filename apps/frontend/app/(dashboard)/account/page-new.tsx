@@ -154,7 +154,7 @@ export default function AccountPage() {
         <div className="max-w-6xl mx-auto p-6 space-y-8">
           <div className="flex items-center gap-3">
             <User className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">Account</h1>
+            <h1 className="text-h2 font-bold text-foreground">Account</h1>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -178,10 +178,10 @@ export default function AccountPage() {
           {data.business_address && (
             <div className="bg-muted/50 p-4 rounded-lg border">
               <h3 className="font-medium mb-2">Business Address (Registered Office)</h3>
-              <pre className="whitespace-pre-wrap text-sm font-mono text-muted-foreground">
+              <pre className="whitespace-pre-wrap text-body-sm font-mono text-muted-foreground">
                 {data.business_address.formatted}
               </pre>
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-caption text-muted-foreground mt-2">
                 This is your registered office address and cannot be edited here.
               </p>
             </div>

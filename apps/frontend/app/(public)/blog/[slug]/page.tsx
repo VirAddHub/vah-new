@@ -168,32 +168,32 @@ export default async function BlogPostPage({
   const hasHtml = typeof post.html === 'string' && post.html.trim().length > 0;
 
   return (
-    <div className="bg-[#F6F6F7]">
+    <div className="bg-background">
         {/* Main Content Area */}
-        <div className="max-w-[1440px] mx-auto px-[80px] py-[80px]">
-          <div className="flex gap-[40px] items-start">
+        <div className="max-w-[1440px] mx-auto px-6 lg:px-20 py-12 lg:py-20">
+          <div className="flex gap-10 items-start">
             {/* Left Column - Main Content */}
             <div className="flex-1">
-              <div className="flex flex-col items-center gap-[48px]">
+              <div className="flex flex-col items-center gap-12">
                 {/* Back to blogs */}
                 <div className="w-full max-w-[1172px] flex justify-start">
                   <Link
                     href="/blog"
-                    className="inline-flex items-center gap-2 text-[16px] font-medium text-[#666666] hover:text-[#1A1A1A] transition-colors"
+                    className="inline-flex items-center gap-2 text-body font-medium text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
                     Back to blogs
                   </Link>
                 </div>
                 {/* Heading */}
-                <h1 className="text-[54px] font-medium text-[#1A1A1A] leading-[1.2] text-center max-w-[1172px]">
+                <h1 className="text-h1 lg:text-display text-foreground text-center max-w-[1172px]">
                   {post.title}
                 </h1>
 
                 {/* Featured Image */}
                 {post.cover && (
                   <div className="w-full max-w-[1172px]">
-                    <div className="relative w-full h-[549px] rounded-[30px] overflow-hidden">
+                    <div className="relative w-full h-[549px] rounded-2xl overflow-hidden">
                       <ImageWithFallback
                         src={post.cover}
                         alt={post.title}
@@ -205,17 +205,17 @@ export default async function BlogPostPage({
 
                 {/* Article Content */}
                 <div className="w-full max-w-[1172px]">
-                  <div className="flex flex-col gap-[20px]">
+                  <div className="flex flex-col gap-5">
                     {hasHtml ? (
                       <article
-                        className="prose prose-lg max-w-none"
+                        className="prose prose-lg max-w-none prose-headings:text-foreground prose-p:text-muted-foreground"
                         dangerouslySetInnerHTML={{ 
                           __html: (post.html as string).replace(
                             /<h2/g, 
-                            '<h2 style="font-size: 24px; font-weight: 500; color: #1A1A1A; line-height: 1.375; margin-bottom: 14px; margin-top: 20px;"'
+                            '<h2 style="font-size: 1.5rem; font-weight: 500; line-height: 1.375; margin-bottom: 14px; margin-top: 20px;"'
                           ).replace(
                             /<p/g,
-                            '<p style="font-size: 18px; font-weight: 400; color: #666666; line-height: 1.4; margin-bottom: 20px;"'
+                            '<p style="font-size: 1.125rem; font-weight: 400; line-height: 1.4; margin-bottom: 20px;"'
                           ).replace(
                             /<ul/g,
                             '<ul style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; list-style: none; padding-left: 0;"'
@@ -235,7 +235,7 @@ export default async function BlogPostPage({
                           components={{
                             h2: ({ node, children, ...props }) => (
                               <h2 
-                                className="text-[24px] font-medium text-[#1A1A1A] leading-[1.375] mb-[14px] mt-[20px]" 
+                                className="text-h2 font-medium text-foreground mb-3.5 mt-5" 
                                 {...props}
                               >
                                 {children}
@@ -243,30 +243,30 @@ export default async function BlogPostPage({
                             ),
                             p: ({ node, children, ...props }) => (
                               <p 
-                                className="text-[18px] font-normal text-[#666666] leading-[1.4] mb-[20px]" 
+                                className="text-body-lg text-muted-foreground mb-5" 
                                 {...props}
                               >
                                 {children}
                               </p>
                             ),
                             ul: ({ node, children, ...props }) => (
-                              <ul className="flex flex-col gap-[10px] mb-[20px]" {...props}>
+                              <ul className="flex flex-col gap-2.5 mb-5" {...props}>
                                 {children}
                               </ul>
                             ),
                             li: ({ node, children, ...props }) => (
-                              <li className="flex items-start gap-[12px]" {...props}>
+                              <li className="flex items-start gap-3" {...props}>
                                 <img
                                   src="/figma/check-16.svg"
                                   alt=""
                                   aria-hidden="true"
-                                  className="h-[18px] w-[18px] flex-shrink-0 mt-0.5"
+                                  className="h-4.5 w-4.5 flex-shrink-0 mt-0.5"
                                 />
-                                <span className="text-[18px] font-normal text-[#666666] leading-[1.4]">{children}</span>
+                                <span className="text-body-lg text-muted-foreground">{children}</span>
                               </li>
                             ),
                             img: ({ node, ...props }) => (
-                              <img {...props} style={{ maxWidth: '100%', height: 'auto', borderRadius: '30px' }} />
+                              <img {...props} className="max-w-full h-auto rounded-2xl" />
                             ),
                           }}
                         >
@@ -281,34 +281,34 @@ export default async function BlogPostPage({
 
             {/* Right Column - Popular Articles Sidebar */}
             <div className="w-[417px] flex-shrink-0">
-              <div className="flex flex-col gap-[40px]">
+              <div className="flex flex-col gap-10">
                 <div>
-                  <h2 className="text-[44px] font-medium text-[#1A1A1A] leading-[1.2] mb-[18px]">
+                  <h2 className="text-h1 lg:text-display text-foreground mb-4">
                     Popular Articles
                   </h2>
-                  <div className="flex flex-col gap-[20px]">
+                  <div className="flex flex-col gap-5">
                     {popularPosts.map((popularPost) => (
                       <Link
                         key={popularPost.slug}
                         href={`/blog/${popularPost.slug}`}
-                        className="flex gap-[27px] p-[24px] bg-[#F9F9F9] rounded-[24px] hover:opacity-90 transition-opacity"
+                        className="flex gap-6 p-6 bg-muted rounded-xl hover:opacity-90 transition-opacity"
                       >
-                        <div className="relative w-[191px] h-[174px] flex-shrink-0 rounded-[12px] overflow-hidden">
+                        <div className="relative w-[191px] h-[174px] flex-shrink-0 rounded-lg overflow-hidden">
                           <ImageWithFallback
                             src={popularPost.imageUrl}
                             alt={popularPost.title}
                             className="w-full h-full object-cover"
                           />
                         </div>
-                        <div className="flex flex-col gap-[14px] flex-1 min-w-0">
-                          <div className="bg-white rounded-[22px] px-[10px] py-0 text-[12px] font-normal text-[#666666] leading-[1.67] inline-flex items-center justify-center w-fit">
+                        <div className="flex flex-col gap-3.5 flex-1 min-w-0">
+                          <div className="bg-card rounded-full px-2.5 py-0 text-caption text-muted-foreground inline-flex items-center justify-center w-fit">
                             {popularPost.category}
                           </div>
-                          <div className="flex flex-col gap-[10px]">
-                            <h3 className="text-[20px] font-medium text-[#1A1A1A] leading-[1.4] line-clamp-2">
+                          <div className="flex flex-col gap-2.5">
+                            <h3 className="text-h3 font-medium text-foreground line-clamp-2">
                               {popularPost.title}
                             </h3>
-                            <p className="text-[16px] font-normal text-[#666666] leading-[1.4] line-clamp-3">
+                            <p className="text-body text-muted-foreground line-clamp-3">
                               {popularPost.excerpt}
                             </p>
                           </div>
@@ -323,10 +323,10 @@ export default async function BlogPostPage({
         </div>
 
         {/* CTA Section */}
-        <div className="w-full bg-[#014D3F] py-[80px] px-[80px]">
+        <div className="w-full bg-secondary py-12 lg:py-20 px-6 lg:px-20">
           <div className="max-w-[1280px] mx-auto">
-            <div className="relative overflow-hidden rounded-[30px] bg-[#014D3F] p-0">
-              <div className="grid md:grid-cols-[857px_1fr] gap-[40px] items-center">
+            <div className="relative overflow-hidden rounded-2xl bg-secondary p-0">
+              <div className="grid md:grid-cols-[857px_1fr] gap-10 items-center">
                 {/* London landmarks illustration on left */}
                 <div className="relative w-full h-full min-h-[300px] md:min-h-[400px] flex items-center justify-center">
                   <img
@@ -337,15 +337,15 @@ export default async function BlogPostPage({
                 </div>
                 {/* Content on right */}
                 <div className="flex flex-col justify-center p-0 md:pl-0">
-                  <h2 className="text-[44px] font-medium leading-[1.2] text-white">
+                  <h2 className="text-h1 lg:text-display text-primary-foreground">
                     Get your London Business Address Today
                   </h2>
-                  <p className="mt-[12px] text-[16px] leading-[1.4] text-white/80">
-                    Everything included for <span className="text-[#206039] font-normal">£9.99</span> per month.
+                  <p className="mt-3 text-body text-primary-foreground/80">
+                    Everything included for <span className="text-primary font-normal">£9.99</span> per month.
                   </p>
                   <Link
                     href="/signup"
-                    className="mt-[24px] w-[268px] h-[48px] rounded-[30px] bg-[#206039] px-[10px] py-[10px] text-[16px] font-medium text-[#024E40] hover:bg-[#206039]/90 transition-colors uppercase flex items-center justify-center"
+                    className="mt-6 w-[268px] h-12 rounded-full bg-primary px-2.5 py-2.5 text-body font-medium text-primary-foreground hover:bg-primary/90 transition-colors uppercase flex items-center justify-center"
                   >
                     Schedule London Address
                   </Link>

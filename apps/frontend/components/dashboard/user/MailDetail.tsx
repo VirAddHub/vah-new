@@ -69,7 +69,7 @@ export function MailDetail({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 transition-colors duration-150 text-sm font-normal w-fit min-h-[44px] py-2 -ml-1 pr-2 rounded-lg touch-manipulation -mb-1"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-150 text-body-sm font-normal w-fit min-h-[44px] py-2 -ml-1 pr-2 rounded-lg touch-manipulation -mb-1"
           aria-label="Back to inbox"
         >
           <ArrowLeft className="h-4 w-4 shrink-0" strokeWidth={2} />
@@ -78,10 +78,10 @@ export function MailDetail({
 
         {/* Mail title + date added to dashboard */}
         <div className="space-y-1.5 md:space-y-3">
-          <h1 className="text-xl md:text-3xl font-semibold text-neutral-900 leading-tight break-words">
+          <h1 className="text-h3 md:text-h2 font-semibold text-foreground leading-tight break-words">
             {title}
           </h1>
-          <p className="text-sm text-neutral-500">
+          <p className="text-body-sm text-muted-foreground">
             {formattedDate ? `Added: ${formattedDate}` : 'Added: —'}
           </p>
         </div>
@@ -131,34 +131,34 @@ export function MailDetail({
             {forwardInlineNotice && (
               <div
                 role="alert"
-                className="absolute top-full left-0 right-0 sm:left-auto sm:right-auto sm:w-[min(420px,90vw)] mt-3 z-20 rounded-xl border border-neutral-200 bg-white shadow-lg p-4 transition-opacity duration-150"
+                className="absolute top-full left-0 right-0 sm:left-auto sm:right-auto sm:w-[min(420px,90vw)] mt-3 z-20 rounded-xl border border-border bg-card shadow-lg p-4 transition-opacity duration-150"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="text-sm font-semibold text-neutral-900">Cannot Forward Mail</div>
+                  <div className="text-body-sm font-semibold text-foreground">Cannot Forward Mail</div>
                   <button
                     type="button"
                     onClick={onDismissForwardNotice}
-                    className="shrink-0 rounded-md p-1 text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 transition-all duration-150"
+                    className="shrink-0 rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150"
                     aria-label="Dismiss"
                   >
                     <X className="h-4 w-4" strokeWidth={2} />
                   </button>
                 </div>
-                <div className="mt-2 text-sm text-neutral-600 leading-relaxed">{forwardInlineNotice}</div>
+                <div className="mt-2 text-body-sm text-muted-foreground leading-relaxed">{forwardInlineNotice}</div>
               </div>
             )}
           </div>
         </div>
 
         {/* PDF Viewer - Embedded container */}
-        <div className="rounded-xl md:rounded-lg border border-neutral-200 bg-neutral-50 p-4 md:p-6 min-w-0">
+        <div className="rounded-xl md:rounded-lg border border-border bg-muted/50 p-4 md:p-6 min-w-0">
           {miniViewerLoading ? (
             <div className="flex flex-col items-center justify-center min-h-[300px] md:min-h-[400px] py-12 md:py-16">
-              <div className="mx-auto h-10 w-10 rounded-full border-2 border-neutral-300 border-t-neutral-700 animate-spin" />
-              <p className="mt-6 text-base font-medium text-neutral-900">
+              <div className="mx-auto h-10 w-10 rounded-full border-2 border-border border-t-primary animate-spin" />
+              <p className="mt-6 text-body font-medium text-foreground">
                 Loading preview…
               </p>
-              <p className="mt-2 text-sm text-neutral-500">
+              <p className="mt-2 text-body-sm text-muted-foreground">
                 Fetching your scanned document
               </p>
             </div>
@@ -180,11 +180,11 @@ export function MailDetail({
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center min-h-[300px] md:min-h-[400px] py-12 md:py-16 text-center">
-              <FileText className="h-12 w-12 mx-auto text-neutral-300" strokeWidth={1.5} />
-              <p className="mt-6 text-base font-medium text-neutral-900">
+              <FileText className="h-12 w-12 mx-auto text-muted-foreground" strokeWidth={1.5} />
+              <p className="mt-6 text-body font-medium text-foreground">
                 {miniViewerError ? 'Preview unavailable' : 'No preview available'}
               </p>
-              <p className="mt-2 text-sm text-neutral-500">
+              <p className="mt-2 text-body-sm text-muted-foreground">
                 {miniViewerError ? 'Click "View Scan" to open full document' : 'Click "View Scan" to view the document'}
               </p>
             </div>

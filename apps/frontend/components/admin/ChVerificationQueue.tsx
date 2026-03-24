@@ -38,9 +38,9 @@ const STATUS_OPTIONS = [
 
 const STATUS_BADGE: Record<string, string> = {
   submitted: "bg-amber-100 text-amber-900 border border-amber-200",
-  approved: "bg-emerald-100 text-emerald-800 border border-emerald-200",
-  rejected: "bg-red-100 text-red-800 border border-red-200",
-  default: "bg-slate-100 text-slate-700 border border-slate-200",
+  approved: "bg-primary/10 text-primary border border-primary/20",
+  rejected: "bg-destructive/10 text-destructive border border-destructive/20",
+  default: "bg-muted text-muted-foreground border border-border",
 };
 
 export default function ChVerificationQueue() {
@@ -113,11 +113,11 @@ export default function ChVerificationQueue() {
     <Card>
       <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+          <CardTitle className="flex items-center gap-2 text-body-lg font-semibold">
             <ShieldCheck className="h-5 w-5 text-primary" />
             Companies House verification queue
           </CardTitle>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             Review uploaded proof before enabling Companies House usage.
           </p>
         </div>
@@ -142,7 +142,7 @@ export default function ChVerificationQueue() {
       </CardHeader>
       <CardContent>
         {error && (
-          <div className="mb-4 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+          <div className="mb-4 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-body-sm text-destructive">
             Failed to load submissions: {String(error)}
           </div>
         )}
@@ -155,7 +155,7 @@ export default function ChVerificationQueue() {
         ) : submissions.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-16 text-center text-muted-foreground">
             <ShieldAlert className="h-10 w-10 text-muted-foreground/70" />
-            <p className="text-sm">
+            <p className="text-body-sm">
               {statusFilter === "submitted"
                 ? "No pending submissions. You’re all caught up!"
                 : "No submissions match this filter."}
@@ -186,7 +186,7 @@ export default function ChVerificationQueue() {
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">{formatName(submission)}</span>
-                          <span className="text-xs text-muted-foreground">{submission.email}</span>
+                          <span className="text-caption text-muted-foreground">{submission.email}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -195,12 +195,12 @@ export default function ChVerificationQueue() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm">
+                        <div className="text-body-sm">
                           {formatDate(submission.ch_verification_submitted_at) || '—'}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm text-muted-foreground max-w-xs">
+                        <div className="text-body-sm text-muted-foreground max-w-xs">
                           {submission.ch_verification_notes || (statusTag === 'submitted' ? 'Awaiting review' : '—')}
                         </div>
                       </TableCell>

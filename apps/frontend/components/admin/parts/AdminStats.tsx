@@ -16,8 +16,8 @@ export function AdminStats({ metrics, links, ovLoading, severity }: AdminStatsPr
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Admin Overview</h1>
-          <p className="text-sm text-muted-foreground">System status and key metrics</p>
+          <h1 className="text-h3 font-bold">Admin Overview</h1>
+          <p className="text-body-sm text-muted-foreground">System status and key metrics</p>
         </div>
         <StatusBadge severity={severity as any} />
       </div>

@@ -141,41 +141,41 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-150">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6">
-          <CardTitle className="text-xl font-semibold text-neutral-900">Request Mail Forwarding</CardTitle>
+          <CardTitle className="text-h3 font-semibold text-foreground">Request Mail Forwarding</CardTitle>
           <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0 transition-all duration-150">
             <X className="h-4 w-4" strokeWidth={2} />
           </Button>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200">
-            <h4 className="font-medium text-sm text-neutral-700 mb-3">Mail Item</h4>
-            <div className="space-y-2 text-sm text-neutral-600">
+          <div className="p-4 bg-muted/50 rounded-lg border border-border">
+            <h4 className="font-medium text-body-sm text-foreground mb-3">Mail Item</h4>
+            <div className="space-y-2 text-body-sm text-muted-foreground">
               <p>
-                <span className="font-medium text-neutral-900">Document:</span> {formatSubjectForDisplay(mailItem?.subject || mailItem?.description || "No subject")}
+                <span className="font-medium text-foreground">Document:</span> {formatSubjectForDisplay(mailItem?.subject || mailItem?.description || "No subject")}
               </p>
               <p>
-                <span className="font-medium text-neutral-900">Source:</span> {formatSenderForDisplay(mailItem?.sender_name || "Unknown sender")}
+                <span className="font-medium text-foreground">Source:</span> {formatSenderForDisplay(mailItem?.sender_name || "Unknown sender")}
               </p>
               <p>
-                <span className="font-medium text-neutral-900">Received:</span> {mailItem?.created_at ? new Date(Number(mailItem.created_at)).toLocaleDateString() : "Unknown date"}
+                <span className="font-medium text-foreground">Received:</span> {mailItem?.created_at ? new Date(Number(mailItem.created_at)).toLocaleDateString() : "Unknown date"}
               </p>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-              <h4 className="font-medium text-sm text-neutral-900 mb-3">Forwarding Address</h4>
-              <div className="text-sm text-neutral-700 whitespace-pre-line mb-3">
+              <h4 className="font-medium text-body-sm text-foreground mb-3">Forwarding Address</h4>
+              <div className="text-body-sm text-foreground whitespace-pre-line mb-3">
                 {forwardingAddress || "No forwarding address configured. Please add one in Profile settings."}
               </div>
-              <p className="text-xs text-neutral-500">
+              <p className="text-caption text-muted-foreground">
                 This address will be used automatically. To change it, update your Profile settings.
               </p>
             </div>
 
             <div className="space-y-4">
               <div>
-                <Label htmlFor="to_name" className="text-sm font-medium text-neutral-700">Recipient Name *</Label>
+                <Label htmlFor="to_name" className="text-body-sm font-medium text-foreground">Recipient Name *</Label>
                 <Input
                   id="to_name"
                   value={formData.to_name}
@@ -183,12 +183,12 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
                   placeholder="Full name"
                   required
                   disabled
-                  className="bg-neutral-50 mt-1.5"
+                  className="bg-muted/50 mt-1.5"
                 />
               </div>
 
               <div>
-                <Label htmlFor="address1" className="text-sm font-medium text-neutral-700">Address Line 1 *</Label>
+                <Label htmlFor="address1" className="text-body-sm font-medium text-foreground">Address Line 1 *</Label>
                 <Input
                   id="address1"
                   value={formData.address1}
@@ -196,25 +196,25 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
                   placeholder="Street address, house number"
                   required
                   disabled
-                  className="bg-neutral-50 mt-1.5"
+                  className="bg-muted/50 mt-1.5"
                 />
               </div>
 
               <div>
-                <Label htmlFor="address2" className="text-sm font-medium text-neutral-700">Address Line 2</Label>
+                <Label htmlFor="address2" className="text-body-sm font-medium text-foreground">Address Line 2</Label>
                 <Input
                   id="address2"
                   value={formData.address2}
                   onChange={(e) => handleChange("address2", e.target.value)}
                   placeholder="Apartment, suite, unit, etc. (optional)"
                   disabled
-                  className="bg-neutral-50 mt-1.5"
+                  className="bg-muted/50 mt-1.5"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="city" className="text-sm font-medium text-neutral-700">City *</Label>
+                  <Label htmlFor="city" className="text-body-sm font-medium text-foreground">City *</Label>
                   <Input
                     id="city"
                     value={formData.city}
@@ -222,22 +222,22 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
                     placeholder="City"
                     required
                     disabled
-                    className="bg-neutral-50 mt-1.5"
+                    className="bg-muted/50 mt-1.5"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="state" className="text-sm font-medium text-neutral-700">State/Province</Label>
+                  <Label htmlFor="state" className="text-body-sm font-medium text-foreground">State/Province</Label>
                   <Input
                     id="state"
                     value={formData.state}
                     onChange={(e) => handleChange("state", e.target.value)}
                     placeholder="State or province"
                     disabled
-                    className="bg-neutral-50 mt-1.5"
+                    className="bg-muted/50 mt-1.5"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="postal" className="text-sm font-medium text-neutral-700">Postal Code *</Label>
+                  <Label htmlFor="postal" className="text-body-sm font-medium text-foreground">Postal Code *</Label>
                   <Input
                     id="postal"
                     value={formData.postal}
@@ -245,15 +245,15 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
                     placeholder="Postal code"
                     required
                     disabled
-                    className="bg-neutral-50 mt-1.5"
+                    className="bg-muted/50 mt-1.5"
                   />
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="country" className="text-sm font-medium text-neutral-700">Country *</Label>
+                <Label htmlFor="country" className="text-body-sm font-medium text-foreground">Country *</Label>
                 <Select value={formData.country} onValueChange={(value) => handleChange("country", value)} disabled>
-                  <SelectTrigger className="bg-neutral-50 mt-1.5">
+                  <SelectTrigger className="bg-muted/50 mt-1.5">
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
                   <SelectContent>
@@ -274,14 +274,14 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
               </div>
             </div>
 
-            <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200">
-              <h4 className="font-semibold text-sm text-neutral-900 mb-3">Forwarding Cost</h4>
-              <div className="space-y-2 text-sm text-neutral-600">
+            <div className="p-4 bg-muted/50 rounded-lg border border-border">
+              <h4 className="font-semibold text-body-sm text-foreground mb-3">Forwarding Cost</h4>
+              <div className="space-y-2 text-body-sm text-muted-foreground">
                 <p>
-                  <span className="font-medium text-neutral-900">HMRC & Companies House:</span> <span className="text-primary font-medium">Free</span>
+                  <span className="font-medium text-foreground">HMRC & Companies House:</span> <span className="text-primary font-medium">Free</span>
                 </p>
                 <p>
-                  <span className="font-medium text-neutral-900">All other mail:</span> <span className="text-primary font-medium">£2 per item</span> (added to your monthly invoice)
+                  <span className="font-medium text-foreground">All other mail:</span> <span className="text-primary font-medium">£2 per item</span> (added to your monthly invoice)
                 </p>
               </div>
             </div>

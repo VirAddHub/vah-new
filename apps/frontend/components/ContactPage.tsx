@@ -98,18 +98,18 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
     // Success screen
     if (isSubmitted) {
         return (
-            <div className="min-w-0 overflow-x-clip bg-zinc-50 pt-20 lg:pt-0 min-h-screen py-16 flex items-center justify-center">
+            <div className="min-w-0 overflow-x-clip bg-muted pt-20 lg:pt-0 min-h-screen py-16 flex items-center justify-center">
                 <div className="max-w-2xl mx-auto w-full px-4 text-center">
-                    <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl lg:text-4xl mb-4">
+                    <h1 className="text-h2 sm:text-h1 lg:text-display text-foreground mb-4">
                         Message sent — thank you!
                     </h1>
-                    <p className="text-base text-zinc-600 mb-8">
+                    <p className="text-body text-muted-foreground mb-8">
                         We've received your enquiry. We'll reply within 24 hours.
                     </p>
                     <div className="flex flex-wrap gap-4 justify-center">
                         <Button
                             onClick={() => onNavigate?.("home")}
-                            className="bg-emerald-800 text-white hover:bg-emerald-900 rounded-full px-6"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6"
                         >
                             Return Home
                         </Button>
@@ -127,14 +127,14 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
     }
 
     return (
-        <div className="min-w-0 w-full overflow-x-clip bg-zinc-50 pt-20 lg:pt-0">
+        <div className="min-w-0 w-full overflow-x-clip bg-muted pt-20 lg:pt-0">
             <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
                 {/* Hero Section */}
                 <div className="max-w-2xl">
-                    <h1 className="text-3xl leading-tight font-semibold text-zinc-900 sm:text-4xl lg:text-[44px]">
+                    <h1 className="text-h1 lg:text-display text-foreground">
                         Get in touch
                     </h1>
-                    <p className="mt-3 text-base leading-7 text-zinc-600">
+                    <p className="mt-3 text-body text-muted-foreground">
                         Have questions about our virtual address service? We're here to help.
                     </p>
                 </div>
@@ -143,10 +143,10 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                 <div className="mt-8 grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
                     {/* Left Column - Contact Form */}
                     <div className="min-w-0 lg:col-span-2">
-                        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
+                        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6 lg:p-8">
                             <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 sm:gap-5">
                                     {errorMsg && (
-                                    <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-600">
+                                    <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-body-sm text-red-600">
                                             {errorMsg}
                                         </div>
                                     )}
@@ -165,7 +165,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
 
                                 {/* Name Field */}
                                 <div className="flex flex-col gap-1.5">
-                                    <label htmlFor="name" className="text-sm font-medium text-zinc-900">Name</label>
+                                    <label htmlFor="name" className="text-label text-foreground">Name</label>
                                     <input
                                         id="name"
                                         name="name"
@@ -174,13 +174,13 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                         value={formData.name}
                                         onChange={handleInputChange}
                                         placeholder="Name"
-                                        className="w-full min-w-0 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                                        className="w-full min-w-0 rounded-xl border border-input bg-background px-4 py-3 text-body text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                                     />
                                 </div>
 
                                 {/* Email Field */}
                                 <div className="flex flex-col gap-1.5">
-                                    <label htmlFor="email" className="text-sm font-medium text-zinc-900">Email</label>
+                                    <label htmlFor="email" className="text-label text-foreground">Email</label>
                                     <input
                                         id="email"
                                         name="email"
@@ -189,13 +189,13 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                         value={formData.email}
                                         onChange={handleInputChange}
                                         placeholder="Type email"
-                                        className="w-full min-w-0 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                                        className="w-full min-w-0 rounded-xl border border-input bg-background px-4 py-3 text-body text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                                     />
                                 </div>
 
                                 {/* Company Name Field */}
                                 <div className="flex flex-col gap-1.5">
-                                    <label htmlFor="company" className="text-sm font-medium text-zinc-900">Company name</label>
+                                    <label htmlFor="company" className="text-label text-foreground">Company name</label>
                                     <input
                                         id="company"
                                         name="company"
@@ -203,13 +203,13 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                         value={formData.company}
                                         onChange={handleInputChange}
                                         placeholder="Company name"
-                                        className="w-full min-w-0 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                                        className="w-full min-w-0 rounded-xl border border-input bg-background px-4 py-3 text-body text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                                     />
                                 </div>
 
                                 {/* Subject Field */}
                                 <div className="flex flex-col gap-1.5">
-                                    <label htmlFor="subject" className="text-sm font-medium text-zinc-900">Subject</label>
+                                    <label htmlFor="subject" className="text-label text-foreground">Subject</label>
                                     <input
                                         id="subject"
                                         name="subject"
@@ -218,33 +218,33 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                         value={formData.subject}
                                         onChange={handleInputChange}
                                         placeholder="How can we help you"
-                                        className="w-full min-w-0 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                                        className="w-full min-w-0 rounded-xl border border-input bg-background px-4 py-3 text-body text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                                     />
                                 </div>
 
                                 {/* Enquiry Type Dropdown */}
                                 <div className="flex flex-col gap-1.5">
-                                    <label htmlFor="inquiryType" className="text-sm font-medium text-zinc-900">Enquiry type</label>
+                                    <label htmlFor="inquiryType" className="text-label text-foreground">Enquiry type</label>
                                     <div className="relative">
                                         <select
                                             id="inquiryType"
                                             name="inquiryType"
                                             value={formData.inquiryType}
                                             onChange={handleInputChange}
-                                            className="w-full min-w-0 rounded-xl border border-zinc-300 bg-white px-4 py-3 pr-10 text-base text-zinc-900 appearance-none focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                                            className="w-full min-w-0 rounded-xl border border-input bg-background px-4 py-3 pr-10 text-body text-foreground appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                                         >
                                             <option value="general">General enquiry</option>
                                             <option value="pricing">Pricing Question</option>
                                             <option value="technical">Technical Support</option>
                                             <option value="billing">Billing Question</option>
                                         </select>
-                                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                     </div>
                                 </div>
 
                                 {/* Description/Message Field */}
                                 <div className="flex flex-col gap-1.5">
-                                    <label htmlFor="message" className="text-sm font-medium text-zinc-900">Description</label>
+                                    <label htmlFor="message" className="text-label text-foreground">Description</label>
                                     <textarea
                                         id="message"
                                         name="message"
@@ -253,7 +253,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                         value={formData.message}
                                         onChange={handleInputChange}
                                         placeholder="Please describe your enquiry in detail..."
-                                        className="min-h-[140px] w-full min-w-0 resize-none rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                                        className="min-h-[140px] w-full min-w-0 resize-none rounded-xl border border-input bg-background px-4 py-3 text-body text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                                     />
                                 </div>
 
@@ -261,7 +261,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-800 px-6 py-3.5 text-base font-semibold text-white hover:bg-emerald-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 disabled:opacity-60 disabled:text-white"
+                                    className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-body font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60"
                                 >
                                     {isSubmitting ? (
                                         <>
@@ -274,7 +274,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 </button>
 
                                 {/* Privacy Text */}
-                                <p className="mt-4 text-sm leading-6 text-zinc-500">
+                                <p className="mt-4 text-body-sm text-muted-foreground">
                                     Your information is private and never shared with third parties.
                                 </p>
                             </form>
@@ -284,16 +284,16 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                     {/* Right Column - Support Cards (stack on mobile) */}
                     <div className="min-w-0 space-y-4 lg:col-span-1">
                         {/* WhatsApp Support Card */}
-                        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+                        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6">
                             <div className="flex flex-col gap-3">
-                                <h3 className="text-base font-semibold text-zinc-900">WhatsApp Support</h3>
-                                <p className="text-sm leading-6 text-zinc-600 break-words">
+                                <h3 className="text-body font-semibold text-foreground">WhatsApp Support</h3>
+                                <p className="text-body-sm text-muted-foreground break-words">
                                     Dedicated WhatsApp Business line
                                 </p>
                                 <button
                                     type="button"
                                     onClick={() => window.open("https://wa.me/447000000000", "_blank")}
-                                    className="inline-flex w-full max-w-[214px] items-center justify-center rounded-full border border-emerald-800 bg-transparent px-4 py-3 text-base font-medium text-emerald-800 hover:bg-emerald-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40"
+                                    className="inline-flex w-full max-w-[214px] items-center justify-center rounded-full border border-primary bg-transparent px-4 py-3 text-body font-medium text-primary hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                                 >
                                     Chat on WhatsApp
                                 </button>
@@ -301,16 +301,16 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                         </div>
 
                         {/* Email Card */}
-                        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+                        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6">
                             <div className="flex flex-col gap-3">
-                                <h3 className="text-base font-semibold text-zinc-900">Email</h3>
-                                <p className="break-words text-sm leading-6 text-zinc-600">
+                                <h3 className="text-body font-semibold text-foreground">Email</h3>
+                                <p className="break-words text-body-sm text-muted-foreground">
                                     support@virtualaddresshub.co.uk
                                 </p>
                                 <button
                                     type="button"
                                     onClick={() => (window.location.href = "mailto:support@virtualaddresshub.co.uk")}
-                                    className="inline-flex w-full max-w-[214px] items-center justify-center rounded-full border border-emerald-800 bg-transparent px-4 py-3 text-base font-medium text-emerald-800 hover:bg-emerald-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40"
+                                    className="inline-flex w-full max-w-[214px] items-center justify-center rounded-full border border-primary bg-transparent px-4 py-3 text-body font-medium text-primary hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                                 >
                                     Send an email
                                 </button>

@@ -28,10 +28,10 @@ export default function HowItWorks() {
         <section className="w-full bg-background pt-12 pb-16 sm:pb-20 lg:pt-24 lg:pb-24" aria-labelledby="how-it-works-heading">
             <div className="safe-pad mx-auto w-full max-w-[1280px] px-6 sm:px-8 lg:px-12">
                 <header className="mb-6 text-center sm:mb-8 md:mb-10 lg:mb-[60px]">
-                    <h2 id="how-it-works-heading" className="mb-2 text-2xl font-semibold text-foreground sm:mb-3 sm:text-3xl md:text-4xl lg:text-[44px] lg:leading-[1.1]">
+                    <h2 id="how-it-works-heading" className="mb-2 text-h2 sm:mb-3 sm:text-h1 lg:text-display text-foreground">
                         How It Works
                     </h2>
-                    <p className="text-sm text-muted-foreground sm:text-base md:text-base lg:text-[18px] lg:leading-[1.4]">
+                    <p className="text-body-sm text-muted-foreground sm:text-body lg:text-body-lg">
                         Getting started is simple
                     </p>
                 </header>
@@ -49,20 +49,20 @@ export default function HowItWorks() {
                                     {index < steps.length - 1 && (
                                         <span
                                             aria-hidden="true"
-                                            className="absolute left-[18px] top-12 h-[calc(100%-2.5rem)] w-px bg-zinc-200"
+                                            className="absolute left-[18px] top-12 h-[calc(100%-2.5rem)] w-px bg-border"
                                         />
                                     )}
                                     <span
                                         aria-hidden="true"
-                                        className="h-9 w-9 shrink-0 rounded-full border border-emerald-100 bg-emerald-50 flex items-center justify-center mt-0.5"
+                                        className="h-9 w-9 shrink-0 rounded-full border border-primary/20 bg-primary/5 flex items-center justify-center mt-0.5"
                                     >
-                                        <Icon className="h-4 w-4 text-emerald-700" />
+                                        <Icon className="h-4 w-4 text-primary" />
                                     </span>
                                     <div>
-                                        <h3 className="text-[17px] leading-6 font-semibold text-zinc-900">
+                                        <h3 className="text-body font-semibold text-foreground">
                                             {step.title}
                                         </h3>
-                                        <p className="mt-1 text-sm leading-6 text-zinc-600">
+                                        <p className="mt-1 text-body-sm text-muted-foreground">
                                             {step.description}
                                         </p>
                                     </div>
@@ -92,13 +92,13 @@ export default function HowItWorks() {
                     <div className="grid grid-cols-3 gap-12 text-center">
                         {steps.map((step, index) => (
                             <div key={step.k} className="relative z-10 flex flex-col items-center">
-                                <div className="flex h-[80px] w-[80px] items-center justify-center text-primary rounded-full bg-emerald-50 border border-emerald-100 shrink-0">
-                                    <step.LucideIcon strokeWidth={1.5} className="h-10 w-10 text-emerald-700" />
+                                <div className="flex h-20 w-20 items-center justify-center text-primary rounded-full bg-primary/5 border border-primary/20 shrink-0">
+                                    <step.LucideIcon strokeWidth={1.5} className="h-10 w-10 text-primary" />
                                 </div>
-                                <h3 className="mt-4 text-[18px] font-medium text-foreground">
+                                <h3 className="mt-4 text-h4 text-foreground">
                                     {step.title}
                                 </h3>
-                                <p className="mt-2 text-[16px] leading-[1.4] text-muted-foreground">
+                                <p className="mt-2 text-body text-muted-foreground">
                                     {step.description}
                                 </p>
                             </div>

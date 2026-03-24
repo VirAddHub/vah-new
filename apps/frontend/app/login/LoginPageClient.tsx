@@ -185,14 +185,14 @@ export function LoginPageClient() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col">
+    <div className="min-h-screen bg-muted flex flex-col">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 flex flex-col flex-1">
         {/* Header row: logo left, contact button right */}
         <div className="flex items-center justify-between gap-4 pt-4 sm:pt-6 pb-2 z-10">
           <VAHLogo size="sm" href="/" className="shrink min-w-0" />
           <Link
             href="/contact"
-            className="shrink-0 inline-flex items-center justify-center rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
+            className="shrink-0 inline-flex items-center justify-center rounded-lg border border-border bg-card px-4 py-2 text-body-sm font-medium text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground transition-colors"
           >
             Contact us
           </Link>
@@ -201,13 +201,13 @@ export function LoginPageClient() {
         {/* Main area - balanced height */}
         <div className="flex items-center justify-center flex-1 min-h-[calc(100vh-120px)] py-8 sm:py-12">
           <div className="w-full max-w-[480px]">
-            <div className="bg-white rounded-3xl border border-zinc-200 shadow-lg shadow-zinc-200/50 p-6 sm:p-8">
+            <div className="bg-card rounded-3xl border border-border shadow-lg p-6 sm:p-8">
               {/* Title & subtitle */}
               <div className="mb-6">
-                <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
+                <h1 className="text-h1 tracking-tight text-foreground">
                   Login
                 </h1>
-                <p className="mt-1.5 text-sm text-zinc-500">
+                <p className="mt-1.5 text-body-sm text-muted-foreground">
                   Sign in to your account
                 </p>
               </div>
@@ -229,7 +229,7 @@ export function LoginPageClient() {
                   <AlertDescription className="space-y-2">
                     <div className="font-medium">{error}</div>
                     {showResetHint && (
-                      <div className="text-sm text-muted-foreground mt-2">
+                      <div className="text-body-sm text-muted-foreground mt-2">
                         Forgot your password? You can reset it below.
                       </div>
                     )}
@@ -240,7 +240,7 @@ export function LoginPageClient() {
               {/* Login Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-zinc-700">
+                  <Label htmlFor="email" className="text-foreground">
                     Email
                   </Label>
                   <Input
@@ -256,7 +256,7 @@ export function LoginPageClient() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="password" className="text-zinc-700">
+                  <Label htmlFor="password" className="text-foreground">
                     Password
                   </Label>
                   <Input
@@ -274,7 +274,7 @@ export function LoginPageClient() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 hover:brightness-95 transition-[filter,background]"
+                  className="w-full h-11 text-body font-semibold bg-primary text-primary-foreground hover:bg-primary/90 hover:brightness-95 transition-[filter,background]"
                 >
                   {loading ? 'Signing in...' : 'Sign In'}
                 </Button>
@@ -287,18 +287,18 @@ export function LoginPageClient() {
                 <div className="text-center">
                   <Link
                     href="/reset-password"
-                    className="text-sm font-medium text-emerald-700 hover:text-emerald-800 transition-colors"
+                    className="text-body-sm font-medium text-primary hover:text-primary/90 transition-colors"
                   >
                     Forgot your password?
                   </Link>
                 </div>
-                <div className="border-t border-zinc-200 pt-4 text-center">
-                  <span className="text-sm text-zinc-500">
+                <div className="border-t border-border pt-4 text-center">
+                  <span className="text-body-sm text-muted-foreground">
                     Don&apos;t have an account?{' '}
                   </span>
                   <Link
                     href="/signup"
-                    className="text-sm text-primary hover:underline"
+                    className="text-body-sm text-primary hover:underline"
                   >
                     Sign up
                   </Link>
@@ -309,19 +309,19 @@ export function LoginPageClient() {
         </div>
 
         {/* Footer - Terms & Privacy */}
-        <footer className="py-4 flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-1 text-xs text-zinc-500">
+        <footer className="py-4 flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-1 text-caption text-muted-foreground">
           <Link
             href="/terms"
-            className="hover:text-zinc-700 hover:underline transition-colors"
+            className="hover:text-foreground hover:underline transition-colors"
           >
             Terms of Service
           </Link>
-          <span className="text-zinc-400" aria-hidden>
+          <span className="text-muted-foreground/50" aria-hidden>
             ·
           </span>
           <Link
             href="/privacy"
-            className="hover:text-zinc-700 hover:underline transition-colors"
+            className="hover:text-foreground hover:underline transition-colors"
           >
             Privacy Policy
           </Link>

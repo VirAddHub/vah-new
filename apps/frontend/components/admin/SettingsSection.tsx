@@ -163,7 +163,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">System Settings</h1>
+                    <h1 className="text-h2 font-bold">System Settings</h1>
                     <p className="text-muted-foreground">Configure system-wide settings and preferences</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -252,7 +252,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Email Notifications</Label>
-                                        <p className="text-sm text-muted-foreground">Send email notifications to users</p>
+                                        <p className="text-body-sm text-muted-foreground">Send email notifications to users</p>
                                     </div>
                                     <Switch
                                         checked={settings.notifications.emailNotifications}
@@ -262,7 +262,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>SMS Notifications</Label>
-                                        <p className="text-sm text-muted-foreground">Send SMS notifications to users</p>
+                                        <p className="text-body-sm text-muted-foreground">Send SMS notifications to users</p>
                                     </div>
                                     <Switch
                                         checked={settings.notifications.smsNotifications}
@@ -272,7 +272,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Push Notifications</Label>
-                                        <p className="text-sm text-muted-foreground">Send push notifications to users</p>
+                                        <p className="text-body-sm text-muted-foreground">Send push notifications to users</p>
                                     </div>
                                     <Switch
                                         checked={settings.notifications.pushNotifications}
@@ -282,7 +282,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Admin Alerts</Label>
-                                        <p className="text-sm text-muted-foreground">Send alerts to admin users</p>
+                                        <p className="text-body-sm text-muted-foreground">Send alerts to admin users</p>
                                     </div>
                                     <Switch
                                         checked={settings.notifications.adminAlerts}
@@ -292,7 +292,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>User Alerts</Label>
-                                        <p className="text-sm text-muted-foreground">Send alerts to regular users</p>
+                                        <p className="text-body-sm text-muted-foreground">Send alerts to regular users</p>
                                     </div>
                                     <Switch
                                         checked={settings.notifications.userAlerts}
@@ -398,7 +398,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Two-Factor Authentication</Label>
-                                        <p className="text-sm text-muted-foreground">Require 2FA for admin users</p>
+                                        <p className="text-body-sm text-muted-foreground">Require 2FA for admin users</p>
                                     </div>
                                     <Switch
                                         checked={settings.security.twoFactorAuth}
@@ -430,7 +430,7 @@ export function SettingsSection({ }: SettingsSectionProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <Label>Audit Logging</Label>
-                                        <p className="text-sm text-muted-foreground">Log all admin actions</p>
+                                        <p className="text-body-sm text-muted-foreground">Log all admin actions</p>
                                     </div>
                                     <Switch
                                         checked={settings.security.auditLogging}
@@ -484,16 +484,16 @@ export function SettingsSection({ }: SettingsSectionProps) {
                                     <h3 className="font-semibold">System Health</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div className="flex items-center gap-2">
-                                            <Server className="h-4 w-4 text-green-500" />
-                                            <span className="text-sm">Database: {health.database ? 'Healthy' : 'Unhealthy'}</span>
+                                            <Server className="h-4 w-4 text-primary" />
+                                            <span className="text-body-sm">Database: {health.database ? 'Healthy' : 'Unhealthy'}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <Key className="h-4 w-4 text-green-500" />
-                                            <span className="text-sm">API Keys: {health.apiKeys ? 'Valid' : 'Invalid'}</span>
+                                            <Key className="h-4 w-4 text-primary" />
+                                            <span className="text-body-sm">API Keys: {health.apiKeys ? 'Valid' : 'Invalid'}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <Users className="h-4 w-4 text-green-500" />
-                                            <span className="text-sm">Users: {health.users}</span>
+                                            <Users className="h-4 w-4 text-primary" />
+                                            <span className="text-body-sm">Users: {health.users}</span>
                                         </div>
                                     </div>
                                 </div>

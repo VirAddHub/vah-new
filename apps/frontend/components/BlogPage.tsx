@@ -39,9 +39,9 @@ function MobileBlogCard({ post, onNavigate }: { post: BlogPost; onNavigate?: (pa
                     onNavigate?.("blog-post", { slug: post.slug });
                 }
             }}
-            className="rounded-2xl border border-zinc-200 bg-white overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+            className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs"
         >
-            <div className="relative aspect-[16/9] w-full bg-zinc-100">
+            <div className="relative aspect-[16/9] w-full bg-muted">
                 {hasImage ? (
                     <ImageWithFallback
                         src={post.imageUrl}
@@ -51,26 +51,26 @@ function MobileBlogCard({ post, onNavigate }: { post: BlogPost; onNavigate?: (pa
                         quality={75}
                     />
                 ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-sm text-zinc-500" aria-hidden="true">
+                    <div className="absolute inset-0 flex items-center justify-center text-body-sm text-muted-foreground" aria-hidden="true">
                         No preview image
                     </div>
                 )}
             </div>
             <div className="p-4">
                 <div className="mb-2 flex flex-wrap gap-2">
-                    <span className="inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700">
+                    <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-caption font-medium text-foreground">
                         {category}
                     </span>
                 </div>
-                <h2 className="text-xl leading-7 font-semibold text-zinc-900 line-clamp-2">
+                <h2 className="text-h3 text-foreground line-clamp-2">
                     {title}
                 </h2>
                 {excerpt ? (
-                    <p className="mt-2 text-sm leading-6 text-zinc-600 line-clamp-3">
+                    <p className="mt-2 text-body-sm text-muted-foreground line-clamp-3">
                         {excerpt}
                     </p>
                 ) : null}
-                <div className="mt-3 text-xs text-zinc-500">
+                <div className="mt-3 text-caption text-muted-foreground">
                     {post.dateShort && post.readTime ? `${post.dateShort} · ${post.readTime}` : post.dateLong || post.dateShort || ""}
                 </div>
             </div>
@@ -155,27 +155,27 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
     }, [blogPosts]);
 
     return (
-        <div className="bg-white">
+        <div className="bg-background">
             {/* Hero Section — mobile-first, reduced top/bottom space */}
-            <section className="bg-white">
+            <section className="bg-background">
                 <div className="mx-auto max-w-6xl px-6 pt-10 pb-8 sm:pt-14 sm:pb-10 lg:px-8">
                     <div className="max-w-2xl">
-                        <h1 className="text-[34px] leading-[1.08] tracking-tight font-semibold text-[#161B1A] sm:text-5xl">
+                        <h1 className="text-h1 sm:text-display tracking-tight text-foreground">
                             Insights &amp; Resources for Modern Businesses
                         </h1>
-                        <p className="mt-4 text-base leading-6 text-[#666666] sm:text-lg">
+                        <p className="mt-4 text-body sm:text-body-lg text-muted-foreground">
                             Expert advice, industry insights, and success stories to help you grow your business.
                         </p>
                     </div>
                     {/* Search Bar - desktop/tablet only */}
                     <div className="hidden lg:flex justify-center mt-6">
-                        <div className="flex items-center gap-[65px] bg-[#F9F9F9] rounded-[87px] px-[34px] py-[14px] w-full max-w-[858px]">
+                        <div className="flex items-center gap-16 bg-muted rounded-full px-8 py-3.5 w-full max-w-[858px]">
                             <input
                                 type="text"
                                 placeholder="Search articles…"
-                                className="flex-1 bg-transparent border-none outline-none text-base text-[#ADADAD] placeholder:text-[#ADADAD]"
+                                className="flex-1 bg-transparent border-none outline-none text-body text-muted-foreground placeholder:text-muted-foreground"
                             />
-                            <div className="w-12 h-12 bg-[#206039] rounded-[40px] flex items-center justify-center cursor-pointer">
+                            <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center cursor-pointer">
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                                     <path d="M14 14L11.1 11.1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -232,7 +232,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                                         onClick={() => onNavigate?.('blog-post', { slug: post.slug })}
                                     >
                                         {/* Image */}
-                                        <div className="relative w-full h-[238px] rounded-[20px] overflow-hidden">
+                                        <div className="relative w-full h-[238px] rounded-2xl overflow-hidden">
                                             <ImageWithFallback
                                                 src={post.imageUrl}
                                                 alt={post.title || "Blog post"}
@@ -243,19 +243,19 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                                         <div className="flex flex-col gap-[10px]">
                                             {/* Category Tags */}
                                             <div className="flex items-center gap-2">
-                                                <div className="bg-[#F9F9F9] rounded-[22px] px-[10px] py-0 flex items-center justify-center h-[34px]">
-                                                    <span className="text-xs text-[#666666] leading-[1.4]">
+                                                <div className="bg-muted rounded-full px-2.5 py-0 flex items-center justify-center h-[34px]">
+                                                    <span className="text-caption text-muted-foreground">
                                                         {post.category || 'Success Stories'}
                                                     </span>
                                                 </div>
                                             </div>
                                             {/* Title */}
-                                            <h3 className="text-2xl font-medium text-[#0F1D07] leading-[1.4] line-clamp-2">
+                                            <h3 className="text-h2 font-medium text-foreground line-clamp-2">
                                                 {post.title || 'Untitled post'}
                                             </h3>
                                             {/* Description */}
                                             {post.excerpt ? (
-                                                <p className="text-lg text-[#666666] leading-[1.4] line-clamp-3">
+                                                <p className="text-body-lg text-muted-foreground line-clamp-3">
                                                     {post.excerpt}
                                                 </p>
                                             ) : null}
@@ -266,7 +266,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                         </div>
                     )}
                     {!loading && !error && gridPosts.length === 0 && (
-                        <div className="text-center text-[#666666]">
+                        <div className="text-center text-muted-foreground">
                             No posts found.
                         </div>
                     )}

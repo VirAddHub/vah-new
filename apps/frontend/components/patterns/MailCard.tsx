@@ -35,7 +35,7 @@ export default function MailCard({
             <div className="min-w-0">
               <div className="font-medium truncate">{title || 'Mail item'}</div>
             </div>
-            <div className="text-xs px-2 py-0.5 rounded-full border">
+            <div className="text-caption px-2 py-0.5 rounded-full border">
               {item.status}
             </div>
           </div>
@@ -43,8 +43,8 @@ export default function MailCard({
 
         {isExpanded && details && (
           <div id={`mail-details-${item.id}`} className="pt-3 border-t space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
-            {details.notes && <p className="text-sm text-muted-foreground">{details.notes}</p>}
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {details.notes && <p className="text-body-sm text-muted-foreground">{details.notes}</p>}
+            {error && <p className="text-body-sm text-destructive">{error}</p>}
           </div>
         )}
 

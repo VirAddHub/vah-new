@@ -76,11 +76,11 @@ export function ProfileCard() {
   };
 
   return (
-    <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white min-w-0">
+    <Card className="rounded-xl sm:rounded-2xl border border-border bg-card min-w-0">
       <CardHeader className="p-4 sm:p-6">
         <div className="flex items-center gap-3 min-w-0">
           <User className="w-5 h-5 sm:w-6 sm:h-6 text-primary shrink-0" strokeWidth={2} />
-          <CardTitle className="text-lg sm:text-xl font-semibold text-neutral-900 truncate">
+          <CardTitle className="text-body-lg sm:text-h3 font-semibold text-foreground truncate">
             Profile Information
           </CardTitle>
         </div>
@@ -88,8 +88,8 @@ export function ProfileCard() {
       <CardContent className="space-y-5 sm:space-y-6 p-4 sm:p-6 pt-0">
         {/* First Name - Read-only */}
         <div className="space-y-2">
-          <Label htmlFor="first-name" className="flex items-center gap-2 text-sm text-neutral-700">
-            <Lock className="w-3.5 h-3.5 text-neutral-500" strokeWidth={2} />
+          <Label htmlFor="first-name" className="flex items-center gap-2 text-body-sm text-foreground">
+            <Lock className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={2} />
             First name
           </Label>
           <Input
@@ -97,20 +97,20 @@ export function ProfileCard() {
             type="text"
             value={formatReadOnlyValue(profile?.first_name)}
             disabled
-            className="bg-neutral-50 text-neutral-600 cursor-not-allowed"
+            className="bg-muted/50 text-muted-foreground cursor-not-allowed"
             readOnly
             tabIndex={-1}
             aria-label="First name (verification-locked)"
           />
-          <p className="text-xs text-neutral-500 leading-relaxed">
+          <p className="text-caption text-muted-foreground leading-relaxed">
             This field is verification-locked. Contact support to request changes.
           </p>
         </div>
 
         {/* Last Name - Read-only */}
         <div className="space-y-2">
-          <Label htmlFor="last-name" className="flex items-center gap-2 text-sm text-neutral-700">
-            <Lock className="w-3.5 h-3.5 text-neutral-500" strokeWidth={2} />
+          <Label htmlFor="last-name" className="flex items-center gap-2 text-body-sm text-foreground">
+            <Lock className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={2} />
             Last name
           </Label>
           <Input
@@ -118,20 +118,20 @@ export function ProfileCard() {
             type="text"
             value={formatReadOnlyValue(profile?.last_name)}
             disabled
-            className="bg-neutral-50 text-neutral-600 cursor-not-allowed"
+            className="bg-muted/50 text-muted-foreground cursor-not-allowed"
             readOnly
             tabIndex={-1}
             aria-label="Last name (verification-locked)"
           />
-          <p className="text-xs text-neutral-500 leading-relaxed">
+          <p className="text-caption text-muted-foreground leading-relaxed">
             This field is verification-locked. Contact support to request changes.
           </p>
         </div>
 
         {/* Company Name - Read-only */}
         <div className="space-y-2">
-          <Label htmlFor="company-name" className="flex items-center gap-2 text-sm text-neutral-700">
-            <Lock className="w-3.5 h-3.5 text-neutral-500" strokeWidth={2} />
+          <Label htmlFor="company-name" className="flex items-center gap-2 text-body-sm text-foreground">
+            <Lock className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={2} />
             Company name
           </Label>
           <Input
@@ -139,20 +139,20 @@ export function ProfileCard() {
             type="text"
             value={formatReadOnlyValue(profile?.company_name)}
             disabled
-            className="bg-neutral-50 text-neutral-600 cursor-not-allowed"
+            className="bg-muted/50 text-muted-foreground cursor-not-allowed"
             readOnly
             tabIndex={-1}
             aria-label="Company name (verification-locked)"
           />
-          <p className="text-xs text-neutral-500 leading-relaxed">
+          <p className="text-caption text-muted-foreground leading-relaxed">
             This field is verification-locked. Contact support to request changes.
           </p>
         </div>
 
         {/* Phone Number - Editable */}
         <div className="space-y-2">
-          <Label htmlFor="phone" className="flex items-center gap-2 text-sm text-neutral-700">
-            <Phone className="w-3.5 h-3.5 text-neutral-500" strokeWidth={2} />
+          <Label htmlFor="phone" className="flex items-center gap-2 text-body-sm text-foreground">
+            <Phone className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={2} />
             Phone number
           </Label>
           <Input
@@ -162,10 +162,10 @@ export function ProfileCard() {
             onChange={(e) => setPhone(e.target.value)}
             placeholder="+44 20 1234 5678"
             disabled={isSaving}
-            className="bg-white"
+            className="bg-card"
             aria-label="Phone number"
           />
-          <p className="text-xs text-neutral-500 leading-relaxed">
+          <p className="text-caption text-muted-foreground leading-relaxed">
             Update your phone number for account verification and notifications.
           </p>
         </div>

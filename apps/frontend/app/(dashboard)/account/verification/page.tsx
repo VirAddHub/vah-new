@@ -225,10 +225,10 @@ export default function AccountVerificationPage() {
         <div className="w-full max-w-3xl">
             {/* Page Header */}
             <div className="mb-5 sm:mb-6 md:mb-8">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-neutral-900 mb-1.5 sm:mb-2 leading-tight tracking-tight">
+                <h1 className="text-h2 sm:text-h2 lg:text-h1 font-semibold text-foreground mb-1.5 sm:mb-2 leading-tight tracking-tight">
                     Identity Verification
                 </h1>
-                <p className="text-sm sm:text-base text-neutral-600 leading-relaxed">
+                <p className="text-body-sm sm:text-body text-muted-foreground leading-relaxed">
                     {verificationState === 'verified' 
                         ? 'Your identity check has been approved'
                         : verificationState === 'pending_others'
@@ -239,43 +239,43 @@ export default function AccountVerificationPage() {
             </div>
 
             {/* Companies House details card — top of Verification */}
-            <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+            <Card className="rounded-xl sm:rounded-2xl border border-border bg-card mb-4 sm:mb-6">
                 <CardContent className="p-4 sm:p-6">
                     <div className="flex items-start gap-3 md:gap-4">
-                        <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0">
-                            <Building2 className="w-5 h-5 text-neutral-600" strokeWidth={2} />
+                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                            <Building2 className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
                         </div>
                         <div className="flex-1 space-y-2 md:space-y-3 min-w-0">
-                            <h2 className="text-lg font-semibold text-neutral-900">
+                            <h2 className="text-body-lg font-semibold text-foreground">
                                 Companies House details
                             </h2>
                             {companyNumberOnFile ? (
                                 <>
-                                    <div className="space-y-1.5 text-sm">
+                                    <div className="space-y-1.5 text-body-sm">
                                         <p className="flex flex-wrap gap-x-2 gap-y-0.5">
-                                            <span className="text-neutral-500">Company number</span>
-                                            <span className="font-medium text-neutral-900">{companyNumberOnFile}</span>
+                                            <span className="text-muted-foreground">Company number</span>
+                                            <span className="font-medium text-foreground">{companyNumberOnFile}</span>
                                         </p>
                                         {companyNameOnFile && (
                                             <p className="flex flex-wrap gap-x-2 gap-y-0.5">
-                                                <span className="text-neutral-500">Company name</span>
-                                                <span className="font-medium text-neutral-900">{companyNameOnFile}</span>
+                                                <span className="text-muted-foreground">Company name</span>
+                                                <span className="font-medium text-foreground">{companyNameOnFile}</span>
                                             </p>
                                         )}
                                     </div>
                                 </>
                             ) : (
                                 <>
-                                    <p className="text-sm text-neutral-600 leading-relaxed">
+                                    <p className="text-body-sm text-muted-foreground leading-relaxed">
                                         Not incorporated yet? That&apos;s fine — add your company number once available.
                                     </p>
                                     <Button
                                         onClick={handleOpenCompanyModal}
-                                        className="w-full sm:w-auto bg-primary text-white hover:bg-primary/90"
+                                        className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
                                     >
                                         Add Companies House number
                                     </Button>
-                                    <p className="text-xs text-neutral-500 leading-relaxed">
+                                    <p className="text-caption text-muted-foreground leading-relaxed">
                                         Required before issuing proof of address certificates.
                                     </p>
                                 </>
@@ -287,17 +287,17 @@ export default function AccountVerificationPage() {
 
             {/* STATE: VERIFIED */}
             {verificationState === 'verified' && (
-                <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+                <Card className="rounded-xl sm:rounded-2xl border border-border bg-card mb-4 sm:mb-6">
                 <CardContent className="p-4 sm:p-6 md:p-8">
                         <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
                             <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                                 <CheckCircle2 className="w-6 h-6 text-green-700" strokeWidth={2} />
                             </div>
                             <div className="flex-1">
-                                <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                                <h2 className="text-h3 font-semibold text-foreground mb-2">
                                     Identity verification complete
                                 </h2>
-                                <p className="text-base text-neutral-600 leading-relaxed mb-6">
+                                <p className="text-body text-muted-foreground leading-relaxed mb-6">
                                     Your identity check (ID verification) has been approved. You have full access to your business address and all account features.
                                 </p>
                                 <Button
@@ -317,17 +317,17 @@ export default function AccountVerificationPage() {
             {verificationState === 'pending_others' && (
                 <>
                     {/* Primary User Verified */}
-                    <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+                    <Card className="rounded-xl sm:rounded-2xl border border-border bg-card mb-4 sm:mb-6">
                 <CardContent className="p-4 sm:p-6 md:p-8">
                             <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
                                 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                                     <CheckCircle2 className="w-6 h-6 text-green-700" strokeWidth={2} />
                                 </div>
                         <div className="flex-1">
-                                    <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                                    <h2 className="text-h3 font-semibold text-foreground mb-2">
                                         Your Verification Complete
                                     </h2>
-                                    <p className="text-base text-neutral-600 leading-relaxed">
+                                    <p className="text-body text-muted-foreground leading-relaxed">
                                         You are verified. Waiting for other directors to complete their verification.
                                     </p>
                         </div>
@@ -336,20 +336,20 @@ export default function AccountVerificationPage() {
             </Card>
 
                     {/* Pending Owners */}
-                    <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+                    <Card className="rounded-xl sm:rounded-2xl border border-border bg-card mb-4 sm:mb-6">
                 <CardContent className="p-4 sm:p-6 md:p-8">
                             <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 mb-4 sm:mb-6">
                                 <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
                                     <AlertCircle className="w-6 h-6 text-yellow-700" strokeWidth={2} />
                                 </div>
                                 <div className="flex-1">
-                                    <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                                    <h2 className="text-h3 font-semibold text-foreground mb-2">
                                         Pending Verification
                                     </h2>
-                                    <p className="text-base text-neutral-600 leading-relaxed mb-4">
+                                    <p className="text-body text-muted-foreground leading-relaxed mb-4">
                                         The following individuals must complete verification before we can issue proof of address certificates.
                                     </p>
-                                    <p className="text-sm text-neutral-500 leading-relaxed mb-6">
+                                    <p className="text-body-sm text-muted-foreground leading-relaxed mb-6">
                                         Your address can still be used for incorporation and Companies House setup; the proof of address certificate will be available once all required directors have verified.
                                     </p>
                                     
@@ -358,14 +358,14 @@ export default function AccountVerificationPage() {
                                         {pendingOwners.map((owner) => (
                                             <div 
                                                 key={owner.id}
-                                                className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg"
+                                                className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
                                             >
                                                 <div className="flex-1">
-                                                    <p className="text-sm font-medium text-neutral-900">
+                                                    <p className="text-body-sm font-medium text-foreground">
                                                         {owner.fullName || owner.firstName || owner.first_name} {owner.lastName || owner.last_name || ''}
                                                     </p>
                                                     {owner.email && (
-                                                        <p className="text-sm text-neutral-600 mt-1">
+                                                        <p className="text-body-sm text-muted-foreground mt-1">
                                                             {owner.email}
                                                         </p>
                                                     )}
@@ -409,17 +409,17 @@ export default function AccountVerificationPage() {
             {verificationState === 'action_required' && (
                 <>
                     {/* Verification Required Card */}
-                    <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+                    <Card className="rounded-xl sm:rounded-2xl border border-border bg-card mb-4 sm:mb-6">
                         <CardContent className="p-4 sm:p-6 md:p-8">
                             <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 mb-4 sm:mb-6">
                                 <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
                                     <ShieldCheck className="w-6 h-6 text-yellow-700" strokeWidth={2} />
                         </div>
                                 <div className="flex-1">
-                                    <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                                    <h2 className="text-h3 font-semibold text-foreground mb-2">
                                         Verification Required
                                     </h2>
-                                    <p className="text-base text-neutral-600 leading-relaxed mb-6">
+                                    <p className="text-body text-muted-foreground leading-relaxed mb-6">
                                         Complete identity verification to fully activate your account (including proof of address certificates). This typically takes 5-10 minutes.
                                     </p>
                                     
@@ -455,46 +455,46 @@ export default function AccountVerificationPage() {
                                 autoComplete="off"
                             />
                             {searchBusy && (
-                                <p className="text-xs text-neutral-500">Searching Companies House…</p>
+                                <p className="text-caption text-muted-foreground">Searching Companies House…</p>
                             )}
                             {!searchBusy && searchResults.length > 0 && (
-                                <ul className="border border-neutral-200 rounded-md divide-y divide-neutral-100 max-h-48 overflow-y-auto">
+                                <ul className="border border-border rounded-md divide-y divide-border max-h-48 overflow-y-auto">
                                     {searchResults.map((company, i) => (
                                         <li key={`${company.identifier}-${i}`}>
                                             <button
                                                 type="button"
-                                                className="w-full text-left px-3 py-2.5 text-sm hover:bg-neutral-50 focus:bg-neutral-50 focus:outline-none"
+                                                className="w-full text-left px-3 py-2.5 text-body-sm hover:bg-muted/50 focus:bg-muted/50 focus:outline-none"
                                                 onClick={() => handleSelectCompany(company)}
                                             >
-                                                <span className="font-medium text-neutral-900">{company.title}</span>
-                                                <span className="text-neutral-500 ml-2">({company.regNumber})</span>
+                                                <span className="font-medium text-foreground">{company.title}</span>
+                                                <span className="text-muted-foreground ml-2">({company.regNumber})</span>
                                             </button>
                                         </li>
                                     ))}
                                 </ul>
                             )}
                             {!searchBusy && searchQuery.trim().length >= 2 && searchResults.length === 0 && searchQuery.trim() && (
-                                <p className="text-xs text-neutral-500">No companies found. Try a different name.</p>
+                                <p className="text-caption text-muted-foreground">No companies found. Try a different name.</p>
                             )}
                         </div>
 
                         {/* Selected company */}
-                        <div className="space-y-3 border-t border-neutral-100 pt-4">
+                        <div className="space-y-3 border-t border-border pt-4">
                             {companyNumberInput || companyNameInput ? (
                                 <>
                                     <div className="flex items-center justify-between gap-2">
-                                        <p className="text-sm font-medium text-neutral-700">Selected company</p>
+                                        <p className="text-body-sm font-medium text-foreground">Selected company</p>
                                         <Button type="button" variant="ghost" size="sm" onClick={clearSelection} className="text-primary">
                                             Change
                                         </Button>
                                     </div>
-                                    <div className="rounded-md bg-neutral-50 px-3 py-2.5 text-sm">
-                                        <p className="font-medium text-neutral-900">{companyNameInput || '—'}</p>
-                                        <p className="text-neutral-500">Company number: {companyNumberInput || '—'}</p>
+                                    <div className="rounded-md bg-muted/50 px-3 py-2.5 text-body-sm">
+                                        <p className="font-medium text-foreground">{companyNameInput || '—'}</p>
+                                        <p className="text-muted-foreground">Company number: {companyNumberInput || '—'}</p>
                                     </div>
                                 </>
                             ) : (
-                                <p className="text-sm text-neutral-500">Search above to find and select your company.</p>
+                                <p className="text-body-sm text-muted-foreground">Search above to find and select your company.</p>
                             )}
                         </div>
                     </div>

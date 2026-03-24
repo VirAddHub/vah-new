@@ -119,12 +119,12 @@ export function ForwardingConfirmationModal({
                 </CardHeader>
                 <CardContent className="space-y-6">
                     {/* Mail Item Details - Simplified */}
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                        <div className="space-y-1 text-sm">
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                        <div className="space-y-1 text-body-sm">
                             <p><strong>Document:</strong> {formatSubjectForDisplay(mailItem?.subject || mailItem?.description || "No subject")}</p>
                             <p><strong>Source:</strong> {formatSenderForDisplay(mailItem?.sender_name || "Unknown sender")}</p>
                             {isGovernmentMail && (
-                                <Badge variant="outline" className="text-xs border-green-500 text-green-700 bg-green-50">
+                                <Badge variant="outline" className="text-caption border-green-500 text-green-700 bg-green-50">
                                     Official Mail - Free Forwarding
                                 </Badge>
                             )}
@@ -133,42 +133,42 @@ export function ForwardingConfirmationModal({
 
                     {/* Pricing Information */}
                     <div className="space-y-4">
-                        <h4 className="font-medium text-sm">Forwarding cost</h4>
+                        <h4 className="font-medium text-body-sm">Forwarding cost</h4>
 
                         {isGovernmentMail ? (
                             <div className="bg-primary-50 p-4 rounded-lg">
-                                <p className="text-sm text-foreground">
+                                <p className="text-body-sm text-foreground">
                                     <strong>HMRC & Companies House:</strong> <span className="text-primary-700 font-medium">Free</span>
                                 </p>
                             </div>
                         ) : (
                             <div className="space-y-4">
                                 <div className="bg-primary-50 p-4 rounded-lg">
-                                    <p className="text-sm text-foreground">
+                                    <p className="text-body-sm text-foreground">
                                         <strong>All other mail:</strong> <span className="text-primary-700 font-medium">£2 per item</span> (added to your monthly invoice)
                                     </p>
                                 </div>
 
                                 {/* Payment Method Selection */}
                                 <div className="space-y-3">
-                                    <h5 className="font-medium text-sm">Payment Method</h5>
+                                    <h5 className="font-medium text-body-sm">Payment Method</h5>
 
                                     {userPlan?.type === 'monthly' ? (
                                         <div className="space-y-2">
                                             <div
                                                 className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedPaymentMethod === 'monthly'
                                                     ? 'border-primary bg-primary/5'
-                                                    : 'border-gray-200 hover:border-gray-300'
+                                                    : 'border-border hover:border-border'
                                                     }`}
                                                 onClick={() => setSelectedPaymentMethod('monthly')}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className={`w-4 h-4 rounded-full border-2 ${selectedPaymentMethod === 'monthly'
                                                         ? 'border-primary bg-primary'
-                                                        : 'border-gray-300'
+                                                        : 'border-border'
                                                         }`}>
                                                         {selectedPaymentMethod === 'monthly' && (
-                                                            <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                                                            <div className="w-full h-full rounded-full bg-card scale-50"></div>
                                                         )}
                                                     </div>
                                                     <div className="flex-1">
@@ -176,7 +176,7 @@ export function ForwardingConfirmationModal({
                                                             <Calendar className="h-4 w-4" />
                                                             <span className="font-medium">Add to Monthly Bill</span>
                                                         </div>
-                                                        <p className="text-sm text-muted-foreground">
+                                                        <p className="text-body-sm text-muted-foreground">
                                                             £2.00 will be added to your next monthly invoice. You'll receive a confirmation once processed.
                                                         </p>
                                                     </div>
@@ -188,17 +188,17 @@ export function ForwardingConfirmationModal({
                                             <div
                                                 className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedPaymentMethod === 'stripe'
                                                     ? 'border-primary bg-primary/5'
-                                                    : 'border-gray-200 hover:border-gray-300'
+                                                    : 'border-border hover:border-border'
                                                     }`}
                                                 onClick={() => setSelectedPaymentMethod('stripe')}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className={`w-4 h-4 rounded-full border-2 ${selectedPaymentMethod === 'stripe'
                                                         ? 'border-primary bg-primary'
-                                                        : 'border-gray-300'
+                                                        : 'border-border'
                                                         }`}>
                                                         {selectedPaymentMethod === 'stripe' && (
-                                                            <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                                                            <div className="w-full h-full rounded-full bg-card scale-50"></div>
                                                         )}
                                                     </div>
                                                     <div className="flex-1">
@@ -206,7 +206,7 @@ export function ForwardingConfirmationModal({
                                                             <CreditCard className="h-4 w-4" />
                                                             <span className="font-medium">Pay Now via Stripe</span>
                                                         </div>
-                                                        <p className="text-sm text-muted-foreground">
+                                                        <p className="text-body-sm text-muted-foreground">
                                                             £2.00 will be charged immediately via direct debit
                                                         </p>
                                                     </div>
@@ -217,12 +217,12 @@ export function ForwardingConfirmationModal({
                                 </div>
 
                                 {/* Plan Information */}
-                                <div className="p-3 bg-gray-50 rounded-lg">
-                                    <p className="text-sm text-gray-600">
+                                <div className="p-3 bg-muted/50 rounded-lg">
+                                    <p className="text-body-sm text-muted-foreground">
                                         <strong>Your Plan:</strong> {userPlan?.name} ({userPlan?.type === 'yearly' ? 'Yearly' : 'Monthly'})
                                     </p>
                                     {userPlan?.type === 'yearly' && (
-                                        <p className="text-xs text-gray-500 mt-1">
+                                        <p className="text-caption text-muted-foreground mt-1">
                                             Since you're on a yearly plan, payment will be processed immediately via Stripe.
                                         </p>
                                     )}

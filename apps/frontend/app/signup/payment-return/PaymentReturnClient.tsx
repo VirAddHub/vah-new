@@ -59,7 +59,7 @@ export function PaymentReturnClient() {
         return (
             <div className="min-h-[70vh] flex flex-col items-center justify-center gap-4 p-6">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-lg text-muted-foreground">Verifying your payment...</p>
+                <p className="text-body-lg text-muted-foreground">Verifying your payment...</p>
             </div>
         );
     }
@@ -68,10 +68,10 @@ export function PaymentReturnClient() {
         return (
             <div className="min-h-[70vh] flex flex-col items-center justify-center p-6">
                 <div className="w-full max-w-lg text-center space-y-6">
-                    <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-                        <CheckCircle2 className="h-8 w-8 text-green-600" />
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                        <CheckCircle2 className="h-8 w-8 text-primary" />
                     </div>
-                    <h1 className="text-3xl font-semibold text-neutral-900">Payment Successful</h1>
+                    <h1 className="text-h1 text-foreground">Payment Successful</h1>
                     <p className="text-muted-foreground leading-relaxed">
                         Your subscription is being activated. We&apos;ve sent a confirmation to{' '}
                         {email ? <strong>{email}</strong> : 'your email'}. You can now sign in to your
@@ -80,13 +80,13 @@ export function PaymentReturnClient() {
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                         <Link
                             href="/login"
-                            className="inline-flex items-center justify-center h-11 px-8 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                            className="inline-flex items-center justify-center h-11 px-8 rounded-lg text-body-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                         >
                             Sign in to Dashboard
                         </Link>
                         <Link
                             href="/"
-                            className="inline-flex items-center justify-center h-11 px-8 rounded-lg text-sm font-medium border border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50 transition-colors"
+                            className="inline-flex items-center justify-center h-11 px-8 rounded-lg text-body-sm font-medium border border-border bg-card text-foreground hover:bg-muted transition-colors"
                         >
                             Return to Home
                         </Link>
@@ -103,13 +103,13 @@ export function PaymentReturnClient() {
                     <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto">
                         <RotateCcw className="h-8 w-8 text-amber-600" />
                     </div>
-                    <h1 className="text-3xl font-semibold text-neutral-900">Payment Not Completed</h1>
+                    <h1 className="text-h1 text-foreground">Payment Not Completed</h1>
                     <p className="text-muted-foreground leading-relaxed">
                         It looks like your payment wasn&apos;t completed. You can try again by clicking below.
                     </p>
                     <Link
                         href="/signup"
-                        className="inline-flex items-center justify-center h-11 px-8 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                        className="inline-flex items-center justify-center h-11 px-8 rounded-lg text-body-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                     >
                         Try Again
                     </Link>
@@ -121,23 +121,23 @@ export function PaymentReturnClient() {
     return (
         <div className="min-h-[70vh] flex flex-col items-center justify-center p-6">
             <div className="w-full max-w-lg text-center space-y-6">
-                <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto">
-                    <XCircle className="h-8 w-8 text-red-600" />
+                <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+                    <XCircle className="h-8 w-8 text-destructive" />
                 </div>
-                <h1 className="text-3xl font-semibold text-neutral-900">Something Went Wrong</h1>
+                <h1 className="text-h1 text-foreground">Something Went Wrong</h1>
                 <p className="text-muted-foreground leading-relaxed">
                     We couldn&apos;t verify your payment. If you believe this is an error, please contact support.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                     <Link
                         href="/signup"
-                        className="inline-flex items-center justify-center h-11 px-8 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                        className="inline-flex items-center justify-center h-11 px-8 rounded-lg text-body-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                     >
                         Try Again
                     </Link>
                     <Link
                         href="/help"
-                        className="inline-flex items-center justify-center h-11 px-8 rounded-lg text-sm font-medium border border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50 transition-colors"
+                        className="inline-flex items-center justify-center h-11 px-8 rounded-lg text-body-sm font-medium border border-border bg-card text-foreground hover:bg-muted transition-colors"
                     >
                         Get Help
                     </Link>

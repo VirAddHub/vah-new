@@ -272,14 +272,14 @@ export default function StableForwardingTable() {
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-4 mb-2">
-                <span className="font-mono text-sm font-medium">{formatFRId(request.id)}</span>
-                <span className="text-sm text-muted-foreground">Mail #{request.mail_item_id}</span>
-                <span className="text-sm text-muted-foreground">User #{request.user_id}</span>
-                <span className="text-sm text-muted-foreground">
+                <span className="font-mono text-body-sm font-medium">{formatFRId(request.id)}</span>
+                <span className="text-body-sm text-muted-foreground">Mail #{request.mail_item_id}</span>
+                <span className="text-body-sm text-muted-foreground">User #{request.user_id}</span>
+                <span className="text-body-sm text-muted-foreground">
                   {formatDateUK(request.created_at)}
                 </span>
               </div>
-              <div className="text-sm">
+              <div className="text-body-sm">
                 <div className="font-medium">{request.to_name || 'No name'}</div>
                 {request.address1 && (
                   <div className="text-muted-foreground">
@@ -365,7 +365,7 @@ export default function StableForwardingTable() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Badge variant="secondary">Requested</Badge>
-              <span className="text-sm text-muted-foreground">({requested.length})</span>
+              <span className="text-body-sm text-muted-foreground">({requested.length})</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -382,7 +382,7 @@ export default function StableForwardingTable() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Badge variant="default">In Progress</Badge>
-              <span className="text-sm text-muted-foreground">({inProgress.length})</span>
+              <span className="text-body-sm text-muted-foreground">({inProgress.length})</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -399,7 +399,7 @@ export default function StableForwardingTable() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Badge variant="outline">Done</Badge>
-              <span className="text-sm text-muted-foreground">({done.length})</span>
+              <span className="text-body-sm text-muted-foreground">({done.length})</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -417,14 +417,14 @@ export default function StableForwardingTable() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Badge variant="destructive">Other</Badge>
-                <span className="text-sm text-muted-foreground">({other.length})</span>
-                <span className="text-xs text-muted-foreground">Unexpected statuses</span>
+                <span className="text-body-sm text-muted-foreground">({other.length})</span>
+                <span className="text-caption text-muted-foreground">Unexpected statuses</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               {other.map(request => (
                 <div key={request.id} className="mb-2 p-2 border border-dashed border-red-200 rounded" data-testid="forwarding-card" data-status="Other">
-                  <div className="text-sm">
+                  <div className="text-body-sm">
                     <span className="font-mono">{formatFRId(request.id)}</span>
                     <span className="ml-2 text-red-600" data-testid="status-text">Status: "{request.status}"</span>
                     <span className="ml-2 text-muted-foreground">User #{request.user_id}</span>

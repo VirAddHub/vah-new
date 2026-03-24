@@ -203,7 +203,7 @@ This is the content of my blog post. You can use **markdown** formatting.
                                 {formData.tags.map(tag => (
                                     <span
                                         key={tag}
-                                        className="bg-primary/10 text-primary px-2 py-1 rounded-md text-sm flex items-center gap-1"
+                                        className="bg-primary/10 text-primary px-2 py-1 rounded-md text-body-sm flex items-center gap-1"
                                     >
                                         {tag}
                                         <button

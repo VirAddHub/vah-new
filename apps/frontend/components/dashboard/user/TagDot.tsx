@@ -11,8 +11,8 @@ const TAG_COLORS: Record<string, string> = {
   companieshouse: 'bg-green-500',
   insurance: 'bg-amber-500',
   utilities: 'bg-cyan-500',
-  other: 'bg-gray-500',
-  default: 'bg-gray-400',
+  other: 'bg-muted',
+  default: 'bg-muted-foreground',
 };
 
 /**
@@ -42,7 +42,7 @@ export function TagDot({ tag, label, className, showDot = true }: TagDotProps) {
   const isUntagged = !tag;
   const displayLabel = label || (isUntagged ? 'Untagged' : tag);
   // Use muted gray color for untagged items
-  const colorClass = isUntagged ? 'bg-gray-300' : getTagColor(tag);
+  const colorClass = isUntagged ? 'bg-muted' : getTagColor(tag);
 
   return (
     <div className={cn('flex items-center gap-1.5', className)}>
@@ -50,8 +50,8 @@ export function TagDot({ tag, label, className, showDot = true }: TagDotProps) {
         <div className={cn('h-2 w-2 rounded-full flex-shrink-0', colorClass)} />
       )}
       <span className={cn(
-        "text-sm font-normal",
-        isUntagged ? "text-neutral-400" : "text-neutral-600"
+        "text-body-sm font-normal",
+        isUntagged ? "text-muted-foreground" : "text-muted-foreground"
       )}>
         {displayLabel}
       </span>

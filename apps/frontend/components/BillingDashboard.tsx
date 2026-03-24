@@ -152,7 +152,7 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="h-8 w-8 animate-spin mx-auto mb-4 border-4 border-gray-300 border-t-blue-600 rounded-full" />
+          <div className="h-8 w-8 animate-spin mx-auto mb-4 border-4 border-border border-t-blue-600 rounded-full" />
           <p>Loading billing information...</p>
         </div>
       </div>
@@ -166,7 +166,7 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div>
-              <h1 className="text-2xl font-bold">Billing & Payments</h1>
+              <h1 className="text-h2 font-bold">Billing & Payments</h1>
               <p className="text-muted-foreground">
                 Manage your subscription and view invoices
               </p>
@@ -196,10 +196,10 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="font-semibold mb-2">Current Plan</h3>
-                <p className="text-2xl font-bold text-primary">
+                <p className="text-h2 font-bold text-primary">
                   {monthlyPrice ? `£${monthlyPrice}/month` : 'Loading...'}
                 </p>
-                <p className="text-sm text-muted-foreground">Virtual Address Service</p>
+                <p className="text-body-sm text-muted-foreground">Virtual Address Service</p>
               </div>
               <div>
                 <h3 className="font-semibold mb-2">Status</h3>
@@ -253,12 +253,12 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
+              <CardTitle className="text-body-sm font-medium">Total Invoices</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{invoices.length}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-h2 font-bold">{invoices.length}</div>
+              <p className="text-caption text-muted-foreground">
                 {invoices.filter(inv => inv.status === 'paid').length} paid
               </p>
             </CardContent>
@@ -266,17 +266,17 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+              <CardTitle className="text-body-sm font-medium">Total Spent</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-h2 font-bold">
                 £{invoices
                   .filter(inv => inv.status === 'paid')
                   .reduce((sum, inv) => sum + (inv.amount || 0), 0)
                   .toFixed(2)}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 This month
               </p>
             </CardContent>
@@ -284,14 +284,14 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Next Billing</CardTitle>
+              <CardTitle className="text-body-sm font-medium">Next Billing</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-h2 font-bold">
                 {monthlyPrice ? `£${monthlyPrice}` : 'Loading...'}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
               </p>
             </CardContent>
@@ -316,10 +316,10 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
                         <p className="font-medium">Invoice #{invoice.id}</p>
                         {getStatusBadge(invoice.status)}
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-body-sm text-muted-foreground">
                         Amount: £{invoice.amount?.toFixed(2) || '0.00'}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-caption text-muted-foreground">
                         Created: {new Date(invoice.created_at).toLocaleDateString()}
                         {invoice.due_date && (
                           <span> • Due: {new Date(invoice.due_date).toLocaleDateString()}</span>
@@ -344,7 +344,7 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
               <div className="text-center py-8">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">No invoices yet</p>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-body-sm text-muted-foreground mt-2">
                   Invoices will appear here once you start using the service
                 </p>
               </div>

@@ -58,7 +58,7 @@ export default function TestMailManagement() {
 
     return (
         <div className="container mx-auto p-6">
-            <h1 className="text-2xl font-bold mb-6">Test Mail Management</h1>
+            <h1 className="text-h2 font-bold mb-6">Test Mail Management</h1>
             <MailManagement
                 mailItems={mockMailItems}
                 onRefresh={mockOnRefresh}

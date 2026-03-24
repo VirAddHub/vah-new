@@ -270,7 +270,7 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-2">
                             <User className="h-6 w-6 text-primary" />
-                            <h2 className="text-2xl font-bold">Edit User: {user.name}</h2>
+                            <h2 className="text-h3 font-bold">Edit User: {user.name}</h2>
                         </div>
                         <Button variant="ghost" size="sm" onClick={onCancel}>
                             <X className="h-4 w-4" />
@@ -317,10 +317,10 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
                                                     value={formData.firstName}
                                                     onChange={(e) => handleInputChange('firstName', e.target.value)}
                                                     placeholder="John"
-                                                    className={validationErrors.firstName ? 'border-red-500' : ''}
+                                                    className={validationErrors.firstName ? 'border-destructive' : ''}
                                                 />
                                                 {validationErrors.firstName && (
-                                                    <p className="text-sm text-red-500">{validationErrors.firstName}</p>
+                                                    <p className="text-body-sm text-destructive">{validationErrors.firstName}</p>
                                                 )}
                                             </div>
                                             <div className="space-y-2">
@@ -330,10 +330,10 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
                                                     value={formData.lastName}
                                                     onChange={(e) => handleInputChange('lastName', e.target.value)}
                                                     placeholder="Doe"
-                                                    className={validationErrors.lastName ? 'border-red-500' : ''}
+                                                    className={validationErrors.lastName ? 'border-destructive' : ''}
                                                 />
                                                 {validationErrors.lastName && (
-                                                    <p className="text-sm text-red-500">{validationErrors.lastName}</p>
+                                                    <p className="text-body-sm text-destructive">{validationErrors.lastName}</p>
                                                 )}
                                             </div>
                                         </div>
@@ -346,10 +346,10 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
                                                 value={formData.email}
                                                 onChange={(e) => handleInputChange('email', e.target.value)}
                                                 placeholder="john.doe@company.com"
-                                                className={validationErrors.email ? 'border-red-500' : ''}
+                                                className={validationErrors.email ? 'border-destructive' : ''}
                                             />
                                             {validationErrors.email && (
-                                                <p className="text-sm text-red-500">{validationErrors.email}</p>
+                                                <p className="text-body-sm text-destructive">{validationErrors.email}</p>
                                             )}
                                         </div>
 
@@ -361,10 +361,10 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
                                                 value={formData.phone}
                                                 onChange={(e) => handleInputChange('phone', e.target.value)}
                                                 placeholder="+44 20 7123 4567"
-                                                className={validationErrors.phone ? 'border-red-500' : ''}
+                                                className={validationErrors.phone ? 'border-destructive' : ''}
                                             />
                                             {validationErrors.phone && (
-                                                <p className="text-sm text-red-500">{validationErrors.phone}</p>
+                                                <p className="text-body-sm text-destructive">{validationErrors.phone}</p>
                                             )}
                                         </div>
                                     </CardContent>
@@ -387,10 +387,10 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
                                                 value={formData.companyName}
                                                 onChange={(e) => handleInputChange('companyName', e.target.value)}
                                                 placeholder="Acme Corporation Ltd"
-                                                className={validationErrors.companyName ? 'border-red-500' : ''}
+                                                className={validationErrors.companyName ? 'border-destructive' : ''}
                                             />
                                             {validationErrors.companyName && (
-                                                <p className="text-sm text-red-500">{validationErrors.companyName}</p>
+                                                <p className="text-body-sm text-destructive">{validationErrors.companyName}</p>
                                             )}
                                         </div>
 
@@ -451,10 +451,10 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
                                                 value={formData.addressLine1}
                                                 onChange={(e) => handleInputChange('addressLine1', e.target.value)}
                                                 placeholder="123 Business Street"
-                                                className={validationErrors.addressLine1 ? 'border-red-500' : ''}
+                                                className={validationErrors.addressLine1 ? 'border-destructive' : ''}
                                             />
                                             {validationErrors.addressLine1 && (
-                                                <p className="text-sm text-red-500">{validationErrors.addressLine1}</p>
+                                                <p className="text-body-sm text-destructive">{validationErrors.addressLine1}</p>
                                             )}
                                         </div>
 
@@ -476,10 +476,10 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
                                                     value={formData.city}
                                                     onChange={(e) => handleInputChange('city', e.target.value)}
                                                     placeholder="London"
-                                                    className={validationErrors.city ? 'border-red-500' : ''}
+                                                    className={validationErrors.city ? 'border-destructive' : ''}
                                                 />
                                                 {validationErrors.city && (
-                                                    <p className="text-sm text-red-500">{validationErrors.city}</p>
+                                                    <p className="text-body-sm text-destructive">{validationErrors.city}</p>
                                                 )}
                                             </div>
                                             <div className="space-y-2">
@@ -489,10 +489,10 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
                                                     value={formData.postcode}
                                                     onChange={(e) => handleInputChange('postcode', e.target.value)}
                                                     placeholder="SW1A 1AA"
-                                                    className={validationErrors.postcode ? 'border-red-500' : ''}
+                                                    className={validationErrors.postcode ? 'border-destructive' : ''}
                                                 />
                                                 {validationErrors.postcode && (
-                                                    <p className="text-sm text-red-500">{validationErrors.postcode}</p>
+                                                    <p className="text-body-sm text-destructive">{validationErrors.postcode}</p>
                                                 )}
                                             </div>
                                             <div className="space-y-2">
@@ -640,7 +640,7 @@ export function UserEditForm({ user, onSuccess, onCancel }: UserEditFormProps) {
                                 <Button type="submit" disabled={loading}>
                                     {loading ? (
                                         <>
-                                            <div className="h-4 w-4 mr-2 animate-spin border-2 border-gray-300 border-t-blue-600 rounded-full" />
+                                            <div className="h-4 w-4 mr-2 animate-spin border-2 border-border border-t-primary rounded-full" />
                                             Updating...
                                         </>
                                     ) : (

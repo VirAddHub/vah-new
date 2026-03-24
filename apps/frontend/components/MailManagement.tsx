@@ -381,7 +381,7 @@ export function MailManagement({
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <div className="text-xs text-muted-foreground">
+                                    <div className="text-caption text-muted-foreground">
                                         Or type a new tag slug (e.g., "hmrc", "companies_house", "bank"):
                                     </div>
                                     <Input
@@ -428,12 +428,12 @@ export function MailManagement({
             <div className="hidden md:block">
                 {/* Search Bar */}
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Search mail by sender, subject, tag, or date..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 rounded-lg border-neutral-200 bg-white focus:border-primary focus:ring-primary/20"
+                        className="pl-10 rounded-lg border-border bg-card focus:border-primary focus:ring-primary/20"
                     />
                 </div>
             </div>
@@ -456,12 +456,12 @@ export function MailManagement({
                     <div className="p-4 space-y-4">
                         {/* Search inside filter modal */}
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Search mail…"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-10 rounded-lg border-neutral-200 bg-white focus:border-primary focus:ring-primary/20"
+                                className="pl-10 rounded-lg border-border bg-card focus:border-primary focus:ring-primary/20"
                             />
                         </div>
 
@@ -496,16 +496,16 @@ export function MailManagement({
                         {/* Tag list (re-uses existing tag state) */}
                         {availableTags.length > 0 && (
                             <div className="space-y-2">
-                                <div className="text-xs font-semibold text-neutral-600">Tags</div>
+                                <div className="text-caption font-semibold text-muted-foreground">Tags</div>
                                 <div className="flex flex-wrap gap-2">
                                     {availableTags.map((tag) => (
                                         <button
                                             key={tag}
                                             type="button"
                                             onClick={() => setActiveTab(`tag:${tag}`)}
-                                            className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${activeTab === `tag:${tag}`
-                                                ? "bg-primary text-white border-primary"
-                                                : "bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50"
+                                            className={`rounded-full px-3 py-1 text-caption font-medium border transition-colors ${activeTab === `tag:${tag}`
+                                                ? "bg-primary text-primary-foreground border-primary"
+                                                : "bg-card text-foreground border-border hover:bg-muted/50"
                                                 }`}
                                         >
                                             {getTagLabel(tag)}
@@ -520,24 +520,24 @@ export function MailManagement({
 
             {/* Tabs (content always renders; controls differ mobile/desktop) */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="hidden md:flex h-auto p-0 bg-transparent border-b border-neutral-200 rounded-none w-full justify-start gap-6">
+                <TabsList className="hidden md:flex h-auto p-0 bg-transparent border-b border-border rounded-none w-full justify-start gap-6">
                     <TabsTrigger
                         value="inbox"
-                        className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
+                        className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-muted-foreground data-[state=active]:bg-transparent hover:text-foreground transition-colors"
                     >
                         <Mail className="h-4 w-4" />
                         Inbox ({mailItems.filter(item => !item.deleted).length})
                     </TabsTrigger>
                     <TabsTrigger
                         value="archived"
-                        className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
+                        className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-muted-foreground data-[state=active]:bg-transparent hover:text-foreground transition-colors"
                     >
                         <Archive className="h-4 w-4" />
                         Archived ({mailItems.filter(item => item.deleted).length})
                     </TabsTrigger>
                     <TabsTrigger
                         value="tags"
-                        className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-neutral-500 data-[state=active]:bg-transparent hover:text-neutral-700 transition-colors"
+                        className="flex items-center gap-2 px-0 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-muted-foreground data-[state=active]:bg-transparent hover:text-foreground transition-colors"
                     >
                         <Tag className="h-4 w-4" />
                         Tags ({availableTags.length})
@@ -548,9 +548,9 @@ export function MailManagement({
                 <TabsContent value="inbox" className="mt-6 space-y-3">
                     {filteredItems.length === 0 ? (
                         <div className="py-12 text-center">
-                            <Mail className="h-12 w-12 mx-auto mb-4 text-neutral-300" />
-                            <h3 className="text-lg font-medium text-neutral-800 mb-2">No mail items</h3>
-                            <p className="text-sm text-neutral-500">
+                            <Mail className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                            <h3 className="text-body-lg font-medium text-foreground mb-2">No mail items</h3>
+                            <p className="text-body-sm text-muted-foreground">
                                 {searchQuery ? 'No items match your search.' : 'Your inbox is empty.'}
                             </p>
                         </div>
@@ -563,9 +563,9 @@ export function MailManagement({
                 <TabsContent value="archived" className="mt-6 space-y-3">
                     {filteredItems.length === 0 ? (
                         <div className="py-12 text-center">
-                            <Archive className="h-12 w-12 mx-auto mb-4 text-neutral-300" />
-                            <h3 className="text-lg font-medium text-neutral-800 mb-2">No archived items</h3>
-                            <p className="text-sm text-neutral-500">
+                            <Archive className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                            <h3 className="text-body-lg font-medium text-foreground mb-2">No archived items</h3>
+                            <p className="text-body-sm text-muted-foreground">
                                 {searchQuery ? 'No archived items match your search.' : 'You haven\'t archived any mail yet.'}
                             </p>
                         </div>
@@ -578,9 +578,9 @@ export function MailManagement({
                 <TabsContent value="tags" className="mt-6 space-y-6">
                     {availableTags.length === 0 ? (
                         <div className="py-12 text-center">
-                            <Tag className="h-12 w-12 mx-auto mb-4 text-neutral-300" />
-                            <h3 className="text-lg font-medium text-neutral-800 mb-2">No tags yet</h3>
-                            <p className="text-sm text-neutral-500">
+                            <Tag className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                            <h3 className="text-body-lg font-medium text-foreground mb-2">No tags yet</h3>
+                            <p className="text-body-sm text-muted-foreground">
                                 Add tags to your mail items to organize them better.
                             </p>
                         </div>
@@ -588,10 +588,10 @@ export function MailManagement({
                         <div className="space-y-6">
                             {availableTags.map(tag => (
                                 <div key={tag}>
-                                    <h3 className="text-base font-semibold text-neutral-800 mb-4 flex items-center gap-2">
+                                    <h3 className="text-body font-semibold text-foreground mb-4 flex items-center gap-2">
                                         <Tag className="h-4 w-4 text-primary" />
                                         {getTagLabel(tag)}
-                                        <Badge variant="outline" className="text-xs bg-primary/10 border-primary/30 text-primary">
+                                        <Badge variant="outline" className="text-caption bg-primary/10 border-primary/30 text-primary">
                                             {mailItems.filter(item => item.tag === tag && !item.deleted).length}
                                         </Badge>
                                     </h3>

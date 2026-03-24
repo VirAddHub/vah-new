@@ -184,12 +184,12 @@ export default function BusinessOwnersPage() {
                 <div className="mb-6">
                     <Link
                         href="/dashboard"
-                        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4"
+                        className="inline-flex items-center gap-2 text-body-sm text-muted-foreground hover:text-foreground mb-4"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Back to dashboard
                     </Link>
-                    <h1 className="text-3xl font-bold mb-2">Business Owners</h1>
+                    <h1 className="text-h2 font-bold mb-2">Business Owners</h1>
                     <p className="text-muted-foreground">
                         Manage directors, owners, and controllers who need identity verification
                     </p>
@@ -218,7 +218,7 @@ export default function BusinessOwnersPage() {
                             <div className="text-center py-8 text-muted-foreground">
                                 <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
                                 <p>No business owners added yet</p>
-                                <p className="text-sm mt-2">Add owners to complete verification</p>
+                                <p className="text-body-sm mt-2">Add owners to complete verification</p>
                             </div>
                         ) : (
                             <div className="space-y-4">
@@ -232,12 +232,12 @@ export default function BusinessOwnersPage() {
                                                 <h3 className="font-medium">{owner.fullName}</h3>
                                                 {getStatusBadge(owner.kycIdStatus)}
                                             </div>
-                                            <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                            <p className="text-body-sm text-muted-foreground flex items-center gap-2">
                                                 <Mail className="h-3 w-3" />
                                                 {owner.email}
                                             </p>
                                             {owner.kycUpdatedAt && (
-                                                <p className="text-xs text-muted-foreground mt-1">
+                                                <p className="text-caption text-muted-foreground mt-1">
                                                     Last updated: {new Date(owner.kycUpdatedAt).toLocaleDateString()}
                                                 </p>
                                             )}

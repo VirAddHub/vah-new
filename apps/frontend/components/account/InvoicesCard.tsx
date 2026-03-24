@@ -30,7 +30,7 @@ export function InvoicesCard({ invoices }: InvoicesCardProps) {
   return (
     <Card className="rounded-xl sm:rounded-2xl overflow-hidden">
       <CardHeader className="p-4 sm:p-6 pb-2">
-        <CardTitle className="text-lg sm:text-xl">Invoices</CardTitle>
+        <CardTitle className="text-body-lg sm:text-h3">Invoices</CardTitle>
       </CardHeader>
       <CardContent className="p-4 sm:p-6 pt-0">
         {invoices.length === 0 ? (

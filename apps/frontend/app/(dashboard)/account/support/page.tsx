@@ -9,10 +9,10 @@ export default function AccountSupportPage() {
         <div className="w-full">
             {/* Page Header */}
             <div className="mb-4 sm:mb-6">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight tracking-tight text-neutral-900 mb-2 sm:mb-4">
+                <h1 className="text-h2 sm:text-h2 lg:text-h1 font-semibold leading-tight tracking-tight text-foreground mb-2 sm:mb-4">
                     Support
                 </h1>
-                <p className="text-sm sm:text-base lg:text-lg text-neutral-600 leading-relaxed">
+                <p className="text-body-sm sm:text-body lg:text-body-lg text-muted-foreground leading-relaxed">
                     Get help and contact our support team
                 </p>
             </div>
@@ -20,20 +20,20 @@ export default function AccountSupportPage() {
             {/* Support Options List */}
             <div className="space-y-3 sm:space-y-4">
                 {/* Email Support */}
-                <div className="flex items-start gap-3 sm:gap-4 p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-neutral-200 bg-white min-w-0">
+                <div className="flex items-start gap-3 sm:gap-4 p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-border bg-card min-w-0">
                     <Mail className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                        <h2 className="text-lg sm:text-xl font-semibold text-neutral-900 mb-2">
+                        <h2 className="text-body-lg sm:text-h3 font-semibold text-foreground mb-2">
                                 Email Support
                             </h2>
-                        <p className="text-base text-neutral-600 leading-relaxed mb-3">
+                        <p className="text-body text-muted-foreground leading-relaxed mb-3">
                             Send us an email and we'll get back to you. We usually respond within 24 hours.
                         </p>
                         <div className="space-y-1 mb-4">
-                            <p className="text-sm text-neutral-700">
+                            <p className="text-body-sm text-foreground">
                                 <span className="font-medium">Account:</span> support@virtualaddresshub.co.uk
                             </p>
-                            <p className="text-sm text-neutral-700">
+                            <p className="text-body-sm text-foreground">
                                 <span className="font-medium">General:</span> virtualaddress@gmail.com
                             </p>
                         </div>
@@ -48,16 +48,16 @@ export default function AccountSupportPage() {
                 </div>
 
                 {/* WhatsApp Support */}
-                <div className="flex items-start gap-3 sm:gap-4 p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-neutral-200 bg-white min-w-0">
+                <div className="flex items-start gap-3 sm:gap-4 p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-border bg-card min-w-0">
                     <MessageCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                        <h2 className="text-lg sm:text-xl font-semibold text-neutral-900 mb-2">
+                        <h2 className="text-body-lg sm:text-h3 font-semibold text-foreground mb-2">
                                 WhatsApp Support
                             </h2>
-                        <p className="text-base text-neutral-600 leading-relaxed mb-3">
+                        <p className="text-body text-muted-foreground leading-relaxed mb-3">
                             Message us on WhatsApp and our support team will respond as soon as possible
                         </p>
-                        <p className="text-sm text-neutral-600 mb-4">
+                        <p className="text-body-sm text-muted-foreground mb-4">
                                 Available: Mon – Fri, 8:00 AM – 6:00 PM
                             </p>
                         <Button
@@ -71,13 +71,13 @@ export default function AccountSupportPage() {
             </div>
 
             {/* Help Center */}
-                <div className="flex items-start gap-4 p-6 rounded-2xl border border-neutral-200 bg-white">
+                <div className="flex items-start gap-4 p-6 rounded-2xl border border-border bg-card">
                     <HelpCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                        <h2 className="text-xl font-semibold text-neutral-900 mb-2">
+                        <h2 className="text-h3 font-semibold text-foreground mb-2">
                             Help Center
                         </h2>
-                        <p className="text-base text-neutral-600 leading-relaxed mb-4">
+                        <p className="text-body text-muted-foreground leading-relaxed mb-4">
                         Browse our help articles and frequently asked questions
                     </p>
                     <Button

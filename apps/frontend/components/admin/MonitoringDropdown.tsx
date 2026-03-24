@@ -37,7 +37,7 @@ export function MonitoringDropdown({ activeSection, onSectionChange }: Monitorin
                     className="gap-1.5 h-8 px-3"
                 >
                     <Activity className="h-4 w-4" />
-                    <span className="text-sm">Monitoring</span>
+                    <span className="text-body-sm">Monitoring</span>
                     <ChevronDown className="h-3 w-3" />
                 </Button>
             </DropdownMenuTrigger>

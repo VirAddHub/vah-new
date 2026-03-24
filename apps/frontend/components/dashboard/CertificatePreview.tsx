@@ -37,21 +37,21 @@ export function CertificatePreview({
     const registeredOfficeAddress = 'Second Floor, Tanner Place, 54–58 Tanner Street, London SE1 3PH, United Kingdom';
 
     return (
-        <div className="min-h-screen bg-[#f3f4f6] flex items-center justify-center p-4 md:p-8">
+        <div className="min-h-screen bg-muted/40 flex items-center justify-center p-4 md:p-8">
             {/* Letter card - max width 896px (max-w-4xl) */}
-            <div className="w-full max-w-4xl bg-white shadow-lg flex flex-col">
+            <div className="w-full max-w-4xl bg-card shadow-lg flex flex-col">
                 {/* Header row - 2px solid black bottom border */}
                 <div className="px-12 py-8 border-b-2 border-black">
                     <div className="flex items-center justify-between">
                         {/* Logo placeholder - height 32px */}
                         <div className="h-8 w-auto">
                             {/* You can replace this with actual logo image */}
-                            <div className="h-8 w-32 bg-neutral-200 rounded flex items-center justify-center">
-                                <span className="text-xs text-neutral-500 font-medium">VAH Logo</span>
+                            <div className="h-8 w-32 bg-muted rounded flex items-center justify-center">
+                                <span className="text-caption text-muted-foreground font-medium">VAH Logo</span>
                             </div>
                         </div>
                         {/* Date - right aligned */}
-                        <div className="text-sm text-[#4b5563] text-right">
+                        <div className="text-body-sm text-muted-foreground text-right">
                             Date: {formattedDate}
                         </div>
                     </div>
@@ -61,44 +61,44 @@ export function CertificatePreview({
                 <div className="flex-grow px-12 py-10">
                     {/* Title area */}
                     <div className="mb-10">
-                        <h1 className="text-2xl font-semibold text-[#111827] tracking-tight mb-0">
+                        <h1 className="text-h2 font-semibold text-foreground tracking-tight mb-0">
                             Business Address Confirmation
                         </h1>
-                        <p className="text-sm text-[#6b7280] mt-1">
+                        <p className="text-body-sm text-muted-foreground mt-1">
                             Verified details
                         </p>
                     </div>
 
                     {/* Verified details section: desktop 2-col (label | value), mobile stacked */}
-                    <div className="space-y-4 pb-8 mb-10 border-b border-[#e5e7eb]">
+                    <div className="space-y-4 pb-8 mb-10 border-b border-border">
                         <div className="flex flex-col md:flex-row md:items-baseline gap-y-1 md:gap-x-8">
-                            <div className="md:w-[200px] md:shrink-0 text-sm font-semibold text-[#374151] leading-snug">
+                            <div className="md:w-[200px] md:shrink-0 text-body-sm font-semibold text-foreground leading-snug">
                                 Registered Office Address
                             </div>
-                            <div className="text-sm text-[#111827] leading-relaxed min-w-0 break-words">
+                            <div className="text-body-sm text-foreground leading-relaxed min-w-0 break-words">
                                 {registeredOfficeAddress}
                             </div>
                         </div>
                         <div className="flex flex-col md:flex-row md:items-baseline gap-y-1 md:gap-x-8">
-                            <div className="md:w-[200px] md:shrink-0 text-sm font-semibold text-[#374151] leading-snug">
+                            <div className="md:w-[200px] md:shrink-0 text-body-sm font-semibold text-foreground leading-snug">
                                 Authorised Company
                             </div>
-                            <div className="text-sm text-[#111827] leading-relaxed min-w-0">
+                            <div className="text-body-sm text-foreground leading-relaxed min-w-0">
                                 {companyName}
                             </div>
                         </div>
                         <div className="flex flex-col md:flex-row md:items-baseline gap-y-1 md:gap-x-8">
-                            <div className="md:w-[200px] md:shrink-0 text-sm font-semibold text-[#374151] leading-snug">
+                            <div className="md:w-[200px] md:shrink-0 text-body-sm font-semibold text-foreground leading-snug">
                                 Date of issue
                             </div>
-                            <div className="text-sm text-[#111827] leading-relaxed min-w-0">
+                            <div className="text-body-sm text-foreground leading-relaxed min-w-0">
                                 {formattedDate}
                             </div>
                         </div>
                     </div>
 
                     {/* Body paragraph section - exact wording */}
-                    <p className="text-sm leading-7 text-[#1f2937] mb-12">
+                    <p className="text-body-sm leading-7 text-foreground mb-12">
                         This letter confirms that the above-named company is authorised to use the address stated above
                         as its Registered Office Address for Companies House and for the receipt of official
                         correspondence from HM Revenue & Customs (HMRC). The address may also be used as the
@@ -108,17 +108,17 @@ export function CertificatePreview({
 
                     {/* Signature block */}
                     <div className="pt-8">
-                        <p className="text-sm mb-6 text-[#111827]">
+                        <p className="text-body-sm mb-6 text-foreground">
                             Sincerely
                         </p>
-                        <p className="text-base font-semibold text-[#111827]">
+                        <p className="text-body font-semibold text-foreground">
                             VirtualAddressHub Customer Support
                         </p>
                     </div>
                 </div>
 
-                {/* Footer - mt-auto, background #f9fafb */}
-                <div className="mt-auto bg-[#f9fafb] border-t border-[#e5e7eb] px-12 py-6 text-center text-xs text-[#4b5563] leading-relaxed">
+                {/* Footer — muted band (semantic tokens) */}
+                <div className="mt-auto bg-muted/30 border-t border-border px-12 py-6 text-center text-caption text-muted-foreground leading-relaxed">
                     <div>VirtualAddressHub Ltd</div>
                     <div className="mt-1">{registeredOfficeAddress}</div>
                     <div className="mt-1">support@virtualaddresshub.co.uk · www.virtualaddresshub.co.uk</div>

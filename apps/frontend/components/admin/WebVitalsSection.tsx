@@ -59,7 +59,7 @@ export function WebVitalsSection() {
       case 'poor':
         return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted text-foreground border-border';
     }
   };
 
@@ -175,20 +175,20 @@ export function WebVitalsSection() {
           <div className="mb-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{summary.good}</div>
-                <div className="text-sm text-muted-foreground">Good</div>
+                <div className="text-h2 font-bold text-green-600">{summary.good}</div>
+                <div className="text-body-sm text-muted-foreground">Good</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600">{summary.needsImprovement}</div>
-                <div className="text-sm text-muted-foreground">Needs Improvement</div>
+                <div className="text-h2 font-bold text-yellow-600">{summary.needsImprovement}</div>
+                <div className="text-body-sm text-muted-foreground">Needs Improvement</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">{summary.poor}</div>
-                <div className="text-sm text-muted-foreground">Poor</div>
+                <div className="text-h2 font-bold text-red-600">{summary.poor}</div>
+                <div className="text-body-sm text-muted-foreground">Poor</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{summary.averageScore}%</div>
-                <div className="text-sm text-muted-foreground">Average Score</div>
+                <div className="text-h2 font-bold text-primary">{summary.averageScore}%</div>
+                <div className="text-body-sm text-muted-foreground">Average Score</div>
               </div>
             </div>
           </div>
@@ -198,10 +198,10 @@ export function WebVitalsSection() {
           <div className="text-center py-8">
             <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
             <h3 className="font-medium mb-2">No Web Vitals Data</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-body-sm text-muted-foreground mb-4">
               Web vitals will appear here as users interact with your site
             </p>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-caption text-muted-foreground">
               <p>• LCP: Largest Contentful Paint (load speed)</p>
               <p>• FID: First Input Delay (responsiveness)</p>
               <p>• CLS: Cumulative Layout Shift (visual stability)</p>
@@ -215,7 +215,7 @@ export function WebVitalsSection() {
                   {getRatingIcon(vital.rating)}
                   <div>
                     <div className="font-medium">{vital.metric}</div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-body-sm text-muted-foreground">
                       {formatValue(vital.metric, vital.value)}
                     </div>
                   </div>
@@ -230,7 +230,7 @@ export function WebVitalsSection() {
 
         <div className="mt-6 p-4 bg-muted/50 rounded-lg">
           <h4 className="font-medium mb-2">Performance Thresholds</h4>
-          <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="grid grid-cols-2 gap-2 text-body-sm">
             <div>LCP: &lt; 2.5s (Good)</div>
             <div>FID: &lt; 100ms (Good)</div>
             <div>CLS: &lt; 0.1 (Good)</div>

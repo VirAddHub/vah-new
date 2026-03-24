@@ -175,11 +175,11 @@ export default function ForwardingHealthCard() {
     return (
       <Card className="p-5">
         <div className="text-center text-red-600">
-          <h3 className="text-xl font-semibold mb-2">Forwarding Health</h3>
+          <h3 className="text-h3 font-semibold mb-2">Forwarding Health</h3>
           <p>Failed to load metrics: {error}</p>
           <button 
             onClick={fetchMetrics}
-            className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+            className="mt-2 px-3 py-1 bg-blue-500 text-primary-foreground rounded text-body-sm hover:bg-blue-600"
           >
             Retry
           </button>
@@ -191,9 +191,9 @@ export default function ForwardingHealthCard() {
   return (
     <Card className="p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold">Forwarding Health</h3>
+        <h3 className="text-h3 font-semibold">Forwarding Health</h3>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-caption">
             <span className="opacity-60">Mute UI alerts</span>
             <Switch checked={mute} onCheckedChange={toggleMute} />
           </div>
@@ -206,14 +206,14 @@ export default function ForwardingHealthCard() {
             {running ? "Running…" : "Run Self-Test"}
           </Button>
           {lastResult && (
-            <span className={`text-sm ${lastResult.ok ? "text-emerald-700" : "text-red-700"}`}>
+            <span className={`text-body-sm ${lastResult.ok ? "text-primary" : "text-destructive"}`}>
               {lastResult.msg}{lastRun ? ` • ${new Date(lastRun).toLocaleTimeString()}` : ""}
             </span>
           )}
           {!mute && uiAlerts.stalled && <Badge variant="destructive">No transitions</Badge>}
           {!mute && uiAlerts.illegalSpike && <Badge variant="destructive">Illegal spike</Badge>}
           {!mute && uiAlerts.errSpike && <Badge variant="destructive">5xx spike</Badge>}
-          <span className="text-xs opacity-60">
+          <span className="text-caption opacity-60">
             Updated {updatedAt ? new Date(updatedAt).toLocaleTimeString() : 'Never'}
           </span>
         </div>
@@ -235,23 +235,23 @@ export default function ForwardingHealthCard() {
       <Card className="p-4">
         <div className="flex items-center justify-between mb-2">
           <h4 className="font-medium">SLA (Requested → Processing within 2h)</h4>
-          <span className="text-sm">{adv.slaPct === null ? "n/a" : `${adv.slaPct}% met`}</span>
+          <span className="text-body-sm">{adv.slaPct === null ? "n/a" : `${adv.slaPct}% met`}</span>
         </div>
-        <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
-          <div className="h-2 bg-emerald-500" style={{ width: `${adv.slaPct ?? 0}%` }} />
+        <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+          <div className="h-2 bg-primary" style={{ width: `${adv.slaPct ?? 0}%` }} />
         </div>
-        <p className="mt-1 text-xs opacity-70">Uses counters: forwarding_sla_met_total / _breached_total (window=2h)</p>
+        <p className="mt-1 text-caption opacity-70">Uses counters: forwarding_sla_met_total / _breached_total (window=2h)</p>
       </Card>
 
       {/* Latency p95s */}
       <Card className="p-4">
         <h4 className="font-medium mb-2">Latency p95</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-body-sm">
           <LatencyRow label="Req → Proc" ms={adv.p95RP} />
           <LatencyRow label="Proc → Disp" ms={adv.p95PD} />
           <LatencyRow label="Disp → Deliv" ms={adv.p95DD} />
         </div>
-        <p className="mt-1 text-xs opacity-70">From histogram: forwarding_transition_latency_ms_bucket</p>
+        <p className="mt-1 text-caption opacity-70">From histogram: forwarding_transition_latency_ms_bucket</p>
       </Card>
 
       {/* Webhook Freshness + Feature Flags */}
@@ -259,18 +259,18 @@ export default function ForwardingHealthCard() {
         <Card className="p-4">
           <div className="flex items-center justify-between mb-2">
             <h4 className="font-medium">Webhook Freshness</h4>
-            <span className="text-xs opacity-60">age (s)</span>
+            <span className="text-caption opacity-60">age (s)</span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            {adv.webhooks.length === 0 && <span className="text-xs opacity-60">n/a</span>}
+            {adv.webhooks.length === 0 && <span className="text-caption opacity-60">n/a</span>}
             {adv.webhooks.map(w => {
-              const tone = w.age > 7200 ? "bg-red-50 border-red-200 text-red-700"
+              const tone = w.age > 7200 ? "bg-destructive/10 border-destructive/20 text-destructive"
                          : w.age > 1800 ? "bg-amber-50 border-amber-200 text-amber-700"
-                         : "bg-emerald-50 border-emerald-200 text-emerald-700";
+                         : "bg-primary/10 border-primary/20 text-primary";
               return (
                 <div key={w.provider} className={`flex items-center justify-between rounded-lg border px-3 py-2 ${tone}`}>
-                  <span className="text-sm">{w.provider}</span>
-                  <span className="text-sm">{w.age}s</span>
+                  <span className="text-body-sm">{w.provider}</span>
+                  <span className="text-body-sm">{w.age}s</span>
                 </div>
               );
             })}
@@ -280,17 +280,17 @@ export default function ForwardingHealthCard() {
         <Card className="p-4">
           <div className="flex items-center justify-between mb-2">
             <h4 className="font-medium">Feature Flags</h4>
-            <span className="text-xs opacity-60">state</span>
+            <span className="text-caption opacity-60">state</span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            {adv.flags.length === 0 && <span className="text-xs opacity-60">n/a</span>}
+            {adv.flags.length === 0 && <span className="text-caption opacity-60">n/a</span>}
             {adv.flags.map(f => {
               const on = (f.state ?? 0) >= 1;
-              const tone = on ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-slate-50 border-slate-200 text-slate-700";
+              const tone = on ? "bg-primary/10 border-primary/20 text-primary" : "bg-muted border-border text-muted-foreground";
               return (
                 <div key={f.flag} className={`flex items-center justify-between rounded-lg border px-3 py-2 ${tone}`}>
-                  <span className="text-sm">{f.flag}</span>
-                  <span className="text-sm">{on ? "ON" : "OFF"}</span>
+                  <span className="text-body-sm">{f.flag}</span>
+                  <span className="text-body-sm">{on ? "ON" : "OFF"}</span>
                 </div>
               );
             })}
@@ -299,10 +299,10 @@ export default function ForwardingHealthCard() {
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="text-xs text-gray-500">
+        <div className="text-caption text-muted-foreground">
           Data points: {series.length} | Refresh: 10s
         </div>
-        <Link className="text-sm underline hover:no-underline" href="/admin/alerts">
+        <Link className="text-body-sm underline hover:no-underline" href="/admin/alerts">
           Open Alerts Dashboard
         </Link>
       </div>
@@ -311,13 +311,13 @@ export default function ForwardingHealthCard() {
 }
 
 function KPI({ title, value, tone="ok" }:{ title:string; value:number; tone?: "ok"|"warn"|"good" }) {
-  const cls = tone === "good" ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+  const cls = tone === "good" ? "text-primary bg-primary/10 border-primary/20"
             : tone === "warn" ? "text-amber-700 bg-amber-50 border-amber-200"
-            : "text-slate-700 bg-slate-50 border-slate-200";
+            : "text-muted-foreground bg-muted border-border";
   return (
     <Card className={`p-4 border ${cls}`}>
-      <div className="text-xs opacity-70">{title}</div>
-      <div className="text-2xl font-semibold">{value.toLocaleString()}</div>
+      <div className="text-caption opacity-70">{title}</div>
+      <div className="text-h2 font-semibold">{value.toLocaleString()}</div>
     </Card>
   );
 }
@@ -326,8 +326,8 @@ function Spark({ title, data }:{ title:string; data:{x:number;y:number}[] }) {
   if (data.length === 0) {
     return (
       <Card className="p-3">
-        <div className="text-xs opacity-70 mb-2">{title}</div>
-        <div className="h-28 flex items-center justify-center text-gray-400">
+        <div className="text-caption opacity-70 mb-2">{title}</div>
+        <div className="h-28 flex items-center justify-center text-muted-foreground">
           No data yet
         </div>
       </Card>
@@ -336,7 +336,7 @@ function Spark({ title, data }:{ title:string; data:{x:number;y:number}[] }) {
 
   return (
     <Card className="p-3">
-      <div className="text-xs opacity-70 mb-2">{title}</div>
+      <div className="text-caption opacity-70 mb-2">{title}</div>
       <div className="h-28">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data.map(d => ({ t: new Date(d.x).toLocaleTimeString(), v: d.y }))}>
@@ -362,14 +362,14 @@ function Spark({ title, data }:{ title:string; data:{x:number;y:number}[] }) {
 
 function LatencyRow({ label, ms }: { label:string; ms:number|null }) {
   const text = ms === null ? "n/a" : (ms >= 1000 ? `${Math.round(ms/100)/10}s` : `${Math.round(ms)}ms`);
-  const tone = ms === null ? "bg-slate-50 border-slate-200 text-slate-700"
-            : ms > 2*60*60*1000 ? "bg-red-50 border-red-200 text-red-700" // >2h
+  const tone = ms === null ? "bg-muted border-border text-muted-foreground"
+            : ms > 2*60*60*1000 ? "bg-destructive/10 border-destructive/20 text-destructive" // >2h
             : ms > 15*60*1000 ? "bg-amber-50 border-amber-200 text-amber-700"
-            : "bg-emerald-50 border-emerald-200 text-emerald-700";
+            : "bg-primary/10 border-primary/20 text-primary";
   return (
     <div className={`rounded-lg border px-3 py-2 ${tone}`}>
-      <div className="text-xs opacity-70">{label}</div>
-      <div className="text-base font-medium">{text}</div>
+      <div className="text-caption opacity-70">{label}</div>
+      <div className="text-body font-medium">{text}</div>
     </div>
   );
 }

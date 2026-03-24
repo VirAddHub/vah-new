@@ -133,7 +133,7 @@ export default function Login({ onNavigate }: LoginProps) {
               <AlertDescription className="space-y-2">
                 <div className="font-medium">{error}</div>
                 {showResetHint && (
-                  <div className="text-sm text-muted-foreground mt-2">
+                  <div className="text-body-sm text-muted-foreground mt-2">
                     Forgot your password? You can reset it below.
                   </div>
                 )}
@@ -187,9 +187,9 @@ export default function Login({ onNavigate }: LoginProps) {
 
           {/* Demo creds (optional) */}
           <div className="mt-4 p-3 bg-muted rounded-lg">
-            <p className="text-sm font-medium mb-1">Demo credentials:</p>
-            <p className="text-xs text-muted-foreground">User — demo@example.com / demo123</p>
-            <p className="text-xs text-muted-foreground">Admin — admin@virtualaddresshub.co.uk / admin123</p>
+            <p className="text-body-sm font-medium mb-1">Demo credentials:</p>
+            <p className="text-caption text-muted-foreground">User — demo@example.com / demo123</p>
+            <p className="text-caption text-muted-foreground">Admin — admin@virtualaddresshub.co.uk / admin123</p>
           </div>
 
           <div className="mt-6 space-y-2 text-center">
@@ -197,12 +197,12 @@ export default function Login({ onNavigate }: LoginProps) {
               <button
                 type="button"
                 onClick={() => window.location.href = '/reset-password'}
-                className="text-primary hover:underline text-sm"
+                className="text-primary hover:underline text-body-sm"
               >
                 Forgot password?
               </button>
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
               <button
                 type="button"

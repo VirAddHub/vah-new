@@ -546,7 +546,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
     if (normalizedStatus === 'dispatched' || normalizedStatus === 'delivered' ||
       normalizedStatus === 'shipped' || normalizedStatus === 'completed' ||
       normalizedStatus === 'complete') {
-      return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">{FWD_LABEL.dispatched}</Badge>;
+      return <Badge variant="default" className="bg-primary/10 text-primary border-primary/20">{FWD_LABEL.dispatched}</Badge>;
     }
 
     return <Badge variant="secondary">{status}</Badge>;
@@ -572,7 +572,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
         key={request.id}
         className={`mb-3 transition-all duration-200 ${lockedByOther ? 'opacity-60 border-orange-200 bg-orange-50' :
             lockedByMe ? 'border-blue-200 bg-blue-50' :
-              isDone ? 'border-green-100 bg-green-50/30' :
+              isDone ? 'border-primary/20 bg-primary/5' :
                 'border-border hover:shadow-md hover:border-primary/20'
           }`}
         data-testid="forwarding-card"
@@ -583,10 +583,10 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
             <div className="flex-1 min-w-0">
               {/* Header with ID and metadata */}
               <div className="flex items-center gap-3 mb-3 flex-wrap">
-                <span className="font-mono text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded">
+                <span className="font-mono text-caption font-semibold text-primary bg-primary/10 px-2 py-1 rounded">
                   {formatFRId(request.id)}
                 </span>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 text-caption text-muted-foreground">
                   <span>Mail #{request.mail_item_id}</span>
                   <span>•</span>
                   <span>User #{request.user_id}</span>
@@ -597,8 +597,8 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
 
               {/* User name */}
               <div className="mb-2">
-                <div className="text-xs text-muted-foreground mb-1">User:</div>
-                <div className="font-medium text-sm text-foreground">
+                <div className="text-caption text-muted-foreground mb-1">User:</div>
+                <div className="font-medium text-body-sm text-foreground">
                   {request.user_name || 
                    (request.first_name || request.last_name 
                      ? `${request.first_name || ''} ${request.last_name || ''}`.trim()
@@ -608,12 +608,12 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
 
               {/* Recipient info */}
               <div className="space-y-1 mb-3">
-                <div className="text-xs text-muted-foreground mb-1">Forwarding to:</div>
-                <div className="font-medium text-sm text-foreground">
+                <div className="text-caption text-muted-foreground mb-1">Forwarding to:</div>
+                <div className="font-medium text-body-sm text-foreground">
                   {request.to_name || 'No name'}
                 </div>
                 {request.address1 && (
-                  <div className="text-xs text-muted-foreground leading-relaxed">
+                  <div className="text-caption text-muted-foreground leading-relaxed">
                     {request.address1}
                     {request.city && `, ${request.city} ${request.postal} ${request.country}`}
                   </div>
@@ -622,7 +622,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
 
               {/* Lock indicator */}
               {lockInfo && (
-                <div className="mt-2 flex items-center justify-between text-xs">
+                <div className="mt-2 flex items-center justify-between text-caption">
                   <div className="flex items-center gap-1">
                     {lockedByMe ? (
                       <>
@@ -642,7 +642,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-6 px-2 text-xs text-red-600 border-red-200 hover:bg-red-50"
+                      className="h-6 px-2 text-caption text-destructive border-destructive/20 hover:bg-destructive/10"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (confirm(`Force unlock this request from ${lockInfo.admin_name}?`)) {
@@ -679,7 +679,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
                       size="sm"
                       onClick={() => updateRequestStatus(request.id, 'dispatched')}
                       disabled={isDisabled || lockedByOther}
-                      className={lockedByOther ? 'opacity-50' : 'bg-green-600 hover:bg-green-700 text-white'}
+                      className={lockedByOther ? 'opacity-50' : 'bg-primary hover:bg-primary/90 text-primary-foreground'}
                     >
                       {isBusy ? '...' : 'Done'}
                     </Button>
@@ -695,7 +695,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
                       deleteRequest(request.id);
                     }}
                     disabled={isDeleting}
-                    className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                    className="text-destructive border-destructive/20 hover:bg-destructive/10 hover:border-destructive/30"
                   >
                     {isDeleting ? (
                       <span className="flex items-center gap-1">
@@ -728,7 +728,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Forwarding Requests</h2>
+          <h2 className="text-h3 font-bold">Forwarding Requests</h2>
           <p className="text-muted-foreground">
             Updates every 2 minutes • {currentAdmin?.name} is online
           </p>
@@ -759,7 +759,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
         {/* Requested */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-lg">Requested</h3>
+            <h3 className="font-semibold text-h4">Requested</h3>
             <Badge variant="secondary">{requested.length}</Badge>
           </div>
           <div className="space-y-3 min-h-[200px]">
@@ -770,7 +770,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
         {/* In Progress */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-lg">In Progress</h3>
+            <h3 className="font-semibold text-h4">In Progress</h3>
             <Badge variant="default">{inProgress.length}</Badge>
           </div>
           <div className="space-y-3 min-h-[200px]">
@@ -782,20 +782,20 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-lg text-muted-foreground">Done</h3>
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              <h3 className="font-semibold text-h4 text-muted-foreground">Done</h3>
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                 {done.length}
               </Badge>
             </div>
             {done.length > 0 && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 Completed requests can be deleted to keep the board clean
               </p>
             )}
           </div>
           <div className="space-y-3 min-h-[200px]">
             {done.length === 0 ? (
-              <div className="text-center py-8 text-sm text-muted-foreground">
+              <div className="text-center py-8 text-body-sm text-muted-foreground">
                 No completed requests
               </div>
             ) : (
@@ -809,7 +809,7 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
       {other.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-lg">Other</h3>
+            <h3 className="font-semibold text-h4">Other</h3>
             <Badge variant="destructive">{other.length}</Badge>
           </div>
           <div className="space-y-3">
@@ -819,8 +819,8 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
       )}
 
       {/* Real-time status indicator */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+      <div className="flex items-center gap-2 text-body-sm text-muted-foreground">
+        <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
         <span>Real-time updates active • Last sync: {new Date().toLocaleTimeString()}</span>
       </div>
     </div>

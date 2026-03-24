@@ -8,14 +8,14 @@ export function KYCPolicyPage({ onNavigate }: KYCPolicyPageProps) {
   return (
     <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-4xl px-6 py-12 space-y-6 text-muted-foreground">
-        <h1 className="text-3xl font-bold tracking-tight text-primary">KYC Verification Policy</h1>
-        <p className="text-sm italic">Last updated: [INSERT DATE]</p>
+        <h1 className="text-h1 tracking-tight text-primary">KYC Verification Policy</h1>
+        <p className="text-body-sm italic">Last updated: [INSERT DATE]</p>
         <p>
           VirtualAddressHub is required by UK law to verify the identity of customers before providing any address, mail-handling, or Registered Office services. This policy explains who must verify, how the process works, and what documents are accepted.
         </p>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">1. Who Must Verify</h2>
+          <h2 className="text-h3 text-foreground">1. Who Must Verify</h2>
           <p>The following individuals must complete identity verification:</p>
           <ul className="list-disc pl-6 space-y-1">
             <li>The account holder</li>
@@ -27,7 +27,7 @@ export function KYCPolicyPage({ onNavigate }: KYCPolicyPageProps) {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">2. How Verification Works</h2>
+          <h2 className="text-h3 text-foreground">2. How Verification Works</h2>
           <p>The verification process includes:</p>
           <ol className="list-decimal pl-6 space-y-1">
             <li>Create an account</li>
@@ -42,7 +42,7 @@ export function KYCPolicyPage({ onNavigate }: KYCPolicyPageProps) {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">3. Accepted Documents</h2>
+          <h2 className="text-h3 text-foreground">3. Accepted Documents</h2>
           <h3 className="font-semibold text-foreground">Identity (must be valid and in-date):</h3>
           <ul className="list-disc pl-6 space-y-1">
             <li>Passport</li>
@@ -59,14 +59,14 @@ export function KYCPolicyPage({ onNavigate }: KYCPolicyPageProps) {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">4. International Clients</h2>
+          <h2 className="text-h3 text-foreground">4. International Clients</h2>
           <p>
             International clients are supported. Applications from higher-risk jurisdictions may require Enhanced Due Diligence (EDD) in accordance with UK AML regulations.
           </p>
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">5. Corporate Clients / KYB</h2>
+          <h2 className="text-h3 text-foreground">5. Corporate Clients / KYB</h2>
           <p>For companies, partnerships, or organisations, we may require:</p>
           <ul className="list-disc pl-6 space-y-1">
             <li>Certificate of incorporation</li>
@@ -78,7 +78,7 @@ export function KYCPolicyPage({ onNavigate }: KYCPolicyPageProps) {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">6. Ongoing Requirements</h2>
+          <h2 className="text-h3 text-foreground">6. Ongoing Requirements</h2>
           <p>Customers must inform us of:</p>
           <ul className="list-disc pl-6 space-y-1">
             <li>New directors</li>
@@ -90,14 +90,14 @@ export function KYCPolicyPage({ onNavigate }: KYCPolicyPageProps) {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">7. AML Compliance</h2>
+          <h2 className="text-h3 text-foreground">7. AML Compliance</h2>
           <p>
             We comply with the Money Laundering Regulations 2017 (as amended). We maintain full AML records, risk assessments, and internal controls. Where required, we may submit Suspicious Activity Reports (SARs) to the National Crime Agency (NCA). We cannot provide service where AML obligations cannot be satisfied.
           </p>
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">8. Contact</h2>
+          <h2 className="text-h3 text-foreground">8. Contact</h2>
           <p>
             For verification questions or support: <strong>support@virtualaddresshub.co.uk</strong>
           </p>

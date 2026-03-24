@@ -40,11 +40,11 @@ export function FAQSchema({ faqs, className = "" }: FAQSchemaProps) {
 
             {/* Visual FAQ Section */}
             <div className={`bg-muted/30 rounded-lg p-8 ${className}`}>
-                <h2 className="text-2xl font-semibold mb-6 text-foreground">Frequently Asked Questions</h2>
+                <h2 className="text-h2 font-semibold mb-6 text-foreground">Frequently Asked Questions</h2>
                 <div className="space-y-6">
                     {faqs.map((faq, index) => (
                         <div key={index} className="border-b border-border pb-4 last:border-b-0">
-                            <h3 className="font-semibold text-lg text-foreground mb-2">
+                            <h3 className="font-semibold text-body-lg text-foreground mb-2">
                                 {faq.question}
                             </h3>
                             <p className="text-muted-foreground leading-relaxed">

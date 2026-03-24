@@ -490,7 +490,7 @@ export function BlogSection() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold">Blog Management</h2>
+                    <h2 className="text-h3 font-bold">Blog Management</h2>
                     <p className="text-muted-foreground">Manage your blog posts and content</p>
                 </div>
                 <div className="flex gap-2">
@@ -644,13 +644,13 @@ export function BlogSection() {
                                     <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                                         {posts.length === 0 ? (
                                             <div>
-                                                <p className="text-lg font-medium mb-2">No blog posts yet</p>
-                                                <p className="text-sm">Click "New Post" to create your first blog post</p>
+                                                <p className="text-body-lg font-medium mb-2">No blog posts yet</p>
+                                                <p className="text-body-sm">Click "New Post" to create your first blog post</p>
                                             </div>
                                         ) : (
                                             <div>
-                                                <p className="text-lg font-medium mb-2">No posts match your filters</p>
-                                                <p className="text-sm">Try adjusting your search or filter criteria</p>
+                                                <p className="text-body-lg font-medium mb-2">No posts match your filters</p>
+                                                <p className="text-body-sm">Try adjusting your search or filter criteria</p>
                                             </div>
                                         )}
                                     </TableCell>
@@ -661,7 +661,7 @@ export function BlogSection() {
                                         <TableCell>
                                             <div>
                                                 <div className="font-medium">{post.title}</div>
-                                                <div className="text-sm text-muted-foreground">{post.slug}</div>
+                                                <div className="text-body-sm text-muted-foreground">{post.slug}</div>
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -674,29 +674,29 @@ export function BlogSection() {
                                                 {post.tags && post.tags.length > 0 ? (
                                                     <>
                                                         {post.tags.slice(0, 2).map(tag => (
-                                                            <Badge key={tag} variant="outline" className="text-xs">
+                                                            <Badge key={tag} variant="outline" className="text-caption">
                                                                 {tag}
                                                             </Badge>
                                                         ))}
                                                         {post.tags.length > 2 && (
-                                                            <Badge variant="outline" className="text-xs">
+                                                            <Badge variant="outline" className="text-caption">
                                                                 +{post.tags.length - 2}
                                                             </Badge>
                                                         )}
                                                     </>
                                                 ) : (
-                                                    <span className="text-xs text-muted-foreground">No tags</span>
+                                                    <span className="text-caption text-muted-foreground">No tags</span>
                                                 )}
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="text-sm">
+                                            <div className="text-body-sm">
                                                 <div className="flex items-center gap-1">
                                                     <Calendar className="h-3 w-3" />
                                                     {formatDate(post.date)}
                                                 </div>
                                                 {post.updated && (
-                                                    <div className="text-xs text-muted-foreground">
+                                                    <div className="text-caption text-muted-foreground">
                                                         Updated: {formatDate(post.updated)}
                                                     </div>
                                                 )}
@@ -741,7 +741,7 @@ export function BlogSection() {
                 {totalPosts > pageSize && (
                     <div className="border-t px-6 py-4">
                         <div className="flex items-center justify-between">
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-body-sm text-muted-foreground">
                                 Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, totalPosts)} of {totalPosts} posts
                             </div>
                             <div className="flex items-center gap-2">
@@ -854,7 +854,7 @@ export function BlogSection() {
                                 onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
                                 placeholder="Write your blog post content here..."
                                 rows={15}
-                                className="font-mono text-sm"
+                                className="font-mono text-body-sm"
                             />
                         </div>
 
@@ -894,10 +894,10 @@ export function BlogSection() {
                                     accept="image/*"
                                     onChange={handleCoverFileChange}
                                     disabled={isUploadingCover}
-                                    className="text-sm"
+                                    className="text-body-sm"
                                 />
                                 {isUploadingCover && (
-                                    <span className="text-xs text-muted-foreground">Uploading…</span>
+                                    <span className="text-caption text-muted-foreground">Uploading…</span>
                                 )}
                             </div>
 
@@ -913,7 +913,7 @@ export function BlogSection() {
                             {/* Preview */}
                             {formData.cover && (
                                 <div className="mt-3">
-                                    <p className="mb-1 text-xs text-muted-foreground">Preview:</p>
+                                    <p className="mb-1 text-caption text-muted-foreground">Preview:</p>
                                     <div className="relative h-40 w-full overflow-hidden rounded-lg border border-border">
                                         <img
                                             src={formData.cover}
@@ -927,7 +927,7 @@ export function BlogSection() {
 
                         {/* Author Information */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="text-sm font-semibold">Author Information</h3>
+                            <h3 className="text-body-sm font-semibold">Author Information</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <Label htmlFor="authorName">Author Name</Label>

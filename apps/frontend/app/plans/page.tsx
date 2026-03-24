@@ -14,9 +14,9 @@ export default async function PlansPage() {
                 <p>No plans.</p>
             ) : plans.map((p: any) => (
                 <div key={p.id} className="rounded-2xl shadow p-5">
-                    <h3 className="font-semibold text-lg">{p.name}</h3>
-                    <p className="text-2xl mt-2">{p.priceFormatted ?? p.price ?? ""}</p>
-                    <ul className="mt-3 list-disc pl-5 text-sm">
+                    <h3 className="font-semibold text-body-lg">{p.name}</h3>
+                    <p className="text-h2 mt-2">{p.priceFormatted ?? p.price ?? ""}</p>
+                    <ul className="mt-3 list-disc pl-5 text-body-sm">
                         {(p.features ?? []).map((f: string) => <li key={f}>{f}</li>)}
                     </ul>
                 </div>

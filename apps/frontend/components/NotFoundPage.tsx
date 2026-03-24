@@ -21,7 +21,7 @@ export function NotFoundPage({ onNavigate, onGoBack }: NotFoundPageProps) {
                 <div className="mx-auto max-w-3xl">
                     <div className="text-center mb-10">
                         <div className="text-6xl font-bold tracking-tight">404</div>
-                        <h1 className="text-[clamp(1.75rem,4.5vw,3.5rem)] font-bold mt-3">
+                        <h1 className="text-display font-bold mt-3">
                             We couldn't find that page
                         </h1>
                         <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
@@ -34,7 +34,7 @@ export function NotFoundPage({ onNavigate, onGoBack }: NotFoundPageProps) {
                             <CardTitle>Try the following</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-5">
-                            <ul className="space-y-3 text-sm">
+                            <ul className="space-y-3 text-body-sm">
                                 {[
                                     "Check the URL for typos",
                                     "Use the main navigation to find a section",
@@ -77,10 +77,10 @@ export function NotFoundPage({ onNavigate, onGoBack }: NotFoundPageProps) {
                                 </Button>
                             </div>
 
-                            <div className="pt-2 text-xs text-muted-foreground">
+                            <div className="pt-2 text-caption text-muted-foreground">
                                 <button
                                     onClick={onGoBack || (() => window.history.back())}
-                                    className="inline-flex items-center bg-background/90 backdrop-blur-sm border border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200 px-3 py-1.5 rounded-md text-sm font-medium"
+                                    className="inline-flex items-center bg-background/90 backdrop-blur-sm border border-border hover:bg-accent hover:border-primary/20 text-foreground shadow-sm hover:shadow-md transition-all duration-200 px-3 py-1.5 rounded-md text-body-sm font-medium"
                                 >
                                     <ArrowLeft className="mr-1 h-3.5 w-3.5" />
                                     Go back

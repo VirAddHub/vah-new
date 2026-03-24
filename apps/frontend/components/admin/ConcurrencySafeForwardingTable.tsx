@@ -162,7 +162,7 @@ export function ConcurrencySafeForwardingTable() {
             case 'dispatched': return 'bg-green-100 text-green-800';
             case 'delivered': return 'bg-green-100 text-green-800';
             case 'cancelled': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
+            default: return 'bg-muted text-foreground';
         }
     };
 
@@ -191,9 +191,9 @@ export function ConcurrencySafeForwardingTable() {
             {/* Header with real-time indicator */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                    <h2 className="text-h2 font-bold flex items-center gap-2">
                         Forwarding Requests
-                        <div className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
+                        <div className="flex items-center gap-2 text-body-sm font-normal text-muted-foreground">
                             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                             Live Updates
                         </div>
@@ -230,7 +230,7 @@ export function ConcurrencySafeForwardingTable() {
                 <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
-                            <label className="text-sm font-medium">Search</label>
+                            <label className="text-body-sm font-medium">Search</label>
                             <div className="relative">
                                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                 <Input
@@ -242,7 +242,7 @@ export function ConcurrencySafeForwardingTable() {
                             </div>
                         </div>
                         <div>
-                            <label className="text-sm font-medium">Status</label>
+                            <label className="text-body-sm font-medium">Status</label>
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="All statuses" />
@@ -266,11 +266,11 @@ export function ConcurrencySafeForwardingTable() {
                                 onChange={(e) => setShowLockedOnly(e.target.checked)}
                                 className="rounded"
                             />
-                            <label htmlFor="locked-only" className="text-sm font-medium">
+                            <label htmlFor="locked-only" className="text-body-sm font-medium">
                                 Show locked only
                             </label>
                         </div>
-                        <div className="text-sm text-muted-foreground flex items-center">
+                        <div className="text-body-sm text-muted-foreground flex items-center">
                             <span>Total: {filteredRequests.length}</span>
                         </div>
                     </div>
@@ -309,14 +309,14 @@ export function ConcurrencySafeForwardingTable() {
                                     <TableRow key={request.id}>
                                         <TableCell className="font-medium">
                                             #{request.id}
-                                            <div className="text-xs text-muted-foreground">
+                                            <div className="text-caption text-muted-foreground">
                                                 v{request.version}
                                             </div>
                                         </TableCell>
                                         <TableCell>
                                             <div>
                                                 <div className="font-medium">{request.to_name}</div>
-                                                <div className="text-sm text-muted-foreground">
+                                                <div className="text-body-sm text-muted-foreground">
                                                     {request.city}, {request.postal}
                                                 </div>
                                             </div>
@@ -328,31 +328,31 @@ export function ConcurrencySafeForwardingTable() {
                                         </TableCell>
                                         <TableCell>
                                             {request.courier ? (
-                                                <span className="text-sm">{request.courier}</span>
+                                                <span className="text-body-sm">{request.courier}</span>
                                             ) : (
-                                                <span className="text-muted-foreground text-sm">-</span>
+                                                <span className="text-muted-foreground text-body-sm">-</span>
                                             )}
                                         </TableCell>
                                         <TableCell>
                                             {request.tracking_number ? (
-                                                <span className="text-sm font-mono">{request.tracking_number}</span>
+                                                <span className="text-body-sm font-mono">{request.tracking_number}</span>
                                             ) : (
-                                                <span className="text-muted-foreground text-sm">-</span>
+                                                <span className="text-muted-foreground text-body-sm">-</span>
                                             )}
                                         </TableCell>
                                         <TableCell>
-                                            <div className="text-sm">
+                                            <div className="text-body-sm">
                                                 {formatDate(request.created_at)}
                                             </div>
                                         </TableCell>
                                         <TableCell>
                                             {request.locked_by ? (
-                                                <div className="flex items-center gap-1 text-sm">
+                                                <div className="flex items-center gap-1 text-body-sm">
                                                     <Lock className="h-3 w-3 text-red-500" />
                                                     <span className="text-red-600">Locked</span>
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-1 text-sm">
+                                                <div className="flex items-center gap-1 text-body-sm">
                                                     <Unlock className="h-3 w-3 text-green-500" />
                                                     <span className="text-green-600">Available</span>
                                                 </div>

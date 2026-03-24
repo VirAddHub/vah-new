@@ -34,7 +34,7 @@ export function DashboardSummary({
               <Button
                 size="sm"
                 onClick={() => onNavigate('business-owners')}
-                className="ml-4 bg-amber-600 hover:bg-amber-700 text-white"
+                className="ml-4 bg-amber-600 hover:bg-amber-700 text-primary-foreground"
               >
                 Add business owners
                 <ArrowRight className="h-4 w-4 ml-2" />
@@ -55,7 +55,7 @@ export function DashboardSummary({
       {(!compliance.canUseRegisteredOfficeAddress || showIdentitySuccessBanner) && (
         <div className="md:hidden order-2 rounded-xl border border-border bg-background p-3">
           <div className="flex items-center justify-between gap-3">
-            <div className="text-sm font-semibold text-foreground">
+            <div className="text-body-sm font-semibold text-foreground">
               {compliance?.isKycApproved && compliance?.isChVerified ? '✔ Identity Verified' : '⏳ Identity check required'}
             </div>
           </div>

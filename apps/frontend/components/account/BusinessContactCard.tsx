@@ -251,7 +251,7 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
               </div>
               {pendingEmail && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
-                  <p className="text-xs text-blue-800">
+                  <p className="text-caption text-blue-800">
                     Pending: <strong>{pendingEmail}</strong> (confirmation required)
                   </p>
                 </div>
@@ -322,14 +322,14 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
                 disabled={isChangingEmail}
               />
               {newEmail && confirmEmail && !emailsMatch && (
-                <p className="text-xs text-destructive">Email addresses must match</p>
+                <p className="text-caption text-destructive">Email addresses must match</p>
               )}
               {newEmail && newEmail === contact.email && (
-                <p className="text-xs text-destructive">This is your current email address</p>
+                <p className="text-caption text-destructive">This is your current email address</p>
               )}
             </div>
             <div className="bg-muted/50 border border-muted rounded-lg p-3">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 We'll send a confirmation link to your new email address. Your email won't update until you confirm.
               </p>
             </div>

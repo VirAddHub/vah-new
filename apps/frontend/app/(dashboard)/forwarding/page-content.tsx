@@ -235,8 +235,8 @@ export default function ForwardingPage() {
         <div className="w-full h-[calc(100vh-8rem)] flex flex-col">
             {/* Header */}
             <div className="mb-6 pt-2 px-6">
-                <h1 className="text-2xl font-semibold text-[#1A1A1A] mb-1">Forwarding Requests</h1>
-                <p className="text-sm text-[#666666]">Track the status of your physical mail forwarding requests</p>
+                <h1 className="text-h2 text-foreground mb-1">Forwarding Requests</h1>
+                <p className="text-body-sm text-muted-foreground">Track the status of your physical mail forwarding requests</p>
             </div>
 
             {/* Two Column Layout: List on Left, Details on Right */}
@@ -248,12 +248,12 @@ export default function ForwardingPage() {
                 )}>
                     <div className="space-y-3">
                     {forwardingRequests.length === 0 ? (
-                        <Card className="border border-[#E5E7EB]">
+                        <Card className="border border-border">
                             <CardContent className="py-12">
                                 <div className="text-center">
-                                    <Truck className="h-12 w-12 text-[#666666] mx-auto mb-4 opacity-50" />
-                                    <h3 className="text-lg font-medium text-[#1A1A1A] mb-2">No forwarding requests yet</h3>
-                                    <p className="text-sm text-[#666666] mb-4 max-w-md mx-auto">
+                                    <Truck className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                                    <h3 className="text-h4 text-foreground mb-2">No forwarding requests yet</h3>
+                                    <p className="text-body-sm text-muted-foreground mb-4 max-w-md mx-auto">
                                         To request forwarding for a mail item, go to your <strong>Mail Inbox</strong> and select the mail you want forwarded.
                                     </p>
                                     <Button
@@ -273,15 +273,15 @@ export default function ForwardingPage() {
                                     key={request.id} 
                                     onClick={() => setSelectedRequest(request)}
                                     className={cn(
-                                        "border border-[#E5E7EB] hover:border-[#206039]/30 transition-colors cursor-pointer",
-                                        selectedRequest?.id === request.id && "border-[#206039] bg-[#F0FDF4]"
+                                        "border border-border hover:border-primary/30 transition-colors cursor-pointer",
+                                        selectedRequest?.id === request.id && "border-primary bg-primary/5"
                                     )}
                                 >
                                     <CardContent className="p-4">
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-3 mb-2">
-                                                    <h3 className="text-base font-medium text-[#1A1A1A]">
+                                                    <h3 className="text-body font-medium text-foreground">
                                                         Request #{request.id}
                                                     </h3>
                                                     <Badge className={getStatusColor(request.status)}>
@@ -292,14 +292,14 @@ export default function ForwardingPage() {
                                                     </Badge>
                                                 </div>
                                                 
-                                                <div className="space-y-1 text-sm text-[#666666]">
+                                                <div className="space-y-1 text-body-sm text-muted-foreground">
                                                     <p>
                                                         <span className="font-medium">To:</span> {request.to_name}
                                                     </p>
                                                     <p>
                                                         <span className="font-medium">Destination:</span> {formatDestination(request)}
                                                     </p>
-                                                    <p className="text-xs text-[#666666] mt-2">
+                                                    <p className="text-caption text-muted-foreground mt-2">
                                                         Requested: {formatDate(request.created_at)}
                                                     </p>
                                                 </div>
@@ -315,10 +315,10 @@ export default function ForwardingPage() {
 
                 {/* Right Column - Request Details */}
                 {selectedRequest && (
-                    <div className="w-full lg:w-1/2 min-w-0 border-t lg:border-t-0 lg:border-l border-[#E5E7EB] pt-6 lg:pt-0 lg:pl-6">
-                        <div className="sticky top-0 bg-white pb-4 mb-4 border-b border-[#E5E7EB]">
+                    <div className="w-full lg:w-1/2 min-w-0 border-t lg:border-t-0 lg:border-l border-border pt-6 lg:pt-0 lg:pl-6">
+                        <div className="sticky top-0 bg-background pb-4 mb-4 border-b border-border">
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                <h2 className="text-xl font-semibold text-[#1A1A1A]">Request Details</h2>
+                                <h2 className="text-h3 text-foreground">Request Details</h2>
                                 <Button
                                     variant="ghost"
                                     size="icon"
@@ -333,7 +333,7 @@ export default function ForwardingPage() {
                         <div className="space-y-6">
                             {/* Status */}
                             <div>
-                                <h3 className="text-sm font-medium text-[#666666] mb-2 uppercase tracking-wide">Status</h3>
+                                <h3 className="text-label text-muted-foreground mb-2 uppercase tracking-wide">Status</h3>
                                 <Badge className={getStatusColor(selectedRequest.status)}>
                                     <span className="flex items-center gap-1.5">
                                         {getStatusIcon(selectedRequest.status)}
@@ -344,27 +344,27 @@ export default function ForwardingPage() {
 
                             {/* Recipient Information */}
                             <div>
-                                <h3 className="text-sm font-medium text-[#666666] mb-3 uppercase tracking-wide">Recipient</h3>
-                                <div className="space-y-2 text-sm">
+                                <h3 className="text-label text-muted-foreground mb-3 uppercase tracking-wide">Recipient</h3>
+                                <div className="space-y-2 text-body-sm">
                                     <p>
-                                        <span className="font-medium text-[#1A1A1A]">Name:</span>{' '}
-                                        <span className="text-[#666666]">{selectedRequest.to_name}</span>
+                                        <span className="font-medium text-foreground">Name:</span>{' '}
+                                        <span className="text-muted-foreground">{selectedRequest.to_name}</span>
                                     </p>
                                     <p>
-                                        <span className="font-medium text-[#1A1A1A]">Address:</span>{' '}
-                                        <span className="text-[#666666]">{selectedRequest.address1}</span>
+                                        <span className="font-medium text-foreground">Address:</span>{' '}
+                                        <span className="text-muted-foreground">{selectedRequest.address1}</span>
                                     </p>
                                     <p>
-                                        <span className="font-medium text-[#1A1A1A]">City:</span>{' '}
-                                        <span className="text-[#666666]">{selectedRequest.city}</span>
+                                        <span className="font-medium text-foreground">City:</span>{' '}
+                                        <span className="text-muted-foreground">{selectedRequest.city}</span>
                                     </p>
                                     <p>
-                                        <span className="font-medium text-[#1A1A1A]">Postcode:</span>{' '}
-                                        <span className="text-[#666666]">{selectedRequest.postal}</span>
+                                        <span className="font-medium text-foreground">Postcode:</span>{' '}
+                                        <span className="text-muted-foreground">{selectedRequest.postal}</span>
                                     </p>
                                     <p>
-                                        <span className="font-medium text-[#1A1A1A]">Country:</span>{' '}
-                                        <span className="text-[#666666]">{selectedRequest.country}</span>
+                                        <span className="font-medium text-foreground">Country:</span>{' '}
+                                        <span className="text-muted-foreground">{selectedRequest.country}</span>
                                     </p>
                                 </div>
                             </div>
@@ -372,16 +372,16 @@ export default function ForwardingPage() {
                             {/* Tracking Information */}
                             {selectedRequest.tracking_number && (
                                 <div>
-                                    <h3 className="text-sm font-medium text-[#666666] mb-3 uppercase tracking-wide">Tracking</h3>
-                                    <div className="space-y-2 text-sm">
+                                    <h3 className="text-label text-muted-foreground mb-3 uppercase tracking-wide">Tracking</h3>
+                                    <div className="space-y-2 text-body-sm">
                                         <p>
-                                            <span className="font-medium text-[#1A1A1A]">Tracking Number:</span>{' '}
-                                            <span className="text-[#666666] font-mono">{selectedRequest.tracking_number}</span>
+                                            <span className="font-medium text-foreground">Tracking Number:</span>{' '}
+                                            <span className="text-muted-foreground font-mono">{selectedRequest.tracking_number}</span>
                                         </p>
                                         {selectedRequest.courier && (
                                             <p>
-                                                <span className="font-medium text-[#1A1A1A]">Courier:</span>{' '}
-                                                <span className="text-[#666666]">{selectedRequest.courier}</span>
+                                                <span className="font-medium text-foreground">Courier:</span>{' '}
+                                                <span className="text-muted-foreground">{selectedRequest.courier}</span>
                                             </p>
                                         )}
                                     </div>
@@ -390,19 +390,19 @@ export default function ForwardingPage() {
 
                             {/* Request Date */}
                             <div>
-                                <h3 className="text-sm font-medium text-[#666666] mb-3 uppercase tracking-wide">Request Information</h3>
-                                <div className="space-y-2 text-sm">
+                                <h3 className="text-label text-muted-foreground mb-3 uppercase tracking-wide">Request Information</h3>
+                                <div className="space-y-2 text-body-sm">
                                     <p>
-                                        <span className="font-medium text-[#1A1A1A]">Request ID:</span>{' '}
-                                        <span className="text-[#666666]">#{selectedRequest.id}</span>
+                                        <span className="font-medium text-foreground">Request ID:</span>{' '}
+                                        <span className="text-muted-foreground">#{selectedRequest.id}</span>
                                     </p>
                                     <p>
-                                        <span className="font-medium text-[#1A1A1A]">Mail Item ID:</span>{' '}
-                                        <span className="text-[#666666]">#{selectedRequest.mail_item_id}</span>
+                                        <span className="font-medium text-foreground">Mail Item ID:</span>{' '}
+                                        <span className="text-muted-foreground">#{selectedRequest.mail_item_id}</span>
                                     </p>
                                     <p>
-                                        <span className="font-medium text-[#1A1A1A]">Requested:</span>{' '}
-                                        <span className="text-[#666666]">{formatDate(selectedRequest.created_at)}</span>
+                                        <span className="font-medium text-foreground">Requested:</span>{' '}
+                                        <span className="text-muted-foreground">{formatDate(selectedRequest.created_at)}</span>
                                     </p>
                                 </div>
                             </div>

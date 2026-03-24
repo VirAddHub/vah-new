@@ -217,26 +217,26 @@ export function ServiceMonitoring({ className }: ServiceMonitoringProps) {
     const getStatusIcon = (status: string) => {
         switch (status) {
             case 'healthy':
-                return <CheckCircle className="h-5 w-5 text-green-500" />;
+                return <CheckCircle className="h-5 w-5 text-primary" />;
             case 'degraded':
                 return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
             case 'down':
-                return <XCircle className="h-5 w-5 text-red-500" />;
+                return <XCircle className="h-5 w-5 text-destructive" />;
             default:
-                return <Clock className="h-5 w-5 text-gray-500" />;
+                return <Clock className="h-5 w-5 text-muted-foreground" />;
         }
     };
 
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'healthy':
-                return 'bg-green-100 text-green-800 border-green-200';
+                return 'bg-primary/10 text-primary border-primary/20';
             case 'degraded':
                 return 'bg-yellow-100 text-yellow-800 border-yellow-200';
             case 'down':
-                return 'bg-red-100 text-red-800 border-red-200';
+                return 'bg-destructive/10 text-destructive border-destructive/20';
             default:
-                return 'bg-gray-100 text-gray-800 border-gray-200';
+                return 'bg-muted text-muted-foreground border-border';
         }
     };
 
@@ -274,7 +274,7 @@ export function ServiceMonitoring({ className }: ServiceMonitoringProps) {
                             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                             Refresh
                         </Button>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-caption text-muted-foreground">
                             Last updated: {new Date(lastRefresh).toLocaleTimeString()}
                         </span>
                     </div>
@@ -294,11 +294,11 @@ export function ServiceMonitoring({ className }: ServiceMonitoringProps) {
                                         </Badge>
                                     </div>
 
-                                    <p className="text-sm text-muted-foreground mb-3">
+                                    <p className="text-body-sm text-muted-foreground mb-3">
                                         {service.description}
                                     </p>
 
-                                    <div className="space-y-2 text-sm">
+                                    <div className="space-y-2 text-body-sm">
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground">Uptime:</span>
                                             <span className="font-medium">{service.uptime.toFixed(1)}%</span>
@@ -321,7 +321,7 @@ export function ServiceMonitoring({ className }: ServiceMonitoringProps) {
                                         {service.errorCount > 0 && (
                                             <div className="flex justify-between">
                                                 <span className="text-muted-foreground">Errors (24h):</span>
-                                                <span className="font-medium text-red-600">{service.errorCount}</span>
+                                                <span className="font-medium text-destructive">{service.errorCount}</span>
                                             </div>
                                         )}
                                     </div>

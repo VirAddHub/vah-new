@@ -157,7 +157,7 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="h-8 w-8 animate-spin mx-auto mb-4 border-4 border-gray-300 border-t-blue-600 rounded-full" />
+          <div className="h-8 w-8 animate-spin mx-auto mb-4 border-4 border-border border-t-blue-600 rounded-full" />
           <p>Loading KYC information...</p>
         </div>
       </div>
@@ -171,7 +171,7 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div>
-              <h1 className="text-2xl font-bold">KYC & Onboarding</h1>
+              <h1 className="text-h2 font-bold">KYC & Onboarding</h1>
               <p className="text-muted-foreground">
                 Complete your verification to access all services
               </p>
@@ -207,7 +207,7 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-semibold">KYC Status</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-body-sm text-muted-foreground">
                   Complete identity verification to access all features
                 </p>
               </div>
@@ -366,7 +366,7 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
                 <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
                 <div>
                   <h4 className="font-medium">Identity Document</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body-sm text-muted-foreground">
                     Valid passport, driving licence, or national ID card
                   </p>
                 </div>
@@ -376,7 +376,7 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
                 <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
                 <div>
                   <h4 className="font-medium">Proof of Address</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body-sm text-muted-foreground">
                     Utility bill, bank statement, or council tax bill (less than 3 months old)
                   </p>
                 </div>
@@ -386,7 +386,7 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
                 <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
                 <div>
                   <h4 className="font-medium">Business Registration</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body-sm text-muted-foreground">
                     Companies House certificate or business registration document
                   </p>
                 </div>
@@ -396,7 +396,7 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
                 <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
                 <div>
                   <h4 className="font-medium">Source of Funds</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body-sm text-muted-foreground">
                     Bank statements or financial documents showing legitimate business income
                   </p>
                 </div>

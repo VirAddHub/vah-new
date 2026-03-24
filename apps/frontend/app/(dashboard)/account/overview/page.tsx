@@ -105,35 +105,35 @@ export default function AccountOverviewPage() {
         <div className="w-full">
             {/* Page Header */}
             <div className="mb-5 sm:mb-6 md:mb-8">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-neutral-900 mb-1.5 sm:mb-2 leading-tight tracking-tight">
+                <h1 className="text-h2 sm:text-h2 lg:text-h1 font-semibold text-foreground mb-1.5 sm:mb-2 leading-tight tracking-tight">
                     Account Overview
                 </h1>
-                <p className="text-sm sm:text-base text-neutral-600 leading-relaxed">
+                <p className="text-body-sm sm:text-body text-muted-foreground leading-relaxed">
                     View your account status and quick actions
                 </p>
             </div>
 
             {/* Account Status Card */}
-            <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+            <Card className="rounded-xl sm:rounded-2xl border border-border bg-card mb-4 sm:mb-6">
                 <CardContent className="p-4 sm:p-6">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex flex-col gap-3">
-                            <h2 className="text-lg sm:text-xl font-semibold text-neutral-900">
+                            <h2 className="text-body-lg sm:text-h3 font-semibold text-foreground">
                                 Account Status
                             </h2>
                             <div className="flex items-center gap-3">
                                 {accountSummary.status === 'active' ? (
-                                    <Badge className="bg-green-100 text-green-800 border-0 px-3 py-1 text-sm font-medium">
+                                    <Badge className="bg-green-100 text-green-800 border-0 px-3 py-1 text-body-sm font-medium">
                                         <CheckCircle2 className="w-4 h-4 mr-2" strokeWidth={2} />
                                         Active
                                     </Badge>
                                 ) : accountSummary.status === 'action_required' ? (
-                                    <Badge className="bg-yellow-100 text-yellow-800 border-0 px-3 py-1 text-sm font-medium">
+                                    <Badge className="bg-yellow-100 text-yellow-800 border-0 px-3 py-1 text-body-sm font-medium">
                                         <AlertCircle className="w-4 h-4 mr-2" strokeWidth={2} />
                                         Action Required
                                     </Badge>
                                 ) : (
-                                    <Badge className="bg-neutral-100 text-neutral-600 border-0 px-3 py-1 text-sm font-medium">
+                                    <Badge className="bg-muted text-muted-foreground border-0 px-3 py-1 text-body-sm font-medium">
                                         {accountSummary.status === 'cancelled' ? 'Cancelled' : 'Unknown'}
                                     </Badge>
                                 )}
@@ -144,10 +144,10 @@ export default function AccountOverviewPage() {
             </Card>
 
             {/* Plan & Billing Summary */}
-            <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+            <Card className="rounded-xl sm:rounded-2xl border border-border bg-card mb-4 sm:mb-6">
                 <CardContent className="p-4 sm:p-6">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
-                        <h2 className="text-lg sm:text-xl font-semibold text-neutral-900">
+                        <h2 className="text-body-lg sm:text-h3 font-semibold text-foreground">
                             Plan & Billing
                         </h2>
                         <Button
@@ -162,28 +162,28 @@ export default function AccountOverviewPage() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                         <div className="flex flex-col gap-2">
-                            <p className="text-sm text-neutral-500">
+                            <p className="text-body-sm text-muted-foreground">
                                 Plan
                             </p>
-                            <p className="text-base font-medium text-neutral-900">
+                            <p className="text-body font-medium text-foreground">
                                 {accountSummary.planName}
                             </p>
                         </div>
                         <div className="flex flex-col gap-2">
-                            <p className="text-sm text-neutral-500">
+                            <p className="text-body-sm text-muted-foreground">
                                 Price
                             </p>
-                            <p className="text-base font-medium text-neutral-900">
+                            <p className="text-body font-medium text-foreground">
                                 {accountSummary.billingPeriod === 'annual'
                                     ? `Annual (${accountSummary.priceLabel}/year)`
                                     : `Monthly (${accountSummary.priceLabel}/month)`}
                             </p>
                         </div>
                         <div className="flex flex-col gap-2">
-                            <p className="text-sm text-neutral-500">
+                            <p className="text-body-sm text-muted-foreground">
                                 Next Billing
                             </p>
-                            <p className="text-base font-medium text-neutral-900">
+                            <p className="text-body font-medium text-foreground">
                                 {accountSummary.nextBillingDate}
                             </p>
                         </div>
@@ -192,24 +192,24 @@ export default function AccountOverviewPage() {
             </Card>
 
             {/* KYC Status Card */}
-            <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+            <Card className="rounded-xl sm:rounded-2xl border border-border bg-card mb-4 sm:mb-6">
                 <CardContent className="p-4 sm:p-6">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-3">
                                 <ShieldCheck className="w-6 h-6 text-primary" strokeWidth={2} />
-                                <h2 className="text-lg sm:text-xl font-semibold text-neutral-900">
+                                <h2 className="text-body-lg sm:text-h3 font-semibold text-foreground">
                                     Identity Verification
                                 </h2>
                             </div>
                             <div className="flex items-center gap-3">
                                 {accountSummary.kycStatus === 'verified' ? (
-                                    <Badge className="bg-green-100 text-green-800 border-0 px-3 py-1 text-sm font-medium">
+                                    <Badge className="bg-green-100 text-green-800 border-0 px-3 py-1 text-body-sm font-medium">
                                         <CheckCircle2 className="w-4 h-4 mr-2" strokeWidth={2} />
                                         Verified
                                     </Badge>
                                 ) : (
-                                    <Badge className="bg-yellow-100 text-yellow-800 border-0 px-3 py-1 text-sm font-medium">
+                                    <Badge className="bg-yellow-100 text-yellow-800 border-0 px-3 py-1 text-body-sm font-medium">
                                         <AlertCircle className="w-4 h-4 mr-2" strokeWidth={2} />
                                         Pending
                                     </Badge>
@@ -235,12 +235,12 @@ export default function AccountOverviewPage() {
             </div>
 
             {/* Business Address Card */}
-            <Card className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white mb-4 sm:mb-6">
+            <Card className="rounded-xl sm:rounded-2xl border border-border bg-card mb-4 sm:mb-6">
                 <CardContent className="p-4 sm:p-6">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4">
                         <div className="flex items-center gap-3 min-w-0">
                             <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-primary shrink-0" strokeWidth={2} />
-                            <h2 className="text-lg sm:text-xl font-semibold text-neutral-900 truncate">
+                            <h2 className="text-body-lg sm:text-h3 font-semibold text-foreground truncate">
                                 Registered Business Address
                             </h2>
                         </div>
@@ -255,13 +255,13 @@ export default function AccountOverviewPage() {
                         </Button>
                     </div>
                     {accountSummary.businessAddress?.formatted ? (
-                        <div className="bg-neutral-50 rounded-lg p-4">
-                            <pre className="whitespace-pre-wrap text-sm text-neutral-600 leading-relaxed">
+                        <div className="bg-muted/50 rounded-lg p-4">
+                            <pre className="whitespace-pre-wrap text-body-sm text-muted-foreground leading-relaxed">
                                 {accountSummary.businessAddress.formatted}
                             </pre>
                         </div>
                     ) : (
-                        <p className="text-sm text-neutral-600 leading-relaxed">
+                        <p className="text-body-sm text-muted-foreground leading-relaxed">
                             No business address configured
                         </p>
                     )}

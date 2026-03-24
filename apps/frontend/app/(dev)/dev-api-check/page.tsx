@@ -68,7 +68,7 @@ export default function DevApiCheckPage() {
     return (
         <div className="min-h-screen bg-background p-8">
             <div className="max-w-4xl mx-auto">
-                <h1 className="text-2xl font-bold mb-6">API Response Shape Check</h1>
+                <h1 className="text-h2 font-bold mb-6">API Response Shape Check</h1>
                 <p className="text-muted-foreground mb-6">
                     This page validates that backend endpoints return standardized{' '}
                     <code className="bg-muted px-1 rounded">{'{ ok, data }'}</code> format.
@@ -84,15 +84,15 @@ export default function DevApiCheckPage() {
 
                 <div className="space-y-6">
                     <div>
-                        <h2 className="text-xl font-semibold mb-2">GET /api/auth/whoami</h2>
-                        <pre className="bg-muted p-4 rounded overflow-auto text-sm">
+                        <h2 className="text-h3 font-semibold mb-2">GET /api/auth/whoami</h2>
+                        <pre className="bg-muted p-4 rounded overflow-auto text-body-sm">
                             {JSON.stringify(whoamiData, null, 2)}
                         </pre>
                     </div>
 
                     <div>
-                        <h2 className="text-xl font-semibold mb-2">GET /api/plans</h2>
-                        <pre className="bg-muted p-4 rounded overflow-auto text-sm">
+                        <h2 className="text-h3 font-semibold mb-2">GET /api/plans</h2>
+                        <pre className="bg-muted p-4 rounded overflow-auto text-body-sm">
                             {JSON.stringify(plansData, null, 2)}
                         </pre>
                     </div>

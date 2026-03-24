@@ -15,7 +15,7 @@ export default function DashboardLayout({
         <DashboardViewProvider>
             <ActiveBusinessProvider>
             <OnboardingGate>
-                <div className="min-h-[100dvh] w-full bg-[#F6F6F7]">
+                <div className="min-h-[100dvh] w-full bg-background">
                     <div className="sticky top-0 z-50">
                         <DashboardNavigation />
                     </div>

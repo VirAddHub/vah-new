@@ -69,15 +69,15 @@ function SectionCard({
     children: React.ReactNode;
 }) {
     return (
-        <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-visible">
+        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-visible">
             <div className="border-l-4 border-l-primary">
                 <div className="px-4 pt-5 pb-2 md:px-6 md:pt-6 md:pb-2">
                     <div className="flex items-center gap-2">
-                        <Icon className="h-5 w-5 flex-shrink-0 text-neutral-600" />
-                        <h4 className="leading-none font-semibold text-neutral-900">{title}</h4>
+                        <Icon className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+                        <h4 className="leading-none font-semibold text-foreground">{title}</h4>
                     </div>
                     {helper && (
-                        <p className="text-sm text-muted-foreground mt-1.5">{helper}</p>
+                        <p className="text-body-sm text-muted-foreground mt-1.5">{helper}</p>
                     )}
                 </div>
             </div>
@@ -307,7 +307,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                     <div className="flex items-center justify-center gap-4 mb-6">
                         <button
                             onClick={onBack}
-                            className="inline-flex items-center justify-center border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-8 rounded-md gap-1.5 px-3 text-sm font-medium transition-all"
+                            className="inline-flex items-center justify-center border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-8 rounded-md gap-1.5 px-3 text-body-sm font-medium transition-all"
                         >
                             <ArrowLeft className="h-4 w-4 mr-2" />
                             Back
@@ -316,17 +316,17 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                         {/* Progress indicator */}
                         <div className="flex items-center gap-2" aria-label="Step progress">
                             <div
-                                className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium"
+                                className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-body-sm font-medium"
                                 title="Plan selected"
                             >
                                 ✓
                             </div>
                             <div className="w-8 h-1 bg-primary rounded-full"></div>
-                            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
+                            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-body-sm font-medium">
                                 2
                             </div>
                             <div className="w-8 h-1 bg-muted rounded-full"></div>
-                            <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-sm font-medium">
+                            <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-body-sm font-medium">
                                 3
                             </div>
                         </div>
@@ -340,7 +340,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                     </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="bg-neutral-50 rounded-2xl p-4 md:p-6">
+                <form onSubmit={handleSubmit} className="bg-muted rounded-2xl p-4 md:p-6">
                     <div className="space-y-6 md:space-y-8">
                     {/* Contact Information */}
                     <SectionCard title="Contact Information" icon={User} helper="We use these to set up your account and for UK AML compliance.">
@@ -357,7 +357,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         className={errors.first_name ? 'border-destructive' : ''}
                                     />
                                     {errors.first_name && (
-                                        <p className="text-sm text-destructive">{errors.first_name}</p>
+                                        <p className="text-body-sm text-destructive">{errors.first_name}</p>
                                     )}
                                 </div>
                                 <div className="space-y-2">
@@ -372,7 +372,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         className={errors.last_name ? 'border-destructive' : ''}
                                     />
                                     {errors.last_name && (
-                                        <p className="text-sm text-destructive">{errors.last_name}</p>
+                                        <p className="text-body-sm text-destructive">{errors.last_name}</p>
                                     )}
                                 </div>
                             </div>
@@ -390,7 +390,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                     className={errors.email ? 'border-destructive' : ''}
                                 />
                                 {errors.email && (
-                                    <p className="text-sm text-destructive">{errors.email}</p>
+                                    <p className="text-body-sm text-destructive">{errors.email}</p>
                                 )}
                             </div>
 
@@ -416,11 +416,11 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </button>
                                 </div>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-caption text-muted-foreground">
                                     Minimum 8 characters. Use a strong, unique password.
                                 </p>
                                 {errors.password && (
-                                    <p className="text-sm text-destructive">{errors.password}</p>
+                                    <p className="text-body-sm text-destructive">{errors.password}</p>
                                 )}
                             </div>
 
@@ -438,22 +438,22 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                     pattern="^\+?[0-9\s\-()]{7,}$"
                                     className={errors.phone ? 'border-destructive' : ''}
                                 />
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-body-sm text-muted-foreground">
                                     Include country code (e.g. +44 for UK).
                                 </p>
                                 {errors.phone && (
-                                    <p className="text-sm text-destructive">{errors.phone}</p>
+                                    <p className="text-body-sm text-destructive">{errors.phone}</p>
                                 )}
                             </div>
                     </SectionCard>
 
                     {/* Company Details — toggle: registered (search) vs not registered (manual name) */}
                     <SectionCard title="Company Details" icon={Building}>
-                            <div className="inline-flex rounded-xl border border-neutral-200 bg-neutral-50 p-1">
+                            <div className="inline-flex rounded-xl border border-border bg-muted p-1">
                                 <button
                                     type="button"
                                     onClick={() => setCompanyMode('registered')}
-                                    className={`rounded-lg px-3 py-2 text-sm font-medium transition-all ${companyMode === 'registered' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-600 hover:text-neutral-900'}`}
+                                    className={`rounded-lg px-3 py-2 text-body-sm font-medium transition-all ${companyMode === 'registered' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
                                     Registered company
                                 </button>
@@ -464,7 +464,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         setShowOptionalWorkingName(false);
                                         setErrors(prev => ({ ...prev, company_name: '' }));
                                     }}
-                                    className={`rounded-lg px-3 py-2 text-sm font-medium transition-all ${companyMode === 'not_registered' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-600 hover:text-neutral-900'}`}
+                                    className={`rounded-lg px-3 py-2 text-body-sm font-medium transition-all ${companyMode === 'not_registered' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
                                     Not registered yet
                                 </button>
@@ -486,7 +486,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         )}
                                         {showResults && companySearchResults.length > 0 && (
                                             <div
-                                                className="absolute left-0 right-0 top-full z-[100] mt-2 rounded-xl border border-neutral-200 bg-white shadow-lg max-h-72 overflow-auto"
+                                                className="absolute left-0 right-0 top-full z-[100] mt-2 rounded-xl border border-border bg-card shadow-lg max-h-72 overflow-auto"
                                                 role="listbox"
                                             >
                                                 {companySearchResults.map((company, index) => (
@@ -496,10 +496,10 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                                         role="option"
                                                         onMouseDown={(e) => e.preventDefault()}
                                                         onClick={() => handleSelectCompany(company)}
-                                                        className="w-full text-left px-4 py-3 hover:bg-accent border-b border-neutral-100 last:border-b-0 transition-colors"
+                                                        className="w-full text-left px-4 py-3 hover:bg-accent border-b border-border last:border-b-0 transition-colors"
                                                     >
-                                                        <div className="font-medium text-sm">{company.title}</div>
-                                                        <div className="text-xs text-muted-foreground mt-1">
+                                                        <div className="font-medium text-body-sm">{company.title}</div>
+                                                        <div className="text-caption text-muted-foreground mt-1">
                                                             {company.regNumber}
                                                             {company.status && ` • ${company.status}`}
                                                             {company.addressSnippet && ` • ${company.addressSnippet}`}
@@ -509,32 +509,32 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                             </div>
                                         )}
                                     </div>
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="text-body-sm text-muted-foreground">
                                         We&apos;ll fill your company name automatically.
                                     </p>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-caption text-muted-foreground">
                                         No company number yet? Add it later in Verification.
                                     </p>
                                     {!isSearchingName && formData.company_name.trim().length >= 2 && companySearchResults.length === 0 && (
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-body-sm text-muted-foreground">
                                             No companies found. Try a different search term or continue with the name you entered.
                                         </p>
                                     )}
                                     {errors.company_name && (
-                                        <p className="text-sm text-destructive">{errors.company_name}</p>
+                                        <p className="text-body-sm text-destructive">{errors.company_name}</p>
                                     )}
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    <p className="font-medium text-neutral-900">You can add your company details later</p>
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="font-medium text-foreground">You can add your company details later</p>
+                                    <p className="text-body-sm text-muted-foreground">
                                         Once your company is registered, add your Companies House details in Verification.
                                     </p>
                                     {!showOptionalWorkingName ? (
                                         <button
                                             type="button"
                                             onClick={() => setShowOptionalWorkingName(true)}
-                                            className="text-sm text-primary hover:text-primary/90 font-medium"
+                                            className="text-body-sm text-primary hover:text-primary/90 font-medium"
                                         >
                                             Add a working name (optional)
                                         </button>
@@ -555,8 +555,8 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
 
                     {/* Forwarding Address — manual only; name auto-filled from contact */}
                     <SectionCard title="Where shall we send the post?" icon={MapPin}>
-                            <div className="rounded-xl bg-neutral-50 border border-neutral-200 p-3 text-sm text-muted-foreground">
-                                <span className="font-medium text-neutral-700">Letters only.</span> HMRC & Companies House letters are forwarded free within the UK. Other letters are £2 per item and added to your monthly invoice.
+                            <div className="rounded-xl bg-muted border border-border p-3 text-body-sm text-muted-foreground">
+                                <span className="font-medium text-foreground">Letters only.</span> HMRC & Companies House letters are forwarded free within the UK. Other letters are £2 per item and added to your monthly invoice.
                             </div>
 
                             <div className="space-y-4">
@@ -572,7 +572,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         className={errors.address_line1 ? 'border-destructive' : ''}
                                     />
                                     {errors.address_line1 && (
-                                        <p className="text-sm text-destructive">{errors.address_line1}</p>
+                                        <p className="text-body-sm text-destructive">{errors.address_line1}</p>
                                     )}
                                 </div>
                                 <div className="space-y-2">
@@ -596,7 +596,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         className={errors.city ? 'border-destructive' : ''}
                                     />
                                     {errors.city && (
-                                        <p className="text-sm text-destructive">{errors.city}</p>
+                                        <p className="text-body-sm text-destructive">{errors.city}</p>
                                     )}
                                 </div>
                                 <div className="space-y-2">
@@ -611,7 +611,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                         className={errors.postcode ? 'border-destructive' : ''}
                                     />
                                     {errors.postcode && (
-                                        <p className="text-sm text-destructive">{errors.postcode}</p>
+                                        <p className="text-body-sm text-destructive">{errors.postcode}</p>
                                     )}
                                 </div>
                             </div>
@@ -620,7 +620,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                     {/* Company Control */}
                     <SectionCard title="Company Control" icon={Building} helper="We ask this for compliance. Additional owners will need to complete identity verification.">
                             <div className="space-y-3">
-                                <Label className="text-base font-medium">
+                                <Label className="text-body font-medium">
                                     Are you the only director/controller of this company?
                                 </Label>
                                 <RadioGroup
@@ -660,7 +660,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                             {formData.isSoleController === false && (
                                 <div className="space-y-4">
                                     <div className="space-y-3">
-                                        <Label className="text-sm font-medium">
+                                        <Label className="text-body-sm font-medium">
                                             Add other directors/owners/controllers
                                         </Label>
                                         
@@ -733,13 +733,13 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                                     }));
                                                 }}
                                             />
-                                            <Label htmlFor="owners_pending_info" className="text-sm font-normal cursor-pointer">
+                                            <Label htmlFor="owners_pending_info" className="text-body-sm font-normal cursor-pointer">
                                                 I don't have their email addresses right now
                                             </Label>
                                         </div>
                                         
                                         {formData.ownersPendingInfo && (
-                                            <p className="text-xs text-muted-foreground">
+                                            <p className="text-caption text-muted-foreground">
                                                 You can add them later from your dashboard.
                                             </p>
                                         )}
@@ -750,7 +750,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                                     const nameError = errors[`owner_${index}_name`];
                                                     const emailError = errors[`owner_${index}_email`];
                                                     return (nameError || emailError) ? (
-                                                        <div key={index} className="text-xs text-destructive">
+                                                        <div key={index} className="text-caption text-destructive">
                                                             {nameError && <p>Owner {index + 1} name: {nameError}</p>}
                                                             {emailError && <p>Owner {index + 1} email: {emailError}</p>}
                                                         </div>
@@ -762,7 +762,7 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                 </div>
                             )}
 
-                            <div className="rounded-xl bg-neutral-50 border border-neutral-200 p-3 text-sm text-muted-foreground">
+                            <div className="rounded-xl bg-muted border border-border p-3 text-body-sm text-muted-foreground">
                                 We ask this for compliance and account security. Additional owners will need to complete identity verification.
                             </div>
                     </SectionCard>
@@ -777,11 +777,11 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                                     onNext(buildPayload());
                                 }
                             }}
-                            className="h-10 px-6 min-w-48 inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 rounded-md"
+                            className="h-10 px-6 min-w-48 inline-flex items-center justify-center gap-2 whitespace-nowrap text-body-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 rounded-md"
                         >
                             Continue to Payment
                         </ScrollToTopButton>
-                        <p className="text-sm text-muted-foreground mt-4">
+                        <p className="text-body-sm text-muted-foreground mt-4">
                             Your information is encrypted and secure. We&apos;ll create your account in the next step.
                         </p>
                     </div>

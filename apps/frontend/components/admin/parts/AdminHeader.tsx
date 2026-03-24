@@ -50,7 +50,7 @@ export function AdminHeader({
               className="gap-1.5 h-8 px-3"
             >
               {item.icon}
-              <span className="text-sm">{item.label}</span>
+              <span className="text-body-sm">{item.label}</span>
             </Button>
           ))}
 
@@ -61,7 +61,7 @@ export function AdminHeader({
             onClick={onGoInvoices}
           >
             <Receipt className="h-4 w-4" />
-            <span className="text-sm">Invoices</span>
+            <span className="text-body-sm">Invoices</span>
           </Button>
 
           <Button
@@ -71,7 +71,7 @@ export function AdminHeader({
             onClick={onGoFilenameGenerator}
           >
             <Clipboard className="h-4 w-4" />
-            <span className="text-sm">Filename Generator</span>
+            <span className="text-body-sm">Filename Generator</span>
           </Button>
 
           {/* Monitoring dropdown removed - using Sentry instead */}
@@ -115,7 +115,7 @@ export function AdminHeader({
                   onSelectSection(item.id);
                   setMobileMenuOpen(false);
                 }}
-                className="justify-start gap-2 h-8 text-xs"
+                className="justify-start gap-2 h-8 text-caption"
               >
                 {item.icon}
                 <span className="truncate">{item.label}</span>
@@ -125,7 +125,7 @@ export function AdminHeader({
             <Button
               variant={activePage === 'invoices' ? "primary" : "ghost"}
               size="sm"
-              className="justify-start gap-2 h-8 text-xs col-span-2"
+              className="justify-start gap-2 h-8 text-caption col-span-2"
               onClick={() => {
                 onGoInvoices();
                 setMobileMenuOpen(false);
@@ -138,7 +138,7 @@ export function AdminHeader({
             <Button
               variant={activePage === 'filename-generator' ? "primary" : "ghost"}
               size="sm"
-              className="justify-start gap-2 h-8 text-xs col-span-2"
+              className="justify-start gap-2 h-8 text-caption col-span-2"
               onClick={() => {
                 onGoFilenameGenerator();
                 setMobileMenuOpen(false);

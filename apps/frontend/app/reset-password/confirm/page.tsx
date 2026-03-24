@@ -38,7 +38,7 @@ function ResetPasswordConfirmContent() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Invalid Reset Link</h1>
+          <h1 className="text-h2 font-bold mb-4">Invalid Reset Link</h1>
           <p className="text-muted-foreground mb-6">
             This password reset link is invalid or has expired.
           </p>
@@ -68,7 +68,7 @@ export default function ResetPasswordConfirmPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
+          <h1 className="text-h2 font-bold mb-4">Loading...</h1>
           <p className="text-muted-foreground">Please wait while we load your reset link.</p>
         </div>
       </div>

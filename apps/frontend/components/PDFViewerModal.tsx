@@ -107,21 +107,21 @@ export default function PDFViewerModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => (!open ? onClose() : undefined)}>
-            <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 overflow-hidden border-neutral-200 shadow-xl [&>button]:hidden transition-all duration-150">
+            <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 overflow-hidden border-border shadow-xl [&>button]:hidden transition-all duration-150">
                 <div className="relative h-[90vh] bg-background">
                     {/* Custom Close Button */}
                     <button
                         onClick={onClose}
-                        className="absolute top-4 left-4 z-50 h-9 w-9 flex items-center justify-center bg-white hover:bg-neutral-50 shadow-md border border-neutral-200 hover:border-neutral-300 transition-all duration-150 rounded-lg"
+                        className="absolute top-4 left-4 z-50 h-9 w-9 flex items-center justify-center bg-card hover:bg-muted/50 shadow-md border border-border hover:border-border transition-all duration-150 rounded-lg"
                         aria-label="Close PDF viewer"
                     >
-                        <X className="h-4 w-4 text-neutral-600" strokeWidth={2} />
+                        <X className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
                     </button>
                     {loading && (
                         <div className="absolute inset-0 grid place-items-center transition-opacity duration-150">
                             <div className="flex flex-col items-center gap-4">
-                                <div className="animate-spin rounded-full h-10 w-10 border-2 border-neutral-200 border-t-primary"></div>
-                                <span className="text-sm text-neutral-600 font-medium">Loading PDF…</span>
+                                <div className="animate-spin rounded-full h-10 w-10 border-2 border-border border-t-primary"></div>
+                                <span className="text-body-sm text-muted-foreground font-medium">Loading PDF…</span>
                             </div>
                         </div>
                     )}
@@ -133,7 +133,7 @@ export default function PDFViewerModal({
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                                     </svg>
                                 </div>
-                                <p className="text-sm text-red-600 font-medium">{String(error)}</p>
+                                <p className="text-body-sm text-red-600 font-medium">{String(error)}</p>
                                 {error === SCAN_CHECKPOINT_MESSAGE && mailItemId && (
                                     <Button
                                         variant="outline"
@@ -149,7 +149,7 @@ export default function PDFViewerModal({
                         </div>
                     )}
                     {!loading && !error && viewerUrl && (
-                        <div className="w-full h-full rounded-lg overflow-hidden shadow-inner border border-neutral-200 transition-opacity duration-150">
+                        <div className="w-full h-full rounded-lg overflow-hidden shadow-inner border border-border transition-opacity duration-150">
                             <object
                                 data={viewerUrl}
                                 type="application/pdf"

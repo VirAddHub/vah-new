@@ -150,7 +150,7 @@ export default function LocalForwardingBoard() {
     <div className="p-6">
       {/* Header / Controls */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        <h1 className="text-2xl font-semibold">Forwarding Board (Manual Mode)</h1>
+        <h1 className="text-h2 font-semibold">Forwarding Board (Manual Mode)</h1>
         <div className="flex-1" />
         <input
           className="border rounded-lg px-3 py-2 w-64"
@@ -169,18 +169,18 @@ export default function LocalForwardingBoard() {
       {/* Quick Add */}
       <form onSubmit={addCard} className="mb-5 flex flex-wrap gap-2 items-end">
         <div className="flex flex-col">
-          <label className="text-sm">ID</label>
+          <label className="text-body-sm">ID</label>
           <input className="border rounded-lg px-3 py-2 w-40" value={adding.id} onChange={e => setAdding(a => ({ ...a, id: e.target.value }))} placeholder="FR-000014" />
         </div>
         <div className="flex flex-col">
-          <label className="text-sm">Name</label>
+          <label className="text-body-sm">Name</label>
           <input className="border rounded-lg px-3 py-2 w-56" value={adding.name} onChange={e => setAdding(a => ({ ...a, name: e.target.value }))} placeholder="John Smith" />
         </div>
         <div className="flex flex-col flex-1 min-w-[240px]">
-          <label className="text-sm">Address (optional)</label>
+          <label className="text-body-sm">Address (optional)</label>
           <input className="border rounded-lg px-3 py-2" value={adding.address} onChange={e => setAdding(a => ({ ...a, address: e.target.value }))} placeholder="123 Test Street…" />
         </div>
-        <button className="bg-black text-white px-4 py-2 rounded-lg">Add</button>
+        <button className="bg-black text-primary-foreground px-4 py-2 rounded-lg">Add</button>
       </form>
 
       {/* Columns */}
@@ -188,13 +188,13 @@ export default function LocalForwardingBoard() {
         {COLS.map(col => (
           <div
             key={col}
-            className="bg-gray-50 rounded-2xl p-3 border"
+            className="bg-muted/50 rounded-2xl p-3 border"
             onDragOver={onDragOver}
             onDrop={() => onDrop(col)}
           >
             <div className="flex items-center justify-between mb-2">
               <div className="font-medium">{col}</div>
-              <div className="text-xs text-gray-500">{filteredState[col].length}</div>
+              <div className="text-caption text-muted-foreground">{filteredState[col].length}</div>
             </div>
             <div className="space-y-3 min-h-[120px]">
               {filteredState[col].map(card => (
@@ -202,7 +202,7 @@ export default function LocalForwardingBoard() {
                   key={card.id}
                   draggable
                   onDragStart={() => onDragStart(card)}
-                  className="rounded-xl border bg-white p-3 shadow-sm cursor-grab active:cursor-grabbing"
+                  className="rounded-xl border bg-card p-3 shadow-sm cursor-grab active:cursor-grabbing"
                   title="Drag to move"
                 >
                   <div className="flex items-center justify-between">
@@ -213,7 +213,7 @@ export default function LocalForwardingBoard() {
                         <button
                           key={next}
                           onClick={() => moveCard(card, next)}
-                          className="text-[11px] border rounded-md px-2 py-1"
+                          className="text-caption border rounded-md px-2 py-1"
                           title={`Move to ${next}`}
                         >
                           {arrowTo(col, next)}
@@ -221,10 +221,10 @@ export default function LocalForwardingBoard() {
                       ))}
                     </div>
                   </div>
-                  <div className="text-sm">{card.name}</div>
-                  {card.address && <div className="text-xs text-gray-500">{card.address}</div>}
+                  <div className="text-body-sm">{card.name}</div>
+                  {card.address && <div className="text-caption text-muted-foreground">{card.address}</div>}
                   <div className="mt-2 flex gap-2">
-                    <button className="text-xs border rounded-md px-2 py-1" onClick={() => removeCard(card)}>Remove</button>
+                    <button className="text-caption border rounded-md px-2 py-1" onClick={() => removeCard(card)}>Remove</button>
                   </div>
                 </article>
               ))}
@@ -233,7 +233,7 @@ export default function LocalForwardingBoard() {
         ))}
       </div>
 
-      <p className="mt-6 text-xs text-gray-500">
+      <p className="mt-6 text-caption text-muted-foreground">
         Manual Mode stores data in your browser only (localStorage). No emails, no webhooks, no backend.
       </p>
     </div>

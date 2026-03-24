@@ -90,16 +90,16 @@ export default function AdminMetricsGrowthCard() {
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="rounded-2xl border p-4">
-            <div className="text-sm text-muted-foreground">Active paying</div>
-            <div className="text-2xl font-semibold">{kpis.active_paying}</div>
+            <div className="text-body-sm text-muted-foreground">Active paying</div>
+            <div className="text-h3 font-semibold">{kpis.active_paying}</div>
           </div>
           <div className="rounded-2xl border p-4">
-            <div className="text-sm text-muted-foreground">Scan SLA ≤ 24h</div>
-            <div className="text-2xl font-semibold">{kpis.scan_sla_24h_pct}%</div>
+            <div className="text-body-sm text-muted-foreground">Scan SLA ≤ 24h</div>
+            <div className="text-h3 font-semibold">{kpis.scan_sla_24h_pct}%</div>
           </div>
           <div className="rounded-2xl border p-4">
-            <div className="text-sm text-muted-foreground">Stale mail &gt; 14d</div>
-            <div className="text-2xl font-semibold">{kpis.stale_mail_over_14d}</div>
+            <div className="text-body-sm text-muted-foreground">Stale mail &gt; 14d</div>
+            <div className="text-h3 font-semibold">{kpis.stale_mail_over_14d}</div>
           </div>
         </div>
 

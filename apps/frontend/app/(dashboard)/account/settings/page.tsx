@@ -11,11 +11,11 @@ export default function AccountSettingsPage() {
             <div className="mb-5 sm:mb-6 md:mb-8">
                 <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2">
                     <Settings className="w-6 h-6 sm:w-8 sm:h-8 text-primary shrink-0" strokeWidth={2} />
-                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-neutral-900 leading-tight tracking-tight">
+                    <h1 className="text-h3 sm:text-h2 lg:text-h1 font-semibold text-foreground leading-tight tracking-tight">
                         Settings
                     </h1>
                 </div>
-                <p className="text-sm sm:text-base text-neutral-600 leading-relaxed">
+                <p className="text-body-sm sm:text-body text-muted-foreground leading-relaxed">
                     Manage your account settings and preferences
                 </p>
             </div>

@@ -171,8 +171,8 @@ export function SumsubKycWidget() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold">Identity verification</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 className="text-h4 font-semibold">Identity verification</h2>
+        <p className="text-body-sm text-muted-foreground">
           Complete your Sumsub identity check to fully activate your VirtualAddressHub account.
         </p>
       </div>
@@ -183,7 +183,7 @@ export function SumsubKycWidget() {
             type="button"
             onClick={startVerification}
             disabled={loading}
-            className="inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+            className="inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-body-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
           >
             {loading ? "Starting..." : "Start verification"}
           </button>
@@ -193,7 +193,7 @@ export function SumsubKycWidget() {
           <button
             type="button"
             onClick={handleRestart}
-            className="inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
+            className="inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-caption font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
           >
             Restart widget
           </button>
@@ -202,18 +202,18 @@ export function SumsubKycWidget() {
 
       {notConfigured && (
         <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-          <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+          <p className="text-body-sm text-amber-800 dark:text-amber-200 font-medium">
             ⚠️ Identity verification is currently unavailable
           </p>
-          <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+          <p className="text-caption text-amber-700 dark:text-amber-300 mt-1">
             KYC verification will be available once Sumsub is configured. Please contact support if you need assistance.
           </p>
         </div>
       )}
 
       {alreadyComplete && (
-        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-          <p className="text-sm text-green-800 dark:text-green-200 font-medium">
+        <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+          <p className="text-body-sm text-primary font-medium">
             ✓ Identity verification already complete
           </p>
         </div>
@@ -221,7 +221,7 @@ export function SumsubKycWidget() {
 
       {error && (
         <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-          <p className="text-sm text-destructive font-medium">
+          <p className="text-body-sm text-destructive font-medium">
             {error}
           </p>
         </div>

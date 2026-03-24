@@ -42,18 +42,18 @@ export default function ComplianceCheckPage() {
     return (
         <main className="mx-auto max-w-5xl px-6 py-16">
             <section className="text-center">
-                <span className="inline-block rounded-full bg-[#FF6B00]/10 px-3 py-1 text-xs font-medium text-[#FF6B00]">
+                <span className="inline-block rounded-full bg-orange-500/10 px-3 py-1 text-caption font-medium text-orange-500">
                     Free 3-minute quiz
                 </span>
-                <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+                <h1 className="mt-4 text-h2 font-semibold tracking-tight sm:text-h1">
                     Is Your Business Address Fully HMRC-Compliant?
                 </h1>
-                <p className="mx-auto mt-3 max-w-2xl text-balance text-sm text-muted-foreground sm:text-base">
+                <p className="mx-auto mt-3 max-w-2xl text-balance text-body-sm text-muted-foreground sm:text-body">
                     Find out if your registered or trading address meets the latest UK Companies House and HMRC requirements.
                     Answer 15 quick questions to reveal hidden risks, protect your privacy, and get instant recommendations.
                 </p>
 
-                <div className="mt-6 inline-flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="mt-6 inline-flex items-center gap-2 text-caption text-muted-foreground">
                     <span>✅ Instant score</span>
                     <span>•</span>
                     <span>✅ Actionable next steps</span>
@@ -64,20 +64,20 @@ export default function ComplianceCheckPage() {
 
             <section className="mt-10 rounded-2xl border border-border bg-card p-4 shadow-sm">
                 {showCompletion ? (
-                    <div className="aspect-[16/12] w-full overflow-hidden rounded-xl border border-border bg-gradient-to-br from-[#FF6B00]/5 to-[#FF6B00]/10 p-8 flex flex-col items-center justify-center text-center">
+                    <div className="aspect-[16/12] w-full overflow-hidden rounded-xl border border-border bg-gradient-to-br from-orange-500/5 to-orange-500/10 p-8 flex flex-col items-center justify-center text-center">
                         <div className="text-6xl mb-4">🎉</div>
-                        <h2 className="text-2xl font-semibold mb-2 text-foreground">Thanks for completing the quiz!</h2>
+                        <h2 className="text-h2 font-semibold mb-2 text-foreground">Thanks for completing the quiz!</h2>
                         {quizScore !== null && (
-                            <p className="text-lg text-muted-foreground mb-4">
-                                Your compliance score: <strong className="text-[#FF6B00]">{quizScore}/100</strong>
+                            <p className="text-body-lg text-muted-foreground mb-4">
+                                Your compliance score: <strong className="text-orange-500">{quizScore}/100</strong>
                             </p>
                         )}
-                        <p className="text-sm text-muted-foreground mb-6">
+                        <p className="text-body-sm text-muted-foreground mb-6">
                             Check your inbox for your personalized recommendations and next steps.
                         </p>
                         <a
                             href="/pricing"
-                            className="inline-flex items-center justify-center rounded-xl bg-[#FF6B00] px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+                            className="inline-flex items-center justify-center rounded-xl bg-orange-500 px-6 py-3 text-body-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
                         >
                             View Pricing
                         </a>
@@ -93,7 +93,7 @@ export default function ComplianceCheckPage() {
                                 referrerPolicy="strict-origin-when-cross-origin"
                             />
                         </div>
-                        <p className="mt-3 text-center text-xs text-muted-foreground">
+                        <p className="mt-3 text-center text-caption text-muted-foreground">
                             {process.env.NEXT_PUBLIC_QUIZ_EMBED_URL
                                 ? "Complete the quiz to get your compliance score"
                                 : "Configure NEXT_PUBLIC_QUIZ_EMBED_URL to embed your quiz"}
@@ -104,20 +104,20 @@ export default function ComplianceCheckPage() {
 
             <section className="mt-12 grid gap-6 sm:grid-cols-3">
                 <div className="rounded-xl border border-border bg-card p-5">
-                    <h3 className="text-base font-semibold text-foreground">Legal Compliance</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
+                    <h3 className="text-body font-semibold text-foreground">Legal Compliance</h3>
+                    <p className="mt-2 text-body-sm text-muted-foreground">
                         Check alignment with the Economic Crime & Corporate Transparency Act (ECCTA), Companies House and HMRC.
                     </p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-5">
-                    <h3 className="text-base font-semibold text-foreground">Privacy & Security</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
+                    <h3 className="text-body font-semibold text-foreground">Privacy & Security</h3>
+                    <p className="mt-2 text-body-sm text-muted-foreground">
                         Avoid exposing your home address and ensure GDPR-compliant mail handling with same-day scanning.
                     </p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-5">
-                    <h3 className="text-base font-semibold text-foreground">Actionable Plan</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
+                    <h3 className="text-body font-semibold text-foreground">Actionable Plan</h3>
+                    <p className="mt-2 text-body-sm text-muted-foreground">
                         Get practical steps tailored to your score — from quick fixes to switching provider smoothly.
                     </p>
                 </div>

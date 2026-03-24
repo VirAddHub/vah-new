@@ -104,7 +104,7 @@ export function BundleAnalysisSection() {
       case 'critical':
         return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted text-foreground border-border';
     }
   };
 
@@ -171,7 +171,7 @@ export function BundleAnalysisSection() {
           <div className="text-center py-8">
             <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-500" />
             <h3 className="font-medium mb-2 text-red-600">Analysis Failed</h3>
-            <p className="text-sm text-muted-foreground mb-4">{error}</p>
+            <p className="text-body-sm text-muted-foreground mb-4">{error}</p>
             <Button onClick={analyzeBundles} variant="outline" size="sm">
               Try Again
             </Button>
@@ -183,28 +183,28 @@ export function BundleAnalysisSection() {
             {/* Summary Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-h2 font-bold text-blue-600">
                   {formatBytes(analysis.totalGzipSize)}
                 </div>
-                <div className="text-sm text-muted-foreground">Total Gzipped</div>
+                <div className="text-body-sm text-muted-foreground">Total Gzipped</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-primary">
+                <div className="text-h2 font-bold text-primary">
                   {analysis.bundles.length}
                 </div>
-                <div className="text-sm text-muted-foreground">Bundles</div>
+                <div className="text-body-sm text-muted-foreground">Bundles</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
+                <div className="text-h2 font-bold text-green-600">
                   {analysis.bundles.filter(b => getBundleStatus(b) === 'good').length}
                 </div>
-                <div className="text-sm text-muted-foreground">Good</div>
+                <div className="text-body-sm text-muted-foreground">Good</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600">
+                <div className="text-h2 font-bold text-yellow-600">
                   {analysis.bundles.filter(b => getBundleStatus(b) === 'warning').length}
                 </div>
-                <div className="text-sm text-muted-foreground">Warning</div>
+                <div className="text-body-sm text-muted-foreground">Warning</div>
               </div>
             </div>
 
@@ -225,10 +225,10 @@ export function BundleAnalysisSection() {
                         <h4 className="font-medium">{bundle.name}</h4>
                       </div>
                       <div className="text-right">
-                        <div className="font-mono text-sm">
+                        <div className="font-mono text-body-sm">
                           {formatBytes(bundle.gzipSize)} / {formatBytes(bundle.limit)}
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-caption text-muted-foreground">
                           {Math.round((bundle.gzipSize / bundle.limit) * 100)}% of limit
                         </div>
                       </div>
@@ -240,7 +240,7 @@ export function BundleAnalysisSection() {
                     />
                     
                     {isOverLimit && (
-                      <div className="mt-2 text-sm text-red-600">
+                      <div className="mt-2 text-body-sm text-red-600">
                         ⚠️ Exceeds limit by {formatBytes(bundle.gzipSize - bundle.limit)}
                       </div>
                     )}
@@ -256,7 +256,7 @@ export function BundleAnalysisSection() {
                   <Zap className="h-4 w-4" />
                   Optimization Recommendations
                 </h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
+                <ul className="text-body-sm space-y-1 text-muted-foreground">
                   <li>• Use dynamic imports for heavy components</li>
                   <li>• Remove unused dependencies</li>
                   <li>• Enable tree shaking</li>
@@ -267,7 +267,7 @@ export function BundleAnalysisSection() {
             )}
 
             {/* Last Analyzed */}
-            <div className="mt-4 text-xs text-muted-foreground text-center">
+            <div className="mt-4 text-caption text-muted-foreground text-center">
               Last analyzed: {new Date(analysis.lastAnalyzed).toLocaleString()}
             </div>
           </>

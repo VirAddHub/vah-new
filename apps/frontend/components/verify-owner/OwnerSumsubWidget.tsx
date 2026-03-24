@@ -89,12 +89,12 @@ export function OwnerSumsubWidget({
       />
       {error && (
         <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-body-sm text-destructive">{error}</p>
         </div>
       )}
       {completed && (
         <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-          <p className="text-sm text-green-800 dark:text-green-200 font-medium">
+          <p className="text-body-sm text-green-800 dark:text-green-200 font-medium">
             Verification submitted. This page will refresh shortly.
           </p>
         </div>

@@ -140,7 +140,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                         <div className="w-full max-w-2xl">
                             <div className="text-center mb-6">
                                 <h1 className="mb-2">Complete Your Payment</h1>
-                                <p className="text-muted-foreground max-w-lg mx-auto text-sm">
+                                <p className="text-muted-foreground max-w-lg mx-auto text-body-sm">
                                     Your account has been created. Payment setup could not load.
                                 </p>
                             </div>
@@ -154,7 +154,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                 <ScrollToTopButton
                                     onClick={handleRetryCheckout}
                                     disabled={isProcessing}
-                                    className="h-10 px-6 inline-flex items-center justify-center gap-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-md disabled:opacity-50"
+                                    className="h-10 px-6 inline-flex items-center justify-center gap-2 text-body-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-md disabled:opacity-50"
                                 >
                                     <RotateCcw className="h-4 w-4" />
                                     Try again
@@ -162,7 +162,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                 <button
                                     type="button"
                                     onClick={onBack}
-                                    className="h-10 px-6 inline-flex items-center justify-center gap-2 text-sm font-medium border border-input bg-background rounded-md hover:bg-accent"
+                                    className="h-10 px-6 inline-flex items-center justify-center gap-2 text-body-sm font-medium border border-input bg-background rounded-md hover:bg-accent"
                                 >
                                     Back
                                 </button>
@@ -178,14 +178,14 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                     <div className="w-full max-w-2xl">
                         <div className="text-center mb-8">
                             <div className="flex items-center justify-center gap-2 mb-4">
-                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">✓</div>
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-body-sm font-medium">✓</div>
                                 <div className="w-8 h-1 bg-primary rounded-full"></div>
-                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">✓</div>
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-body-sm font-medium">✓</div>
                                 <div className="w-8 h-1 bg-primary rounded-full"></div>
-                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">3</div>
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-body-sm font-medium">3</div>
                             </div>
                             <h1 className="mb-2">Complete Your Payment</h1>
-                            <p className="text-muted-foreground max-w-lg mx-auto text-sm">
+                            <p className="text-muted-foreground max-w-lg mx-auto text-body-sm">
                                 Your account has been created. Enter your payment details below to activate your subscription.
                             </p>
                         </div>
@@ -196,7 +196,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                             </EmbeddedCheckoutProvider>
                         </div>
 
-                        <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                        <div className="mt-6 flex items-center justify-center gap-2 text-caption text-muted-foreground">
                             <Shield className="h-3.5 w-3.5" />
                             <span>Secure payment powered by Stripe</span>
                         </div>
@@ -217,18 +217,18 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                             <button
                                 onClick={onBack}
                                 disabled={isProcessing}
-                                className="inline-flex items-center justify-center border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-8 rounded-md gap-1.5 px-3 text-sm font-medium transition-all disabled:opacity-50"
+                                className="inline-flex items-center justify-center border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-8 rounded-md gap-1.5 px-3 text-body-sm font-medium transition-all disabled:opacity-50"
                             >
                                 <ArrowLeft className="h-4 w-4 mr-2" />
                                 Back
                             </button>
 
                             <div className="flex items-center gap-2" aria-label="Step progress">
-                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">✓</div>
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-body-sm font-medium">✓</div>
                                 <div className="w-8 h-1 bg-primary rounded-full"></div>
-                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">✓</div>
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-body-sm font-medium">✓</div>
                                 <div className="w-8 h-1 bg-primary rounded-full"></div>
-                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">3</div>
+                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-body-sm font-medium">3</div>
                             </div>
                         </div>
 
@@ -249,19 +249,19 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                 <div className="flex justify-between items-center">
                                     <div>
                                         <p className="font-medium">{planName}</p>
-                                        <p className="text-sm text-muted-foreground">{planDescription}</p>
+                                        <p className="text-body-sm text-muted-foreground">{planDescription}</p>
                                     </div>
-                                    <p className="font-medium text-neutral-900">
+                                    <p className="font-medium text-foreground">
                                         {displayPrice}
-                                        <span className="text-sm text-muted-foreground">{priceUnit}</span>
+                                        <span className="text-body-sm text-muted-foreground">{priceUnit}</span>
                                     </p>
                                 </div>
                                 <div className="border-t pt-4">
                                     <div className="flex justify-between items-center font-medium">
                                         <p>Total today</p>
-                                        <p className="text-neutral-900">{displayPrice}</p>
+                                        <p className="text-foreground">{displayPrice}</p>
                                     </div>
-                                    <p className="text-sm text-muted-foreground mt-1">{totalDescription}</p>
+                                    <p className="text-body-sm text-muted-foreground mt-1">{totalDescription}</p>
                                 </div>
                             </div>
                         </div>
@@ -277,29 +277,29 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="w-4 h-4 rounded-full border-2 border-primary bg-primary flex items-center justify-center">
-                                            <div className="w-2 h-2 rounded-full bg-white"></div>
+                                            <div className="w-2 h-2 rounded-full bg-card"></div>
                                         </div>
                                         <div>
                                             <p className="font-medium">Pay securely by card or bank via Stripe</p>
-                                            <p className="text-sm text-muted-foreground">Secure, regulated payment processing</p>
+                                            <p className="text-body-sm text-muted-foreground">Secure, regulated payment processing</p>
                                         </div>
                                     </div>
                                     <Badge variant="secondary">Secure</Badge>
                                 </div>
                                 <div className="mt-3 ml-7 space-y-2">
-                                    <div className="flex items-center gap-2 text-sm text-primary">
+                                    <div className="flex items-center gap-2 text-body-sm text-primary">
                                         <Check className="h-4 w-4" />
                                         <span>PCI DSS compliant</span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm text-primary">
+                                    <div className="flex items-center gap-2 text-body-sm text-primary">
                                         <Check className="h-4 w-4" />
                                         <span>No hidden charges</span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm text-primary">
+                                    <div className="flex items-center gap-2 text-body-sm text-primary">
                                         <Check className="h-4 w-4" />
                                         <span>Easy to cancel anytime</span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-sm text-primary">
+                                    <div className="flex items-center gap-2 text-body-sm text-primary">
                                         <Check className="h-4 w-4" />
                                         <span>Powered by Stripe</span>
                                     </div>
@@ -343,8 +343,8 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                         <Link
                                             href="/login"
                                             className={cn(
-                                                'inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium h-9 px-3 text-sm',
-                                                'border border-neutral-200 bg-transparent text-neutral-900 hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-offset-2'
+                                                'inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium h-9 px-3 text-body-sm',
+                                                'border border-border bg-transparent text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-offset-2'
                                             )}
                                         >
                                             Sign in
@@ -352,8 +352,8 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                         <Link
                                             href="/reset-password"
                                             className={cn(
-                                                'inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium h-9 px-3 text-sm',
-                                                'border border-neutral-200 bg-transparent text-neutral-900 hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-offset-2'
+                                                'inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium h-9 px-3 text-body-sm',
+                                                'border border-border bg-transparent text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-offset-2'
                                             )}
                                         >
                                             Reset password
@@ -364,7 +364,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                     <button
                                         onClick={handleRetryCheckout}
                                         disabled={isProcessing}
-                                        className="mt-3 text-sm text-primary hover:underline font-medium"
+                                        className="mt-3 text-body-sm text-primary hover:underline font-medium"
                                     >
                                         Retry payment setup
                                     </button>
@@ -380,7 +380,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                 <ScrollToTopButton
                                     onClick={accountCreated ? handleRetryCheckout : handlePayment}
                                     disabled={isProcessing || isLoading}
-                                    className="h-10 px-6 min-w-64 mb-4 inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 rounded-md disabled:opacity-50 disabled:pointer-events-none"
+                                    className="h-10 px-6 min-w-64 mb-4 inline-flex items-center justify-center gap-2 whitespace-nowrap text-body-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 rounded-md disabled:opacity-50 disabled:pointer-events-none"
                                 >
                                     {isProcessing || isLoading ? (
                                         <>
@@ -394,7 +394,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                         </>
                                     )}
                                 </ScrollToTopButton>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-body-sm text-muted-foreground">
                                     Payment is handled securely by Stripe — right here on this page.
                                 </p>
                             </>
@@ -403,12 +403,12 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                 <ScrollToTopButton
                                     onClick={handlePayment}
                                     disabled={isProcessing || isLoading}
-                                    className="h-10 px-6 min-w-64 mb-4 inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 rounded-md disabled:opacity-50 disabled:pointer-events-none"
+                                    className="h-10 px-6 min-w-64 mb-4 inline-flex items-center justify-center gap-2 whitespace-nowrap text-body-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 rounded-md disabled:opacity-50 disabled:pointer-events-none"
                                 >
                                     <CreditCard className="h-4 w-4" />
                                     {isProcessing || isLoading ? 'Processing...' : `Complete Signup – ${displayPrice}`}
                                 </ScrollToTopButton>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-body-sm text-muted-foreground">
                                     Payments are disabled on this environment. Your account will be created without payment setup.
                                 </p>
                             </>
@@ -417,7 +417,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
 
                     {/* What Happens Next Card */}
                     <div className="bg-card border rounded-xl shadow-sm p-6 mt-10 space-y-5">
-                        <h3 className="text-lg font-semibold">What happens next</h3>
+                        <h3 className="text-h4">What happens next</h3>
                         <div className="space-y-4">
                             {[
                                 "We'll email you a secure link to your dashboard.",
@@ -425,10 +425,10 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                                 "Once approved, your London address, mail dashboard, and Business Address Confirmation will be fully active."
                             ].map((text, i) => (
                                 <div key={i} className="flex items-start gap-3">
-                                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-caption font-medium text-primary">
                                         {i + 1}
                                     </div>
-                                    <p className="text-sm text-muted-foreground leading-relaxed">{text}</p>
+                                    <p className="text-body-sm text-muted-foreground leading-relaxed">{text}</p>
                                 </div>
                             ))}
                         </div>

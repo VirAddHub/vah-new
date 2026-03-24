@@ -76,7 +76,7 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
     };
 
     return (
-        <header className="w-full shrink-0 border-b border-neutral-200/80 bg-white">
+        <header className="w-full shrink-0 border-b border-border/80 bg-card">
             {/* Inner: same max-width/padding as dashboard shell; single row, justify-between */}
             <div className="mx-auto flex h-12 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 sm:h-16">
                 {/* Left: hamburger (mobile only) + logo. Slot has fixed min width so logo never collapses. */}
@@ -84,12 +84,12 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
                     <button
                         ref={hamburgerRef}
                         onClick={() => setIsMobileSidebarOpen(true)}
-                        className="flex min-h-[44px] min-w-[44px] -ml-0.5 items-center justify-center rounded-md p-2 text-neutral-600 transition-colors hover:text-neutral-900 touch-manipulation lg:hidden"
+                        className="flex min-h-[44px] min-w-[44px] -ml-0.5 items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground touch-manipulation lg:hidden"
                         aria-label="Open dashboard menu"
                     >
                         <Menu className="h-5 w-5 shrink-0" strokeWidth={2} />
                     </button>
-                    <div className="flex h-8 min-h-[2rem] w-[150px] min-w-[150px] items-center justify-start rounded-md border border-transparent bg-neutral-50/80 px-1 sm:px-2 sm:h-9 sm:min-h-[2.25rem] sm:w-[160px] sm:min-w-[160px]" data-dashboard-logo-slot>
+                    <div className="flex h-8 min-h-[2rem] w-[150px] min-w-[150px] items-center justify-start rounded-md border border-transparent bg-muted/50/80 px-1 sm:px-2 sm:h-9 sm:min-h-[2.25rem] sm:w-[160px] sm:min-w-[160px]" data-dashboard-logo-slot>
                         <VAHLogo
                             onNavigate={onNavigate}
                             size="md"

@@ -43,7 +43,7 @@ export function SimpleUserDashboard({ onLogout, onNavigate, onGoBack }: SimpleUs
                     <div className="flex items-center gap-3">
                         <VAHLogo onNavigate={onNavigate} size="md" />
                         <div>
-                            <p className="text-sm text-muted-foreground">Dashboard</p>
+                            <p className="text-body-sm text-muted-foreground">Dashboard</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -63,7 +63,7 @@ export function SimpleUserDashboard({ onLogout, onNavigate, onGoBack }: SimpleUs
                 <div className="max-w-7xl mx-auto">
                     {/* Welcome Section */}
                     <div className="mb-8">
-                        <h2 className="text-2xl font-bold mb-2">
+                        <h2 className="text-h2 font-bold mb-2">
                             Welcome back{user?.first_name ? `, ${user.first_name}` : ''}!
                         </h2>
                         <p className="text-muted-foreground">
@@ -75,34 +75,34 @@ export function SimpleUserDashboard({ onLogout, onNavigate, onGoBack }: SimpleUs
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Mail Items</CardTitle>
+                                <CardTitle className="text-body-sm font-medium">Mail Items</CardTitle>
                                 <Mail className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">0</div>
-                                <p className="text-xs text-muted-foreground">No mail items yet</p>
+                                <div className="text-h2 font-bold">0</div>
+                                <p className="text-caption text-muted-foreground">No mail items yet</p>
                             </CardContent>
                         </Card>
 
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Forwarding Requests</CardTitle>
+                                <CardTitle className="text-body-sm font-medium">Forwarding Requests</CardTitle>
                                 <Truck className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">0</div>
-                                <p className="text-xs text-muted-foreground">No requests yet</p>
+                                <div className="text-h2 font-bold">0</div>
+                                <p className="text-caption text-muted-foreground">No requests yet</p>
                             </CardContent>
                         </Card>
 
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Billing</CardTitle>
+                                <CardTitle className="text-body-sm font-medium">Billing</CardTitle>
                                 <CreditCard className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">Active</div>
-                                <p className="text-xs text-muted-foreground">Subscription active</p>
+                                <div className="text-h2 font-bold">Active</div>
+                                <p className="text-caption text-muted-foreground">Subscription active</p>
                             </CardContent>
                         </Card>
                     </div>

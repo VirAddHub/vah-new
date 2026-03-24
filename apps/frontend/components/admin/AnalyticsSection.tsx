@@ -136,7 +136,7 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
+                    <h1 className="text-h2 font-bold">Analytics Dashboard</h1>
                     <p className="text-muted-foreground">Detailed insights and performance metrics</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -169,9 +169,9 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-muted-foreground">Total Users</p>
-                                <p className="text-2xl font-bold">{analytics?.userGrowth?.total?.toLocaleString() || "0"}</p>
-                                <p className="text-xs text-green-600 flex items-center gap-1">
+                                <p className="text-body-sm text-muted-foreground">Total Users</p>
+                                <p className="text-h2 font-bold">{analytics?.userGrowth?.total?.toLocaleString() || "0"}</p>
+                                <p className="text-caption text-green-600 flex items-center gap-1">
                                     <TrendingUp className="h-3 w-3" />
                                     +{analytics?.userGrowth.growth}% growth
                                 </p>
@@ -185,9 +185,9 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-muted-foreground">Monthly Revenue</p>
-                                <p className="text-2xl font-bold">£{analytics?.revenue.monthly.toLocaleString()}</p>
-                                <p className="text-xs text-green-600 flex items-center gap-1">
+                                <p className="text-body-sm text-muted-foreground">Monthly Revenue</p>
+                                <p className="text-h2 font-bold">£{analytics?.revenue.monthly.toLocaleString()}</p>
+                                <p className="text-caption text-green-600 flex items-center gap-1">
                                     <TrendingUp className="h-3 w-3" />
                                     +{analytics?.revenue.growth}% growth
                                 </p>
@@ -201,9 +201,9 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-muted-foreground">Mail Processed</p>
-                                <p className="text-2xl font-bold">{analytics?.mailVolume.monthly.toLocaleString()}</p>
-                                <p className="text-xs text-green-600 flex items-center gap-1">
+                                <p className="text-body-sm text-muted-foreground">Mail Processed</p>
+                                <p className="text-h2 font-bold">{analytics?.mailVolume.monthly.toLocaleString()}</p>
+                                <p className="text-caption text-green-600 flex items-center gap-1">
                                     <TrendingUp className="h-3 w-3" />
                                     +{analytics?.mailVolume.growth}% growth
                                 </p>
@@ -217,9 +217,9 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-muted-foreground">Active Users</p>
-                                <p className="text-2xl font-bold">{analytics?.userGrowth.activeUsers.toLocaleString()}</p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-body-sm text-muted-foreground">Active Users</p>
+                                <p className="text-h2 font-bold">{analytics?.userGrowth.activeUsers.toLocaleString()}</p>
+                                <p className="text-caption text-muted-foreground">
                                     {((analytics?.userGrowth.activeUsers / analytics?.userGrowth.total) * 100).toFixed(1)}% of total
                                 </p>
                             </div>
@@ -248,7 +248,7 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
                         <div className="text-center">
                             <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                             <p className="text-muted-foreground">User growth chart would be displayed here</p>
-                            <p className="text-sm text-muted-foreground mt-2">
+                            <p className="text-body-sm text-muted-foreground mt-2">
                                 Shows new registrations, activations, and churn over time
                             </p>
                         </div>
@@ -272,7 +272,7 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
                         <div className="text-center">
                             <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                             <p className="text-muted-foreground">Revenue trends chart would be displayed here</p>
-                            <p className="text-sm text-muted-foreground mt-2">
+                            <p className="text-body-sm text-muted-foreground mt-2">
                                 Shows monthly recurring revenue, one-time payments, and refunds
                             </p>
                         </div>
@@ -296,7 +296,7 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
                         <div className="text-center">
                             <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                             <p className="text-muted-foreground">Mail volume chart would be displayed here</p>
-                            <p className="text-sm text-muted-foreground mt-2">
+                            <p className="text-body-sm text-muted-foreground mt-2">
                                 Shows incoming mail, processing times, and forwarding volumes
                             </p>
                         </div>
@@ -320,7 +320,7 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
                         <div className="text-center">
                             <PieChart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                             <p className="text-muted-foreground">Plan distribution chart would be displayed here</p>
-                            <p className="text-sm text-muted-foreground mt-2">
+                            <p className="text-body-sm text-muted-foreground mt-2">
                                 Shows breakdown of Basic ({analytics?.planDistribution.basic}%),
                                 Premium ({analytics?.planDistribution.premium}%),
                                 and Professional ({analytics?.planDistribution.professional}%) plans
@@ -339,7 +339,7 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="space-y-4">
                             <h3 className="font-semibold">User Metrics</h3>
-                            <div className="space-y-2 text-sm">
+                            <div className="space-y-2 text-body-sm">
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">New Users ({timeRange})</span>
                                     <span className="font-medium">{analytics?.userGrowth.newUsers}</span>
@@ -357,7 +357,7 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
 
                         <div className="space-y-4">
                             <h3 className="font-semibold">Revenue Metrics</h3>
-                            <div className="space-y-2 text-sm">
+                            <div className="space-y-2 text-body-sm">
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Monthly Revenue</span>
                                     <span className="font-medium">£{analytics?.revenue.monthly.toLocaleString()}</span>
@@ -375,7 +375,7 @@ export function AnalyticsSection({ }: AnalyticsSectionProps) {
 
                         <div className="space-y-4">
                             <h3 className="font-semibold">Mail Metrics</h3>
-                            <div className="space-y-2 text-sm">
+                            <div className="space-y-2 text-body-sm">
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Total Processed</span>
                                     <span className="font-medium">{analytics?.mailVolume.processed.toLocaleString()}</span>

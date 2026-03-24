@@ -49,7 +49,7 @@ export function IdentityComplianceCard({
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-sm text-green-800 dark:text-green-200">
+                    <p className="text-body-sm text-green-800 dark:text-green-200">
                         You can now use your VirtualAddressHub registered office address.
                     </p>
                 </CardContent>
@@ -215,34 +215,34 @@ export function IdentityComplianceCard({
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p className="text-sm text-amber-800 dark:text-amber-200">
+                    <p className="text-body-sm text-amber-800 dark:text-amber-200">
                         To use your registered office address, you need to complete identity verification (KYC).
                     </p>
 
                     {/* KYC */}
-                    <div className="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-amber-200 dark:border-amber-700">
+                    <div className="flex items-start gap-3 p-3 bg-card dark:bg-muted rounded-lg border border-amber-200 dark:border-amber-700">
                         <div className="flex-shrink-0 mt-0.5">
                             {compliance.isKycApproved ? (
                                 <CheckCircle className="h-5 w-5 text-green-600" />
                             ) : (
                                 <div className="h-5 w-5 rounded-full border-2 border-amber-600 flex items-center justify-center">
-                                    <span className="text-xs font-semibold text-amber-600">1</span>
+                                    <span className="text-caption font-semibold text-amber-600">1</span>
                                 </div>
                             )}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-sm text-foreground mb-1">
+                            <div className="font-semibold text-body-sm text-foreground mb-1">
                                 Identity Check (KYC)
                             </div>
                             {compliance.isKycApproved ? (
-                                <p className="text-sm text-green-700 dark:text-green-300">✓ Completed</p>
+                                <p className="text-body-sm text-green-700 dark:text-green-300">✓ Completed</p>
                             ) : (
                                 <>
-                                    <p className="text-sm text-muted-foreground mb-2">
+                                    <p className="text-body-sm text-muted-foreground mb-2">
                                         Complete identity verification with Sumsub. This is required for UK AML compliance.
                                     </p>
                                     {error && (
-                                        <p className="mt-1 mb-2 text-xs text-red-600 dark:text-red-400">
+                                        <p className="mt-1 mb-2 text-caption text-red-600 dark:text-red-400">
                                             {error}
                                         </p>
                                     )}
@@ -250,7 +250,7 @@ export function IdentityComplianceCard({
                                         onClick={startKyc}
                                         disabled={startingKyc}
                                         size="sm"
-                                        className="bg-amber-600 hover:bg-amber-700 text-white"
+                                        className="bg-amber-600 hover:bg-amber-700 text-primary-foreground"
                                     >
                                         {startingKyc ? (
                                             <>

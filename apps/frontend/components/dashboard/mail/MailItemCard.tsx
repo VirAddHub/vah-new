@@ -25,8 +25,8 @@ export function MailItemCard({
   const isUnread = !isRead;
   const Icon = mailType === "bank" ? Landmark : mailType === "gov" ? Building2 : FileText;
   // Keep icon colour consistent across all categories (no tag-based red/black)
-  const iconBg = "bg-neutral-100";
-  const iconColor = "text-neutral-900";
+  const iconBg = "bg-muted";
+  const iconColor = "text-foreground";
 
   const showStatusPill = statusVariant !== "scanned" && statusLabel !== "Scanned";
   const displayStatusLabel: MailItemCardProps["statusLabel"] =
@@ -34,18 +34,18 @@ export function MailItemCard({
 
   const badgeClass =
     statusVariant === "new"
-      ? "bg-blue-600 text-white border-transparent"
+      ? "bg-blue-600 text-primary-foreground border-transparent"
       : statusVariant === "forwarded"
-        ? "bg-emerald-600 text-white border-transparent"
+        ? "bg-primary text-primary-foreground border-transparent"
         : statusVariant === "scanned"
-          ? "bg-neutral-200 text-neutral-700 border-transparent"
-          : "bg-neutral-200 text-neutral-700 border-transparent";
+          ? "bg-muted text-foreground border-transparent"
+          : "bg-muted text-foreground border-transparent";
 
   return (
     <button
       type="button"
       onClick={onOpen}
-      className={`w-full text-left transition-colors ${isUnread ? "bg-blue-50/50 hover:bg-blue-50" : "bg-white hover:bg-neutral-50"}`}
+      className={`w-full text-left transition-colors ${isUnread ? "bg-blue-50/50 hover:bg-blue-50" : "bg-card hover:bg-muted/50"}`}
     >
       {/* Mobile: dense row (no badges) */}
       <div className="md:hidden flex items-center gap-3 px-4 py-3">
@@ -55,10 +55,10 @@ export function MailItemCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 min-w-0">
-            <div className={`text-sm truncate ${isUnread ? "font-bold text-neutral-900" : "font-semibold text-neutral-900"}`}>{sender}</div>
+            <div className={`text-body-sm truncate ${isUnread ? "font-bold text-foreground" : "font-semibold text-foreground"}`}>{sender}</div>
             {isUnread && <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0" aria-label="Unread" />}
           </div>
-          <div className="mt-0.5 text-xs text-neutral-500 truncate">
+          <div className="mt-0.5 text-caption text-muted-foreground truncate">
             {displayStatusLabel}
           </div>
         </div>
@@ -74,7 +74,7 @@ export function MailItemCard({
         {/* title/subtitle */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3 min-w-0">
-            <div className={`text-2xl text-neutral-900 truncate ${isUnread ? "font-bold" : "font-semibold"}`}>{sender}</div>
+            <div className={`text-h2 text-foreground truncate ${isUnread ? "font-bold" : "font-semibold"}`}>{sender}</div>
             {isUnread && <span className="h-3 w-3 rounded-full bg-blue-600 shrink-0" aria-label="Unread" />}
           </div>
         </div>
@@ -82,7 +82,7 @@ export function MailItemCard({
         {/* right meta */}
         <div className="shrink-0 text-right">
           {showStatusPill && (
-            <Badge className={`rounded-full px-4 py-1 text-base font-medium ${badgeClass}`}>
+            <Badge className={`rounded-full px-4 py-1 text-body font-medium ${badgeClass}`}>
               {displayStatusLabel}
             </Badge>
           )}

@@ -227,7 +227,7 @@ export default function AdminInvoiceDetailPage() {
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h1 className="text-3xl font-bold">{invoice?.invoice_number || `Invoice #${id}`}</h1>
+              <h1 className="text-h2 font-bold">{invoice?.invoice_number || `Invoice #${id}`}</h1>
               <p className="text-muted-foreground">Invoice details and line items</p>
             </div>
             <div className="flex gap-2">
@@ -240,7 +240,7 @@ export default function AdminInvoiceDetailPage() {
             </div>
           </div>
 
-          {error ? <div className="text-sm text-red-600">{error}</div> : null}
+          {error ? <div className="text-body-sm text-red-600">{error}</div> : null}
 
           <Card>
             <CardHeader>
@@ -248,30 +248,30 @@ export default function AdminInvoiceDetailPage() {
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <div className="text-sm text-muted-foreground">Customer</div>
+                <div className="text-body-sm text-muted-foreground">Customer</div>
                 <div className="font-medium">{invoice?.email || "—"}</div>
-                <div className="text-xs text-muted-foreground">User {invoice?.user_id ?? "—"}</div>
+                <div className="text-caption text-muted-foreground">User {invoice?.user_id ?? "—"}</div>
               </div>
               <div>
-                <div className="text-sm text-muted-foreground">Status</div>
+                <div className="text-body-sm text-muted-foreground">Status</div>
                 <Badge variant={invoice?.status === "paid" ? "default" : "secondary"}>{invoice?.status || "—"}</Badge>
               </div>
               <div>
-                <div className="text-sm text-muted-foreground">Amount</div>
+                <div className="text-body-sm text-muted-foreground">Amount</div>
                 <div className="font-medium">{amountLabel}</div>
               </div>
               <div>
-                <div className="text-sm text-muted-foreground">Billing period</div>
+                <div className="text-body-sm text-muted-foreground">Billing period</div>
                 <div className="font-medium">
                   {invoice?.period_start || "—"} → {invoice?.period_end || "—"}
                 </div>
               </div>
               <div>
-                <div className="text-sm text-muted-foreground">Created</div>
+                <div className="text-body-sm text-muted-foreground">Created</div>
                 <div className="font-medium">{createdLabel}</div>
               </div>
               <div>
-                <div className="text-sm text-muted-foreground">Invoice ID</div>
+                <div className="text-body-sm text-muted-foreground">Invoice ID</div>
                 <div className="font-medium">{invoice?.id ?? id}</div>
               </div>
             </CardContent>

@@ -70,7 +70,7 @@ export default function SafeAdminDashboard() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <h1 className="text-h2 font-bold">Admin Dashboard</h1>
             <p className="text-muted-foreground">Welcome, {state.user?.email}</p>
           </div>
           <Button onClick={handleLogout} variant="outline">
@@ -80,7 +80,7 @@ export default function SafeAdminDashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <section className="bg-card rounded-lg border p-6">
-            <h2 className="text-xl font-semibold mb-4">Users ({state.users.length})</h2>
+            <h2 className="text-h3 font-semibold mb-4">Users ({state.users.length})</h2>
             {state.users.length === 0 ? (
               <p className="text-muted-foreground">No users found.</p>
             ) : (
@@ -88,7 +88,7 @@ export default function SafeAdminDashboard() {
                 {state.users.map((user, index) => (
                   <div key={index} className="p-3 bg-muted rounded">
                     <div className="font-medium">{user.email}</div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-body-sm text-muted-foreground">
                       {user.is_admin ? 'Admin' : 'User'} • {user.status || 'Active'}
                     </div>
                   </div>
@@ -98,12 +98,12 @@ export default function SafeAdminDashboard() {
           </section>
 
           <section className="bg-card rounded-lg border p-6">
-            <h2 className="text-xl font-semibold mb-4">Analytics</h2>
+            <h2 className="text-h3 font-semibold mb-4">Analytics</h2>
             {!state.analytics ? (
               <p className="text-muted-foreground">Analytics data unavailable.</p>
             ) : (
               <div className="space-y-2">
-                <pre className="text-sm bg-muted p-3 rounded overflow-auto">
+                <pre className="text-body-sm bg-muted p-3 rounded overflow-auto">
                   {JSON.stringify(state.analytics, null, 2)}
                 </pre>
               </div>
@@ -111,7 +111,7 @@ export default function SafeAdminDashboard() {
           </section>
 
           <section className="bg-card rounded-lg border p-6">
-            <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+            <h2 className="text-h3 font-semibold mb-4">Quick Actions</h2>
             <div className="space-y-2">
               <Button className="w-full" variant="outline">
                 Manage Users

@@ -101,7 +101,7 @@ export function App({ initialPricing = null }: AppProps) {
         return (
           <div className="min-h-screen bg-background flex items-center justify-center">
             <div className="text-center">
-              <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
+              <h1 className="text-h2 font-bold mb-4">Dashboard</h1>
               <p className="text-muted-foreground mb-4">User dashboard coming soon</p>
               <button
                 onClick={() => navigate('home')}
@@ -127,7 +127,7 @@ export function App({ initialPricing = null }: AppProps) {
         return (
           <div className="min-h-screen bg-background flex items-center justify-center">
             <div className="text-center">
-              <h1 className="text-2xl font-bold mb-4">Admin Portal</h1>
+              <h1 className="text-h2 font-bold mb-4">Admin Portal</h1>
               <p className="text-muted-foreground mb-4">Admin functionality coming soon</p>
               <button
                 onClick={() => navigate('home')}
@@ -142,7 +142,7 @@ export function App({ initialPricing = null }: AppProps) {
         return (
           <div className="min-h-screen bg-background flex items-center justify-center">
             <div className="text-center">
-              <h1 className="text-2xl font-bold mb-4">Page Not Found</h1>
+              <h1 className="text-h2 font-bold mb-4">Page Not Found</h1>
               <p className="text-muted-foreground mb-4">The page "{currentPage}" doesn't exist</p>
               <button
                 onClick={() => navigate('home')}

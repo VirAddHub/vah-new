@@ -263,7 +263,7 @@ export function MailSection({ }: MailSectionProps) {
             return {
                 label: "Destroyed",
                 variant: "default" as const,
-                color: "text-green-600",
+                color: "text-primary",
                 icon: <CheckCircle className="h-4 w-4" />
             };
         }
@@ -272,7 +272,7 @@ export function MailSection({ }: MailSectionProps) {
             return {
                 label: `Past ${daysPast} days - Destroy now`,
                 variant: "destructive" as const,
-                color: "text-red-600",
+                color: "text-destructive",
                 icon: <AlertTriangle className="h-4 w-4" />
             };
         }
@@ -332,12 +332,12 @@ export function MailSection({ }: MailSectionProps) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">Scanned Mail</h1>
+                    <h1 className="text-h2 font-bold">Scanned Mail</h1>
                     <p className="text-muted-foreground">All scanned mail items - track processing and deletion dates</p>
-                    <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+                    <div className="flex gap-4 mt-2 text-body-sm text-muted-foreground">
                         <span>Total: {filteredItems.length}</span>
                         <span>Processed: {processedCount}</span>
-                        <span className="text-red-600">Needs Destruction: {needsDestructionCount}</span>
+                        <span className="text-destructive">Needs Destruction: {needsDestructionCount}</span>
                     </div>
                 </div>
                 <Button
@@ -368,9 +368,9 @@ export function MailSection({ }: MailSectionProps) {
             {/* Helper Note */}
             <Card className="border-amber-200 bg-amber-50">
                 <CardContent className="pt-6">
-                    <div className="text-sm text-amber-800">
+                    <div className="text-body-sm text-amber-800">
                         <p className="font-medium mb-1">📋 Physical Destruction Eligibility Information</p>
-                        <p className="text-xs">
+                        <p className="text-caption">
                             These fields are used to populate the Shredding & Destruction Log. Eligibility is system-calculated based on receipt date and retention rules (30-day GDPR retention period). Staff should manually copy these values into the Excel destruction log.
                         </p>
                     </div>
@@ -381,7 +381,7 @@ export function MailSection({ }: MailSectionProps) {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="needs-destruction" className="flex items-center gap-2">
-                        <AlertCircle className="h-4 w-4 text-red-600" />
+                        <AlertCircle className="h-4 w-4 text-destructive" />
                         Needs Destruction ({needsDestructionCount})
                     </TabsTrigger>
                     <TabsTrigger value="all" className="flex items-center gap-2">
@@ -431,13 +431,13 @@ export function MailSection({ }: MailSectionProps) {
                                         return (
                                             <TableRow
                                                 key={item.id}
-                                                className={item.past_30_days && !item.physical_destruction_date ? "bg-red-50/30 border-l-4 border-l-red-500" : ""}
+                                                className={item.past_30_days && !item.physical_destruction_date ? "bg-destructive/5 border-l-4 border-l-destructive" : ""}
                                             >
                                                 <TableCell className="font-medium">#{item.id}</TableCell>
                                                 <TableCell>
                                                     <div>
                                                         <div className="font-medium">{userName}</div>
-                                                        <div className="text-xs text-muted-foreground">{item.user_email}</div>
+                                                        <div className="text-caption text-muted-foreground">{item.user_email}</div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
@@ -445,7 +445,7 @@ export function MailSection({ }: MailSectionProps) {
                                                         {item.subject || '—'}
                                                     </div>
                                                     {item.tag && (
-                                                        <Badge variant="outline" className="mt-1 text-xs">{item.tag}</Badge>
+                                                        <Badge variant="outline" className="mt-1 text-caption">{item.tag}</Badge>
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="text-muted-foreground">
@@ -453,7 +453,7 @@ export function MailSection({ }: MailSectionProps) {
                                                 </TableCell>
                                                 <TableCell>
                                                     {isProcessed ? (
-                                                        <Badge variant="default" className="bg-green-600">
+                                                        <Badge variant="default" className="bg-primary">
                                                             <CheckCircle className="h-3 w-3 mr-1" />
                                                             Yes
                                                         </Badge>
@@ -473,7 +473,7 @@ export function MailSection({ }: MailSectionProps) {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="space-y-2 text-xs min-w-[220px]">
+                                                    <div className="space-y-2 text-caption min-w-[220px]">
                                                         <div>
                                                             <div className="text-muted-foreground mb-0.5">Mail Item ID:</div>
                                                             <div className="font-medium">#{item.id}</div>
@@ -481,7 +481,7 @@ export function MailSection({ }: MailSectionProps) {
                                                         <div>
                                                             <div className="text-muted-foreground mb-0.5">Customer Name / ID:</div>
                                                             <div className="font-medium">{userName}</div>
-                                                            <div className="text-xs text-muted-foreground">ID: {item.user_id}</div>
+                                                            <div className="text-caption text-muted-foreground">ID: {item.user_id}</div>
                                                         </div>
                                                         <div>
                                                             <div className="text-muted-foreground mb-0.5">Mail Description:</div>
@@ -587,7 +587,7 @@ export function MailSection({ }: MailSectionProps) {
                                                 <TableCell>
                                                     <div>
                                                         <div className="font-medium">{userName}</div>
-                                                        <div className="text-xs text-muted-foreground">{item.user_email}</div>
+                                                        <div className="text-caption text-muted-foreground">{item.user_email}</div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
@@ -595,7 +595,7 @@ export function MailSection({ }: MailSectionProps) {
                                                         {item.subject || '—'}
                                                     </div>
                                                     {item.tag && (
-                                                        <Badge variant="outline" className="mt-1 text-xs">{item.tag}</Badge>
+                                                        <Badge variant="outline" className="mt-1 text-caption">{item.tag}</Badge>
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="text-muted-foreground">
@@ -603,7 +603,7 @@ export function MailSection({ }: MailSectionProps) {
                                                 </TableCell>
                                                 <TableCell>
                                                     {isProcessed ? (
-                                                        <Badge variant="default" className="bg-green-600">
+                                                        <Badge variant="default" className="bg-primary">
                                                             <CheckCircle className="h-3 w-3 mr-1" />
                                                             Yes
                                                         </Badge>
@@ -623,7 +623,7 @@ export function MailSection({ }: MailSectionProps) {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="space-y-2 text-xs min-w-[220px]">
+                                                    <div className="space-y-2 text-caption min-w-[220px]">
                                                         <div>
                                                             <div className="text-muted-foreground mb-0.5">Mail Item ID:</div>
                                                             <div className="font-medium">#{item.id}</div>
@@ -631,7 +631,7 @@ export function MailSection({ }: MailSectionProps) {
                                                         <div>
                                                             <div className="text-muted-foreground mb-0.5">Customer Name / ID:</div>
                                                             <div className="font-medium">{userName}</div>
-                                                            <div className="text-xs text-muted-foreground">ID: {item.user_id}</div>
+                                                            <div className="text-caption text-muted-foreground">ID: {item.user_id}</div>
                                                         </div>
                                                         <div>
                                                             <div className="text-muted-foreground mb-0.5">Mail Description:</div>
