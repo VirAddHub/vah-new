@@ -1,6 +1,5 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-    darkMode: ["class"],
     content: [
         './pages/**/*.{ts,tsx}',
         './components/**/*.{ts,tsx}',
@@ -41,16 +40,18 @@ module.exports = {
                 content: "72ch",
             },
             fontSize: {
-                // Standardized typography scale
-                h1: ["1.875rem", { lineHeight: "2.25rem", fontWeight: "600" }], // 30px
-                "h1-lg": ["2.25rem", { lineHeight: "2.75rem", fontWeight: "600" }], // 36px
-                h2: ["1.5rem", { lineHeight: "2rem", fontWeight: "600" }], // 24px
-                "h2-lg": ["1.875rem", { lineHeight: "2.25rem", fontWeight: "600" }], // 30px
-                h3: ["1rem", { lineHeight: "1.5rem", fontWeight: "500" }], // 16px
-                body: ["0.875rem", { lineHeight: "1.5rem", fontWeight: "400" }], // 14px
-                "body-lg": ["1rem", { lineHeight: "1.75rem", fontWeight: "400" }], // 16px
-                small: ["0.75rem", { lineHeight: "1.25rem", fontWeight: "400" }], // 12px
-                // Fluid typography using clamp for responsive scaling (kept for backward compatibility)
+                // ── Canonical type scale (Batch 2) ──
+                display: ["clamp(2rem, 5vw, 3.5rem)", { lineHeight: "1.1", fontWeight: "600", letterSpacing: "-0.025em" }],
+                h1: ["clamp(1.75rem, 4vw, 2.25rem)", { lineHeight: "1.2", fontWeight: "600", letterSpacing: "-0.02em" }],
+                h2: ["clamp(1.5rem, 3vw, 1.875rem)", { lineHeight: "1.3", fontWeight: "600", letterSpacing: "-0.015em" }],
+                h3: ["1.25rem", { lineHeight: "1.4", fontWeight: "600", letterSpacing: "-0.01em" }],
+                h4: ["1.125rem", { lineHeight: "1.4", fontWeight: "600", letterSpacing: "-0.005em" }],
+                "body-lg": ["1.125rem", { lineHeight: "1.7", fontWeight: "400" }],
+                body: ["1rem", { lineHeight: "1.6", fontWeight: "400" }],
+                "body-sm": ["0.875rem", { lineHeight: "1.5", fontWeight: "400" }],
+                label: ["0.875rem", { lineHeight: "1.4", fontWeight: "500" }],
+                caption: ["0.75rem", { lineHeight: "1.4", fontWeight: "400", letterSpacing: "0.01em" }],
+                // ── Deprecated — remove after page-level migration ──
                 "fluid-sm": ["clamp(0.9rem, 0.85rem + 0.2vw, 1rem)", { lineHeight: "1.5" }],
                 "fluid-base": ["clamp(1rem, 0.95rem + 0.35vw, 1.125rem)", { lineHeight: "1.6" }],
                 "fluid-lg": ["clamp(1.125rem, 1.05rem + 0.5vw, 1.25rem)", { lineHeight: "1.6" }],
@@ -96,26 +97,25 @@ module.exports = {
                     DEFAULT: "hsl(var(--primary))",
                     fg: "hsl(var(--primary-foreground))",
                 },
-                // Neutral helpers for color cleanup
-                ink: {
-                    DEFAULT: '#111827', // near-black for headings/nav
-                },
-                line: {
-                    DEFAULT: '#e5e7eb', // subtle border
-                },
                 success: {
-                    DEFAULT: '#16a34a', // ensure success token exists (same as your green)
+                    DEFAULT: "hsl(var(--success))",
+                    foreground: "hsl(var(--success-foreground))",
                 },
             },
+            // ── Canonical radius scale (Batch 2) ──
             borderRadius: {
-                lg: "var(--radius)",
-                md: "calc(var(--radius) - 2px)",
-                sm: "calc(var(--radius) - 4px)",
+                sm: "0.25rem",
+                md: "0.5rem",
+                lg: "0.75rem",
                 xl: "1rem",
                 "2xl": "1.25rem",
             },
+            // ── Canonical shadow scale (Batch 2) ──
             boxShadow: {
-                soft: "0 10px 20px -10px rgba(0,0,0,0.2)",
+                xs: "0 1px 2px rgba(2, 6, 23, 0.04)",
+                sm: "0 1px 2px rgba(2, 6, 23, 0.06)",
+                md: "0 4px 12px rgba(2, 6, 23, 0.06)",
+                lg: "0 10px 24px rgba(2, 6, 23, 0.08)",
             },
             keyframes: {
                 "accordion-down": {

@@ -24,8 +24,8 @@ export function AccountNavigation() {
     const router = useRouter();
 
     return (
-        <nav className="w-[240px] flex-shrink-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-            <div className="bg-white border border-[#E5E7EB] rounded-[10px] p-4">
+        <nav className="w-60 flex-shrink-0">
+            <div className="bg-card border border-border rounded-lg p-4">
                 <div className="flex flex-col gap-2">
                     {navItems.map((item) => {
                         const Icon = item.icon;
@@ -36,14 +36,13 @@ export function AccountNavigation() {
                                 key={item.href}
                                 href={item.href}
                                 className={cn(
-                                    "flex items-center gap-3 px-4 py-3 rounded-[8px] text-[16px] font-normal leading-[1.4] transition-colors",
+                                    "flex items-center gap-3 px-4 py-3 rounded-md text-body transition-colors",
                                     isActive
-                                        ? "bg-[#F9F9F9] text-[#024E40] font-medium"
-                                        : "text-[#666666] hover:bg-[#F9F9F9] hover:text-[#1A1A1A]"
+                                        ? "bg-muted text-primary font-medium"
+                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                 )}
-                                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                             >
-                                <Icon className={cn("w-5 h-5", isActive ? "text-[#024E40]" : "text-[#666666]")} />
+                                <Icon className={cn("w-5 h-5", isActive ? "text-primary" : "text-muted-foreground")} />
                                 {item.label}
                             </Link>
                         );

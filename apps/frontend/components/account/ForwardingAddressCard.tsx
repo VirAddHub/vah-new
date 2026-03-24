@@ -219,12 +219,12 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
   };
 
   return (
-    <Card className="rounded-xl sm:rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white min-w-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-      <CardContent className="p-4 sm:p-6 md:p-[28px]">
-        <div className="flex flex-col gap-[14px]">
+    <Card className="rounded-xl sm:rounded-2xl shadow-sm bg-card min-w-0">
+      <CardContent className="p-4 sm:p-6 md:p-7">
+        <div className="flex flex-col gap-3.5">
           {/* Header with Edit button aligned top-right */}
           <div className="flex items-center justify-between">
-            <h3 className="text-[18px] font-semibold leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <h3 className="text-h4 text-foreground">
               Mail Forwarding Address
             </h3>
             {/* Edit/Add button moved to top-right for better visibility and affordance */}
@@ -234,8 +234,7 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="text-[12px] text-[#206039] hover:text-[#206039]/80 hover:bg-[#206039]/5 -mr-2" 
-                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                    className="text-caption text-primary hover:text-primary/80 hover:bg-primary/5 -mr-2" 
                   >
                     <Edit className="h-3.5 w-3.5 mr-1.5" />
                       Edit
@@ -345,8 +344,7 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="text-[12px] text-[#206039] hover:text-[#206039]/80 hover:bg-[#206039]/5 -mr-2 min-h-[44px] min-w-[44px] touch-manipulation" 
-                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                    className="text-caption text-primary hover:text-primary/80 hover:bg-primary/5 -mr-2 min-h-[44px] min-w-[44px] touch-manipulation" 
                   >
                     <Plus className="h-3.5 w-3.5 mr-1.5" />
                       Add address
@@ -448,25 +446,25 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
             )}
           </div>
           
-          <div className="w-full h-[0.5px] bg-[#E5E7EB]"></div>
+          <div className="w-full h-px bg-border"></div>
 
           {/* Forwarding Address Section - Removed duplicate label */}
-          <div className="flex flex-col gap-[10px]">
+          <div className="flex flex-col gap-2.5">
             {/* Added value-reinforcing microcopy */}
-            <p className="text-[12px] font-normal leading-[1.4] text-[#666666] mb-2" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <p className="text-caption text-muted-foreground mb-2">
               Physical mail forwarding destination. Digital scans are always available in your inbox.
             </p>
             {address ? (
-              <div className="flex flex-col gap-[6px]">
+              <div className="flex flex-col gap-1.5">
                 {address.formatted.split('\n').map((line, index) => (
-                  <p key={index} className="text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                  <p key={index} className="text-caption text-muted-foreground">
                     {line}
                   </p>
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col gap-[6px]">
-                <p className="text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+              <div className="flex flex-col gap-1.5">
+                <p className="text-caption text-muted-foreground">
                   No forwarding address configured
                 </p>
               </div>

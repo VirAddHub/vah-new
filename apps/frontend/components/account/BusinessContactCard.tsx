@@ -178,20 +178,20 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
   const initials = `${contact.first_name?.[0] || ''}${contact.last_name?.[0] || ''}`.toUpperCase() || '?';
 
   return (
-    <Card className="rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white w-[408px] h-[490px] flex-shrink-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-      <CardContent className="p-[28px] h-full flex flex-col">
-        <div className="flex flex-col gap-[31px] flex-1">
+    <Card className="rounded-2xl shadow-sm bg-card w-full max-w-md flex-shrink-0">
+      <CardContent className="p-7 h-full flex flex-col">
+        <div className="flex flex-col gap-8 flex-1">
           {/* Header */}
-          <div className="flex items-center gap-[57px]">
-            <h3 className="text-[18px] font-semibold leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+          <div className="flex items-center justify-between">
+            <h3 className="text-h4 text-foreground">
               Business Contact
             </h3>
-            <div className="w-[12px] h-[12px] border border-[#E5E7EB] rounded-[8px]"></div>
+            <div className="w-3 h-3 border border-border rounded-md"></div>
           </div>
 
           {/* Avatar and Name/Email */}
-          <div className="flex flex-col items-center gap-[14px]">
-            <div className="w-[54px] h-[54px] rounded-full bg-[#F9F9F9] border border-[#E5E7EB] flex items-center justify-center overflow-hidden">
+          <div className="flex flex-col items-center gap-3.5">
+            <div className="w-14 h-14 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden">
               {contact.email ? (
                 <img
                   src={`https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random&color=fff&size=54`}
@@ -199,38 +199,37 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-[20px] font-semibold text-[#666666]">{initials}</span>
+                <span className="text-h3 font-semibold text-muted-foreground">{initials}</span>
               )}
             </div>
-            <div className="flex flex-col gap-[4px] items-center">
-              <p className="text-[16px] font-semibold leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <div className="flex flex-col gap-1 items-center">
+              <p className="text-body font-semibold text-foreground">
                 {fullName}
               </p>
-              <p className="text-[12px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+              <p className="text-caption text-muted-foreground">
                 {contact.email || 'No email'}
               </p>
             </div>
           </div>
 
           {/* Form Fields */}
-          <div className="flex flex-col gap-[10px]">
+          <div className="flex flex-col gap-2.5">
             {/* Name Field */}
-            <div className="flex flex-col gap-[10px]">
-              <Label htmlFor="name" className="text-[12px] font-medium leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <div className="flex flex-col gap-2.5">
+              <Label htmlFor="name" className="text-caption font-medium text-foreground">
                 Name
               </Label>
               <Input
                 id="name"
                 value={fullName}
                 disabled
-                className="h-auto px-[20px] py-[6px] rounded-[41px] bg-[#F9F9F9] border border-[#E5E7EB] text-[12px] font-normal leading-[1.4] text-[#666666]"
-                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                className="h-auto px-5 py-1.5 rounded-full bg-muted border border-border text-caption text-muted-foreground"
               />
             </div>
 
             {/* Email Field */}
-            <div className="flex flex-col gap-[10px]">
-              <Label htmlFor="email" className="text-[12px] font-medium leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <div className="flex flex-col gap-2.5">
+              <Label htmlFor="email" className="text-caption font-medium text-foreground">
                 Email
               </Label>
               <div className="flex items-center gap-2">
@@ -238,15 +237,14 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
                   id="email"
                   value={contact.email || ''}
                   disabled
-                  className="flex-1 h-auto px-[20px] py-[6px] rounded-[41px] bg-[#F9F9F9] border border-[#E5E7EB] text-[12px] font-normal leading-[1.4] text-[#666666]"
-                  style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                  className="flex-1 h-auto px-5 py-1.5 rounded-full bg-muted border border-border text-caption text-muted-foreground"
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={handleOpenEmailDialog}
-                  className="text-[12px] text-[#206039] hover:text-[#206039]/80"
+                  className="text-caption text-primary hover:text-primary/80"
                 >
                   Edit
                 </Button>
@@ -261,8 +259,8 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
             </div>
 
             {/* Number Field */}
-            <div className="flex flex-col gap-[10px]">
-              <Label htmlFor="phone" className="text-[12px] font-medium leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <div className="flex flex-col gap-2.5">
+              <Label htmlFor="phone" className="text-caption font-medium text-foreground">
                 Number
               </Label>
               <Input
@@ -271,8 +269,7 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
                 value={contact.phone || ''}
                 onChange={(e) => handleChange('phone', e.target.value)}
                 placeholder="+088 5642 2356"
-                className="h-auto px-[20px] py-[6px] rounded-[41px] bg-[#F9F9F9] border border-[#E5E7EB] text-[12px] font-normal leading-[1.4] text-[#666666]"
-                style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                className="h-auto px-5 py-1.5 rounded-full bg-muted border border-border text-caption text-muted-foreground"
               />
             </div>
 
@@ -282,8 +279,7 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
                 <Button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="bg-[#206039] text-white hover:bg-[#206039]/90"
-                  style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   {isSaving ? 'Saving...' : 'Save changes'}
                 </Button>

@@ -13,7 +13,7 @@ import { EmailChangeCard } from '@/components/account/EmailChangeCard';
 /**
  * Premium Account Overview Page
  * 
- * Design principles from design-system.ts:
+ * Design principles:
  * - Clean, spacious layout
  * - Consistent spacing (16px/24px/32px)
  * - Subtle borders, no heavy shadows

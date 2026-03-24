@@ -112,42 +112,39 @@ export default function AccountAddressesPage() {
     };
 
     return (
-        <div className="w-full" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-            {/* Page Header */}
+        <div className="w-full">
             <div className="mb-5 sm:mb-6 md:mb-8">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[42px] font-medium leading-tight text-[#1A1A1A] mb-2 sm:mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                <h1 className="text-h1 text-foreground mb-2 sm:mb-4">
                     Addresses
                 </h1>
-                <p className="text-sm sm:text-base md:text-[18px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                <p className="text-body-sm sm:text-body md:text-body-lg text-muted-foreground">
                     Manage your business and forwarding addresses
                 </p>
             </div>
 
             <div className="space-y-4 sm:space-y-6">
-                {/* Registered Office Address */}
-                <Card className="rounded-xl sm:rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border border-[#D1D5DB] bg-[#F5F5F5]">
+                <Card className="rounded-xl sm:rounded-2xl shadow-sm border border-border bg-muted">
                     <CardContent className="p-4 sm:p-6 md:p-8">
-                        <h2 className="text-lg sm:text-xl md:text-[24px] font-semibold leading-[1.33] text-[#1A1A1A] mb-3 sm:mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                        <h2 className="text-h2 text-foreground mb-3 sm:mb-4">
                             Registered Office Address
                         </h2>
-                        <p className="text-[14px] font-medium leading-[1.4] text-[#1A1A1A] mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                        <p className="text-label text-foreground mb-4">
                             Your trusted Central London address for Companies House, HMRC, and official business mail.
                         </p>
                         {addresses.businessAddress?.formatted ? (
-                            <div className="bg-white rounded-[10px] p-4 border border-[#E5E7EB]">
-                                <pre className="whitespace-pre-wrap text-[14px] font-normal leading-[1.4] text-[#1A1A1A]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                            <div className="bg-card rounded-lg p-4 border border-border">
+                                <pre className="whitespace-pre-wrap text-body-sm text-foreground">
                                     {addresses.businessAddress.formatted}
                                 </pre>
                             </div>
                         ) : (
-                            <p className="text-[14px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                            <p className="text-body-sm text-muted-foreground">
                                 No business address configured
                             </p>
                         )}
                     </CardContent>
                 </Card>
 
-                {/* Forwarding Address */}
                 <ForwardingAddressCard
                     address={addresses.forwardingAddress || null}
                     businessAddress={addresses.businessAddress || null}

@@ -98,7 +98,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
     // Success screen
     if (isSubmitted) {
         return (
-            <div className="min-w-0 overflow-x-clip bg-zinc-50 pt-20 lg:pt-0 min-h-screen py-16 flex items-center justify-center" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+            <div className="min-w-0 overflow-x-clip bg-zinc-50 pt-20 lg:pt-0 min-h-screen py-16 flex items-center justify-center">
                 <div className="max-w-2xl mx-auto w-full px-4 text-center">
                     <h1 className="text-2xl font-semibold text-zinc-900 sm:text-3xl lg:text-4xl mb-4">
                         Message sent — thank you!
@@ -127,7 +127,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
     }
 
     return (
-        <div className="min-w-0 w-full overflow-x-clip bg-zinc-50 pt-20 lg:pt-0" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+        <div className="min-w-0 w-full overflow-x-clip bg-zinc-50 pt-20 lg:pt-0">
             <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
                 {/* Hero Section */}
                 <div className="max-w-2xl">

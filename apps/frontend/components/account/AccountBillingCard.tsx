@@ -159,15 +159,13 @@ export function AccountBillingCard({
 
   return (
     <Card
-      className="rounded-xl sm:rounded-[20px] shadow-[0px_2px_10px_rgba(0,0,0,0.06)] border-0 bg-white w-full max-w-full sm:max-w-[408px] flex-shrink-0 min-w-0"
-      style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+      className="rounded-xl sm:rounded-2xl shadow-sm bg-card w-full max-w-full sm:max-w-md flex-shrink-0 min-w-0"
     >
-      <CardContent className="p-4 sm:p-[28px] h-full flex flex-col">
-        <div className="flex flex-col gap-3 sm:gap-[14px] flex-1">
+      <CardContent className="p-4 sm:p-7 h-full flex flex-col">
+        <div className="flex flex-col gap-3 sm:gap-3.5 flex-1">
           {/* Header */}
           <h3
-            className="text-base sm:text-[18px] font-semibold leading-[1.4] text-[#1A1A1A]"
-            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+            className="text-body sm:text-h4 text-foreground"
           >
             Account & billing
           </h3>
@@ -175,41 +173,29 @@ export function AccountBillingCard({
           {/* Plan: clarify monthly vs yearly */}
           <div className="flex items-center justify-between gap-3 sm:gap-4 min-w-0">
             <span
-              className="text-[12px] font-normal leading-[1.4] text-[#666666] shrink-0"
-              style={{
-                fontFamily: 'var(--font-poppins), Poppins, sans-serif',
-              }}
+              className="text-caption text-muted-foreground shrink-0"
             >
               Plan
             </span>
             <span
-              className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right min-w-0 truncate max-w-[60%] sm:max-w-none"
-              style={{
-                fontFamily: 'var(--font-poppins), Poppins, sans-serif',
-              }}
+              className="text-caption text-muted-foreground text-right min-w-0 truncate max-w-[60%] sm:max-w-none"
             >
               {subscription.billing_period === 'annual'
                 ? `Annual (${subscription.price_label}/year)`
                 : `Monthly (${subscription.price_label}/month)`}
             </span>
           </div>
-          <div className="w-full h-[0.5px] bg-[#E5E7EB]"></div>
+          <div className="w-full h-px bg-border"></div>
 
           {/* Status */}
           <div className="flex items-center justify-between gap-3 sm:gap-4 min-w-0">
             <span
-              className="text-[12px] font-normal leading-[1.4] text-[#666666] shrink-0"
-              style={{
-                fontFamily: 'var(--font-poppins), Poppins, sans-serif',
-              }}
+              className="text-caption text-muted-foreground shrink-0"
             >
               Status
             </span>
             <span
-              className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right min-w-0"
-              style={{
-                fontFamily: 'var(--font-poppins), Poppins, sans-serif',
-              }}
+              className="text-caption text-muted-foreground text-right min-w-0"
             >
               {subscription.status === 'active'
                 ? 'Active'
@@ -220,23 +206,17 @@ export function AccountBillingCard({
                     : 'Unknown'}
             </span>
           </div>
-          <div className="w-full h-[0.5px] bg-[#E5E7EB]"></div>
+          <div className="w-full h-px bg-border"></div>
 
           {/* Next billing */}
           <div className="flex items-center justify-between gap-3 sm:gap-4 min-w-0">
             <span
-              className="text-[12px] font-normal leading-[1.4] text-[#666666] shrink-0"
-              style={{
-                fontFamily: 'var(--font-poppins), Poppins, sans-serif',
-              }}
+              className="text-caption text-muted-foreground shrink-0"
             >
               Next billing
             </span>
             <span
-              className="text-[12px] font-normal leading-[1.4] text-[#666666] text-right min-w-0 truncate max-w-[55%] sm:max-w-none"
-              style={{
-                fontFamily: 'var(--font-poppins), Poppins, sans-serif',
-              }}
+              className="text-caption text-muted-foreground text-right min-w-0 truncate max-w-[55%] sm:max-w-none"
             >
               {nextBillingLabel}
             </span>
@@ -249,10 +229,7 @@ export function AccountBillingCard({
               <Button
                 onClick={handleReactivate}
                 disabled={isLoading === 'reactivate'}
-                className="w-full min-h-[44px] sm:min-h-0 bg-[#206039] text-white hover:bg-[#206039]/90 touch-manipulation"
-                style={{
-                  fontFamily: 'var(--font-poppins), Poppins, sans-serif',
-                }}
+                className="w-full min-h-[44px] sm:min-h-0 touch-manipulation"
               >
                 {isLoading === 'reactivate' ? (
                   <>
@@ -275,9 +252,6 @@ export function AccountBillingCard({
                   setPaymentModalOpen(true);
                 }}
                 className="w-full min-h-[44px] sm:min-h-0 touch-manipulation"
-                style={{
-                  fontFamily: 'var(--font-poppins), Poppins, sans-serif',
-                }}
               >
                 <CreditCard className="h-4 w-4 mr-2" />
                 Set up payment method
@@ -289,10 +263,7 @@ export function AccountBillingCard({
                   setPaymentModalMode('update');
                   setPaymentModalOpen(true);
                 }}
-                className="w-full min-h-[44px] sm:min-h-0 bg-[#206039] text-white hover:bg-[#206039]/90 touch-manipulation"
-                style={{
-                  fontFamily: 'var(--font-poppins), Poppins, sans-serif',
-                }}
+                className="w-full min-h-[44px] sm:min-h-0 touch-manipulation"
               >
                 <CreditCard className="h-4 w-4 mr-2" />
                 Update bank details

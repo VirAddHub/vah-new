@@ -34,7 +34,7 @@ const CertificateDownload = dynamic(
 /**
  * Premium Dashboard Sidebar
  * 
- * Design principles from design-system.ts:
+ * Design principles:
  * - Clean, minimal navigation
  * - Consistent spacing (12px/16px/24px)
  * - Subtle active states

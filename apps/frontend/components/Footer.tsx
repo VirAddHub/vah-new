@@ -66,9 +66,6 @@ export function Footer({ onNavigate }: FooterProps) {
     return (
         <footer
             className="pt-8 pb-8 text-neutral-700 lg:pt-16 lg:pb-10"
-            style={{
-                fontFamily: 'Inter, sans-serif',
-            }}
         >
             <div className="mx-auto max-w-7xl px-8">
                 {/* Mobile/Tablet Footer (< 1024px) */}

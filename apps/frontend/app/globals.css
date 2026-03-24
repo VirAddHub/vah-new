@@ -113,7 +113,6 @@ iframe {
     --color-ring: hsl(var(--ring));
 
     --border-radius: var(--radius);
-    --border-radius-xs: var(--radius-xs);
     --border-radius-sm: var(--radius-sm);
     --border-radius-md: var(--radius-md);
     --border-radius-lg: var(--radius-lg);
@@ -144,14 +143,6 @@ iframe {
 
         /* Subtle section breaks for depth */
         --section-alt: 210 5% 98%;
-        /* Very light neutral for feature bands */
-
-        /* Dual-tone color system */
-        --color-primary: #20603A;
-        --color-accent: #166534;
-        --color-background: #F6F6F7;
-        --color-foreground: #212325;
-        --color-muted: #6B7280;
 
         /* VAH Brand Green #20603A */
         --primary: 144 50% 25%;
@@ -186,81 +177,6 @@ iframe {
         --accent-700: 145 50% 30%;
         --accent-800: 145 50% 20%;
         --accent-900: 145 50% 15%;
-
-        /* Accent color utilities */
-        .bg-accent {
-            background-color: hsl(var(--accent));
-        }
-
-        .text-accent {
-            color: hsl(var(--accent));
-        }
-
-        .border-accent {
-            border-color: hsl(var(--accent));
-        }
-
-        .hover\:bg-accent:hover {
-            background-color: hsl(var(--accent));
-        }
-
-        .hover\:text-accent:hover {
-            color: hsl(var(--accent));
-        }
-
-        .hover\:border-accent:hover {
-            border-color: hsl(var(--accent));
-        }
-
-        /* Accent scale utilities */
-        .bg-accent-50 {
-            background-color: hsl(var(--accent-50));
-        }
-
-        .bg-accent-200 {
-            background-color: hsl(var(--accent-200));
-        }
-
-        .bg-accent-700 {
-            background-color: hsl(var(--accent-700));
-        }
-
-        .text-accent-50 {
-            color: hsl(var(--accent-50));
-        }
-
-        .text-accent-200 {
-            color: hsl(var(--accent-200));
-        }
-
-        .text-accent-700 {
-            color: hsl(var(--accent-700));
-        }
-
-        .border-accent-50 {
-            border-color: hsl(var(--accent-50));
-        }
-
-        .border-accent-200 {
-            border-color: hsl(var(--accent-200));
-        }
-
-        .border-accent-700 {
-            border-color: hsl(var(--accent-700));
-        }
-
-        /* Trust badge styling */
-        .bg-trust-badge {
-            background-color: hsl(var(--accent-50));
-        }
-
-        .text-trust-badge {
-            color: hsl(var(--accent-700));
-        }
-
-        .border-trust-badge {
-            border-color: hsl(var(--accent-200));
-        }
 
         /* Success/accent button styling */
         .btn-accent {
@@ -313,85 +229,26 @@ iframe {
         --chart-4: 0 0% 64%;
         --chart-5: 0 0% 83%;
 
-        /* radii */
-        --radius-xs: .25rem;
-        --radius-sm: .375rem;
-        --radius: .75rem;
-        --radius-md: .875rem;
-        --radius-lg: 1rem;
-        --radius-xl: 1.25rem;
-        --radius-2xl: 1.5rem;
+        /* radii — canonical scale (matches tailwind.config.js) */
+        --radius-sm: .25rem;
+        --radius: .5rem;
+        --radius-md: .5rem;
+        --radius-lg: .75rem;
+        --radius-xl: 1rem;
+        --radius-2xl: 1.25rem;
 
         /* Fluid typography variables removed - components use Tailwind scale */
 
-        /* shadows (quiet) */
+        /* shadows — canonical scale (matches tailwind.config.js) */
         --shadow-xs: 0 1px 2px rgba(2, 6, 23, .04);
         --shadow-sm: 0 1px 2px rgba(2, 6, 23, .06);
-        --shadow-md: 0 8px 26px rgba(2, 6, 23, .06);
-        --shadow-lg: 0 14px 40px rgba(2, 6, 23, .08);
-        --shadow-xl: 0 24px 60px rgba(2, 6, 23, .10);
-        --shadow-2xl: 0 36px 80px rgba(2, 6, 23, .12);
+        --shadow-md: 0 4px 12px rgba(2, 6, 23, .06);
+        --shadow-lg: 0 10px 24px rgba(2, 6, 23, .08);
 
         /* glass (optional) */
         --glass-background: rgba(255, 255, 255, .9);
         --glass-border: rgba(0, 0, 0, .06);
         --backdrop-blur: blur(12px);
-    }
-
-    /* DARK THEME (HSL triples) — apply via <html class="dark"> */
-    html.dark {
-        --background: 210 15% 8%;
-        /* Warmer dark background */
-        --foreground: 210 10% 90%;
-        /* Softer light text */
-
-        --card: 213 20% 10%;
-        /* Slightly lighter than background */
-        --card-foreground: 210 10% 90%;
-
-        --popover: 213 20% 10%;
-        --popover-foreground: 210 10% 90%;
-
-        --primary: 144 50% 25%;
-        --primary-foreground: 0 0% 100%;
-        --primary-hover: 144 50% 20%;
-
-        --secondary: 180 7% 62%;
-        --secondary-foreground: 0 0% 100%;
-
-        --muted: 216 15% 15%;
-        /* Better dark muted */
-        --muted-foreground: 210 8% 70%;
-        /* Softer muted text */
-
-        --accent: 216 20% 12%;
-        /* Better dark accent */
-        --accent-foreground: 210 10% 90%;
-        --accent-hover: 216 20% 15%;
-
-        --destructive: 0 70% 50%;
-        --destructive-foreground: 0 0% 100%;
-        --success: 145 60% 35%;
-        --success-foreground: 0 0% 100%;
-        --warning: 45 80% 50%;
-        --warning-foreground: 0 0% 100%;
-        --info: 210 70% 50%;
-        --info-foreground: 0 0% 100%;
-
-        --border: 211 20% 20%;
-        /* Better dark borders */
-        --border-light: 209 25% 15%;
-        --input: 209 20% 15%;
-        --input-background: 213 20% 10%;
-
-        --ring: 144 50% 25% / 0.28;
-        --selection: 144 50% 25% / 0.12;
-
-        --chart-1: 206 18% 92%;
-        --chart-2: 145 41% 22%;
-        --chart-3: 210 11% 64%;
-        --chart-4: 210 13% 45%;
-        --chart-5: 212 24% 21%;
     }
 
     /* Scoped typography */
@@ -643,11 +500,6 @@ iframe {
 
     .shadow-modern-lg {
         box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
-
-    /* Premium focus states for white background */
-    .focus-ring {
-        @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
     }
 
     /* Section band using your --section-alt */

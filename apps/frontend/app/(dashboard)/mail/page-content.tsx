@@ -401,10 +401,8 @@ export default function MailInboxPage() {
     // Ensures date is always correct by using UTC to avoid timezone issues
     const formatDate = (dateValue: string | number | undefined): string => {
         if (dateValue === undefined || dateValue === null) return '';
-        
         try {
             let date: Date;
-            
             // Handle received_at_ms (number in milliseconds)
             if (typeof dateValue === 'number') {
                 // received_at_ms is always in milliseconds (BIGINT from backend)
@@ -424,20 +422,16 @@ export default function MailInboxPage() {
             } else {
                 return '';
             }
-            
             if (isNaN(date.getTime())) return '';
-            
             // Use UTC methods to ensure date doesn't change based on timezone
             // Get current year to decide if we need to show year
             const currentYear = new Date().getFullYear();
             const dateYear = date.getUTCFullYear();
             const dateDay = date.getUTCDate();
             const dateMonth = date.getUTCMonth();
-            
             // Format: "9 Feb" if same year, "9 Feb 2024" if different year
             const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             const monthName = monthNames[dateMonth];
-            
             if (dateYear === currentYear) {
                 return `${dateDay} ${monthName}`;
             } else {
@@ -1217,7 +1211,6 @@ export default function MailInboxPage() {
                                                                         size="sm"
                                                                         onClick={(e) => handleUnarchive(item, e)}
                                                                         className="h-9 px-3 text-sm text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F9]"
-                                                                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                                                     >
                                                                         <ArchiveRestore className="h-4 w-4 mr-1.5" />
                                                                         Unarchive
@@ -1228,13 +1221,12 @@ export default function MailInboxPage() {
                                                                         size="sm"
                                                                         onClick={(e) => handleArchive(item, e)}
                                                                         className="h-9 px-3 text-sm text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F9]"
-                                                                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                                                     >
                                                                         <Archive className="h-4 w-4 mr-1.5" />
                                                                         Archive
                                                                     </Button>
                                                                 )}
-                                                                <span className="text-xs text-[#999999] whitespace-nowrap" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                                                <span className="text-xs text-[#999999] whitespace-nowrap">
                                                                     {date}
                                                                 </span>
                                                             </div>
@@ -1383,7 +1375,7 @@ export default function MailInboxPage() {
             <Dialog open={showManageTagsModal} onOpenChange={setShowManageTagsModal}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                        <DialogTitle style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                        <DialogTitle>
                             Manage Tags
                         </DialogTitle>
                     </DialogHeader>
@@ -1392,14 +1384,14 @@ export default function MailInboxPage() {
                         /* Action Selection */
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                                <Label style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                <Label>
                                     Select Tag
                                 </Label>
                                 <Select
                                     value={selectedTagForManage || ''}
                                     onValueChange={(value) => setSelectedTagForManage(value)}
                                 >
-                                    <SelectTrigger style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                    <SelectTrigger>
                                         <SelectValue placeholder="Choose a tag to manage" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1424,7 +1416,6 @@ export default function MailInboxPage() {
                                                 setNewTagName(selectedTagForManage);
                                             }}
                                             className="flex-1"
-                                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                         >
                                             Rename Tag
                                         </Button>
@@ -1432,7 +1423,6 @@ export default function MailInboxPage() {
                                             onClick={() => setManageTagAction('merge')}
                                             variant="outline"
                                             className="flex-1"
-                                            style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                         >
                                             Merge Tag
                                         </Button>
@@ -1441,7 +1431,6 @@ export default function MailInboxPage() {
                                         onClick={() => setManageTagAction('delete')}
                                         variant="destructive"
                                         className="w-full"
-                                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                     >
                                         Delete Tag
                                     </Button>
@@ -1452,14 +1441,13 @@ export default function MailInboxPage() {
                         /* Rename Tag */
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                                <Label style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                <Label>
                                     New Tag Name
                                 </Label>
                                 <Input
                                     value={newTagName}
                                     onChange={(e) => setNewTagName(e.target.value)}
                                     placeholder="Enter new tag name"
-                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                 />
                             </div>
                             <DialogFooter>
@@ -1469,14 +1457,12 @@ export default function MailInboxPage() {
                                         setManageTagAction(null);
                                         setNewTagName('');
                                     }}
-                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                 >
                                     Cancel
                                 </Button>
                                 <Button
                                     onClick={handleTagRename}
                                     disabled={!newTagName.trim()}
-                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                 >
                                     Rename
                                 </Button>
@@ -1486,14 +1472,14 @@ export default function MailInboxPage() {
                         /* Merge Tag */
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                                <Label style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                <Label>
                                     Merge into Tag
                                 </Label>
                                 <Select
                                     value={mergeTargetTag || ''}
                                     onValueChange={(value) => setMergeTargetTag(value)}
                                 >
-                                    <SelectTrigger style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                    <SelectTrigger>
                                         <SelectValue placeholder="Choose target tag" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1509,7 +1495,7 @@ export default function MailInboxPage() {
                                             ))}
                                     </SelectContent>
                                 </Select>
-                                <p className="text-xs text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                <p className="text-xs text-[#666666]">
                                     All items with "{getTagLabel(selectedTagForManage)}" will be moved to the selected tag.
                                 </p>
                             </div>
@@ -1520,14 +1506,12 @@ export default function MailInboxPage() {
                                         setManageTagAction(null);
                                         setMergeTargetTag(null);
                                     }}
-                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                 >
                                     Cancel
                                 </Button>
                                 <Button
                                     onClick={handleTagMerge}
                                     disabled={!mergeTargetTag}
-                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                 >
                                     Merge
                                 </Button>
@@ -1537,11 +1521,11 @@ export default function MailInboxPage() {
                         /* Delete Tag Confirmation */
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
-                                <p className="text-sm text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                <p className="text-sm text-[#666666]">
                                     This will remove the tag <strong>"{getTagLabel(selectedTagForManage)}"</strong> from all active mail items.
                                     Archived mail is unaffected.
                                 </p>
-                                <p className="text-sm font-medium text-destructive" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                                <p className="text-sm font-medium text-destructive">
                                     This action cannot be undone.
                                 </p>
                             </div>
@@ -1551,14 +1535,12 @@ export default function MailInboxPage() {
                                     onClick={() => {
                                         setManageTagAction(null);
                                     }}
-                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                 >
                                     Cancel
                                 </Button>
                                 <Button
                                     onClick={handleTagDelete}
                                     variant="destructive"
-                                    style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
                                 >
                                     Delete Tag
                                 </Button>

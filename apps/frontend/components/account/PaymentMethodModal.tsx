@@ -120,14 +120,13 @@ export function PaymentMethodModal({
       }}
     >
       <DialogContent
-        className="w-full max-w-[480px] sm:max-w-[520px] rounded-t-2xl sm:rounded-2xl px-6 py-6 sm:px-8 sm:py-7 gap-4 sm:gap-5 bg-white"
-        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+        className="w-full max-w-[480px] sm:max-w-[520px] rounded-t-2xl sm:rounded-2xl px-6 py-6 sm:px-8 sm:py-7 gap-4 sm:gap-5 bg-card"
       >
         <DialogHeader className="space-y-2 text-left">
-          <DialogTitle className="text-[20px] sm:text-[22px] font-semibold text-[#111827]">
+          <DialogTitle className="text-h3 text-foreground">
             {title}
           </DialogTitle>
-          <DialogDescription className="text-[13px] sm:text-[14px] text-[#6B7280]">
+          <DialogDescription className="text-body-sm text-muted-foreground">
             Choose how you’d like to pay for your VirtualAddressHub
             subscription. You’ll stay inside your dashboard while we securely
             update your payment details.
@@ -142,19 +141,19 @@ export function PaymentMethodModal({
               onClick={() => setSelectedMethod('card')}
               className={cn(
                 'flex flex-col items-start gap-1 rounded-xl border px-3.5 py-3 text-left transition-colors',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#206039]/70',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/70',
                 selectedMethod === 'card'
-                  ? 'border-[#206039] bg-[#F0FDF4]'
-                  : 'border-[#E5E7EB] hover:border-[#D1D5DB] bg-white'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-border bg-card'
               )}
             >
               <div className="flex items-center gap-1.5">
-                <CreditCard className="h-4 w-4 text-[#206039]" />
-                <span className="text-[13px] font-medium text-[#111827]">
+                <CreditCard className="h-4 w-4 text-primary" />
+                <span className="text-body-sm font-medium text-foreground">
                   Card
                 </span>
               </div>
-              <p className="text-[11px] text-[#6B7280]">
+              <p className="text-caption text-muted-foreground">
                 Visa, Mastercard, Amex and more.
               </p>
             </button>
@@ -164,21 +163,21 @@ export function PaymentMethodModal({
               onClick={() => setSelectedMethod('direct_debit')}
               className={cn(
                 'flex flex-col items-start gap-1 rounded-xl border px-3.5 py-3 text-left transition-colors',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#206039]/70',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/70',
                 selectedMethod === 'direct_debit'
-                  ? 'border-[#206039] bg-[#F0FDF4]'
-                  : 'border-[#E5E7EB] hover:border-[#D1D5DB] bg-white'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-border bg-card'
               )}
             >
               <div className="flex items-center gap-1.5">
-                <Banknote className="h-4 w-4 text-[#206039]" />
-                <span className="text-[13px] font-medium text-[#111827]">
+                <Banknote className="h-4 w-4 text-primary" />
+                <span className="text-body-sm font-medium text-foreground">
                   Direct Debit
                 </span>
               </div>
-              <p className="text-[11px] text-[#6B7280]">
+              <p className="text-caption text-muted-foreground">
                 Secure UK bank transfer via our provider.{' '}
-                <span className="font-medium text-[#111827]">
+                <span className="font-medium text-foreground">
                   Card updates are available now; Direct Debit coming soon.
                 </span>
               </p>
@@ -186,15 +185,15 @@ export function PaymentMethodModal({
           </div>
 
           {/* Trust / security copy */}
-          <div className="flex items-start gap-2 rounded-xl bg-[#F9FAFB] px-3.5 py-3">
+          <div className="flex items-start gap-2 rounded-xl bg-muted px-3.5 py-3">
             <div className="mt-[2px]">
-              <ShieldCheck className="h-4 w-4 text-[#206039]" />
+              <ShieldCheck className="h-4 w-4 text-primary" />
             </div>
             <div className="space-y-1">
-              <p className="text-[12px] font-medium text-[#111827]">
+              <p className="text-caption font-medium text-foreground">
                 Bank‑grade security
               </p>
-              <p className="text-[11px] text-[#6B7280]">
+              <p className="text-caption text-muted-foreground">
                 Payments are processed securely by our PCI‑compliant partners.
                 VirtualAddressHub never sees or stores your full card or bank
                 details.
@@ -202,7 +201,7 @@ export function PaymentMethodModal({
             </div>
           </div>
           {stripeError && (
-            <div className="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-700">
+            <div className="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-caption text-red-700">
               {stripeError}
             </div>
           )}
@@ -241,7 +240,7 @@ export function PaymentMethodModal({
             <Button
               type="button"
               disabled
-              className="bg-[#206039] hover:bg-[#206039]/90 px-4 opacity-60 cursor-not-allowed"
+              className="px-4 opacity-60 cursor-not-allowed"
             >
               {primaryCtaLabel}
             </Button>
@@ -352,7 +351,7 @@ function CardPaymentElement({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 mt-3">
-      <div className="rounded-lg border border-[#E5E7EB] p-3.5">
+      <div className="rounded-lg border border-border p-3.5">
         <PaymentElement
           options={{
             layout: 'tabs',
@@ -362,10 +361,10 @@ function CardPaymentElement({
       <Button
         type="submit"
         disabled={submitting}
-        className="w-full bg-[#206039] hover:bg-[#206039]/90"
+        className="w-full"
       >
         {submitting && (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin text-white" />
+          <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary-foreground" />
         )}
         {buttonLabel}
       </Button>

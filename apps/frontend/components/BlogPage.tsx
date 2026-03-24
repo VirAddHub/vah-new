@@ -174,7 +174,6 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                                 type="text"
                                 placeholder="Search articles…"
                                 className="flex-1 bg-transparent border-none outline-none text-base text-[#ADADAD] placeholder:text-[#ADADAD]"
-                                style={{ fontFamily: 'Poppins' }}
                             />
                             <div className="w-12 h-12 bg-[#206039] rounded-[40px] flex items-center justify-center cursor-pointer">
                                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -245,18 +244,18 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                                             {/* Category Tags */}
                                             <div className="flex items-center gap-2">
                                                 <div className="bg-[#F9F9F9] rounded-[22px] px-[10px] py-0 flex items-center justify-center h-[34px]">
-                                                    <span className="text-xs text-[#666666] leading-[1.4]" style={{ fontFamily: 'Poppins' }}>
+                                                    <span className="text-xs text-[#666666] leading-[1.4]">
                                                         {post.category || 'Success Stories'}
                                                     </span>
                                                 </div>
                                             </div>
                                             {/* Title */}
-                                            <h3 className="text-2xl font-medium text-[#0F1D07] leading-[1.4] line-clamp-2" style={{ fontFamily: 'Poppins' }}>
+                                            <h3 className="text-2xl font-medium text-[#0F1D07] leading-[1.4] line-clamp-2">
                                                 {post.title || 'Untitled post'}
                                             </h3>
                                             {/* Description */}
                                             {post.excerpt ? (
-                                                <p className="text-lg text-[#666666] leading-[1.4] line-clamp-3" style={{ fontFamily: 'Poppins' }}>
+                                                <p className="text-lg text-[#666666] leading-[1.4] line-clamp-3">
                                                     {post.excerpt}
                                                 </p>
                                             ) : null}

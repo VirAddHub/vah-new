@@ -102,30 +102,27 @@ export default function AccountBillingPage() {
     }, [invoicesRaw]);
 
     return (
-        <div className="w-full" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
-            {/* Page Header */}
+        <div className="w-full">
             <div className="mb-5 sm:mb-6 md:mb-8">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[42px] font-medium leading-tight text-[#1A1A1A] mb-2 sm:mb-4" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                <h1 className="text-h1 text-foreground mb-2 sm:mb-4">
                     Billing
                 </h1>
-                <p className="text-sm sm:text-base md:text-[18px] font-normal leading-[1.4] text-[#666666]" style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}>
+                <p className="text-body-sm sm:text-body md:text-body-lg text-muted-foreground">
                     Manage your subscription, payment method, and invoices
                 </p>
             </div>
 
             <Tabs defaultValue="payment" className="w-full min-w-0">
-                <TabsList className="mb-4 sm:mb-6 bg-transparent border-b border-[#E5E7EB] rounded-none p-0 h-auto w-full overflow-x-auto">
+                <TabsList className="mb-4 sm:mb-6 bg-transparent border-b border-border rounded-none p-0 h-auto w-full overflow-x-auto">
                     <TabsTrigger
                         value="payment"
-                        className="px-4 sm:px-6 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-[#206039] data-[state=active]:text-[#024E40] text-[#666666] font-normal data-[state=active]:font-medium text-sm sm:text-base shrink-0"
-                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                        className="px-4 sm:px-6 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-muted-foreground font-normal data-[state=active]:font-medium text-body-sm sm:text-body shrink-0"
                     >
                         Payment Details
                     </TabsTrigger>
                     <TabsTrigger
                         value="invoices"
-                        className="px-4 sm:px-6 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-[#206039] data-[state=active]:text-[#024E40] text-[#666666] font-normal data-[state=active]:font-medium text-sm sm:text-base shrink-0"
-                        style={{ fontFamily: 'var(--font-poppins), Poppins, sans-serif' }}
+                        className="px-4 sm:px-6 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-muted-foreground font-normal data-[state=active]:font-medium text-body-sm sm:text-body shrink-0"
                     >
                         Invoices
                     </TabsTrigger>

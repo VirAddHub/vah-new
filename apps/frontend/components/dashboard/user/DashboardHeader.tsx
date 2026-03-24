@@ -8,7 +8,7 @@ import { VAHLogo } from '@/components/VAHLogo';
 /**
  * Premium Dashboard Header
  * 
- * Design principles from design-system.ts:
+ * Design principles:
  * - Clean, minimal header (64px height)
  * - Subtle border, no heavy shadows
  * - Consistent spacing (16px/24px)

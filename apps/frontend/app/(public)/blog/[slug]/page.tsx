@@ -209,9 +209,6 @@ export default async function BlogPostPage({
                     {hasHtml ? (
                       <article
                         className="prose prose-lg max-w-none"
-                        style={{
-                          fontFamily: 'var(--font-poppins), Poppins, sans-serif',
-                        }}
                         dangerouslySetInnerHTML={{ 
                           __html: (post.html as string).replace(
                             /<h2/g, 
@@ -232,9 +229,6 @@ export default async function BlogPostPage({
                     ) : (
                       <article 
                         className="prose prose-lg max-w-none"
-                        style={{
-                          fontFamily: 'var(--font-poppins), Poppins, sans-serif',
-                        }}
                       >
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
