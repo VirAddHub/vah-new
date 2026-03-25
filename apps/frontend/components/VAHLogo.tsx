@@ -64,17 +64,17 @@ export function VAHLogo({
         });
     }, [size, showText]);
 
-    const handleClick = (e: React.MouseEvent) => {
+    const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
         logClientEvent("vah_logo_click", {
             size,
             showText,
             source: "vah_logo",
         });
 
-        // If onNavigate is provided, use custom navigation instead of href
+        // Custom navigation (SPA / scroll) — keep real href for semantics & middle-click to /
         if (onNavigate) {
             e.preventDefault();
-            onNavigate('home');
+            onNavigate("home");
         }
     };
 
@@ -98,13 +98,13 @@ export function VAHLogo({
                     height={logoDimensions.height}
                     className={cn(
                         "block object-contain transition-opacity duration-200 group-hover:opacity-90",
-                        (size === "lg" || size === "xl") && "min-h-[50px] min-w-[200px]",
+                        size === "xl" && "min-h-[50px] min-w-[200px]",
                         imgClassName
                     )}
                     style={{
                         height: "auto",
                         maxHeight: "100%",
-                        ...((size === "lg" || size === "xl") && { minWidth: 200, minHeight: 50 }),
+                        ...(size === "xl" && { minWidth: 200, minHeight: 50 }),
                     }}
                     onError={() => setImgFailed(true)}
                     fetchPriority="high"
@@ -112,19 +112,6 @@ export function VAHLogo({
             )}
         </span>
     );
-
-    if (onNavigate) {
-        return (
-            <button
-                onClick={handleClick}
-                className={cn(logoVariants({ size }), className)}
-                aria-label={`${fullName} homepage`}
-                type="button"
-            >
-                {inner}
-            </button>
-        );
-    }
 
     return (
         <Link

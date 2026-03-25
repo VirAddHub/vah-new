@@ -277,7 +277,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         ].map((t) => (
                                             <li key={t} className="flex items-center gap-2">
                                                 <Check className="h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4 text-primary" strokeWidth={3} />
-                                                <span className="text-body-sm leading-[1.4] text-primary-foreground/90 sm:text-body">{t}</span>
+                                                <span className="text-body-sm leading-[1.4] text-primary-foreground sm:text-body">{t}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -296,7 +296,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         ].map((t) => (
                                             <li key={t} className="flex items-start gap-2">
                                                 <Check className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 sm:h-4 sm:w-4 text-primary" strokeWidth={3} />
-                                                <span className="text-body-sm leading-[1.4] text-primary-foreground/90 sm:text-body">{t}</span>
+                                                <span className="text-body-sm leading-[1.4] text-primary-foreground sm:text-body">{t}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -428,13 +428,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     <h2 className="text-h2 font-semibold leading-tight tracking-tight sm:text-h1 lg:text-display">
                                         Your Central London business address
                                     </h2>
-                                    <p className="mt-4 text-body text-primary-foreground/90 sm:text-body-lg">
+                                    <p className="mt-4 text-body text-primary-foreground sm:text-body-lg">
                                         Use one trusted address for company registration, business mail, and everyday correspondence.
                                     </p>
                                     <div className="mt-5 flex flex-wrap gap-2.5 lg:mt-6">
-                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-background/10 px-3 py-1.5 text-body-sm text-primary-foreground/95">ICO Registration: ZA123456</span>
-                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-background/10 px-3 py-1.5 text-body-sm text-primary-foreground/95">HMRC AML Supervised</span>
-                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-background/10 px-3 py-1.5 text-body-sm text-primary-foreground/95 tabular-nums">{formatMonthly(monthlyPrice)} · Cancel anytime</span>
+                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-background/10 px-3 py-1.5 text-body-sm text-primary-foreground">ICO Registration: ZA123456</span>
+                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-background/10 px-3 py-1.5 text-body-sm text-primary-foreground">HMRC AML Supervised</span>
+                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-background/10 px-3 py-1.5 text-body-sm text-primary-foreground tabular-nums">{formatMonthly(monthlyPrice)} · Cancel anytime</span>
                                     </div>
                                 </div>
 

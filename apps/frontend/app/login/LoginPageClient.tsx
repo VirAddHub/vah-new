@@ -188,11 +188,16 @@ export function LoginPageClient() {
     <div className="min-h-screen bg-muted flex flex-col">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 flex flex-col flex-1">
         {/* Header row: logo left, contact button right */}
-        <div className="flex items-center justify-between gap-4 pt-4 sm:pt-6 pb-2 z-10">
-          <VAHLogo size="sm" href="/" className="shrink min-w-0" />
+        <div className="flex items-center justify-between gap-4 px-0.5 pt-5 sm:pt-7 pb-2 sm:pb-3 z-10">
+          <VAHLogo
+            size="lg"
+            href="/"
+            className="shrink-0 min-w-0 flex items-center [&_[data-vah-logo]]:min-h-0 [&_[data-vah-logo]]:min-w-0"
+            imgClassName="h-9 w-auto object-left sm:h-10 md:h-11 lg:h-[2.875rem] max-w-[min(58vw,200px)] sm:max-w-[210px] md:max-w-[228px] lg:max-w-[248px]"
+          />
           <Link
             href="/contact"
-            className="shrink-0 inline-flex items-center justify-center rounded-lg border border-border bg-card px-4 py-2 text-body-sm font-medium text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground transition-colors"
+            className="shrink-0 self-center inline-flex items-center justify-center rounded-lg border border-border bg-card px-4 py-2.5 text-body-sm font-medium text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground transition-colors"
           >
             Contact us
           </Link>

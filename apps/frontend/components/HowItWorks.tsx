@@ -72,26 +72,33 @@ export default function HowItWorks() {
                     </div>
                 </div>
 
-                {/* Desktop: original layout (lg+) */}
+                {/* Desktop (lg+): SVG connector only spans the icon row; text sits below so the curve is not stretched. */}
                 <div className="relative hidden lg:block">
+                    {/*
+                      viewBox width 1000 matches a 3× column + 2× gap mental model:
+                      centers for equal 1fr columns with gap-12 (48px): ~15.3%, 50%, ~84.7% at typical widths.
+                      Knots (153, 500, 847) ≈ those centers; y=40 is the midline of h-20 icons.
+                      Icons stack above the stroke (z-10) so the dotted line reads in the gaps only.
+                    */}
                     <svg
                         aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 -translate-y-2 h-full w-full text-primary"
-                        viewBox="0 0 1000 200"
+                        className="pointer-events-none absolute left-0 right-0 top-0 z-0 h-20 w-full text-primary"
+                        viewBox="0 0 1000 80"
                         preserveAspectRatio="none"
                     >
                         <path
-                            d="M 166 80 C 320 10 380 10 500 80 C 620 150 680 150 834 80"
+                            d="M 153 40 C 268 22 368 22 500 40 C 632 58 732 58 847 40"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth="2"
                             strokeDasharray="2 8"
+                            strokeLinecap="round"
                         />
                     </svg>
 
-                    <div className="grid grid-cols-3 gap-12 text-center">
-                        {steps.map((step, index) => (
-                            <div key={step.k} className="relative z-10 flex flex-col items-center">
+                    <div className="relative z-10 grid grid-cols-3 gap-12 text-center">
+                        {steps.map((step) => (
+                            <div key={step.k} className="flex flex-col items-center">
                                 <div className="flex h-20 w-20 items-center justify-center text-primary rounded-full bg-primary/5 border border-primary/20 shrink-0">
                                     <step.LucideIcon strokeWidth={1.5} className="h-10 w-10 text-primary" />
                                 </div>
