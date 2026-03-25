@@ -64,11 +64,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </span> Address
                             </h1>
 
-                            <p className="mt-6 text-body-lg lg:text-h4 text-muted-foreground leading-relaxed">
+                            <p className="mt-6 text-body-lg lg:text-h4 text-foreground leading-relaxed">
                                 A compliant alternative to a physical office.
                             </p>
 
-                            <p className="mt-4 text-body text-muted-foreground leading-relaxed">
+                            <p className="mt-4 text-body text-foreground leading-relaxed">
                                 Use one trusted address for <strong className="font-semibold text-foreground">Companies House</strong>, <strong className="font-semibold text-foreground">HMRC</strong>, and <strong className="font-semibold text-foreground">official business mail</strong> without using your home address.
                             </p>
 
@@ -257,13 +257,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     <div className="flex justify-center">
                         {/* Single card that switches based on toggle */}
                         {billing === "monthly" ? (
-                            <div className="w-full max-w-[420px] rounded-3xl border border-primary/20 bg-gradient-to-b from-secondary to-secondary/90 p-5 shadow-lg sm:p-6 flex flex-col text-primary-foreground">
+                            <div className="w-full max-w-[420px] rounded-3xl border border-primary/20 bg-gradient-to-b from-secondary to-secondary/90 p-5 shadow-lg sm:p-6 flex flex-col text-foreground">
                                 <div className="text-h2 font-semibold tabular-nums min-w-[110px] sm:text-h1 lg:text-display">
                                     {formatMonthly(monthlyPrice)}
                                 </div>
 
                                 <div className="mt-5">
-                                    <p className="text-body font-semibold text-primary-foreground sm:text-body-lg">
+                                    <p className="text-body font-semibold text-foreground sm:text-body-lg">
                                         Everything below is included
                                     </p>
                                     <ul className="mt-3 space-y-2 sm:mt-4 sm:space-y-2.5" aria-label="Included features">
@@ -277,7 +277,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         ].map((t) => (
                                             <li key={t} className="flex items-center gap-2">
                                                 <Check className="h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4 text-primary" strokeWidth={3} />
-                                                <span className="text-body-sm leading-[1.4] text-primary-foreground sm:text-body">{t}</span>
+                                                <span className="text-body-sm leading-[1.4] text-foreground sm:text-body">{t}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -286,7 +286,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <div className="my-5 h-px w-full bg-background/20 sm:my-6" />
 
                                 <div>
-                                    <p className="text-body-sm font-semibold text-primary-foreground sm:text-body">
+                                    <p className="text-body-sm font-semibold text-foreground sm:text-body">
                                         Mail Forwarding rules
                                     </p>
                                     <ul className="mt-2.5 space-y-2 sm:mt-3 sm:space-y-2.5" aria-label="Mail forwarding rules">
@@ -296,7 +296,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         ].map((t) => (
                                             <li key={t} className="flex items-start gap-2">
                                                 <Check className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 sm:h-4 sm:w-4 text-primary" strokeWidth={3} />
-                                                <span className="text-body-sm leading-[1.4] text-primary-foreground sm:text-body">{t}</span>
+                                                <span className="text-body-sm leading-[1.4] text-foreground sm:text-body">{t}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -305,7 +305,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <div className="mt-6">
                                     <Button
                                         onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                        className="h-11 w-full rounded-full bg-card text-secondary hover:bg-background/95 text-body-sm font-medium focus-visible:ring-white/50"
+                                        className="h-11 w-full rounded-full bg-card text-primary hover:bg-background/95 text-body-sm font-medium focus-visible:ring-white/50"
                                     >
                                         Sign Up
                                     </Button>
@@ -417,7 +417,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* Final CTA — signup + pricing */}
             <section className="py-12 lg:py-20 bg-background">
                 <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-                    <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-b from-secondary to-secondary/90 text-primary-foreground shadow-lg">
+                    <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-b from-secondary to-secondary/90 text-foreground shadow-lg">
                         <div className="relative px-6 py-8 sm:px-8 sm:py-10 lg:px-12 lg:py-12">
                             <span aria-hidden="true" className="pointer-events-none absolute -top-20 -right-20 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
                             <span aria-hidden="true" className="pointer-events-none absolute -bottom-16 -left-16 h-32 w-32 rounded-full bg-background/10 blur-2xl" />
@@ -425,16 +425,16 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
                                 {/* Left: headline + supporting text + trust pills */}
                                 <div className="lg:max-w-3xl">
-                                    <h2 className="text-h2 font-semibold leading-tight tracking-tight sm:text-h1 lg:text-display">
+                                    <h2 className="text-h2 font-semibold leading-tight tracking-tight text-foreground sm:text-h1 lg:text-display">
                                         Your <span className="font-accent italic">Central London</span> business address
                                     </h2>
-                                    <p className="mt-4 text-body text-primary-foreground sm:text-body-lg">
+                                    <p className="mt-4 text-body text-foreground sm:text-body-lg">
                                         Use one trusted address for company registration, business mail, and everyday correspondence.
                                     </p>
                                     <div className="mt-5 flex flex-wrap gap-2.5 lg:mt-6">
-                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-background/10 px-3 py-1.5 text-body-sm text-primary-foreground">ICO Registration: ZA123456</span>
-                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-background/10 px-3 py-1.5 text-body-sm text-primary-foreground">HMRC AML Supervised</span>
-                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-background/10 px-3 py-1.5 text-body-sm text-primary-foreground tabular-nums">{formatMonthly(monthlyPrice)} · Cancel anytime</span>
+                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-background/10 px-3 py-1.5 text-body-sm text-foreground">ICO Registration: ZA123456</span>
+                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-background/10 px-3 py-1.5 text-body-sm text-foreground">HMRC AML Supervised</span>
+                                        <span className="inline-flex items-center rounded-full border border-white/20 bg-background/10 px-3 py-1.5 text-body-sm text-foreground tabular-nums">{formatMonthly(monthlyPrice)} · Cancel anytime</span>
                                     </div>
                                 </div>
 
@@ -443,14 +443,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     <div className="mt-6 flex flex-col gap-3 sm:flex-row lg:mt-0 lg:flex-col lg:min-w-[220px]">
                                         <Button
                                             onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                            className="w-full bg-card text-secondary hover:bg-background/95 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary"
+                                            className="w-full bg-card text-primary hover:bg-background/95 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary"
                                         >
                                             Get started now
                                         </Button>
                                         <Button
                                             onClick={() => handleNavClick?.("pricing")}
                                             variant="outline"
-                                            className="w-full border-white/40 text-primary-foreground hover:bg-background/10 hover:text-primary-foreground focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary"
+                                            className="w-full border-white/40 text-foreground hover:bg-background/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-secondary"
                                         >
                                             View pricing
                                         </Button>
