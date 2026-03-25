@@ -59,7 +59,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                         <div className="lg:col-span-6 xl:col-span-6 lg:pr-10 text-left">
                             <h1 className="text-h1 lg:text-display font-semibold leading-tight text-foreground tracking-tight">
                                 Your <span className="relative inline-block">
-                                    Central London
+                                    <span className="font-accent italic">Central London</span>
                                     <span className="absolute bottom-0 left-0 w-full h-[3px] bg-primary rounded-full" aria-hidden="true"></span>
                                 </span> Address
                             </h1>
@@ -426,7 +426,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 {/* Left: headline + supporting text + trust pills */}
                                 <div className="lg:max-w-3xl">
                                     <h2 className="text-h2 font-semibold leading-tight tracking-tight sm:text-h1 lg:text-display">
-                                        Your Central London business address
+                                        Your <span className="font-accent italic">Central London</span> business address
                                     </h2>
                                     <p className="mt-4 text-body text-primary-foreground sm:text-body-lg">
                                         Use one trusted address for company registration, business mail, and everyday correspondence.

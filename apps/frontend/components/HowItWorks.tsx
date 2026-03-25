@@ -39,19 +39,13 @@ export default function HowItWorks() {
                 {/* Mobile: compact step list (< lg) — no number badges, no large icon bubbles */}
                 <div className="lg:hidden">
                     <div className="mx-auto max-w-md px-4">
-                        {steps.map((step, index) => {
+                        {steps.map((step) => {
                             const Icon = step.LucideIcon;
                             return (
                                 <div
                                     key={step.k}
                                     className="relative flex items-start gap-3 py-4"
                                 >
-                                    {index < steps.length - 1 && (
-                                        <span
-                                            aria-hidden="true"
-                                            className="absolute left-[18px] top-12 h-[calc(100%-2.5rem)] w-px bg-border"
-                                        />
-                                    )}
                                     <span
                                         aria-hidden="true"
                                         className="h-9 w-9 shrink-0 rounded-full border border-primary/20 bg-primary/5 flex items-center justify-center mt-0.5"
@@ -74,28 +68,6 @@ export default function HowItWorks() {
 
                 {/* Desktop (lg+): SVG connector only spans the icon row; text sits below so the curve is not stretched. */}
                 <div className="relative hidden lg:block">
-                    {/*
-                      viewBox width 1000 matches a 3× column + 2× gap mental model:
-                      centers for equal 1fr columns with gap-12 (48px): ~15.3%, 50%, ~84.7% at typical widths.
-                      Knots (153, 500, 847) ≈ those centers; y=40 is the midline of h-20 icons.
-                      Icons stack above the stroke (z-10) so the dotted line reads in the gaps only.
-                    */}
-                    <svg
-                        aria-hidden="true"
-                        className="pointer-events-none absolute left-0 right-0 top-0 z-0 h-20 w-full text-primary"
-                        viewBox="0 0 1000 80"
-                        preserveAspectRatio="none"
-                    >
-                        <path
-                            d="M 153 40 C 268 22 368 22 500 40 C 632 58 732 58 847 40"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeDasharray="2 8"
-                            strokeLinecap="round"
-                        />
-                    </svg>
-
                     <div className="relative z-10 grid grid-cols-3 gap-12 text-center">
                         {steps.map((step) => (
                             <div key={step.k} className="flex flex-col items-center">

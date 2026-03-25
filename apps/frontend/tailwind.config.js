@@ -22,6 +22,9 @@ module.exports = {
         extend: {
             fontFamily: {
                 sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                // Accent: italic Noto Serif only for a few highlighted words in headings.
+                // Include explicit fallback family per request.
+                accent: ['var(--font-accent)', '"Noto Serif"', 'serif'],
             },
             screens: {
                 xs: "360px",
