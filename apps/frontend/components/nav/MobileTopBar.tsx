@@ -61,7 +61,7 @@ export function MobileTopBar({
                     <div className="min-w-[44px]" />
                 )}
 
-                <h1 className="text-fluid-xl font-semibold truncate flex-1 text-center">
+                <h1 className="text-h4 font-semibold truncate flex-1 text-center">
                     {title}
                 </h1>
 

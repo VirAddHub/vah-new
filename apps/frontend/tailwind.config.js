@@ -43,7 +43,7 @@ module.exports = {
                 content: "72ch",
             },
             fontSize: {
-                // ── Canonical type scale (Batch 2) ──
+                // ── Canonical type scale ──
                 display: ["clamp(2rem, 5vw, 3.5rem)", { lineHeight: "1.1", fontWeight: "600", letterSpacing: "-0.025em" }],
                 h1: ["clamp(1.75rem, 4vw, 2.25rem)", { lineHeight: "1.2", fontWeight: "600", letterSpacing: "-0.02em" }],
                 h2: ["clamp(1.5rem, 3vw, 1.875rem)", { lineHeight: "1.3", fontWeight: "600", letterSpacing: "-0.015em" }],
@@ -54,13 +54,7 @@ module.exports = {
                 "body-sm": ["0.875rem", { lineHeight: "1.5", fontWeight: "400" }],
                 label: ["0.875rem", { lineHeight: "1.4", fontWeight: "500" }],
                 caption: ["0.75rem", { lineHeight: "1.4", fontWeight: "400", letterSpacing: "0.01em" }],
-                // ── Deprecated — remove after page-level migration ──
-                "fluid-sm": ["clamp(0.9rem, 0.85rem + 0.2vw, 1rem)", { lineHeight: "1.5" }],
-                "fluid-base": ["clamp(1rem, 0.95rem + 0.35vw, 1.125rem)", { lineHeight: "1.6" }],
-                "fluid-lg": ["clamp(1.125rem, 1.05rem + 0.5vw, 1.25rem)", { lineHeight: "1.6" }],
-                "fluid-xl": ["clamp(1.25rem, 1.1rem + 0.8vw, 1.5rem)", { lineHeight: "1.25" }],
-                "fluid-2xl": ["clamp(1.5rem, 1.25rem + 1vw, 1.875rem)", { lineHeight: "1.2" }],
-                "fluid-3xl": ["clamp(1.875rem, 1.5rem + 1.5vw, 2.25rem)", { lineHeight: "1.1" }],
+                legal: ["0.75rem", { lineHeight: "1.6", fontWeight: "400" }],
             },
             colors: {
                 border: "hsl(var(--border))",
@@ -104,6 +98,14 @@ module.exports = {
                     DEFAULT: "hsl(var(--success))",
                     foreground: "hsl(var(--success-foreground))",
                 },
+                warning: {
+                    DEFAULT: "hsl(var(--warning))",
+                    foreground: "hsl(var(--warning-foreground))",
+                },
+                info: {
+                    DEFAULT: "hsl(var(--info))",
+                    foreground: "hsl(var(--info-foreground))",
+                },
             },
             // ── Canonical radius scale (Batch 2) ──
             borderRadius: {
@@ -112,6 +114,7 @@ module.exports = {
                 lg: "0.75rem",
                 xl: "1rem",
                 "2xl": "1.25rem",
+                full: "9999px",
             },
             // ── Canonical shadow scale (Batch 2) ──
             boxShadow: {

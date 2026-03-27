@@ -169,7 +169,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                     </div>
                     {/* Search Bar - desktop/tablet only */}
                     <div className="hidden lg:flex justify-center mt-6">
-                        <div className="flex items-center gap-16 bg-muted rounded-full px-8 py-3.5 w-full max-w-[858px]">
+                        <div className="flex items-center gap-16 bg-muted rounded-full px-8 py-3.5 w-full max-w-2xl">
                             <input
                                 type="text"
                                 placeholder="Search articles…"
@@ -212,7 +212,7 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
             )}
 
             <div className="mx-auto max-w-6xl px-6 pb-14 sm:pb-16 lg:px-8">
-                <div className="max-w-[1280px] mx-auto">
+                <div className="mx-auto">
                     {/* Mobile Blog List (< lg) */}
                     {!loading && !error && gridPosts.length > 0 && (
                         <div className="lg:hidden mt-8 space-y-4">
@@ -228,11 +228,11 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                                 {gridPosts.map((post) => (
                                     <div
                                         key={post.id}
-                                        className="flex flex-col gap-[14px] w-full max-w-[395px] cursor-pointer"
+                                        className="flex flex-col gap-3.5 w-full cursor-pointer"
                                         onClick={() => onNavigate?.('blog-post', { slug: post.slug })}
                                     >
                                         {/* Image */}
-                                        <div className="relative w-full h-[238px] rounded-2xl overflow-hidden">
+                                        <div className="relative w-full aspect-[5/3] rounded-2xl overflow-hidden">
                                             <ImageWithFallback
                                                 src={post.imageUrl}
                                                 alt={post.title || "Blog post"}
@@ -240,10 +240,10 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                                             />
                                         </div>
                                         {/* Content */}
-                                        <div className="flex flex-col gap-[10px]">
+                                        <div className="flex flex-col gap-2.5">
                                             {/* Category Tags */}
                                             <div className="flex items-center gap-2">
-                                                <div className="bg-muted rounded-full px-2.5 py-0 flex items-center justify-center h-[34px]">
+                                                <div className="bg-muted rounded-full px-2.5 py-1 inline-flex items-center justify-center">
                                                     <span className="text-caption text-muted-foreground">
                                                         {post.category || 'Success Stories'}
                                                     </span>

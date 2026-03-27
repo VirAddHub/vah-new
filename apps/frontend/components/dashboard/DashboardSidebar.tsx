@@ -15,7 +15,7 @@ import {
     Settings,
     type LucideIcon
 } from 'lucide-react';
-import { clearToken } from "@/lib/token-manager";
+import { performLogout } from "@/lib/logout";
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
@@ -81,53 +81,9 @@ export function DashboardSidebar() {
     const { data: profileData } = useProfile();
     const profile = profileData?.data;
 
-    // Handle logout - use proper API endpoint
-    // Export this so DashboardHeader can use it
-    const handleLogout = async () => {
-        // Prevent multiple logout attempts
-        if ((handleLogout as any).__isLoggingOut) {
-            return;
-        }
-        (handleLogout as any).__isLoggingOut = true;
-
-        // Close mobile sidebar first (before async operations)
-        if (setIsMobileSidebarOpen) {
-            setIsMobileSidebarOpen(false);
-        }
-
-        try {
-            // Call logout API endpoint - backend will clear httpOnly cookies
-            await fetch('/api/bff/auth/logout', {
-                method: 'POST',
-                credentials: 'include',
-            });
-        } catch (error) {
-            console.error('Logout failed:', error);
-        } finally {
-            // Clear client-side tokens (localStorage + CSRF cookie)
-            clearToken();
-            // Clear all localStorage items related to auth
-            localStorage.removeItem('vah_jwt');
-            localStorage.removeItem('vah_user');
-            // Force clear cookies client-side as well
-            document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-            document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-            document.cookie = 'vah_role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-            document.cookie = 'vah_user=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-            document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-
-            window.stop();
-            try {
-                toast({ title: "You've been signed out", durationMs: 2000 });
-            } catch (_) {
-                // ignore so redirect always runs
-            }
-            // Always redirect to homepage (not login) after manual sign-out
-            setTimeout(() => {
-                window.location.href = '/';
-            }, 300);
-        }
-    };
+    const handleLogout = () => performLogout(
+        setIsMobileSidebarOpen ? () => setIsMobileSidebarOpen(false) : undefined
+    );
 
     useEffect(() => {
         const checkMobile = () => {

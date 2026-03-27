@@ -89,8 +89,8 @@ export function AboutPage() {
     return (
         <div className="min-h-screen bg-background">
             {/* Hero Section */}
-            <section className="section-mobile bg-gradient-to-b from-background to-muted/30">
-                <div className="container-mobile">
+            <section className="py-16 bg-gradient-to-b from-background to-muted/30">
+                <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
                         <h1 className="font-bold leading-tight text-display text-balance mb-6">
                             About <span className="text-gradient">VirtualAddressHub</span>
@@ -139,8 +139,8 @@ export function AboutPage() {
             </section>
 
             {/* Our Story */}
-            <section className="section-mobile">
-                <div className="container-mobile">
+            <section className="py-16">
+                <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                     <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
                         <div>
                             <h2 className="text-h2 font-bold mb-6">
@@ -166,7 +166,7 @@ export function AboutPage() {
                         </div>
 
                         <div className="relative">
-                            <div className="card-modern p-8">
+                            <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
                                 <ImageWithFallback
                                     src="/images/london_office.jpg"
                                     alt="Our London office location"
@@ -186,8 +186,8 @@ export function AboutPage() {
             </section>
 
             {/* Values */}
-            <section className="section-mobile bg-gradient-to-b from-muted/30 to-background">
-                <div className="container-mobile">
+            <section className="py-16 bg-gradient-to-b from-muted/30 to-background">
+                <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
                         <h2 className="text-h2 font-bold mb-6">
                             Our <span className="text-gradient">Values</span>
@@ -198,7 +198,7 @@ export function AboutPage() {
                     </div>
 
                     <div className="grid gap-8 md:grid-cols-3">
-                        <Card className="card p-8 text-center">
+                        <Card className="p-8 text-center">
                             <div className="w-16 h-16 bg-primary/10 rounded-2xl mx-auto mb-6 flex items-center justify-center">
                                 <Shield className="h-8 w-8 text-primary" />
                             </div>
@@ -208,7 +208,7 @@ export function AboutPage() {
                             </p>
                         </Card>
 
-                        <Card className="card p-8 text-center">
+                        <Card className="p-8 text-center">
                             <div className="w-16 h-16 bg-primary/10 rounded-2xl mx-auto mb-6 flex items-center justify-center">
                                 <Building2 className="h-8 w-8 text-primary" />
                             </div>
@@ -218,7 +218,7 @@ export function AboutPage() {
                             </p>
                         </Card>
 
-                        <Card className="card p-8 text-center">
+                        <Card className="p-8 text-center">
                             <div className="w-16 h-16 bg-primary/10 rounded-2xl mx-auto mb-6 flex items-center justify-center">
                                 <Clock className="h-8 w-8 text-primary" />
                             </div>
@@ -234,8 +234,8 @@ export function AboutPage() {
 
 
             {/* Contact Section */}
-            <section className="section-padding bg-gradient-to-b from-background to-muted/30">
-                <div className="container-modern">
+            <section className="py-16 bg-gradient-to-b from-background to-muted/30">
+                <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
                         <h2 className="text-h2 font-bold mb-6">
                             Get In <span className="text-gradient">Touch</span>
@@ -246,7 +246,7 @@ export function AboutPage() {
                     </div>
 
                     <div className="max-w-2xl mx-auto">
-                        <Card className="card-modern p-8">
+                        <Card className="rounded-xl border border-border bg-card p-8 shadow-sm">
                             {formSuccess ? (
                                 <div className="text-center py-8">
                                     <div className="w-16 h-16 bg-gradient-to-br from-success to-success/90 rounded-2xl mx-auto mb-4 flex items-center justify-center">
@@ -256,10 +256,7 @@ export function AboutPage() {
                                     <p className="text-muted-foreground mb-6">
                                         Thank you for reaching out. We'll get back to you within 24 hours.
                                     </p>
-                                    <Button
-                                        onClick={() => setFormSuccess(false)}
-                                        className="btn-primary"
-                                    >
+                                    <Button onClick={() => setFormSuccess(false)}>
                                         Send Another Message
                                     </Button>
                                 </div>
@@ -276,7 +273,7 @@ export function AboutPage() {
                                                 value={contactForm.name}
                                                 onChange={handleInputChange}
                                                 required
-                                                className="form-input"
+                                                className=""
                                                 placeholder="Your full name"
                                             />
                                         </div>
@@ -292,7 +289,7 @@ export function AboutPage() {
                                                 value={contactForm.email}
                                                 onChange={handleInputChange}
                                                 required
-                                                className="form-input"
+                                                className=""
                                                 placeholder="your@email.com"
                                             />
                                         </div>
@@ -308,7 +305,7 @@ export function AboutPage() {
                                                 name="company"
                                                 value={contactForm.company}
                                                 onChange={handleInputChange}
-                                                className="form-input"
+                                                className=""
                                                 placeholder="Your company name"
                                             />
                                         </div>
@@ -323,7 +320,7 @@ export function AboutPage() {
                                                 value={contactForm.subject}
                                                 onChange={handleInputChange}
                                                 required
-                                                className="form-input"
+                                                className=""
                                                 placeholder="What's this about?"
                                             />
                                         </div>
@@ -340,7 +337,7 @@ export function AboutPage() {
                                             onChange={handleInputChange}
                                             required
                                             rows={6}
-                                            className="form-input"
+                                            className=""
                                             placeholder="Tell us how we can help you..."
                                         />
                                     </div>
@@ -354,7 +351,7 @@ export function AboutPage() {
                                     <Button
                                         type="submit"
                                         disabled={formLoading}
-                                        className="w-full btn-primary"
+                                        className="w-full"
                                     >
                                         {formLoading ? (
                                             <>

@@ -4,10 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from "./ui/button";
 import { Menu, LogOut } from "lucide-react";
-import { clearToken } from "@/lib/token-manager";
 import { VAHLogo } from "./VAHLogo";
 import { useDashboardView } from "@/contexts/DashboardViewContext";
-import { useToast } from "@/components/ui/use-toast";
+import { performLogout } from "@/lib/logout";
 
 /**
  * Dashboard top header — LAYOUT CONTRACT (do not break):
@@ -26,7 +25,6 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
     const { isMobileSidebarOpen, setIsMobileSidebarOpen } = useDashboardView();
     const router = useRouter();
     const pathname = usePathname();
-    const { toast } = useToast();
     const hamburgerRef = useRef<HTMLButtonElement>(null);
     const prevIsOpenRef = useRef(isMobileSidebarOpen);
     const prevPathnameRef = useRef(pathname);
@@ -41,39 +39,7 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
         prevPathnameRef.current = pathname;
     }, [isMobileSidebarOpen, pathname]);
 
-    const handleLogout = async () => {
-        if ((handleLogout as any).__isLoggingOut) return;
-        (handleLogout as any).__isLoggingOut = true;
-
-        try {
-            await fetch('/api/bff/auth/logout', {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-            });
-        } catch (error) {
-            console.error('Logout API call failed:', error);
-        } finally {
-            clearToken();
-            localStorage.removeItem('vah_jwt');
-            localStorage.removeItem('vah_user');
-            document.cookie = 'vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-            document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-            document.cookie = 'vah_role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-            document.cookie = 'vah_user=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-            document.cookie = 'vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-            window.stop();
-            try {
-                toast({ title: "You've been signed out", durationMs: 2000 });
-            } catch (_) {
-                // ignore so redirect always runs
-            }
-            // Always redirect to homepage (not login) after manual sign-out
-            setTimeout(() => {
-                window.location.href = '/';
-            }, 300);
-        }
-    };
+    const handleLogout = () => performLogout();
 
     return (
         <header className="w-full shrink-0 border-b border-border/80 bg-card">

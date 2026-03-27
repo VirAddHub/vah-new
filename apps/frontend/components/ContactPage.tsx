@@ -258,10 +258,10 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 </div>
 
                                 {/* Submit Button */}
-                                <button
+                                <Button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-body font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60"
+                                    className="mt-2 w-full rounded-full"
                                 >
                                     {isSubmitting ? (
                                         <>
@@ -271,7 +271,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                     ) : (
                                         'Send enquiry'
                                     )}
-                                </button>
+                                </Button>
 
                                 {/* Privacy Text */}
                                 <p className="mt-4 text-body-sm text-muted-foreground">
@@ -290,13 +290,14 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 <p className="text-body-sm text-muted-foreground break-words">
                                     Dedicated WhatsApp Business line
                                 </p>
-                                <button
+                                <Button
                                     type="button"
+                                    variant="outline"
+                                    className="rounded-full"
                                     onClick={() => window.open("https://wa.me/447000000000", "_blank")}
-                                    className="inline-flex w-full max-w-[214px] items-center justify-center rounded-full border border-primary bg-transparent px-4 py-3 text-body font-medium text-primary hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                                 >
                                     Chat on WhatsApp
-                                </button>
+                                </Button>
                             </div>
                         </div>
 
@@ -307,13 +308,14 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 <p className="break-words text-body-sm text-muted-foreground">
                                     support@virtualaddresshub.co.uk
                                 </p>
-                                <button
+                                <Button
                                     type="button"
+                                    variant="outline"
+                                    className="rounded-full"
                                     onClick={() => (window.location.href = "mailto:support@virtualaddresshub.co.uk")}
-                                    className="inline-flex w-full max-w-[214px] items-center justify-center rounded-full border border-primary bg-transparent px-4 py-3 text-body font-medium text-primary hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                                 >
                                     Send an email
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>

@@ -81,9 +81,13 @@ iframe {
 
 /* Grid utilities removed - use Tailwind grid classes in components */
 
-/* Avoid fixed heights; let content grow */
-.card {
-    min-height: 0;
+/* .card-modern: legacy shim used only by ui/mobile.tsx — do not add new usages */
+.card-modern {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s ease;
 }
 
 /* Fonts are loaded via next/font in layout.tsx (Inter) */
@@ -265,12 +269,6 @@ iframe {
         letter-spacing: 0.01em;
     }
 
-    /* Standardized component borders */
-    .card {
-        border: 1px solid rgba(0, 0, 0, 0.06);
-        border-radius: var(--radius-lg);
-        transition: all 0.2s ease;
-    }
 
 }
 

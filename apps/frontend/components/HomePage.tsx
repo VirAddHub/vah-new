@@ -53,7 +53,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
         >
             {/* HERO - Premium, calm, spacious with subtle depth */}
             <section className="relative bg-gradient-to-b from-background to-muted border-b border-border">
-                <div className="mx-auto max-w-[1200px] px-6 lg:px-8 py-16 lg:py-24">
+                <div className="mx-auto max-w-[1280px] px-6 lg:px-8 py-16 lg:py-24">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
                         {/* LEFT COLUMN - Content */}
                         <div className="lg:col-span-6 xl:col-span-6 lg:pr-10 text-left">
