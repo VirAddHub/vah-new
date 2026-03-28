@@ -5,7 +5,7 @@ import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { sendKycSubmitted } from '../../lib/mailer';
 import { buildAppUrl } from '../../lib/mailer';
-import { sumsubFetch } from '../../lib/sumsub';
+import { sumsubFetch, sumsubGetApplicantForUserSync } from '../../lib/sumsub';
 import { deriveKycStatusFromSumsubReview } from '../../lib/sumsubKycReview';
 import { resolveSumsubApiConfig, resolveSumsubLevelName } from '../../lib/sumsubConfig';
 
@@ -180,10 +180,6 @@ router.post('/start', requireAuth, async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/kyc/upload-documents
- * Upload KYC documents (multipart/form-data)
- */
-/**
  * POST /api/kyc/sync-from-sumsub
  * Pull latest applicant review from Sumsub API and update user.kyc_status.
  * Use when the dashboard is stale (e.g. webhook delayed, misconfigured secret, or local dev).
@@ -205,14 +201,11 @@ router.post('/sync-from-sumsub', requireAuth, async (req: Request, res: Response
             return res.status(404).json({ ok: false, error: 'user_not_found' });
         }
 
-        const applicantId = row.sumsub_applicant_id as string | null;
-        if (!applicantId || !String(applicantId).trim()) {
-            return res.status(400).json({
-                ok: false,
-                error: 'no_applicant',
-                message: 'No Sumsub applicant on file yet. Start identity verification first.',
-            });
-        }
+        const storedApplicantIdRaw = row.sumsub_applicant_id as string | null;
+        const storedApplicantId =
+            storedApplicantIdRaw && String(storedApplicantIdRaw).trim()
+                ? String(storedApplicantIdRaw).trim()
+                : null;
 
         if (!resolveSumsubApiConfig()) {
             return res.status(501).json({
@@ -222,10 +215,34 @@ router.post('/sync-from-sumsub', requireAuth, async (req: Request, res: Response
             });
         }
 
-        const applicant = await sumsubFetch(
-            'GET',
-            `/resources/applicants/${encodeURIComponent(String(applicantId).trim())}/one`
-        );
+        let applicant: any;
+        let resolvedApplicantId: string;
+        try {
+            const got = await sumsubGetApplicantForUserSync({
+                storedApplicantId,
+                externalUserId: userId,
+            });
+            applicant = got.applicant;
+            resolvedApplicantId = got.resolvedApplicantId;
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            if (/404/.test(msg) || /not found/i.test(msg)) {
+                return res.status(400).json({
+                    ok: false,
+                    error: 'no_applicant',
+                    message:
+                        'No Sumsub applicant found for this account. Complete identity verification once, then try again.',
+                });
+            }
+            throw e;
+        }
+
+        if (resolvedApplicantId !== storedApplicantId) {
+            await pool.query(`UPDATE "user" SET sumsub_applicant_id = $1 WHERE id = $2`, [
+                resolvedApplicantId,
+                userId,
+            ]);
+        }
 
         const derived = deriveKycStatusFromSumsubReview(applicant?.review);
         const kycStatus =
@@ -265,6 +282,7 @@ router.post('/sync-from-sumsub', requireAuth, async (req: Request, res: Response
             data: {
                 kyc_status: kycStatus,
                 sumsubReviewStatus: derived.statusLabel,
+                sumsub_applicant_id: resolvedApplicantId,
             },
         });
     } catch (e) {
