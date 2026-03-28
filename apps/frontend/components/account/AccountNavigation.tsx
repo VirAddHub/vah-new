@@ -1,9 +1,11 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { LayoutDashboard, CreditCard, MapPin, ShieldCheck, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useProfile, useCompliance } from '@/hooks/useDashboardData';
+import { isPrimaryVerificationRequiredForNav } from '@/lib/verification-state';
 
 interface NavItem {
     label: string;
@@ -21,7 +23,14 @@ const navItems: NavItem[] = [
 
 export function AccountNavigation() {
     const pathname = usePathname();
-    const router = useRouter();
+    const { data: profileData } = useProfile();
+    const { data: complianceData } = useCompliance();
+    const profile = profileData?.data;
+    const compliance = complianceData?.data;
+    const verificationNavRequired = isPrimaryVerificationRequiredForNav({
+        verificationState: compliance?.verificationState,
+        kycStatus: profile?.kyc_status,
+    });
 
     return (
         <nav className="w-60 flex-shrink-0">
@@ -42,8 +51,15 @@ export function AccountNavigation() {
                                         : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                 )}
                             >
-                                <Icon className={cn("w-5 h-5", isActive ? "text-primary" : "text-muted-foreground")} />
-                                {item.label}
+                                <Icon className={cn("w-5 h-5 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
+                                <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                                    <span className="truncate">{item.label}</span>
+                                    {item.href === '/account/verification' && verificationNavRequired && (
+                                        <span className="shrink-0 text-caption font-semibold text-destructive">
+                                            Required
+                                        </span>
+                                    )}
+                                </span>
                             </Link>
                         );
                     })}

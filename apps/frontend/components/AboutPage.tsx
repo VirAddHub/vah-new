@@ -38,9 +38,13 @@ export function AboutPage() {
         const loadHealthData = async () => {
             try {
                 setLoading(true);
-                const response = await apiClient.get('/api/health');
-                if (response.ok) {
-                    setHealthData(response.data);
+                const res = await fetch('/api/bff/health', {
+                    credentials: 'include',
+                    cache: 'no-store',
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data?.ok) {
+                    setHealthData(data);
                 }
             } catch (error) {
                 console.error('Failed to load health data:', error);

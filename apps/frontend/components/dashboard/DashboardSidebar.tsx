@@ -21,7 +21,8 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { useDashboardView } from '@/contexts/DashboardViewContext';
-import { useProfile } from '@/hooks/useDashboardData';
+import { useProfile, useCompliance } from '@/hooks/useDashboardData';
+import { isPrimaryVerificationRequiredForNav } from '@/lib/verification-state';
 import { useToast } from '@/components/ui/use-toast';
 
 // Lazy load CertificateDownload to avoid unnecessary bundle size
@@ -79,7 +80,13 @@ export function DashboardSidebar() {
     // Fetch profile data once (shared across dashboard, no duplicate fetches)
     // This data is used by CertificateDownload component
     const { data: profileData } = useProfile();
+    const { data: complianceData } = useCompliance();
     const profile = profileData?.data;
+    const compliance = complianceData?.data;
+    const verificationNavRequired = isPrimaryVerificationRequiredForNav({
+        verificationState: compliance?.verificationState,
+        kycStatus: profile?.kyc_status,
+    });
 
     const handleLogout = () => performLogout(
         setIsMobileSidebarOpen ? () => setIsMobileSidebarOpen(false) : undefined
@@ -168,8 +175,15 @@ export function DashboardSidebar() {
                                                                 : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                                                         )}
                                                     >
-                                                        <Icon className="w-5 h-5" strokeWidth={2} />
-                                                        {item.label}
+                                                        <Icon className="w-5 h-5 shrink-0" strokeWidth={2} />
+                                                        <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                                                            <span className="truncate">{item.label}</span>
+                                                            {item.href === '/account/verification' && verificationNavRequired && (
+                                                                <span className="shrink-0 text-caption font-semibold text-destructive">
+                                                                    Required
+                                                                </span>
+                                                            )}
+                                                        </span>
                                                     </Link>
                                                 );
                                             })}
@@ -367,7 +381,14 @@ export function DashboardSidebar() {
                                                         )}
                                                     >
                                                         <Icon className="w-5 h-5 shrink-0" strokeWidth={2} />
-                                                        {item.label}
+                                                        <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                                                            <span className="truncate">{item.label}</span>
+                                                            {item.href === '/account/verification' && verificationNavRequired && (
+                                                                <span className="shrink-0 text-caption font-semibold text-destructive">
+                                                                    Required
+                                                                </span>
+                                                            )}
+                                                        </span>
                                                     </Link>
                                                 );
                                             })}

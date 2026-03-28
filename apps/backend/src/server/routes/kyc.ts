@@ -6,6 +6,7 @@ import { getPool } from '../db';
 import { sendKycSubmitted } from '../../lib/mailer';
 import { buildAppUrl } from '../../lib/mailer';
 import { sumsubFetch } from '../../lib/sumsub';
+import { deriveKycStatusFromSumsubReview } from '../../lib/sumsubKycReview';
 import { resolveSumsubApiConfig, resolveSumsubLevelName } from '../../lib/sumsubConfig';
 
 const router = Router();
@@ -182,6 +183,101 @@ router.post('/start', requireAuth, async (req: Request, res: Response) => {
  * POST /api/kyc/upload-documents
  * Upload KYC documents (multipart/form-data)
  */
+/**
+ * POST /api/kyc/sync-from-sumsub
+ * Pull latest applicant review from Sumsub API and update user.kyc_status.
+ * Use when the dashboard is stale (e.g. webhook delayed, misconfigured secret, or local dev).
+ */
+router.post('/sync-from-sumsub', requireAuth, async (req: Request, res: Response) => {
+    try {
+        const userId = Number(req.user!.id);
+        if (!Number.isFinite(userId)) {
+            return res.status(401).json({ ok: false, error: 'unauthenticated' });
+        }
+
+        const pool = getPool();
+        const userResult = await pool.query(
+            `SELECT id, kyc_status, sumsub_applicant_id FROM "user" WHERE id = $1`,
+            [userId]
+        );
+        const row = userResult.rows[0];
+        if (!row) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+
+        const applicantId = row.sumsub_applicant_id as string | null;
+        if (!applicantId || !String(applicantId).trim()) {
+            return res.status(400).json({
+                ok: false,
+                error: 'no_applicant',
+                message: 'No Sumsub applicant on file yet. Start identity verification first.',
+            });
+        }
+
+        if (!resolveSumsubApiConfig()) {
+            return res.status(501).json({
+                ok: false,
+                error: 'SUMSUB_NOT_CONFIGURED',
+                message: 'Sumsub API is not configured on the server.',
+            });
+        }
+
+        const applicant = await sumsubFetch(
+            'GET',
+            `/resources/applicants/${encodeURIComponent(String(applicantId).trim())}/one`
+        );
+
+        const derived = deriveKycStatusFromSumsubReview(applicant?.review);
+        const kycStatus =
+            derived.kycStatus === 'approved'
+                ? 'approved'
+                : derived.kycStatus === 'rejected'
+                  ? 'rejected'
+                  : 'pending';
+
+        const previousKycStatus = row.kyc_status as string;
+        const now = Date.now();
+        const rejectReason = derived.kycStatus === 'rejected' ? derived.rejectReason : null;
+
+        await pool.query(
+            `UPDATE "user"
+             SET sumsub_review_status   = $1,
+                 sumsub_last_updated    = $2,
+                 sumsub_rejection_reason = $3
+             WHERE id = $4`,
+            [derived.statusLabel, now, rejectReason, userId]
+        );
+
+        const updates: string[] = ['kyc_status = $1', 'updated_at = $2'];
+        const values: unknown[] = [kycStatus, now];
+        let paramIndex = 3;
+
+        if (kycStatus === 'approved' && previousKycStatus !== 'approved') {
+            updates.push(`kyc_approved_at = $${paramIndex++}`);
+            values.push(new Date().toISOString());
+        }
+
+        values.push(userId);
+        await pool.query(`UPDATE "user" SET ${updates.join(', ')} WHERE id = $${paramIndex}`, values);
+
+        return res.json({
+            ok: true,
+            data: {
+                kyc_status: kycStatus,
+                sumsubReviewStatus: derived.statusLabel,
+            },
+        });
+    } catch (e) {
+        console.error('[POST /api/kyc/sync-from-sumsub]', e);
+        const message = e instanceof Error ? e.message : String(e);
+        return res.status(502).json({
+            ok: false,
+            error: 'sumsub_sync_failed',
+            message: message.length > 500 ? `${message.slice(0, 500)}…` : message,
+        });
+    }
+});
+
 router.post('/upload-documents', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();

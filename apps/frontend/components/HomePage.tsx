@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { ArrowRight, Receipt, Check, ShieldCheck, Mail } from "lucide-react";
-import { apiClient } from "@/lib/apiClient";
 import { usePricing } from "@/hooks/usePlans";
 import { formatMonthly, formatAnnual } from "@/lib/formatPrice";
 import { Button } from "./ui/button";
@@ -29,20 +28,30 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
     const isAnnual = billing === "annual";
 
-    // Load marketing data (health status)
+    // Backend reachability — must use same-origin BFF (apiClient would call API_BASE cross-origin and CORS-fail in the browser).
     useEffect(() => {
+        let cancelled = false;
         const loadData = async () => {
             try {
-                const healthResponse = await apiClient.get('/api/health');
-                if (healthResponse.ok) {
-                    console.log('Health status:', healthResponse.data);
+                const res = await fetch('/api/bff/health', {
+                    credentials: 'include',
+                    cache: 'no-store',
+                });
+                const data = await res.json().catch(() => ({}));
+                if (cancelled) return;
+                if (res.ok && data?.ok) {
+                    console.log('Health status:', data);
                 }
             } catch (error) {
-                console.error('Failed to load health data:', error);
+                if (!cancelled) {
+                    console.error('Failed to load health data:', error);
+                }
             }
         };
-
-        loadData();
+        void loadData();
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     return (

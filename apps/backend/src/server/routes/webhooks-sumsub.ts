@@ -13,6 +13,7 @@
 import crypto from 'crypto';
 import { Router, Request, Response } from 'express';
 import { resolveSumsubWebhookSecret } from '../../lib/sumsubConfig';
+import { deriveKycStatusFromSumsubReview, parseSumsubExternalUserId } from '../../lib/sumsubKycReview';
 import { getPool } from '../db';
 import { logVerificationEvent } from '../services/verificationEventLog';
 import { sendKycApproved, sendKycRejected } from '../../lib/mailer';
@@ -134,12 +135,18 @@ router.post('/', async (req: Request, res: Response) => {
   }
 
   const applicantId = payload.applicantId ?? payload.applicant?.id ?? null;
-  const reviewStatus = payload.reviewStatus ?? payload.eventType ?? '';
-  const reviewAnswer = payload.reviewResult?.reviewAnswer ?? payload.reviewResult?.answer ?? '';
-  const rejectReason = payload.reviewResult?.moderationComment ?? payload.reviewResult?.rejectReason ?? null;
   const externalUserId = payload.externalUserId ?? payload.metadata?.externalUserId ?? null;
 
-  const reviewIsGreen = reviewAnswer === 'GREEN' || reviewStatus === 'completed';
+  const reviewBlock = {
+    reviewStatus: typeof payload.reviewStatus === 'string' ? payload.reviewStatus : '',
+    reviewResult: payload.reviewResult,
+  };
+  const derived = deriveKycStatusFromSumsubReview(reviewBlock);
+  const rejectReason = derived.rejectReason;
+  const reviewIsGreen = derived.kycStatus === 'approved';
+
+  const reviewStatus = reviewBlock.reviewStatus || String(payload.type || payload.eventType || '');
+  const reviewAnswer = String(payload.reviewResult?.reviewAnswer ?? payload.reviewResult?.answer ?? '');
 
   // Determine target: primary user OR business owner
   const isBusinessOwner = externalUserId != null && String(externalUserId).startsWith('owner_');
@@ -174,10 +181,10 @@ router.post('/', async (req: Request, res: Response) => {
     const previousStatus = ownerRow.status as string;
     const safePayload = safeWebhookPayload(payload, applicantId, reviewStatus, reviewAnswer, externalUserId);
 
-    let newStatus = 'pending';
-    if (reviewIsGreen) {
+    let newStatus: 'pending' | 'verified' | 'rejected' = 'pending';
+    if (derived.kycStatus === 'approved') {
       newStatus = 'verified';
-    } else if (reviewAnswer === 'RED' || reviewStatus === 'rejected') {
+    } else if (derived.kycStatus === 'rejected') {
       newStatus = 'rejected';
     }
 
@@ -225,9 +232,10 @@ router.post('/', async (req: Request, res: Response) => {
   // ---------------------------------------------------------------------------
   // Primary user path
   // ---------------------------------------------------------------------------
+  const primaryUserId = parseSumsubExternalUserId(externalUserId);
   let userResult = await pool.query(
     'SELECT id, kyc_status, email, first_name, last_name FROM "user" WHERE id = $1',
-    [externalUserId != null ? Number(externalUserId) : null],
+    [primaryUserId],
   );
 
   if (userResult.rows.length === 0 && applicantId) {
@@ -245,18 +253,12 @@ router.post('/', async (req: Request, res: Response) => {
   const userRow = userResult.rows[0];
   const previousKycStatus = userRow.kyc_status as string;
   const now = Date.now();
-  const statusText = reviewAnswer || reviewStatus || 'unknown';
+  const statusText = derived.statusLabel || reviewAnswer || reviewStatus || 'unknown';
   const safePayload = safeWebhookPayload(payload, applicantId, reviewStatus, reviewAnswer, externalUserId);
 
   await logVerificationEvent('user', userRow.id, 'webhook_received', safePayload);
 
-  // Determine new KYC status
-  let kycStatus = 'pending';
-  if (reviewIsGreen) {
-    kycStatus = 'approved';
-  } else if (reviewAnswer === 'RED' || reviewStatus === 'rejected') {
-    kycStatus = 'rejected';
-  }
+  const kycStatus = derived.kycStatus === 'approved' ? 'approved' : derived.kycStatus === 'rejected' ? 'rejected' : 'pending';
 
   // Update Sumsub audit columns
   await pool.query(

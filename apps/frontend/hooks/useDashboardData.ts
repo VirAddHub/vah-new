@@ -10,6 +10,7 @@ export const KEYS = {
     TAGS: '/api/bff/tags',
     ACCOUNT: '/api/bff/account',
     PROFILE: '/api/bff/profile',
+    COMPLIANCE: '/api/bff/profile/compliance',
     BILLING_OVERVIEW: '/api/bff/billing/overview',
     BILLING_INVOICES: '/api/bff/billing/invoices?page=1&page_size=12', // Simplified for now, pagination might need dynamic key
     WHOAMI: '/api/bff/auth/whoami',
@@ -37,6 +38,10 @@ export function useAccount(options?: SWRConfiguration) {
 
 export function useProfile(options?: SWRConfiguration) {
     return useSWR(KEYS.PROFILE, swrFetcher, { ...DEFAULT_CONFIG, ...options });
+}
+
+export function useCompliance(options?: SWRConfiguration) {
+    return useSWR(KEYS.COMPLIANCE, swrFetcher, { ...DEFAULT_CONFIG, ...options });
 }
 
 export function useBillingOverview(options?: SWRConfiguration) {

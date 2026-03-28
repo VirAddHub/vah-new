@@ -129,3 +129,21 @@ export function getCertificateBlockReasonFromError(
   if (errorCode === 'company_number_missing') return 'company';
   return 'primary';
 }
+
+/**
+ * Whether the signed-in user still needs to complete primary identity verification
+ * (nav badge / “Required” label). Aligns with Account → Verification when
+ * `verificationState` comes from `/api/bff/profile/compliance`.
+ */
+export function isPrimaryVerificationRequiredForNav(options: {
+  verificationState?: VerificationPageState | string | null;
+  kycStatus?: string | null;
+}): boolean {
+  const state = options.verificationState as VerificationPageState | undefined;
+  if (state === 'verified' || state === 'pending_others') return false;
+  if (state === 'action_required') return true;
+
+  const k = (options.kycStatus || '').toLowerCase();
+  const done = k === 'approved' || k === 'verified';
+  return !done;
+}

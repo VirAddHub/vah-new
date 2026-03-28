@@ -51,26 +51,23 @@ export async function GET(req: NextRequest) {
     let csrfToken = cookies[CSRF_COOKIE_NAME] || '';
     let finalCookieHeader = rawCookieHeader;
 
-    // If CSRF token is missing, fetch it from whoami endpoint
+    // If CSRF cookie is missing, load token from backend JSON (reliable; Set-Cookie from whoami
+    // is fragile when multiple cookies are folded into one header).
     if (!csrfToken) {
       try {
-        const csrfResponse = await fetch(`${backend}/api/auth/whoami`, {
+        const csrfResponse = await fetch(`${backend}/api/csrf`, {
           method: 'GET',
-          headers: { 'Cookie': rawCookieHeader },
+          headers: { Cookie: rawCookieHeader },
           cache: 'no-store',
         });
-        
-        // Extract CSRF token from Set-Cookie header
-        const setCookieHeader = csrfResponse.headers.get('set-cookie');
-        if (setCookieHeader) {
-          const csrfMatch = setCookieHeader.match(/vah_csrf_token=([^;]+)/);
-          if (csrfMatch?.[1]) {
-            csrfToken = decodeURIComponent(csrfMatch[1]);
-            // Update cookie header with CSRF token
-            finalCookieHeader = rawCookieHeader 
-              ? `${rawCookieHeader}; vah_csrf_token=${csrfToken}` 
-              : `vah_csrf_token=${csrfToken}`;
-          }
+        const csrfJson = await csrfResponse.json().catch(() => ({}));
+        const fromBody =
+          typeof csrfJson?.csrfToken === 'string' ? csrfJson.csrfToken.trim() : '';
+        if (fromBody) {
+          csrfToken = fromBody;
+          finalCookieHeader = rawCookieHeader
+            ? `${rawCookieHeader}; ${CSRF_COOKIE_NAME}=${csrfToken}`
+            : `${CSRF_COOKIE_NAME}=${csrfToken}`;
         }
       } catch (csrfError) {
         console.warn(`[${routePath}] Failed to fetch CSRF token:`, csrfError);

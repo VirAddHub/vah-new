@@ -27,6 +27,44 @@ function trimString(v: unknown): string | undefined {
   return s || undefined;
 }
 
+/** Collapse Sumsub `SnsError` (or odd payloads) into one lowercase string for matching. */
+function sumsubSdkErrorFingerprint(sdkError: unknown): string {
+  if (sdkError == null || sdkError === "") return "";
+  if (typeof sdkError === "string") return sdkError.toLowerCase();
+  if (typeof sdkError === "object" && !Array.isArray(sdkError)) {
+    const o = sdkError as Record<string, unknown>;
+    const bits: string[] = [];
+    for (const k of ["code", "error", "reason", "message", "name", "type"] as const) {
+      const v = o[k];
+      if (typeof v === "string" && v.trim()) bits.push(v);
+    }
+    try {
+      const s = JSON.stringify(o);
+      if (s !== "{}") bits.push(s);
+    } catch {
+      /* ignore */
+    }
+    return bits.join(" ").toLowerCase();
+  }
+  return String(sdkError).toLowerCase();
+}
+
+function isEmptyPlainObject(v: unknown): boolean {
+  return typeof v === "object" && v !== null && !Array.isArray(v) && Object.keys(v).length === 0;
+}
+
+function userMessageForSumsubSdkError(sdkError: unknown): string {
+  const fp = sumsubSdkErrorFingerprint(sdkError);
+  if (
+    /camera|notallowed|permission|denied|getusermedia|mediadevices|device_not_found|notreadable|in use|blocked/i.test(
+      fp
+    )
+  ) {
+    return "We couldn't access your camera. Check site permissions in your browser or system settings, then tap “I have provided access” in the Sumsub window, or use “Continue on phone” if you see it.";
+  }
+  return "Something went wrong with identity verification. Please try again.";
+}
+
 /**
  * Prefer human text from BFF JSON; avoid using bare codes like `sumsub_error` when `message` is missing.
  */
@@ -94,12 +132,45 @@ async function fetchSumsubToken(): Promise<string> {
       );
     }
 
-    if (res.status === 401 || res.status === 403) {
-      const errorMsg = data?.error || data?.data?.error || data?.details?.message || "Authentication required";
-      if (errorMsg.includes("already") || errorMsg.includes("complete") || errorMsg.includes("approved")) {
+    if (res.status === 403) {
+      const code = typeof data?.error === "string" ? data.error : "";
+      const detail = pickUserFacingBffDetail(data) || trimString(data?.message);
+      if (
+        code === "csrf_token_missing" ||
+        code === "csrf_token_invalid" ||
+        /csrf/i.test(code) ||
+        /csrf/i.test(detail || "")
+      ) {
+        throw new Error(
+          "Your session security token expired or is missing. Refresh this page and try again."
+        );
+      }
+      if (code === "forbidden" || code === "Forbidden") {
+        throw new Error(detail || "You do not have permission to start verification.");
+      }
+      throw new Error(detail || "Request was blocked. Refresh the page and try again.");
+    }
+
+    if (res.status === 401) {
+      const errorMsg =
+        pickUserFacingBffDetail(data) ||
+        trimString(data?.message) ||
+        trimString(data?.error) ||
+        trimString(data?.data?.error) ||
+        trimString(data?.details?.message) ||
+        "Authentication required";
+      if (
+        errorMsg.includes("already") ||
+        errorMsg.includes("complete") ||
+        errorMsg.includes("approved")
+      ) {
         throw new Error("KYC already complete");
       }
-      throw new Error("Please log in to start verification");
+      throw new Error(
+        errorMsg.includes("log in") || errorMsg.includes("Please log")
+          ? errorMsg
+          : "Please log in to start verification."
+      );
     }
 
     if (res.status >= 500) {
@@ -154,6 +225,26 @@ async function fetchSumsubToken(): Promise<string> {
   return data.token as string;
 }
 
+async function postSyncKycFromSumsub(): Promise<{ ok: boolean; kyc_status?: string; message?: string }> {
+  const res = await fetch("/api/bff/kyc/sync-from-sumsub", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    body: "{}",
+  });
+  const data = (await res.json().catch(() => ({}))) as {
+    ok?: boolean;
+    data?: { kyc_status?: string };
+    message?: string;
+  };
+  return {
+    ok: res.ok && data.ok !== false,
+    kyc_status: data.data?.kyc_status,
+    message: typeof data.message === "string" ? data.message : undefined,
+  };
+}
+
 export type SumsubKycWidgetProps = {
   /** When true, skip the extra title/blurb (parent card already explains). */
   hideIntro?: boolean;
@@ -169,6 +260,7 @@ export function SumsubKycWidget({ hideIntro = false }: SumsubKycWidgetProps) {
   /** Token fetched; triggers mount effect once container is in the DOM */
   const [launchToken, setLaunchToken] = useState<string | null>(null);
   const [showSdkContainer, setShowSdkContainer] = useState(false);
+  const [syncingStatus, setSyncingStatus] = useState(false);
 
   const destroySdk = useCallback(() => {
     if (sdkRef.current && typeof sdkRef.current.destroy === "function") {
@@ -199,7 +291,9 @@ export function SumsubKycWidget({ hideIntro = false }: SumsubKycWidgetProps) {
       setShowSdkContainer(true);
       setLaunchToken(accessToken);
     } catch (err) {
-      console.error(err);
+      if (isDev) {
+        console.warn("[SumsubKycWidget] startVerification", err);
+      }
       const errorMessage =
         err instanceof Error ? err.message : "Unable to start identity verification. Please try again.";
 
@@ -219,10 +313,44 @@ export function SumsubKycWidget({ hideIntro = false }: SumsubKycWidgetProps) {
     }
   }, []);
 
+  const handleRefreshVerificationStatus = useCallback(async () => {
+    setSyncingStatus(true);
+    setError(null);
+    try {
+      const r = await postSyncKycFromSumsub();
+      if (!r.ok) {
+        setError(
+          r.message ||
+            "Could not refresh your verification status from Sumsub. Try again in a minute, or contact support if this persists."
+        );
+        return;
+      }
+      window.location.reload();
+    } finally {
+      setSyncingStatus(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!launchToken || !showSdkContainer) return;
 
     let cancelled = false;
+
+    const syncThenReload = async () => {
+      await new Promise((r) => setTimeout(r, 1200));
+      if (cancelled) return;
+      try {
+        const sync = await postSyncKycFromSumsub();
+        if (isDev && !sync.ok) {
+          console.warn("[SumsubKycWidget] post-completion sync failed", sync);
+        }
+      } catch (e) {
+        if (isDev) console.warn("[SumsubKycWidget] post-completion sync error", e);
+      }
+      if (!cancelled) {
+        window.location.reload();
+      }
+    };
 
     const mountSdk = async () => {
       try {
@@ -233,34 +361,49 @@ export function SumsubKycWidget({ hideIntro = false }: SumsubKycWidgetProps) {
 
         const instance = snsWebSdk
           .init(launchToken, tokenRefreshCallback)
-          .withConf({ lang: "en" })
+          .withConf({ lang: "en", theme: "light" })
           .on("idCheck.onError", (sdkError: unknown) => {
-            console.error("Sumsub onError", sdkError);
-            setError("Something went wrong with identity verification. Please try again.");
+            if (isDev) {
+              console.warn("[SumsubKycWidget] idCheck.onError", sdkError);
+            }
+            // Sumsub often fires this with `{}` while still showing its own UI (e.g. camera denied).
+            if (isEmptyPlainObject(sdkError)) {
+              return;
+            }
+            setError(userMessageForSumsubSdkError(sdkError));
           })
           .on("idCheck.onReady", () => {
-            console.log("Sumsub ready");
+            if (isDev) {
+              console.log("[SumsubKycWidget] Sumsub ready");
+            }
           })
           .onMessage((type: string, payload: any) => {
-            console.log("Sumsub onMessage", type, payload);
+            if (isDev) {
+              console.log("[SumsubKycWidget] onMessage", type, payload);
+            }
 
             if (type === "idCheck.applicantStatus") {
               const reviewStatus = payload?.reviewStatus;
-              const reviewResult = payload?.reviewResult;
+              const reviewAnswer = payload?.reviewResult?.reviewAnswer;
+              const green = String(reviewAnswer || "").toUpperCase() === "GREEN";
+              const done =
+                green ||
+                reviewStatus === "completed" ||
+                reviewStatus === "approved";
 
-              if (reviewStatus === "completed" || reviewStatus === "approved" || reviewResult === "green") {
-                console.log("[SumsubKycWidget] Verification completed/approved");
-                setAlreadyComplete(true);
-                setStarted(false);
-                setTimeout(() => window.location.reload(), 2000);
+              if (done) {
+                if (isDev) {
+                  console.log("[SumsubKycWidget] Verification completed/approved");
+                }
+                void syncThenReload();
               }
             }
 
             if (type === "onApplicantApproved" || type === "onApplicantSubmitted") {
-              console.log("[SumsubKycWidget] Applicant approved/submitted");
-              setAlreadyComplete(true);
-              setStarted(false);
-              setTimeout(() => window.location.reload(), 2000);
+              if (isDev) {
+                console.log("[SumsubKycWidget] Applicant approved/submitted");
+              }
+              void syncThenReload();
             }
           })
           .build();
@@ -337,6 +480,26 @@ export function SumsubKycWidget({ hideIntro = false }: SumsubKycWidgetProps) {
             Start over
           </Button>
         )}
+
+        {hideIntro && (started || showSdkContainer) && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="w-full sm:w-auto touch-manipulation"
+            onClick={handleRefreshVerificationStatus}
+            disabled={syncingStatus}
+          >
+            {syncingStatus ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                Updating status…
+              </>
+            ) : (
+              "Refresh verification status"
+            )}
+          </Button>
+        )}
       </div>
 
       {notConfigured && (
@@ -374,7 +537,7 @@ export function SumsubKycWidget({ hideIntro = false }: SumsubKycWidgetProps) {
           <div
             id="sumsub-websdk-container"
             className={cn(
-              "w-full overflow-hidden rounded-xl border border-border bg-card",
+              "w-full overflow-hidden",
               started ? "min-h-[min(72dvh,560px)]" : "min-h-[200px]"
             )}
           />

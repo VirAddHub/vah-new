@@ -109,7 +109,12 @@ export function middleware(request: NextRequest) {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'origin-when-cross-origin');
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  // Allow Sumsub WebSDK iframe (in.sumsub.com) to use camera/mic for liveness checks.
+  // camera=() / microphone=() blocks *all* contexts, including cross-origin iframes — breaks KYC on every device.
+  response.headers.set(
+    'Permissions-Policy',
+    'camera=(self "https://in.sumsub.com" "https://static.sumsub.com"), microphone=(self "https://in.sumsub.com" "https://static.sumsub.com"), geolocation=()'
+  );
 
   // Add CORS headers for API routes (FIND-03: allowlist replaces wildcard)
   if (pathname.startsWith('/api/')) {

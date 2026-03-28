@@ -6,7 +6,7 @@ import { swrFetcher } from '@/services/http';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, CheckCircle2, AlertCircle, Mail, Building2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Mail, Building2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import {
@@ -411,21 +411,16 @@ export default function AccountVerificationPage() {
                     {/* Verification Required — CTA + Sumsub on same page after Start */}
                     <Card className="mb-4 rounded-xl border border-border bg-card sm:mb-6 sm:rounded-2xl">
                         <CardContent className="p-4 sm:p-6 md:p-8">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/40">
-                                    <ShieldCheck className="h-6 w-6 text-amber-800 dark:text-amber-200" strokeWidth={2} />
+                            <div className="min-w-0 space-y-4">
+                                <div>
+                                    <h2 className="text-h3 font-semibold text-foreground">
+                                        Verification required
+                                    </h2>
+                                    <p className="mt-2 text-body text-muted-foreground leading-relaxed">
+                                        Tap the button below to open secure identity verification on this page. It usually takes about 5–10 minutes.
+                                    </p>
                                 </div>
-                                <div className="min-w-0 flex-1 space-y-4">
-                                    <div>
-                                        <h2 className="text-h3 font-semibold text-foreground">
-                                            Verification required
-                                        </h2>
-                                        <p className="mt-2 text-body text-muted-foreground leading-relaxed">
-                                            Tap the button below to open secure identity verification on this page. It usually takes about 5–10 minutes.
-                                        </p>
-                                    </div>
-                                    <SumsubKycWidget hideIntro />
-                                </div>
+                                <SumsubKycWidget hideIntro />
                             </div>
                         </CardContent>
                     </Card>
