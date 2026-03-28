@@ -40,3 +40,6 @@ next-env.d.ts
 .history/
 .vscode/
 .DS_Store
+
+# Generated local route preview (see scripts/generate-all-pages-review-html.mjs)
+public/all-pages-review.html

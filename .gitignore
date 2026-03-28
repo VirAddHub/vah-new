@@ -101,6 +101,8 @@ apps/frontend/out/
 # All .mjs files (user creation scripts, etc.)
 *.mjs
 **/*.mjs
+# Exception: committed route-preview generator (no secrets)
+!scripts/generate-all-pages-review-html.mjs
 
 # cookies/tokens captured locally
 **/bff.cookies.txt
