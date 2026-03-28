@@ -121,8 +121,8 @@ export function DashboardSidebar() {
     const isMailActive = pathname === '/mail' || pathname === '/mail/';
 
     const SidebarContent = () => (
-        <aside className="hidden lg:flex lg:w-[240px] lg:flex-shrink-0 lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:border-r lg:border-border bg-card">
-            <div className="flex h-[calc(100dvh-4rem)] flex-col w-full">
+        <aside className="hidden h-full min-h-0 w-[240px] shrink-0 flex-col border-r border-border bg-card lg:flex">
+            <div className="flex h-full min-h-0 w-full flex-col">
                 {/* Nav area - scrollable if needed */}
                 <nav className="flex-1 overflow-y-auto px-4 py-4">
                 {/* Main Navigation */}

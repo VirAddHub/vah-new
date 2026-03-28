@@ -98,7 +98,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
     // Success screen
     if (isSubmitted) {
         return (
-            <div className="min-w-0 overflow-x-clip bg-muted pt-20 lg:pt-0 min-h-screen py-16 flex items-center justify-center">
+            <div className="min-h-screen min-w-0 overflow-x-clip bg-muted pt-8 pb-16 lg:pt-0 flex items-center justify-center">
                 <div className="max-w-2xl mx-auto w-full px-4 text-center">
                     <h1 className="text-h2 sm:text-h1 lg:text-display text-foreground mb-4">
                         Message sent — thank you!
@@ -127,8 +127,8 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
     }
 
     return (
-        <div className="min-w-0 w-full overflow-x-clip bg-muted pt-20 lg:pt-0">
-            <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
+        <div className="min-w-0 w-full overflow-x-clip bg-muted pt-8 lg:pt-0">
+            <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-6 sm:px-6 lg:px-8 lg:py-16">
                 {/* Hero Section */}
                 <div className="max-w-2xl">
                     <h1 className="text-h1 lg:text-display text-foreground">

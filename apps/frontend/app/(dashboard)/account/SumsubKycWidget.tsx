@@ -6,13 +6,10 @@ type SumsubTokenResponse = {
   token: string;
 };
 
-async function fetchSumsubToken(): Promise<string> {
-  // Debug: Check if cookies are available
-  if (typeof document !== 'undefined') {
-    const cookies = document.cookie;
-    console.log('[SumsubKycWidget] Cookies available:', cookies ? 'Yes' : 'No', cookies);
-  }
+const isDev =
+  typeof process !== "undefined" && process.env.NODE_ENV === "development";
 
+async function fetchSumsubToken(): Promise<string> {
   const res = await fetch("/api/bff/kyc/sumsub-token", {
     method: "GET",
     credentials: "include", // This should send cookies automatically
@@ -32,11 +29,19 @@ async function fetchSumsubToken(): Promise<string> {
   }
 
   if (!res.ok) {
-    console.error("Sumsub token fetch failed", res.status, data);
-
     // Handle "Sumsub not configured" (501)
     if (res.status === 501 || data?.code === 'SUMSUB_NOT_CONFIGURED' || data?.data?.code === 'SUMSUB_NOT_CONFIGURED') {
       throw new Error("SUMSUB_NOT_CONFIGURED");
+    }
+
+    // Proxy / host unavailable (Render, nginx, bad gateway) — common cause of 502
+    if (res.status === 502 || res.status === 503 || res.status === 504) {
+      if (isDev) {
+        console.warn("[SumsubKycWidget] Sumsub token route upstream error", res.status, data);
+      }
+      throw new Error(
+        "The verification service is temporarily unavailable. Please try again in a few minutes."
+      );
     }
 
     // Handle specific error cases
@@ -48,9 +53,38 @@ async function fetchSumsubToken(): Promise<string> {
       throw new Error("Please log in to start verification");
     }
 
-    // Return detailed error message from backend
-    const errorMsg = data?.error || data?.data?.error || data?.data?.message || data?.details?.message || `Failed to fetch Sumsub access token (status ${res.status})`;
-    throw new Error(errorMsg);
+    // Generic 5xx from BFF/backend (avoid raw BACKEND_ERROR in UI)
+    if (res.status >= 500) {
+      if (isDev) {
+        console.warn("[SumsubKycWidget] Sumsub token fetch failed", res.status, data);
+      }
+      const raw =
+        data?.error ||
+        data?.data?.error ||
+        data?.message ||
+        data?.data?.message;
+      if (raw && raw !== "BACKEND_ERROR" && raw !== "server_error") {
+        throw new Error(String(raw));
+      }
+      throw new Error(
+        "We couldn't start verification right now. Please try again later or contact support if this continues."
+      );
+    }
+
+    if (isDev) {
+      console.warn("[SumsubKycWidget] Sumsub token fetch failed", res.status, data);
+    }
+    const errorMsg =
+      data?.error ||
+      data?.data?.error ||
+      data?.data?.message ||
+      data?.details?.message ||
+      `Failed to fetch Sumsub access token (status ${res.status})`;
+    throw new Error(
+      errorMsg === "BACKEND_ERROR"
+        ? "We couldn't reach the verification service. Please try again."
+        : errorMsg
+    );
   }
 
   if (!data.token) {

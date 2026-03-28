@@ -86,8 +86,16 @@ export function VAHLogo({
         xl: { width: 240, height: 60 },
     }[size || "md"];
 
+    // Default caps so the SVG scales down on small screens; imgClassName can override via cn merge.
+    const sizeImgMaxClass = {
+        sm: "max-h-[26px] w-auto max-w-full sm:max-h-[30px]",
+        md: "max-h-8 w-auto max-w-full sm:max-h-10",
+        lg: "max-h-9 w-auto max-w-full sm:max-h-[50px]",
+        xl: "max-h-12 w-auto max-w-full sm:max-h-[60px] min-h-[50px] min-w-[200px]",
+    }[size || "md"];
+
     const inner = (
-        <span className="inline-flex min-h-[2rem] min-w-[80px] shrink-0 items-center" data-vah-logo>
+        <span className="inline-flex min-h-0 min-w-0 shrink-0 items-center" data-vah-logo>
             {imgFailed ? (
                 <span className="font-semibold text-foreground text-body tracking-tight">{fullName}</span>
             ) : (
@@ -97,15 +105,15 @@ export function VAHLogo({
                     width={logoDimensions.width}
                     height={logoDimensions.height}
                     className={cn(
-                        "block object-contain transition-opacity duration-200 group-hover:opacity-90",
-                        size === "xl" && "min-h-[50px] min-w-[200px]",
+                        "block object-contain object-left transition-opacity duration-200 group-hover:opacity-90",
+                        sizeImgMaxClass,
                         imgClassName
                     )}
-                    style={{
-                        height: "auto",
-                        maxHeight: "100%",
-                        ...(size === "xl" && { minWidth: 200, minHeight: 50 }),
-                    }}
+                    style={
+                        size === "xl"
+                            ? { minWidth: 200, minHeight: 50 }
+                            : undefined
+                    }
                     onError={() => setImgFailed(true)}
                     fetchPriority="high"
                 />

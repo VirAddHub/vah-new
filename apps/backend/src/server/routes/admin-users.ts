@@ -55,6 +55,9 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
         const onlineThresholdParam = `$${paramIndex}`;
         paramIndex++;
 
+        // Plan display: user.plan_id → plans; subscription.plan_name → plans (case-insensitive);
+        // if name is legacy/default (e.g. "Digital Mailbox Plan") and does not match `plans`,
+        // infer from subscription.cadence → active plan row (same idea as billing overview).
         let query = `
             SELECT
                 u.id,
@@ -72,16 +75,43 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
                 u.updated_at,
                 u.last_active_at,
                 u.last_login_at,
-                p.name as plan_name,
-                p.interval as plan_interval,
-                p.price_pence as plan_price,
+                COALESCE(p_sub.name, p.name, p_cadence.name, s.plan_name) as plan_name,
+                COALESCE(
+                    p_sub.interval,
+                    p.interval,
+                    p_cadence.interval,
+                    CASE
+                        WHEN LOWER(COALESCE(s.cadence, '')) IN ('annual', 'year', 'yearly') THEN 'year'
+                        WHEN s.cadence IS NOT NULL AND TRIM(s.cadence::text) <> '' THEN 'month'
+                        ELSE NULL
+                    END
+                ) as plan_interval,
+                COALESCE(p_sub.price_pence, p.price_pence, p_cadence.price_pence) as plan_price,
                 CASE
                     WHEN u.last_active_at IS NULL THEN 'offline'
                     WHEN u.last_active_at > $1 THEN 'online'
                     ELSE 'offline'
                 END as activity_status
             FROM "user" u
+            LEFT JOIN subscription s ON s.user_id = u.id
             LEFT JOIN plans p ON u.plan_id = p.id
+            LEFT JOIN plans p_sub ON s.id IS NOT NULL
+                AND LOWER(TRIM(s.plan_name)) = LOWER(TRIM(p_sub.name))
+                AND p_sub.active = true
+                AND (p_sub.retired_at IS NULL OR p_sub.retired_at = '')
+            LEFT JOIN LATERAL (
+                SELECT p2.name, p2.interval, p2.price_pence
+                FROM plans p2
+                WHERE s.id IS NOT NULL
+                  AND p2.active = true
+                  AND (p2.retired_at IS NULL OR p2.retired_at = '')
+                  AND p2.interval = CASE
+                    WHEN LOWER(COALESCE(s.cadence, '')) IN ('annual', 'year', 'yearly') THEN 'year'
+                    ELSE 'month'
+                  END
+                ORDER BY p2.sort ASC NULLS LAST, p2.id ASC
+                LIMIT 1
+            ) p_cadence ON true
         `;
 
         // Filter out soft-deleted users
@@ -340,11 +370,38 @@ router.get('/users/deleted', adminUsersLimiter, requireAdmin, async (req: Reques
                 u.deleted_at,
                 u.last_active_at,
                 u.last_login_at,
-                p.name as plan_name,
-                p.interval as plan_interval,
-                p.price_pence as plan_price
+                COALESCE(p_sub.name, p.name, p_cadence.name, s.plan_name) as plan_name,
+                COALESCE(
+                    p_sub.interval,
+                    p.interval,
+                    p_cadence.interval,
+                    CASE
+                        WHEN LOWER(COALESCE(s.cadence, '')) IN ('annual', 'year', 'yearly') THEN 'year'
+                        WHEN s.cadence IS NOT NULL AND TRIM(s.cadence::text) <> '' THEN 'month'
+                        ELSE NULL
+                    END
+                ) as plan_interval,
+                COALESCE(p_sub.price_pence, p.price_pence, p_cadence.price_pence) as plan_price
             FROM "user" u
+            LEFT JOIN subscription s ON s.user_id = u.id
             LEFT JOIN plans p ON u.plan_id = p.id
+            LEFT JOIN plans p_sub ON s.id IS NOT NULL
+                AND LOWER(TRIM(s.plan_name)) = LOWER(TRIM(p_sub.name))
+                AND p_sub.active = true
+                AND (p_sub.retired_at IS NULL OR p_sub.retired_at = '')
+            LEFT JOIN LATERAL (
+                SELECT p2.name, p2.interval, p2.price_pence
+                FROM plans p2
+                WHERE s.id IS NOT NULL
+                  AND p2.active = true
+                  AND (p2.retired_at IS NULL OR p2.retired_at = '')
+                  AND p2.interval = CASE
+                    WHEN LOWER(COALESCE(s.cadence, '')) IN ('annual', 'year', 'yearly') THEN 'year'
+                    ELSE 'month'
+                  END
+                ORDER BY p2.sort ASC NULLS LAST, p2.id ASC
+                LIMIT 1
+            ) p_cadence ON true
         `;
 
         // Only show soft-deleted users

@@ -305,7 +305,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 <div className="mt-6">
                                     <Button
                                         onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                                        className="h-11 w-full rounded-full bg-card text-primary hover:bg-background/95 text-body-sm font-medium focus-visible:ring-white/50"
+                                        variant="primary"
+                                        className="h-11 w-full rounded-full text-body-sm font-medium"
                                     >
                                         Sign Up
                                     </Button>
@@ -313,11 +314,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                             </div>
                         ) : (
                             <div className="w-full max-w-[420px] rounded-3xl bg-card p-5 shadow-md sm:p-6 flex flex-col border border-border">
-                                <div className="flex items-center justify-between">
-                                    <div className="text-h2 font-semibold text-foreground tabular-nums min-w-[110px] sm:text-h1 lg:text-display">
+                                <div className="flex flex-col items-start gap-2">
+                                    <div className="text-h2 font-semibold text-foreground tabular-nums sm:text-h1 lg:text-display">
                                         {formatAnnual(annualPrice)}
                                     </div>
-                                    <span className="text-caption font-medium text-orange-600 bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400 px-2.5 py-1 rounded-full sm:text-body-sm">20% Save</span>
+                                    <span className="text-caption font-medium text-orange-600 bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400 px-2.5 py-1 rounded-full sm:text-body-sm">Save 20%</span>
                                 </div>
 
                                 <div className="mt-5">

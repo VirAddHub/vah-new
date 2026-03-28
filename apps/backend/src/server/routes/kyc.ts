@@ -87,7 +87,7 @@ router.post('/start', requireAuth, async (req: Request, res: Response) => {
         // Support old, new and sandbox env var names
         const appToken = process.env.SUMSUB_APP_TOKEN || process.env.SUMSUB_APP_TOKEN_SANDBOX;
         const appSecret = process.env.SUMSUB_APP_SECRET || process.env.SUMSUB_SECRET_KEY || process.env.SUMSUB_SECRET_KEY_SANDBOX;
-        const levelName = process.env.SUMSUB_LEVEL || process.env.SUMSUB_LEVEL_NAME || process.env.SUMSUB_LEVEL_NAME_SANDBOX || "basic-kyc";
+        const levelName = process.env.SUMSUB_LEVEL || process.env.SUMSUB_LEVEL_NAME || process.env.SUMSUB_LEVEL_NAME_SANDBOX || "id-and-liveness";
         const baseUrl = process.env.SUMSUB_BASE_URL || process.env.SUMSUB_API || process.env.SUMSUB_BASE_URL_SANDBOX || process.env.SUMSUB_API_SANDBOX || "https://api.sumsub.com";
 
         if (!appToken || !appSecret) {

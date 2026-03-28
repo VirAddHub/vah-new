@@ -495,9 +495,12 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                       {u.plan_name ? (
                         <div className="flex flex-col gap-1">
                           <span className="text-body-sm font-medium">{u.plan_name}</span>
-                          <span className="text-caption text-muted-foreground">
-                            £{((u.plan_price || 0) / 100).toFixed(2)}/{u.plan_interval}
-                          </span>
+                          {(u.plan_price != null && u.plan_price > 0) || u.plan_interval ? (
+                            <span className="text-caption text-muted-foreground">
+                              £{((u.plan_price || 0) / 100).toFixed(2)}/
+                              {u.plan_interval || 'month'}
+                            </span>
+                          ) : null}
                         </div>
                       ) : (
                         <span className="text-body-sm text-muted-foreground">No plan</span>

@@ -108,19 +108,43 @@ describe('getBackendOrigin', () => {
     expect(() => getBackendOrigin()).toThrow('Invalid NEXT_PUBLIC_BACKEND_API_ORIGIN: must be Render origin');
   });
 
-  it('should reject non-Render origins in non-production', () => {
+  it('should allow localhost BACKEND origin in non-production (local API)', () => {
     process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN = 'http://localhost:8080';
     delete process.env.NEXT_PUBLIC_API_URL;
     process.env.NODE_ENV = 'development';
 
-    expect(() => getBackendOrigin()).toThrow('Invalid NEXT_PUBLIC_BACKEND_API_ORIGIN: must be Render origin');
+    const result = getBackendOrigin();
+    expect(result).toBe('http://localhost:8080');
   });
 
-  it('should reject non-Render origins from NEXT_PUBLIC_API_URL', () => {
+  it('should allow localhost from NEXT_PUBLIC_API_URL in non-production', () => {
     delete process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN;
-    process.env.NEXT_PUBLIC_API_URL = 'http://localhost:8080';
+    process.env.NEXT_PUBLIC_API_URL = 'http://127.0.0.1:3001';
     process.env.NODE_ENV = 'development';
 
-    expect(() => getBackendOrigin()).toThrow('Invalid NEXT_PUBLIC_API_URL: must be Render origin');
+    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const result = getBackendOrigin();
+    expect(result).toBe('http://127.0.0.1:3001');
+    consoleSpy.mockRestore();
+  });
+
+  it('should reject localhost BACKEND origin in production', () => {
+    process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN = 'http://localhost:8080';
+    delete process.env.NEXT_PUBLIC_API_URL;
+    process.env.NODE_ENV = 'production';
+
+    expect(() => getBackendOrigin()).toThrow(
+      'Invalid NEXT_PUBLIC_BACKEND_API_ORIGIN'
+    );
+  });
+
+  it('should reject unknown non-local origins in non-production', () => {
+    process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN = 'https://api.example.com';
+    delete process.env.NEXT_PUBLIC_API_URL;
+    process.env.NODE_ENV = 'development';
+
+    expect(() => getBackendOrigin()).toThrow(
+      'Invalid NEXT_PUBLIC_BACKEND_API_ORIGIN'
+    );
   });
 });

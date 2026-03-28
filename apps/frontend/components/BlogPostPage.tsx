@@ -7,7 +7,7 @@ import { Badge } from "./ui/badge";
 import { ArrowLeft, Calendar, Clock, Share2, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { MDXRemote } from "next-mdx-remote/rsc";
+import { MDXRemote, type MDXRemoteSerializeResult } from "next-mdx-remote";
 import { mdxComponents } from "../app/blog/_components/mdx-components";
 import { parseJsonSafe } from "@/lib/http";
 import { formatBlogDate } from "@/lib/blog-date-formatter";
@@ -20,12 +20,19 @@ interface BlogPostPageProps {
 
 export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
     const [post, setPost] = useState<any>(null);
+    const [mdxSerialized, setMdxSerialized] = useState<MDXRemoteSerializeResult | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Fetch blog post from API
+    // Fetch blog post from API, then compile MDX on the server (classic MDXRemote; RSC MDXRemote cannot run in Client Components)
     useEffect(() => {
+        let cancelled = false;
+
         const fetchBlogPost = async () => {
+            setLoading(true);
+            setError(null);
+            setPost(null);
+            setMdxSerialized(null);
             try {
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
                 const response = await fetch(`${apiUrl}/api/blog/posts/${slug}`);
@@ -35,27 +42,57 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                     data = await parseJsonSafe(response);
                 } catch (err: any) {
                     console.error('[BlogPostPage] Blog request failed with non-JSON response:', err);
-                    setError(`Failed to load blog post: ${err.message || 'Invalid response from server'}`);
-                    setLoading(false);
+                    if (!cancelled) {
+                        setError(`Failed to load blog post: ${err.message || 'Invalid response from server'}`);
+                    }
                     return;
                 }
 
                 if (!response.ok || !data?.ok) {
-                    setError(data?.error || 'Post not found');
-                    setLoading(false);
+                    if (!cancelled) {
+                        setError(data?.error || 'Post not found');
+                    }
                     return;
                 }
 
-                setPost(data.data);
+                const postData = data.data;
+                const content = typeof postData?.content === 'string' ? postData.content : '';
+
+                const compileRes = await fetch('/api/blog/compile-mdx', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ source: content }),
+                });
+
+                if (cancelled) return;
+
+                if (!compileRes.ok) {
+                    const errBody = await compileRes.json().catch(() => ({}));
+                    if (!cancelled) {
+                        setError(typeof errBody?.error === 'string' ? errBody.error : 'Failed to render article');
+                    }
+                    return;
+                }
+
+                const serialized = (await compileRes.json()) as MDXRemoteSerializeResult;
+                setPost(postData);
+                setMdxSerialized(serialized);
             } catch (err: any) {
                 console.error('Error fetching blog post:', err);
-                setError(err.message || 'Failed to load blog post');
+                if (!cancelled) {
+                    setError(err.message || 'Failed to load blog post');
+                }
             } finally {
-                setLoading(false);
+                if (!cancelled) {
+                    setLoading(false);
+                }
             }
         };
 
         fetchBlogPost();
+        return () => {
+            cancelled = true;
+        };
     }, [slug]);
 
     // Add structured data for individual blog posts
@@ -104,7 +141,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
     }
 
     // Error state
-    if (error || !post) {
+    if (error || !post || !mdxSerialized) {
         return (
             <div className="min-h-screen bg-background py-12">
                 <div className="container mx-auto px-4 text-center">
@@ -202,7 +239,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                     <Card className="border-0 shadow-none bg-transparent">
                         <CardContent className="px-0">
                             <div className="prose prose-lg max-w-none">
-                                <MDXRemote source={post.content} components={mdxComponents} />
+                                <MDXRemote {...mdxSerialized} components={mdxComponents} />
                             </div>
                         </CardContent>
                     </Card>

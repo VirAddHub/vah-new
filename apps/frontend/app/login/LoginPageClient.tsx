@@ -8,7 +8,48 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle2 } from 'lucide-react';
-import { VAHLogo } from '@/components/VAHLogo';
+
+/**
+ * Login header brand — not VAHLogo: explicit box + eager img + text fallback
+ * so the mark stays visible even if flex/SVG sizing misbehaves or the asset 404s.
+ */
+function LoginBrandMark() {
+  const [useTextFallback, setUseTextFallback] = useState(false);
+
+  if (useTextFallback) {
+    return (
+      <Link
+        href="/"
+        className="inline-flex min-h-[36px] min-w-0 shrink-0 items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        aria-label="VirtualAddressHub home"
+      >
+        <span className="text-body font-semibold tracking-tight text-foreground sm:text-body-lg">
+          Virtual<span className="text-primary">Address</span>Hub
+        </span>
+      </Link>
+    );
+  }
+
+  return (
+    <Link
+      href="/"
+      className="inline-flex h-9 min-h-[36px] w-auto max-w-[200px] shrink-0 items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 sm:h-10 sm:max-w-[220px]"
+      aria-label="VirtualAddressHub home"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- public SVG; avoids optimizer quirks */}
+      <img
+        src="/images/logo.svg"
+        alt=""
+        width={160}
+        height={40}
+        className="block h-8 w-auto max-w-[200px] object-contain object-left sm:h-9 sm:max-w-[220px]"
+        loading="eager"
+        decoding="sync"
+        onError={() => setUseTextFallback(true)}
+      />
+    </Link>
+  );
+}
 
 // Map backend error codes to user-friendly messages
 function getLoginErrorMessage(
@@ -187,36 +228,25 @@ export function LoginPageClient() {
   return (
     <div className="min-h-screen bg-muted flex flex-col">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 flex flex-col flex-1">
-        {/* Header row: logo left, contact button right */}
-        <div className="flex items-center justify-between gap-4 px-0.5 pt-5 sm:pt-7 pb-2 sm:pb-3 z-10">
-          <VAHLogo
-            size="lg"
-            href="/"
-            className="shrink-0 min-w-0 flex items-center [&_[data-vah-logo]]:min-h-0 [&_[data-vah-logo]]:min-w-0"
-            imgClassName="h-9 w-auto object-left sm:h-10 md:h-11 lg:h-[2.875rem] max-w-[min(58vw,200px)] sm:max-w-[210px] md:max-w-[228px] lg:max-w-[248px]"
-          />
-          <Link
-            href="/contact"
-            className="shrink-0 self-center inline-flex items-center justify-center rounded-lg border border-border bg-card px-4 py-2.5 text-body-sm font-medium text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground transition-colors"
-          >
-            Contact us
-          </Link>
+        {/* Header: brand only */}
+        <div className="flex w-full items-center px-0.5 pt-5 sm:pt-7 pb-2 sm:pb-3 z-10">
+          <LoginBrandMark />
         </div>
 
         {/* Main area - balanced height */}
         <div className="flex items-center justify-center flex-1 min-h-[calc(100vh-120px)] py-8 sm:py-12">
           <div className="w-full max-w-[480px]">
-            <div className="bg-card rounded-3xl border border-border shadow-lg p-6 sm:p-8">
-              {/* Title & subtitle */}
-              <div className="mb-6">
-                <h1 className="text-h1 tracking-tight text-foreground">
-                  Login
-                </h1>
-                <p className="mt-1.5 text-body-sm text-muted-foreground">
-                  Sign in to your account
-                </p>
-              </div>
+            {/* Heading + subtitle outside the card (product-style auth layout) */}
+            <div className="mb-5 text-left">
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                Welcome back
+              </h1>
+              <p className="mt-1.5 text-body-sm text-muted-foreground">
+                Sign in to your account
+              </p>
+            </div>
 
+            <div className="rounded-[14px] border border-border bg-card p-6 shadow-sm sm:p-8">
               {/* Success Alert - Email Changed */}
               {emailChanged && (
                 <Alert className="mb-6 border-green-500/50 bg-green-50 dark:bg-green-900/20">
@@ -234,8 +264,8 @@ export function LoginPageClient() {
                   <AlertDescription className="space-y-2">
                     <div className="font-medium">{error}</div>
                     {showResetHint && (
-                      <div className="text-body-sm text-muted-foreground mt-2">
-                        Forgot your password? You can reset it below.
+                      <div className="mt-2 text-body-sm text-muted-foreground">
+                        Use <span className="font-medium text-foreground">Forgot password?</span> next to Password to reset it.
                       </div>
                     )}
                   </AlertDescription>
@@ -256,14 +286,22 @@ export function LoginPageClient() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     disabled={loading}
-                    className="h-11 w-full"
+                    className="h-11 w-full border-border bg-muted/60"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="password" className="text-foreground">
-                    Password
-                  </Label>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="password" className="text-foreground">
+                      Password
+                    </Label>
+                    <Link
+                      href="/reset-password"
+                      className="shrink-0 text-body-sm font-medium text-primary transition-colors hover:text-primary/90"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
                   <Input
                     id="password"
                     type="password"
@@ -272,40 +310,37 @@ export function LoginPageClient() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     disabled={loading}
-                    className="h-11 w-full"
+                    className="h-11 w-full border-border bg-muted/60"
                   />
                 </div>
 
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 text-body font-semibold bg-primary text-primary-foreground hover:bg-primary/90 hover:brightness-95 transition-[filter,background]"
+                  className="h-11 w-full text-body font-semibold bg-primary text-primary-foreground transition-[filter,background] hover:bg-primary/90 hover:brightness-95"
                 >
                   {loading ? 'Signing in...' : 'Sign In'}
                 </Button>
-
-
               </form>
 
-              {/* Forgot password then Sign up */}
-              <div className="mt-6 space-y-4">
-                <div className="text-center">
-                  <Link
-                    href="/reset-password"
-                    className="text-body-sm font-medium text-primary hover:text-primary/90 transition-colors"
-                  >
-                    Forgot your password?
-                  </Link>
-                </div>
-                <div className="border-t border-border pt-4 text-center">
+              <div className="mt-6 space-y-3 border-t border-border pt-4 text-left">
+                <div>
                   <span className="text-body-sm text-muted-foreground">
                     Don&apos;t have an account?{' '}
                   </span>
                   <Link
                     href="/signup"
-                    className="text-body-sm text-primary hover:underline"
+                    className="text-body-sm font-medium text-primary hover:underline"
                   >
-                    Sign up
+                    Sign up free
+                  </Link>
+                </div>
+                <div>
+                  <Link
+                    href="/contact"
+                    className="text-body-sm font-medium text-primary transition-colors hover:text-primary/90 hover:underline"
+                  >
+                    Can&apos;t log in?
                   </Link>
                 </div>
               </div>

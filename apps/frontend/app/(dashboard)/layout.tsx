@@ -14,27 +14,27 @@ export default function DashboardLayout({
     return (
         <DashboardViewProvider>
             <ActiveBusinessProvider>
-            <OnboardingGate>
-                <div className="min-h-[100dvh] w-full bg-background">
-                    <div className="sticky top-0 z-50">
-                        <DashboardNavigation />
-                    </div>
+                <OnboardingGate>
+                    <div className="flex h-[100dvh] min-h-0 w-full flex-col overflow-hidden bg-background">
+                        <div className="sticky top-0 z-50 shrink-0">
+                            <DashboardNavigation />
+                        </div>
 
-                    <div className="flex min-h-[calc(100dvh-4rem)]">
-                        <DashboardSidebar />
-                        
-                        <main 
-                            id="main-content" 
-                            role="main" 
-                            className="min-w-0 flex-1 w-full overflow-x-hidden"
-                        >
-                            <div className="w-full max-w-full pt-2 pb-3 px-4 sm:pt-4 sm:px-4 sm:pb-5 md:pt-6 md:px-6 md:pb-6">
-                                {children}
-                            </div>
-                        </main>
+                        <div className="flex min-h-0 flex-1 overflow-hidden">
+                            <DashboardSidebar />
+
+                            <main
+                                id="main-content"
+                                role="main"
+                                className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto"
+                            >
+                                <div className="w-full max-w-full px-4 pb-3 pt-2 sm:px-4 sm:pb-5 sm:pt-4 md:px-6 md:pb-6 md:pt-6">
+                                    {children}
+                                </div>
+                            </main>
+                        </div>
                     </div>
-                </div>
-            </OnboardingGate>
+                </OnboardingGate>
             </ActiveBusinessProvider>
         </DashboardViewProvider>
     );

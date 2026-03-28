@@ -39,6 +39,7 @@ export function Footer({ onNavigate }: FooterProps) {
         { label: "Pricing", page: "pricing" },
         { label: "Blog", page: "blog" },
         { label: "Help Centre", page: "help" },
+        { label: "Contact us", page: "contact" },
     ];
 
     const legal: NavItem[] = [

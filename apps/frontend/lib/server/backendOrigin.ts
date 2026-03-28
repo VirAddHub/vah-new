@@ -61,6 +61,21 @@ function normalise(origin: string): string {
 }
 
 /**
+ * Non-production only: allow proxying to a local API (full-stack dev).
+ * Production always requires an allowlisted Render origin.
+ */
+function allowsLocalHttpBackend(origin: string): boolean {
+  if (process.env.NODE_ENV === 'production') return false;
+  try {
+    const u = new URL(origin);
+    if (u.protocol !== 'http:') return false;
+    return u.hostname === 'localhost' || u.hostname === '127.0.0.1';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Validates that the origin is in the Render allowlist.
  * 
  * @param origin The origin URL to validate
@@ -68,11 +83,14 @@ function normalise(origin: string): string {
  * @throws Error if origin is not in allowlist
  */
 function validateRenderOrigin(origin: string, envVarName: string): void {
+  if (allowsLocalHttpBackend(origin)) {
+    return;
+  }
   if (!ALLOWED.has(origin)) {
     throw new Error(
-      `Invalid ${envVarName}: must be Render origin. ` +
+      `Invalid ${envVarName}: must be Render origin (or http://localhost / http://127.0.0.1 in development). ` +
       `Got: ${origin}. ` +
-      `Allowed: ${Array.from(ALLOWED).join(', ')}`
+      `Allowed Render: ${Array.from(ALLOWED).join(', ')}`
     );
   }
 }
@@ -87,8 +105,8 @@ function validateRenderOrigin(origin: string, envVarName: string): void {
  * - No fallbacks
  * 
  * Non-production:
- * - Prefers NEXT_PUBLIC_BACKEND_API_ORIGIN (must be allowlisted)
- * - Falls back to NEXT_PUBLIC_API_URL (legacy, warns, must be allowlisted)
+ * - Prefers NEXT_PUBLIC_BACKEND_API_ORIGIN (Render allowlist or local http://localhost|127.0.0.1)
+ * - Falls back to NEXT_PUBLIC_API_URL (legacy, warns, same rules)
  * - Falls back to staging Render origin (warns)
  * 
  * @returns The backend origin URL (without trailing slash)

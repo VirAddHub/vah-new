@@ -3,23 +3,33 @@ export const runtime = 'nodejs';
 export const revalidate = 0;
 
 import { NextRequest, NextResponse } from "next/server";
-
-const ORIGIN = process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN; // no non-null bang
+import { getBackendOrigin } from "@/lib/server/backendOrigin";
 
 export async function proxy(req: NextRequest, targetPath: string) {
-  // Emit a header so you can see what target we're using in Network tab
-  if (!ORIGIN) {
-    const hint = { message: 'Missing NEXT_PUBLIC_BACKEND_API_ORIGIN', env: process.env.VERCEL_ENV || 'unknown' };
-    console.error('[proxy] NEXT_PUBLIC_BACKEND_API_ORIGIN missing for env', hint.env);
-    return new NextResponse(JSON.stringify(hint), {
-      status: 500,
-      headers: { 'content-type': 'application/json', 'x-proxy-missing-origin': '1' },
-    });
+  let normalizedOrigin: string;
+  try {
+    // Same resolution as BFF routes: dev falls back to NEXT_PUBLIC_API_URL or staging Render
+    normalizedOrigin = getBackendOrigin().replace(/\/api\/?$/, "");
+  } catch (e) {
+    const message =
+      e instanceof Error ? e.message : "Backend API origin is not configured";
+    console.error("[proxy] getBackendOrigin failed:", message);
+    return new NextResponse(
+      JSON.stringify({
+        message,
+        env: process.env.VERCEL_ENV || "unknown",
+      }),
+      {
+        status: 500,
+        headers: {
+          "content-type": "application/json",
+          "x-proxy-missing-origin": "1",
+        },
+      }
+    );
   }
 
   const url = new URL(req.url);
-  // Normalize ORIGIN to remove trailing /api if present
-  const normalizedOrigin = ORIGIN.replace(/\/api\/?$/, '');
   // Ensure targetPath includes /api prefix (backend routes are mounted at /api/admin/...)
   const apiPath = targetPath.startsWith('/api/') ? targetPath : `/api${targetPath}`;
   const target = `${normalizedOrigin}${apiPath}${url.search}`;
