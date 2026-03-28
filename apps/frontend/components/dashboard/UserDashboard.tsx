@@ -43,6 +43,7 @@ import { MailDetail } from "@/components/dashboard/user/MailDetail";
 import { ForwardingModal } from "@/components/dashboard/user/ForwardingModal";
 import { RightPanel } from "@/components/dashboard/user/RightPanel";
 import type { MailItem } from "@/components/dashboard/user/types";
+import { getMailItemPrimaryLabel } from "@/lib/mailItemDates";
 import dynamic from 'next/dynamic';
 
 // Lazy load Sumsub widget to avoid SSR issues
@@ -226,12 +227,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const isAllSelected = selectedMail.length === mailItems.length && mailItems.length > 0;
   const isSomeSelected = selectedMail.length > 0;
 
-  // Check if selected items include HMRC or Companies House
-  const selectedHasGovernment = selectedMail.some(id => {
-    const item = mailItems.find((m: MailItem) => String(m.id) === id);
-    return item?.tag === "HMRC" || item?.tag === "COMPANIES HOUSE";
-  });
-
   // Mark mail item as read
   const markAsRead = useCallback(async (item: MailItem) => {
     try {
@@ -291,23 +286,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       .toUpperCase();
   };
 
-  const formatDate = (dateValue: string | number | undefined): string => {
-    if (dateValue === undefined || dateValue === null) return '';
-    try {
-      const date = typeof dateValue === 'number' ? new Date(dateValue) : new Date(dateValue);
-      if (Number.isNaN(date.getTime())) return '';
-      const currentYear = new Date().getFullYear();
-      const dateYear = date.getUTCFullYear();
-      const dateDay = date.getUTCDate();
-      const dateMonth = date.getUTCMonth();
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthName = monthNames[dateMonth];
-      return dateYear === currentYear ? `${dateDay} ${monthName}` : `${dateDay} ${monthName} ${dateYear}`;
-    } catch {
-      return '';
-    }
-  };
-
   const mailStatusMeta = (item: MailItem) => {
     const raw = (item.status || "").toLowerCase();
     const isForwarded = raw.includes("forward");
@@ -327,10 +305,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   };
 
   const mailTypeIcon = (item: MailItem) => {
-    const tag = (item.tag || "").toLowerCase();
     const sender = (item.sender_name || "").toLowerCase();
     const subj = (item.subject || "").toLowerCase();
-    const s = `${tag} ${sender} ${subj}`;
+    const s = `${sender} ${subj}`;
 
     if (s.includes("bank") || s.includes("barclays") || s.includes("hsbc") || s.includes("lloyds")) return Landmark;
     if (s.includes("hmrc") || s.includes("companies house") || s.includes("gov")) return Building2;
@@ -829,7 +806,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   </p>
                 </CardHeader>
                 <CardContent>
-                  <SumsubKycWidget />
+                  <SumsubKycWidget hideIntro />
                 </CardContent>
               </Card>
             )}
@@ -1030,7 +1007,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                 mailTypeIcon={mailTypeIcon}
                 mailStatusMeta={mailStatusMeta}
                 formatTime={formatTime}
-                formatDate={formatDate}
                 forwardingRequests={forwardingRequests}
                 onRequestForwarding={handleRequestForwarding}
                 userProfile={userProfile}
@@ -1109,7 +1085,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
         isOpen={showPDFModal}
         onClose={() => setShowPDFModal(false)}
         mailItemId={selectedMailForPDF?.id ? Number(selectedMailForPDF.id) : null}
-        mailItemSubject={selectedMailForPDF?.subject || 'Mail Preview'}
+        mailItemSubject={selectedMailForPDF ? getMailItemPrimaryLabel(selectedMailForPDF) : 'Mail Preview'}
         useBlobFallback
       />
 
@@ -1154,7 +1130,6 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           mailTypeIcon={mailTypeIcon}
           mailStatusMeta={mailStatusMeta}
           formatTime={formatTime}
-          formatDate={formatDate}
           forwardingRequests={forwardingRequests}
           onRequestForwarding={handleRequestForwarding}
           userProfile={userProfile}

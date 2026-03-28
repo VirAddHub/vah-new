@@ -112,11 +112,19 @@ export async function GET(req: NextRequest) {
     }
 
     if (!backendRes.ok) {
+      const backendMessage = (() => {
+        const m = typeof data?.message === 'string' ? data.message.trim() : '';
+        if (m) return m;
+        const d = typeof data?.description === 'string' ? data.description.trim() : '';
+        if (d) return d;
+        return undefined;
+      })();
       return NextResponse.json(
         {
           ok: false,
           status: backendRes.status,
           error: data?.error || data?.message || 'BACKEND_ERROR',
+          message: backendMessage,
           data,
           debug: {
             backendUrl,

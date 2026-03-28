@@ -45,10 +45,15 @@ export function MarketingNavigation({ onNavigate }: MarketingNavigationProps) {
     return (
         <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-sm border-b border-border">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16">
-                    {/* Logo - explicit min size so it never renders small (200x50) */}
-                    <div className="flex h-[50px] min-h-[50px] min-w-[200px] shrink-0 items-center">
-                        <VAHLogo onNavigate={onNavigate} size="lg" className="h-[50px] w-[200px]" />
+                <div className="flex h-16 items-center justify-between gap-3 min-w-0">
+                    {/* Logo: visible on all breakpoints; tighter on phone, full height from sm */}
+                    <div className="flex min-h-10 min-w-0 max-w-[min(100%,12rem)] flex-1 shrink items-center sm:min-w-[180px] sm:max-w-none sm:flex-none sm:min-h-[50px]">
+                        <VAHLogo
+                            onNavigate={onNavigate}
+                            size="lg"
+                            className="min-w-0 max-w-full"
+                            imgClassName="!h-9 !max-h-9 w-auto max-w-full object-contain object-left sm:!h-[50px] sm:!max-h-[50px] sm:max-w-[200px]"
+                        />
                     </div>
 
                     {/* Desktop Navigation */}

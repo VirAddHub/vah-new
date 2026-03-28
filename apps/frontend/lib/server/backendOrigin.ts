@@ -2,22 +2,22 @@
  * Backend Origin Resolution for BFF Routes
  * 
  * Render-Only: Only Render origins are allowed (no localhost).
- * Allowed origins:
+ * Allowed hosts:
  * - https://vah-api.onrender.com (production)
  * - https://vah-api-staging.onrender.com (staging)
  * 
- * IMPORTANT: The origin should NOT include "/api" because BFF routes automatically
- * add "/api" when constructing backend URLs (e.g., `${origin}/api/profile`).
- * 
- * The normalise() function automatically strips trailing "/api" if present to
- * prevent double /api/api/ bugs.
+ * `NEXT_PUBLIC_BACKEND_API_ORIGIN` may be set **either** as the host root **or** with a
+ * trailing `/api` (common in dashboards). `normalise()` strips a trailing `/api` so BFF
+ * routes can append `/api/...` exactly once (e.g. `${origin}/api/kyc/start`).
  * 
  * Correct examples:
- * - NEXT_PUBLIC_BACKEND_API_ORIGIN=https://vah-api-staging.onrender.com
- * - NEXT_PUBLIC_BACKEND_API_ORIGIN=https://vah-api-staging.onrender.com/api (auto-fixed)
+ * - https://vah-api-staging.onrender.com
+ * - https://vah-api-staging.onrender.com/
+ * - https://vah-api-staging.onrender.com/api
+ * - https://vah-api-staging.onrender.com/api/
  * 
- * Wrong (will cause 404/500 errors):
- * - NEXT_PUBLIC_BACKEND_API_ORIGIN=https://vah-api-staging.onrender.com/api/profile (too specific)
+ * Wrong (will fail validation or 404):
+ * - https://vah-api-staging.onrender.com/api/profile (path beyond `/api`)
  */
 
 // Render-only allowlist
@@ -109,7 +109,7 @@ function validateRenderOrigin(origin: string, envVarName: string): void {
  * - Falls back to NEXT_PUBLIC_API_URL (legacy, warns, same rules)
  * - Falls back to staging Render origin (warns)
  * 
- * @returns The backend origin URL (without trailing slash)
+ * @returns The backend host origin (no trailing slash, no trailing `/api` — use {@link getBackendApiBaseUrl} for `/api/...` paths)
  * @throws Error if:
  *   - Production: NEXT_PUBLIC_BACKEND_API_ORIGIN is not set
  *   - Origin is not in Render allowlist
@@ -123,7 +123,7 @@ export function getBackendOrigin(): string {
       const error = new Error(
         'NEXT_PUBLIC_BACKEND_API_ORIGIN is not set. ' +
         'Please configure this environment variable in your deployment settings. ' +
-        'Example: https://vah-api-staging.onrender.com (do NOT include /api - it is added automatically)'
+        'Example: https://vah-api-staging.onrender.com or https://vah-api-staging.onrender.com/api (trailing /api is optional and normalised)'
       );
       if (!didLog) {
         console.error('[backendOrigin] PRODUCTION ERROR:', error.message);
@@ -134,28 +134,13 @@ export function getBackendOrigin(): string {
     }
 
     const origin = normalise(process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN);
-    
-    // Guard: Ensure origin does NOT end with /api (BFF routes add /api automatically)
-    if (origin.toLowerCase().endsWith('/api')) {
-      const error = new Error(
-        `Invalid backend origin: must NOT end with /api. Got: ${origin}. ` +
-        `BFF routes automatically add /api when constructing URLs. ` +
-        `Example: https://vah-api-staging.onrender.com (not .../api)`
-      );
-      if (!didLog) {
-        console.error('[backendOrigin] PRODUCTION ERROR:', error.message);
-        didLog = true;
-      }
-      throw error;
-    }
-    
+
     try {
       validateRenderOrigin(origin, 'NEXT_PUBLIC_BACKEND_API_ORIGIN');
     } catch (validationError) {
       const error = new Error(
         `Invalid NEXT_PUBLIC_BACKEND_API_ORIGIN: ${validationError instanceof Error ? validationError.message : 'must be Render origin'}. ` +
-        `Note: Do NOT include /api in the origin - it is added automatically by BFF routes. ` +
-        `Example: https://vah-api-staging.onrender.com`
+        `Use the API host only, optionally with a trailing /api (e.g. https://vah-api-staging.onrender.com or .../api).`
       );
       if (!didLog) {
         console.error('[backendOrigin] PRODUCTION ERROR:', error.message);
@@ -175,21 +160,7 @@ export function getBackendOrigin(): string {
   // Non-production: Prefer NEXT_PUBLIC_BACKEND_API_ORIGIN
   if (process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN) {
     const origin = normalise(process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN);
-    
-    // Guard: Ensure origin does NOT end with /api (BFF routes add /api automatically)
-    if (origin.toLowerCase().endsWith('/api')) {
-      const error = new Error(
-        `Invalid backend origin: must NOT end with /api. Got: ${origin}. ` +
-        `BFF routes automatically add /api when constructing URLs. ` +
-        `Example: https://vah-api-staging.onrender.com (not .../api)`
-      );
-      if (!didLog) {
-        console.error('[backendOrigin] ERROR:', error.message);
-        didLog = true;
-      }
-      throw error;
-    }
-    
+
     validateRenderOrigin(origin, 'NEXT_PUBLIC_BACKEND_API_ORIGIN');
 
     if (!didLog) {
@@ -269,4 +240,12 @@ export function getBackendOriginWithSource(): { origin: string; origin_source: s
  */
 export function assertBackendOrigin(): string {
   return getBackendOrigin();
+}
+
+/**
+ * Base URL for backend Express routes (always ends with `/api`, once).
+ * Prefer `${getBackendApiBaseUrl()}/kyc/start` over manual `${getBackendOrigin()}/api/...` in new code.
+ */
+export function getBackendApiBaseUrl(): string {
+  return `${getBackendOrigin()}/api`;
 }

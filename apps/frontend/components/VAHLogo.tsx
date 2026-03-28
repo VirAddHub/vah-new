@@ -86,16 +86,17 @@ export function VAHLogo({
         xl: { width: 240, height: 60 },
     }[size || "md"];
 
-    // Default caps so the SVG scales down on small screens; imgClassName can override via cn merge.
-    const sizeImgMaxClass = {
-        sm: "max-h-[26px] w-auto max-w-full sm:max-h-[30px]",
-        md: "max-h-8 w-auto max-w-full sm:max-h-10",
-        lg: "max-h-9 w-auto max-w-full sm:max-h-[50px]",
-        xl: "max-h-12 w-auto max-w-full sm:max-h-[60px] min-h-[50px] min-w-[200px]",
+    // Responsive bounds: explicit max-height + width auto so the SVG never collapses to 0×0.
+    // imgClassName merges last so parents (e.g. dashboard) can tune without fighting inline styles.
+    const sizeImgClass = {
+        sm: "h-7 w-auto max-h-7 max-w-[min(100%,10rem)] sm:h-8 sm:max-h-8 sm:max-w-[11rem]",
+        md: "h-8 w-auto max-h-8 max-w-[min(100%,12rem)] sm:h-10 sm:max-h-10 sm:max-w-[14rem]",
+        lg: "h-9 w-auto max-h-9 max-w-[min(100%,13rem)] sm:h-[50px] sm:max-h-[50px] sm:max-w-[200px]",
+        xl: "h-11 w-auto max-h-11 max-w-[min(100%,15rem)] sm:h-[60px] sm:max-h-[60px] sm:max-w-[240px]",
     }[size || "md"];
 
     const inner = (
-        <span className="inline-flex min-h-0 min-w-0 shrink-0 items-center" data-vah-logo>
+        <span className="inline-flex shrink-0 items-center" data-vah-logo>
             {imgFailed ? (
                 <span className="font-semibold text-foreground text-body tracking-tight">{fullName}</span>
             ) : (
@@ -106,7 +107,7 @@ export function VAHLogo({
                     height={logoDimensions.height}
                     className={cn(
                         "block object-contain object-left transition-opacity duration-200 group-hover:opacity-90",
-                        sizeImgMaxClass,
+                        sizeImgClass,
                         imgClassName
                     )}
                     style={

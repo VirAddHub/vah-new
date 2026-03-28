@@ -12,6 +12,7 @@
 
 import crypto from 'crypto';
 import { Router, Request, Response } from 'express';
+import { resolveSumsubWebhookSecret } from '../../lib/sumsubConfig';
 import { getPool } from '../db';
 import { logVerificationEvent } from '../services/verificationEventLog';
 import { sendKycApproved, sendKycRejected } from '../../lib/mailer';
@@ -111,7 +112,7 @@ async function insertNotification(opts: {
 // ---------------------------------------------------------------------------
 
 router.post('/', async (req: Request, res: Response) => {
-  const secret = process.env.SUMSUB_WEBHOOK_SECRET || '';
+  const { secret } = resolveSumsubWebhookSecret();
   const sig =
     (req.headers['x-payload-digest'] as string | undefined) ??
     (req.headers['X-Payload-Digest'] as string | undefined) ??

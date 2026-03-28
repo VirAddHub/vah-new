@@ -3,6 +3,8 @@
 import React from 'react';
 import { FileText, X, ArrowLeft, Archive, ArchiveRestore } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { pdfEmbedUrl } from '@/lib/pdfEmbedUrl';
+import { getMailItemPrimaryLabel } from '@/lib/mailItemDates';
 import type { MailItem } from './types';
 
 type StatusMeta = { label: string; badgeClass: string };
@@ -21,8 +23,8 @@ interface MailDetailProps {
   miniViewerError: string | null;
   mailTypeIcon: (item: MailItem) => React.ComponentType<{ className?: string }>;
   mailStatusMeta: (item: MailItem) => StatusMeta;
+  /** Kept for call-site compatibility */
   formatTime: (d?: string | number) => string;
-  formatDate: (dateValue: string | number | undefined) => string;
 }
 
 export function MailDetail({
@@ -37,30 +39,16 @@ export function MailDetail({
   miniViewerLoading,
   miniViewerUrl,
   miniViewerError,
-  mailTypeIcon,
-  mailStatusMeta,
-  formatTime,
-  formatDate,
+  mailTypeIcon: _mailTypeIcon,
+  mailStatusMeta: _mailStatusMeta,
+  formatTime: _formatTime,
 }: MailDetailProps) {
-  const getMailDate = (mailItem: MailItem): string | number | undefined => {
-    if (mailItem.received_at_ms !== undefined && mailItem.received_at_ms !== null) {
-      return mailItem.received_at_ms;
-    }
-    if (mailItem.received_date) {
-      return mailItem.received_date;
-    }
-    if (mailItem.received_at) {
-      return mailItem.received_at;
-    }
-    if (mailItem.created_at !== undefined && mailItem.created_at !== null) {
-      return mailItem.created_at;
-    }
-    return undefined;
-  };
+  void _mailTypeIcon;
+  void _mailStatusMeta;
+  void _formatTime;
 
-  const dateValue = getMailDate(item);
-  const formattedDate = formatDate(dateValue);
-  const title = formattedDate || item.sender_name || item.subject || item.tag || 'Mail';
+  const headline = getMailItemPrimaryLabel(item);
+  const previewSrc = miniViewerUrl ? pdfEmbedUrl(miniViewerUrl) : null;
 
   return (
     <div className="bg-background w-full min-w-0">
@@ -76,15 +64,9 @@ export function MailDetail({
           Back to Inbox
         </button>
 
-        {/* Mail title + date added to dashboard */}
-        <div className="space-y-1.5 md:space-y-3">
-          <h1 className="text-h3 md:text-h2 font-semibold text-foreground leading-tight break-words">
-            {title}
-          </h1>
-          <p className="text-body-sm text-muted-foreground">
-            {formattedDate ? `Added: ${formattedDate}` : 'Added: —'}
-          </p>
-        </div>
+        <h1 className="text-h3 md:text-h2 font-semibold text-foreground leading-tight break-words">
+          {headline}
+        </h1>
 
         {/* Action buttons - stack on mobile, comfortable height */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 flex-wrap">
@@ -150,10 +132,10 @@ export function MailDetail({
           </div>
         </div>
 
-        {/* PDF Viewer - Embedded container */}
-        <div className="rounded-xl md:rounded-lg border border-border bg-muted/50 p-4 md:p-6 min-w-0">
+        {/* PDF viewer: bleed to screen edges on small viewports; FitH fragment + overflow-x for stubborn viewers */}
+        <div className="min-w-0 -mx-4 w-[calc(100%+2rem)] max-w-[100vw] border-y border-border bg-muted/50 py-4 sm:mx-0 sm:w-full sm:max-w-none sm:rounded-xl sm:border sm:px-4 md:p-6 md:rounded-lg">
           {miniViewerLoading ? (
-            <div className="flex flex-col items-center justify-center min-h-[300px] md:min-h-[400px] py-12 md:py-16">
+            <div className="flex flex-col items-center justify-center min-h-[min(82dvh,1040px)] py-12 md:py-16">
               <div className="mx-auto h-10 w-10 rounded-full border-2 border-border border-t-primary animate-spin" />
               <p className="mt-6 text-body font-medium text-foreground">
                 Loading preview…
@@ -162,24 +144,25 @@ export function MailDetail({
                 Fetching your scanned document
               </p>
             </div>
-          ) : miniViewerUrl ? (
-            <div className="relative w-full" style={{ minHeight: '400px' }}>
-              <object 
-                data={miniViewerUrl} 
-                type="application/pdf" 
-                className="w-full h-full rounded"
-                style={{ minHeight: '400px' }}
+          ) : previewSrc ? (
+            <div
+              className="relative mx-auto w-full min-h-[560px] h-[min(82dvh,1040px)] overflow-x-auto overflow-y-hidden rounded-none bg-background sm:rounded-md [-webkit-overflow-scrolling:touch]"
+            >
+              <object
+                data={previewSrc}
+                type="application/pdf"
+                className="absolute inset-0 h-full w-full min-h-[560px] rounded-none sm:rounded-md"
+                aria-label="Mail scan PDF preview"
               >
                 <iframe
                   title="Mail Scan Preview"
-                  src={miniViewerUrl}
-                  className="w-full h-full rounded border-0"
-                  style={{ minHeight: '400px' }}
+                  src={previewSrc}
+                  className="absolute inset-0 h-full w-full min-h-[560px] rounded-none border-0 sm:rounded-md"
                 />
               </object>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center min-h-[300px] md:min-h-[400px] py-12 md:py-16 text-center">
+            <div className="flex flex-col items-center justify-center min-h-[min(82dvh,1040px)] py-12 md:py-16 text-center">
               <FileText className="h-12 w-12 mx-auto text-muted-foreground" strokeWidth={1.5} />
               <p className="mt-6 text-body font-medium text-foreground">
                 {miniViewerError ? 'Preview unavailable' : 'No preview available'}

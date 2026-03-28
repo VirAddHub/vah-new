@@ -376,7 +376,7 @@ router.post('/from-onedrive', async (req, res) => {
           0,                                  // $8: file_size (not provided in payload)
           true,                               // $9: scanned (true for OneDrive files)
           'received',                         // $10: status
-          null,                               // $11: tag - leave empty until user selects; use source_slug for billing
+          null,                               // $11: tag — always null on create; users set tags in-app only (source_slug carries filename slug for HMRC/CH routing)
           payload.sourceSlug,                 // $12: source_slug (from filename, for forwarding/KYC)
           `OneDrive import: ${payload.fileName}`, // $13: notes
           receivedAtMs,                       // $14: received_at_ms
@@ -430,7 +430,7 @@ router.post('/from-onedrive', async (req, res) => {
           0,                                  // $8: file_size (not provided in payload)
           true,                               // $9: scanned (true for OneDrive files)
           'received',                         // $10: status
-          null,                               // $11: tag - leave empty until user selects
+          null,                               // $11: tag — always null on create; users set tags in-app only
           payload.sourceSlug,                 // $12: source_slug (from filename, for forwarding/KYC)
           `OneDrive import: ${payload.fileName}`, // $13: notes
           receivedAtMs,                       // $14: received_at_ms

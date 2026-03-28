@@ -4,16 +4,7 @@ import { getPool } from '../../server/db';
 import { LegalTransitions } from './state';
 import { GDPR_FORWARDING_WINDOW_MS } from '../../config/gdpr';
 import { MAIL_STATUS } from './mailStatus';
-
-// Free forwarding tags (lowercase slugs)
-const FREE_FORWARD_TAGS = new Set(['hmrc', 'companies_house']);
-
-function isOfficialMail(tag: string | null | undefined): boolean {
-    if (!tag) return false;
-    // Normalize to lowercase for comparison
-    const normalized = tag.toLowerCase().replace(/\s+/g, '_');
-    return FREE_FORWARD_TAGS.has(normalized);
-}
+import { isOfficialMailClassification } from '../../server/services/kyc-guards';
 
 export interface CreateForwardingInput {
     userId: number;
@@ -77,7 +68,7 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
                 throw new Error('Mail item is older than 30 days and cannot be forwarded due to GDPR compliance');
             }
 
-            const isOfficial = isOfficialMail(mailData.tag) || isOfficialMail(mailData.source_slug);
+            const isOfficial = isOfficialMailClassification(mailData.tag, mailData.source_slug);
 
             // Check for existing active forwarding request (idempotent check)
             // Treat these as "active" requests where we should not allow duplicates
@@ -171,7 +162,7 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
                     }
                 }
             } else {
-                console.log(`[forwarding] ℹ️ Official mail (tag="${mailData.tag}"), no charge created (free forwarding)`);
+                console.log(`[forwarding] ℹ️ Official mail (tag="${mailData.tag}", source_slug="${mailData.source_slug}"), no charge created (free forwarding)`);
             }
 
             // Create outbox event

@@ -408,27 +408,27 @@ export default function AccountVerificationPage() {
             {/* STATE: ACTION REQUIRED */}
             {verificationState === 'action_required' && (
                 <>
-                    {/* Verification Required Card */}
-                    <Card className="rounded-xl sm:rounded-2xl border border-border bg-card mb-4 sm:mb-6">
+                    {/* Verification Required — CTA + Sumsub on same page after Start */}
+                    <Card className="mb-4 rounded-xl border border-border bg-card sm:mb-6 sm:rounded-2xl">
                         <CardContent className="p-4 sm:p-6 md:p-8">
-                            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 mb-4 sm:mb-6">
-                                <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
-                                    <ShieldCheck className="w-6 h-6 text-yellow-700" strokeWidth={2} />
-                        </div>
-                                <div className="flex-1">
-                                    <h2 className="text-h3 font-semibold text-foreground mb-2">
-                                        Verification Required
-                                    </h2>
-                                    <p className="text-body text-muted-foreground leading-relaxed mb-6">
-                                        Complete identity verification to fully activate your account (including proof of address certificates). This typically takes 5-10 minutes.
-                                    </p>
-                                    
-                                    {/* Sumsub Widget */}
-                                    <SumsubKycWidget />
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/40">
+                                    <ShieldCheck className="h-6 w-6 text-amber-800 dark:text-amber-200" strokeWidth={2} />
+                                </div>
+                                <div className="min-w-0 flex-1 space-y-4">
+                                    <div>
+                                        <h2 className="text-h3 font-semibold text-foreground">
+                                            Verification required
+                                        </h2>
+                                        <p className="mt-2 text-body text-muted-foreground leading-relaxed">
+                                            Tap the button below to open secure identity verification on this page. It usually takes about 5–10 minutes.
+                                        </p>
+                                    </div>
+                                    <SumsubKycWidget hideIntro />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
 
                 </>
             )}

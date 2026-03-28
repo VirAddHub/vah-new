@@ -422,9 +422,9 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
             });
         }
 
-        const mailTag = mailResult.rows[0].tag;
+        const { tag: mailTag, source_slug: mailSourceSlug } = mailResult.rows[0];
         const { canForwardMail } = await import('../services/kyc-guards');
-        if (!canForwardMail(user.kyc_status, mailTag)) {
+        if (!canForwardMail(user.kyc_status, mailTag, mailSourceSlug)) {
             return res.status(403).json({
                 ok: false,
                 error: 'KYC_REQUIRED',

@@ -5,7 +5,7 @@
  * Or: npx jest lib/server/backendOrigin.test.ts
  */
 
-import { getBackendOrigin } from './backendOrigin';
+import { getBackendApiBaseUrl, getBackendOrigin } from './backendOrigin';
 
 describe('getBackendOrigin', () => {
   const originalEnv = process.env;
@@ -49,6 +49,24 @@ describe('getBackendOrigin', () => {
 
     const result = getBackendOrigin();
     expect(result).toBe('https://vah-api.onrender.com');
+  });
+
+  it('should normalise NEXT_PUBLIC_BACKEND_API_ORIGIN when it includes trailing /api', () => {
+    process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN = 'https://vah-api-staging.onrender.com/api';
+    delete process.env.NEXT_PUBLIC_API_URL;
+    process.env.NODE_ENV = 'production';
+
+    expect(getBackendOrigin()).toBe('https://vah-api-staging.onrender.com');
+    expect(getBackendApiBaseUrl()).toBe('https://vah-api-staging.onrender.com/api');
+  });
+
+  it('should normalise NEXT_PUBLIC_BACKEND_API_ORIGIN when it includes trailing /api/', () => {
+    process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN = 'https://vah-api.onrender.com/api/';
+    delete process.env.NEXT_PUBLIC_API_URL;
+    process.env.NODE_ENV = 'production';
+
+    expect(getBackendOrigin()).toBe('https://vah-api.onrender.com');
+    expect(getBackendApiBaseUrl()).toBe('https://vah-api.onrender.com/api');
   });
 
   it('should throw error in production when NEXT_PUBLIC_BACKEND_API_ORIGIN is missing (ignores NEXT_PUBLIC_API_URL)', () => {

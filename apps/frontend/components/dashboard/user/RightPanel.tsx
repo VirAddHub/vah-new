@@ -25,7 +25,6 @@ interface RightPanelProps {
   mailTypeIcon?: (item: MailItem) => React.ComponentType<{ className?: string }>;
   mailStatusMeta?: (item: MailItem) => { label: string; badgeClass: string };
   formatTime?: (d?: string | number) => string;
-  formatDate?: (dateValue: string | number | undefined) => string;
   // Forwarding props
   forwardingRequests?: unknown[];
   onRequestForwarding?: (mailItem: MailItem) => void;
@@ -47,7 +46,6 @@ export function RightPanel({
   mailTypeIcon,
   mailStatusMeta,
   formatTime,
-  formatDate,
   forwardingRequests = [],
   onRequestForwarding,
   userProfile,
@@ -99,7 +97,6 @@ export function RightPanel({
                   mailTypeIcon={mailTypeIcon || (() => () => null)}
                   mailStatusMeta={mailStatusMeta || (() => ({ label: '', badgeClass: '' }))}
                   formatTime={formatTime || (() => '—')}
-                  formatDate={formatDate || (() => '')}
                 />
               </div>
             )}

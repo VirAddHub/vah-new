@@ -7,6 +7,7 @@ import { X, ExternalLink } from "lucide-react";
 import { usePDFPreloader } from "@/hooks/usePDFPreloader";
 import { SCAN_CHECKPOINT_MESSAGE } from "@/lib/scanUrlUtils";
 import { openMailItemInlineNewTab } from "@/lib/openInlineNewTab";
+import { pdfEmbedUrl } from "@/lib/pdfEmbedUrl";
 
 type PDFViewerModalProps = {
     isOpen: boolean;
@@ -149,16 +150,16 @@ export default function PDFViewerModal({
                         </div>
                     )}
                     {!loading && !error && viewerUrl && (
-                        <div className="w-full h-full rounded-lg overflow-hidden shadow-inner border border-border transition-opacity duration-150">
+                        <div className="h-full w-full overflow-x-auto overflow-y-hidden rounded-lg border border-border shadow-inner transition-opacity duration-150 [-webkit-overflow-scrolling:touch]">
                             <object
-                                data={viewerUrl}
+                                data={pdfEmbedUrl(viewerUrl)}
                                 type="application/pdf"
-                                className="w-full h-full"
+                                className="h-full min-h-full w-full min-w-full"
                             >
                                 <iframe
                                     title="PDF preview"
-                                    src={viewerUrl}
-                                    className="w-full h-full border-0"
+                                    src={pdfEmbedUrl(viewerUrl)}
+                                    className="h-full min-h-full w-full min-w-full border-0"
                                 />
                             </object>
                         </div>

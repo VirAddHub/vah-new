@@ -6,6 +6,7 @@ import { getPool } from '../db';
 import { sendKycSubmitted } from '../../lib/mailer';
 import { buildAppUrl } from '../../lib/mailer';
 import { sumsubFetch } from '../../lib/sumsub';
+import { resolveSumsubApiConfig, resolveSumsubLevelName } from '../../lib/sumsubConfig';
 
 const router = Router();
 
@@ -83,29 +84,22 @@ router.post('/start', requireAuth, async (req: Request, res: Response) => {
             return res.status(404).json({ ok: false, error: "user_not_found" });
         }
 
-        // Check if Sumsub credentials are configured
-        // Support old, new and sandbox env var names
-        const appToken = process.env.SUMSUB_APP_TOKEN || process.env.SUMSUB_APP_TOKEN_SANDBOX;
-        const appSecret = process.env.SUMSUB_APP_SECRET || process.env.SUMSUB_SECRET_KEY || process.env.SUMSUB_SECRET_KEY_SANDBOX;
-        const levelName = process.env.SUMSUB_LEVEL || process.env.SUMSUB_LEVEL_NAME || process.env.SUMSUB_LEVEL_NAME_SANDBOX || "id-and-liveness";
-        const baseUrl = process.env.SUMSUB_BASE_URL || process.env.SUMSUB_API || process.env.SUMSUB_BASE_URL_SANDBOX || process.env.SUMSUB_API_SANDBOX || "https://api.sumsub.com";
-
-        if (!appToken || !appSecret) {
-            console.error('[kyc/start] Sumsub not configured', {
-                hasAppToken: !!appToken,
-                hasAppSecret: !!appSecret,
-                hasLevelName: !!levelName,
-                hasBaseUrl: !!baseUrl,
-            });
+        const apiCfg = resolveSumsubApiConfig();
+        if (!apiCfg) {
+            console.error('[kyc/start] Sumsub not configured');
             return res.status(501).json({
                 ok: false,
                 status: 501,
                 error: 'Sumsub not configured',
                 code: 'SUMSUB_NOT_CONFIGURED',
-                message: 'Sumsub credentials are missing. Please configure SUMSUB_APP_TOKEN and SUMSUB_SECRET_KEY (or SUMSUB_APP_SECRET) environment variables.',
-                debug: { hasAppToken: !!appToken, hasAppSecret: !!appSecret, hasLevelName: !!levelName, hasBaseUrl: !!baseUrl }
+                message:
+                    'Sumsub credentials are missing. For live: SUMSUB_APP_TOKEN + SUMSUB_APP_SECRET or SUMSUB_SECRET_KEY. ' +
+                    'For sandbox: SUMSUB_APP_TOKEN_SANDBOX + SUMSUB_SECRET_KEY_SANDBOX or SUMSUB_APP_SECRET_SANDBOX (live secrets are not used with the sandbox token).',
+                debug: { hint: 'Do not set SUMSUB_SECRET_KEY if you only intend to use sandbox credentials.' },
             });
         }
+
+        const { levelName } = resolveSumsubLevelName(apiCfg.mode, 'id-and-liveness');
 
         // Ensure applicant exists
         let applicantId = user.sumsub_applicant_id;
@@ -162,7 +156,25 @@ router.post('/start', requireAuth, async (req: Request, res: Response) => {
         return res.json({ ok: true, token: tokenResp.token, applicantId });
     } catch (e) {
         console.error("[kyc/start]", e);
-        return res.status(500).json({ ok: false, error: "server_error" });
+        const raw = e instanceof Error ? e.message : String(e);
+        /** Short, user-facing hint (Sumsub errors often include JSON in the message). */
+        let message = raw;
+        try {
+            const jsonMatch = raw.match(/\{[\s\S]*\}\s*$/);
+            if (jsonMatch) {
+                const parsed = JSON.parse(jsonMatch[0]) as { description?: string; errorCode?: string; errorName?: string };
+                if (parsed.description) message = parsed.description;
+                else if (parsed.errorName && parsed.errorCode) message = `${parsed.errorName} (${parsed.errorCode})`;
+            }
+        } catch {
+            /* keep raw */
+        }
+        if (message.length > 400) message = `${message.slice(0, 400)}…`;
+        return res.status(500).json({
+            ok: false,
+            error: "sumsub_error",
+            message,
+        });
     }
 });
 

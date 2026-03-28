@@ -1,4 +1,6 @@
 // apps/backend/src/config/integrations.ts
+import { isSumsubApiConfigured, isSumsubWebhookConfigured, resolveSumsubApiConfig } from '../lib/sumsubConfig';
+
 export type GoCardlessConfig = {
     accessToken?: string;
     webhookSecret?: string;
@@ -21,7 +23,9 @@ export const integrations = {
     sumsub: {
         apiKey: process.env.SUMSUB_API_KEY,
         webhookSecret: process.env.SUMSUB_WEBHOOK_SECRET,
-        baseUrl: process.env.SUMSUB_BASE_URL || "https://api.sumsub.com",
+        get baseUrl() {
+            return resolveSumsubApiConfig()?.baseUrl ?? (process.env.SUMSUB_BASE_URL || 'https://api.sumsub.com');
+        },
     } as SumsubConfig,
 };
 
@@ -29,8 +33,7 @@ export const isConfigured = {
     gocardless: () =>
         Boolean(integrations.gocardless.accessToken && integrations.gocardless.webhookSecret),
 
-    sumsub: () =>
-        Boolean(integrations.sumsub.apiKey && integrations.sumsub.webhookSecret),
+    sumsub: () => Boolean(isSumsubApiConfigured() && isSumsubWebhookConfigured()),
 };
 
 export function getIntegrationStatus() {

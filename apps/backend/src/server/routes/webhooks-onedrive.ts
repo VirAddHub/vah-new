@@ -7,6 +7,7 @@ import { nowMs } from '../../lib/time';
 import { getPrimaryBusinessIdForUser } from '../../lib/business-helpers';
 import { sendMailScanned } from '../../lib/mailer';
 import { logger } from '../../lib/logger';
+import { parseMailFilename } from '../../services/mailFilenameParser';
 
 const router = Router();
 
@@ -15,6 +16,7 @@ const OneDrivePayload = z.object({
   userId: z.string().min(1).optional(),
   name: z.string().min(1),
   webUrl: z.string().url().optional(),
+  /** Ignored for persistence — `mail_item.tag` stays null until the user sets a tag in the app. */
   tag: z.string().optional(),
   sender: z.string().optional(),
   subject: z.string().optional(),
@@ -41,57 +43,6 @@ function parseBasic(auth?: string) {
 // Helper functions
 const pick = (v: any) => (v === '' || v == null ? undefined : v);
 const toNum = (v: any) => (Number.isFinite(Number(v)) ? Number(v) : null);
-const isoToMs = (iso: string) => {
-  if (!iso) return null;
-  const date = new Date(iso);
-  return isNaN(date.getTime()) ? null : date.getTime();
-};
-
-// Auto-detect tag from filename/sender/subject (returns lowercase slug)
-const detectTag = (filename: string, sender?: string, subject?: string): string => {
-  const text = `${filename} ${sender || ''} ${subject || ''}`.toUpperCase();
-
-  // Check for HMRC (most specific first)
-  if (/(HMRC|HM REVENUE|HM-REVENUE|TAX|VAT|CORPORATION TAX|CT|SELF-ASSESSMENT|SA|PAYE|INCOME TAX|CORPORATION)/.test(text)) {
-    return 'hmrc';
-  }
-
-  // Check for Companies House
-  if (/(COMPANIES HOUSE|COMPANIESHOUSE|COMPANIES-HOUSE|CH|CO-HOUSE)/.test(text)) {
-    return 'companies_house';
-  }
-
-  // Check for banks
-  if (/(BANK|BARCLAYS|LLOYDS|HSBC|NATWEST|MONZO|STARLING|HALIFAX|SANTANDER|NATIONWIDE|FIRST-DIRECT|TSB|RBS|ROYAL BANK)/.test(text)) {
-    return 'bank';
-  }
-
-  if (/(INSURANCE|POLICY|PREMIUM|COVER)/.test(text)) {
-    return 'insurance';
-  }
-
-  if (/(UTILITY|ELECTRIC|GAS|WATER|BRITISH GAS|EDF|E-ON|NPOWER|SCOTTISH POWER)/.test(text)) {
-    return 'utilities';
-  }
-
-  return 'other';
-};
-
-// Parse date from UK or ISO format to ISO string
-const parseDateTolerant = (s?: string): string | null => {
-  if (!s) return null;
-  const t = s.replace(/_/g, '-').replace(/\//g, '-');
-
-  // ISO first (YYYY-MM-DD)
-  let m = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-
-  // UK fallback (DD-MM-YYYY)
-  m = t.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
-
-  return null;
-};
 
 // Extract userID and date from filename (tags are manual-only, not extracted)
 // Supports: user4_10-10-2024.pdf (UK format)
@@ -133,54 +84,6 @@ const extractFromFilename = (name: string): FilenameData => {
     userId,
     dateIso: dateIso || null,  // No "today" fallback - let webhook use ingest time instead
   };
-};
-
-// Normalize tag from raw filename token to lowercase slug
-const normaliseTag = (tagRaw?: string | null): string => {
-  const t = (tagRaw || "").toLowerCase();
-
-  // HMRC detection (most specific first)
-  if (/(hmrc|hm-revenue|hm-revenue-and-customs|tax|vat|corporation-tax|ct|self-assessment|sa|paye|income-tax|corporation|corporationtax)/.test(t)) {
-    return "hmrc";
-  }
-
-  // Companies House detection
-  if (/(companies|companieshouse|companies-house|ch|co-house|cohouse)/.test(t)) {
-    return "companies_house";
-  }
-
-  // Bank detection
-  if (/(bank|barclays|hsbc|lloyds|natwest|monzo|starling|halifax|santander|nationwide|first-direct|tsb|rbs|royal-bank)/.test(t)) {
-    return "bank";
-  }
-
-  // Insurance detection
-  if (/(insur|policy|premium|cover)/.test(t)) {
-    return "insurance";
-  }
-
-  // Utilities detection
-  if (/(util|gas|electric|water|octopus|ovo|thames|british-gas|edf|e-on|npower|scottish-power|utility)/.test(t)) {
-    return "utilities";
-  }
-
-  if (!t) return "other";
-
-  // Convert to slug (kebab-case, lowercase)
-  return t.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || "other";
-};
-
-// Convert tag slug to human-readable title for subject
-const tagToTitle = (tagSlug: string): string => {
-  const titleMap: Record<string, string> = {
-    hmrc: "HMRC",
-    companies_house: "Companies House",
-    bank: "Bank Statement",
-    insurance: "Insurance",
-    utilities: "Utilities",
-    other: "General Mail",
-  };
-  return titleMap[tagSlug] || tagSlug.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
 // ---- Per-route raw capture ----
@@ -285,8 +188,8 @@ router.post('/', async (req: any, res) => {
     const lastModifiedDateTime = pick(body.lastModifiedDateTime); // Note: Not used for received_at_ms (uses ingest time instead)
     const event = pick(body.event) ?? 'created';
 
-    // Tag: Only use explicit tag from webhook payload, no auto-detection
-    const providedTag = pick(body.tag);
+    // Optional webhook `tag` is ignored for DB `mail_item.tag` — users set tags in the app only.
+    const providedTagIgnored = pick(body.tag);
     const sender = pick(body.sender);
     const subject = pick(body.subject);
 
@@ -297,11 +200,13 @@ router.post('/', async (req: any, res) => {
 
     // Extract userId and date from filename (but NOT tag - manual tagging only)
     const filenameData = extractFromFilename(cleanName);
+    const parsedMailFilename = parseMailFilename(cleanName);
+    const sourceSlugFromFilename = parsedMailFilename?.sourceSlug ?? null;
 
     // Determine final values with priority: webhook payload > filename extraction
     const finalUserId = userId || filenameData?.userId || null;
-    // Tag: Only use explicit tag from webhook, normalize if provided, otherwise null
-    const tagSlug = providedTag ? normaliseTag(providedTag) : null;
+    /** Always null on create — HMRC/CH routing uses `source_slug` from filename, not user `tag`. */
+    const tagForInsert: string | null = null;
     // Generate subject from provided subject or use default (no tag-based subject)
     const initialSubject = subject || 'Mail received';
     const receivedDate = filenameData?.dateIso || null;
@@ -313,13 +218,13 @@ router.post('/', async (req: any, res) => {
       cleanName,
       originalPath: path,
       cleanPath,
-      providedTag,
-      finalTag: tagSlug,
+      providedTagIgnored,
+      userTagColumn: tagForInsert,
+      sourceSlugFromFilename,
       initialSubject,
       receivedDate,
       sender,
       subject,
-      tagSource: providedTag ? 'explicit' : 'none'
     });
 
     // Validation
@@ -371,10 +276,10 @@ router.post('/', async (req: any, res) => {
             const result = await pool.query(
               `INSERT INTO mail_item (
                 idempotency_key, user_id, business_id, subject, sender_name, received_date,
-                scan_file_url, file_size, scanned, status, tag, notes,
+                scan_file_url, file_size, scanned, status, tag, source_slug, notes,
                 received_at_ms, created_at, updated_at
               )
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
               ON CONFLICT (idempotency_key) DO UPDATE SET
                 user_id = EXCLUDED.user_id,
                 business_id = EXCLUDED.business_id,
@@ -385,7 +290,7 @@ router.post('/', async (req: any, res) => {
                 file_size = EXCLUDED.file_size,
                 scanned = EXCLUDED.scanned,
                 status = EXCLUDED.status,
-                tag = EXCLUDED.tag,
+                source_slug = COALESCE(mail_item.source_slug, EXCLUDED.source_slug),
                 notes = EXCLUDED.notes,
                 received_at_ms = EXCLUDED.received_at_ms,
                 updated_at = EXCLUDED.updated_at
@@ -402,6 +307,7 @@ router.post('/', async (req: any, res) => {
                 true,
                 'received',
                 defaultTagSlug,
+                null,
                 `OneDrive file (extracted from URL: ${webUrl})`,
                 receivedAtMs,
                 now,
@@ -535,10 +441,10 @@ router.post('/', async (req: any, res) => {
     const result = await pool.query(
       `INSERT INTO mail_item (
         idempotency_key, user_id, business_id, subject, sender_name, received_date,
-        scan_file_url, file_size, scanned, status, tag, notes,
+        scan_file_url, file_size, scanned, status, tag, source_slug, notes,
         received_at_ms, created_at, updated_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       ON CONFLICT (idempotency_key) DO UPDATE SET
         user_id = EXCLUDED.user_id,
         business_id = EXCLUDED.business_id,
@@ -549,27 +455,28 @@ router.post('/', async (req: any, res) => {
         file_size = EXCLUDED.file_size,
         scanned = EXCLUDED.scanned,
         status = EXCLUDED.status,
-        tag = EXCLUDED.tag,
+        source_slug = COALESCE(mail_item.source_slug, EXCLUDED.source_slug),
         notes = EXCLUDED.notes,
         received_at_ms = EXCLUDED.received_at_ms,
         updated_at = EXCLUDED.updated_at
       RETURNING id, subject, status`,
       [
-        idempotencyKey,           // $1: idempotency_key
-        finalUserId,              // $2: user_id
-        primaryBusinessId,        // $3: business_id
-        initialSubject,           // $4: subject (human-readable title from tag)
-        'OneDrive Scan',          // $5: sender_name
-        new Date(receivedAtMs).toISOString().split('T')[0], // $6: received_date (YYYY-MM-DD)
-        webUrl,                   // $7: scan_file_url
-        size,                     // $8: file_size
-        true,                     // $9: scanned (true for OneDrive files)
-        'received',               // $10: status
-        tagSlug,                  // $11: tag (lowercase slug: hmrc, companies_house, bank, etc.)
-        `OneDrive path: ${cleanPath}`, // $12: notes
-        receivedAtMs,             // $13: received_at_ms
-        now,                      // $14: created_at
-        now                       // $15: updated_at
+        idempotencyKey,
+        finalUserId,
+        primaryBusinessId,
+        initialSubject,
+        'OneDrive Scan',
+        new Date(receivedAtMs).toISOString().split('T')[0],
+        webUrl,
+        size,
+        true,
+        'received',
+        tagForInsert,
+        sourceSlugFromFilename,
+        `OneDrive path: ${cleanPath}`,
+        receivedAtMs,
+        now,
+        now
       ]
     );
 
@@ -580,7 +487,8 @@ router.post('/', async (req: any, res) => {
       userId: finalUserId,
       subject: mailItem.subject,
       status: mailItem.status,
-      tag: tagSlug,
+      userTag: tagForInsert,
+      sourceSlug: sourceSlugFromFilename,
       receivedDate: new Date(receivedAtMs).toISOString().split('T')[0]
     });
 

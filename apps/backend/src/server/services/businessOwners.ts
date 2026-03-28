@@ -7,6 +7,7 @@ import { getAppUrl } from '../../config/appUrl';
 import { sendTemplateEmail } from '../../lib/mailer';
 import { Templates } from '../../lib/postmark-templates';
 import { sumsubFetch } from '../../lib/sumsub';
+import { resolveSumsubApiConfig, resolveSumsubLevelName } from '../../lib/sumsubConfig';
 
 /**
  * Create business owner and send verification invite
@@ -284,11 +285,15 @@ export async function createSumsubApplicantForOwner(ownerId: number): Promise<{
     }
     
     const owner = ownerResult.rows[0];
+
+    const api = resolveSumsubApiConfig();
+    if (!api) {
+        throw new Error('Sumsub API not configured');
+    }
+    const { levelName } = resolveSumsubLevelName(api.mode, 'basic-kyc');
     
     // If applicant already exists, generate new token
     if (owner.sumsub_applicant_id) {
-        const levelName = process.env.SUMSUB_LEVEL || process.env.SUMSUB_LEVEL_NAME || 'basic-kyc';
-        
         const tokenBody = {
             userId: `owner_${owner.id}`,
             levelName: levelName,
@@ -343,9 +348,7 @@ export async function createSumsubApplicantForOwner(ownerId: number): Promise<{
         [applicantId, 'pending', owner.id]
     );
     
-    // Generate access token
-    const levelName = process.env.SUMSUB_LEVEL || process.env.SUMSUB_LEVEL_NAME || 'basic-kyc';
-    
+    // Generate access token (levelName from resolveSumsubLevelName above)
     const tokenBody = {
         userId: `owner_${owner.id}`,
         levelName: levelName,

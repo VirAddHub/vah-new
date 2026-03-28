@@ -2,6 +2,7 @@
 // Admin health check endpoints
 
 import { Router, Request, Response } from 'express';
+import { isSumsubApiConfigured } from '../../lib/sumsubConfig';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 
@@ -63,7 +64,7 @@ router.get('/summary', requireAdmin, async (_req: Request, res: Response) => {
         const deps = await Promise.all([
             checkService('email_postmark_config', async () => !!process.env.POSTMARK_TOKEN),
             checkService('payments_gocardless_config', async () => !!(process.env.GC_ACCESS_TOKEN || process.env.GOCARDLESS_ACCESS_TOKEN)),
-            checkService('kyc_sumsub_config', async () => !!process.env.SUMSUB_API_KEY),
+            checkService('kyc_sumsub_config', async () => isSumsubApiConfigured()),
             checkService('storage_onedrive_config', async () => !!(process.env.GRAPH_CLIENT_ID && process.env.GRAPH_CLIENT_SECRET)),
             checkService('queue_jobs_db', async () => dbStatus.severity !== 'down'),
         ]);
@@ -94,7 +95,7 @@ router.get('/dependencies', requireAdmin, async (_req: Request, res: Response) =
         const deps = await Promise.all([
             checkService('email_postmark_config', async () => !!process.env.POSTMARK_TOKEN),
             checkService('payments_gocardless_config', async () => !!(process.env.GC_ACCESS_TOKEN || process.env.GOCARDLESS_ACCESS_TOKEN)),
-            checkService('kyc_sumsub_config', async () => !!process.env.SUMSUB_API_KEY),
+            checkService('kyc_sumsub_config', async () => isSumsubApiConfigured()),
             checkService('storage_onedrive_config', async () => !!(process.env.GRAPH_CLIENT_ID && process.env.GRAPH_CLIENT_SECRET)),
             checkService('queue_jobs_db', async () => dbStatus.severity !== 'down'),
         ]);

@@ -19,6 +19,14 @@ function isOfficialTag(value: string | null | undefined): boolean {
 }
 
 /**
+ * HMRC / Companies House detection for KYC bypass and £0 forwarding fee.
+ * Matches ingest filenames (e.g. source_slug "companieshouse") and DB tags ("Companies House", "HMRC", etc.).
+ */
+export function isOfficialMailClassification(tag?: string | null, sourceSlug?: string | null): boolean {
+    return isOfficialTag(tag) || isOfficialTag(sourceSlug);
+}
+
+/**
  * Check if mail can be forwarded based on KYC status and mail tag/source
  * 
  * Rules:
@@ -26,7 +34,7 @@ function isOfficialTag(value: string | null | undefined): boolean {
  * - All other mail requires approved KYC status
  */
 export function canForwardMail(kycStatus: KycStatus, tag?: string | null, sourceSlug?: string | null): boolean {
-    if (isOfficialTag(tag) || isOfficialTag(sourceSlug)) return true;
+    if (isOfficialMailClassification(tag, sourceSlug)) return true;
     return kycStatus === "approved" || kycStatus === "verified";
 }
 

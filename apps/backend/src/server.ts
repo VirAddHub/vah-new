@@ -19,6 +19,7 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express';
 // Centralized environment config
 import { HOST, PORT } from './config/env';
 import { logGraphConfigAtStartup } from './config/azure';
+import { logSumsubConfigAtStartup } from './lib/sumsubConfig';
 
 // CORS middleware
 import { corsMiddleware } from './cors';
@@ -744,6 +745,8 @@ async function start() {
 
         // Log Graph API configuration
         logGraphConfigAtStartup();
+
+        logSumsubConfigAtStartup();
     });
 
     // ---- Graceful shutdown (prevents crash loops) ----
