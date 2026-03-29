@@ -113,14 +113,14 @@ const LONG_MONTH_NAMES = [
  */
 export function getMailItemSearchBlob(item: MailItem): string {
   const chunks: string[] = [
-    item.subject,
-    item.sender_name,
-    item.user_title,
-    item.tag,
-    item.status,
-    item.received_date,
-    item.received_at,
-    item.scanned_at,
+    item.subject ?? '',
+    item.sender_name ?? '',
+    item.user_title ?? '',
+    item.tag ?? '',
+    item.status ?? '',
+    item.received_date ?? '',
+    item.received_at ?? '',
+    item.scanned_at ?? '',
     item.received_at_ms != null && item.received_at_ms !== ''
       ? String(item.received_at_ms)
       : '',
