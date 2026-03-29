@@ -10,8 +10,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { CreditCard, Banknote, ShieldCheck, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import type { Stripe } from '@stripe/stripe-js';
 import { getStripePromise } from '@/lib/stripeClient';
@@ -37,7 +36,6 @@ export function PaymentMethodModal({
   onClose,
   onSuccess,
 }: PaymentMethodModalProps) {
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('card');
   const [loading, setLoading] = useState(false);
   const [initialising, setInitialising] = useState(false);
   const [stripeError, setStripeError] = useState<string | null>(null);
@@ -48,23 +46,19 @@ export function PaymentMethodModal({
   const title =
     mode === 'update' ? 'Update payment method' : 'Add payment method';
 
-  const primaryCtaLabel =
-    mode === 'update' ? 'Update payment method' : 'Continue';
-
-  // When the modal opens for card payments, initialise a Stripe SetupIntent.
+  // When the modal opens, initialise a Stripe SetupIntent.
   useEffect(() => {
     if (!open) {
       // Reset state when modal fully closes
       setClientSecret(null);
       setSetupIntentId(null);
       setStripeError(null);
-      setSelectedMethod('card');
       setInitialising(false);
       setLoading(false);
       return;
     }
 
-    if (selectedMethod !== 'card' || clientSecret) return;
+    if (clientSecret) return;
 
     let cancelled = false;
 
@@ -110,7 +104,7 @@ export function PaymentMethodModal({
     return () => {
       cancelled = true;
     };
-  }, [open, selectedMethod, clientSecret]);
+  }, [open, clientSecret]);
 
   return (
     <Dialog
@@ -122,91 +116,37 @@ export function PaymentMethodModal({
       <DialogContent
         className="w-full max-w-[480px] sm:max-w-[520px] rounded-t-2xl sm:rounded-2xl px-6 py-6 sm:px-8 sm:py-7 gap-4 sm:gap-5 bg-card"
       >
-        <DialogHeader className="space-y-2 text-left">
+        <DialogHeader className="space-y-1.5 text-left">
           <DialogTitle className="text-h3 text-foreground">
             {title}
           </DialogTitle>
           <DialogDescription className="text-body-sm text-muted-foreground">
-            Choose how you’d like to pay for your VirtualAddressHub
-            subscription. You’ll stay inside your dashboard while we securely
-            update your payment details.
+            {mode === 'update'
+              ? 'Update the payment method used for your subscription.'
+              : 'Add a payment method for your subscription.'}
           </DialogDescription>
         </DialogHeader>
 
-        {/* Payment method choices */}
-        <div className="mt-2 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setSelectedMethod('card')}
-              className={cn(
-                'flex flex-col items-start gap-1 rounded-xl border px-3.5 py-3 text-left transition-colors',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/70',
-                selectedMethod === 'card'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-border bg-card'
-              )}
-            >
-              <div className="flex items-center gap-1.5">
-                <CreditCard className="h-4 w-4 text-primary" />
-                <span className="text-body-sm font-medium text-foreground">
-                  Card
-                </span>
-              </div>
-              <p className="text-caption text-muted-foreground">
-                Visa, Mastercard, Amex and more.
-              </p>
-            </button>
+        <div className="mt-1 space-y-3">
+          <p className="text-[11px] leading-snug text-muted-foreground">
+            Card details are handled by Stripe; we never store your full card
+            number.
+          </p>
 
-            <button
-              type="button"
-              onClick={() => setSelectedMethod('direct_debit')}
-              className={cn(
-                'flex flex-col items-start gap-1 rounded-xl border px-3.5 py-3 text-left transition-colors',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/70',
-                selectedMethod === 'direct_debit'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-border bg-card'
-              )}
-            >
-              <div className="flex items-center gap-1.5">
-                <Banknote className="h-4 w-4 text-primary" />
-                <span className="text-body-sm font-medium text-foreground">
-                  Direct Debit
-                </span>
-              </div>
-              <p className="text-caption text-muted-foreground">
-                Secure UK bank transfer via our provider.{' '}
-                <span className="font-medium text-foreground">
-                  Card updates are available now; Direct Debit coming soon.
-                </span>
-              </p>
-            </button>
-          </div>
+          {initialising && (
+            <div className="flex items-center gap-2 py-6 text-caption text-muted-foreground">
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+              Preparing secure form…
+            </div>
+          )}
 
-          {/* Trust / security copy */}
-          <div className="flex items-start gap-2 rounded-xl bg-muted px-3.5 py-3">
-            <div className="mt-[2px]">
-              <ShieldCheck className="h-4 w-4 text-primary" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-caption font-medium text-foreground">
-                Bank‑grade security
-              </p>
-              <p className="text-caption text-muted-foreground">
-                Payments are processed securely by our PCI‑compliant partners.
-                VirtualAddressHub never sees or stores your full card or bank
-                details.
-              </p>
-            </div>
-          </div>
           {stripeError && (
-            <div className="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-caption text-red-700">
+            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-caption text-red-700">
               {stripeError}
             </div>
           )}
 
-          {selectedMethod === 'card' && clientSecret && (
+          {clientSecret && (
             <Elements
               stripe={stripePromise as unknown as Stripe | Promise<Stripe | null>}
               options={{
@@ -226,26 +166,19 @@ export function PaymentMethodModal({
           )}
         </div>
 
-        <DialogFooter className="mt-2 flex flex-row justify-end gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={loading}
-            className="px-4"
-          >
-            Cancel
-          </Button>
-          {selectedMethod !== 'card' && (
+        {!clientSecret && (
+          <DialogFooter className="mt-2 flex flex-row justify-end sm:mt-0">
             <Button
               type="button"
-              disabled
-              className="px-4 opacity-60 cursor-not-allowed"
+              variant="outline"
+              onClick={onClose}
+              disabled={loading}
+              className="px-4"
             >
-              {primaryCtaLabel}
+              Cancel
             </Button>
-          )}
-        </DialogFooter>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -347,10 +280,10 @@ function CardPaymentElement({
   };
 
   const buttonLabel =
-    mode === 'update' ? 'Save new payment method' : 'Add payment method';
+    mode === 'update' ? 'Save payment method' : 'Add payment method';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 mt-3">
+    <form onSubmit={handleSubmit} className="mt-3 space-y-4">
       <div className="rounded-lg border border-border p-3.5">
         <PaymentElement
           options={{
@@ -358,16 +291,23 @@ function CardPaymentElement({
           }}
         />
       </div>
-      <Button
-        type="submit"
-        disabled={submitting}
-        className="w-full"
-      >
-        {submitting && (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary-foreground" />
-        )}
-        {buttonLabel}
-      </Button>
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          disabled={submitting}
+          className="sm:min-w-[100px]"
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={submitting} className="sm:min-w-[160px]">
+          {submitting && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary-foreground" />
+          )}
+          {buttonLabel}
+        </Button>
+      </div>
     </form>
   );
 }

@@ -18,7 +18,7 @@ import { useToast } from '@/components/ui/use-toast';
 import type { MailItem } from '@/components/dashboard/user/types';
 import { CreatableTagSelect } from '@/components/dashboard/user/CreatableTagSelect';
 import { TagDot, getTagColor } from '@/components/dashboard/user/TagDot';
-import { getMailItemPrimaryLabel } from '@/lib/mailItemDates';
+import { getMailItemPrimaryLabel, mailItemMatchesSearchQuery } from '@/lib/mailItemDates';
 
 export default function MailInboxPage() {
     const router = useRouter();
@@ -82,13 +82,7 @@ export default function MailInboxPage() {
         }
 
         if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase();
-            items = items.filter((item: MailItem) =>
-                item.subject?.toLowerCase().includes(query) ||
-                (item.sender_name ?? item.user_title)?.toLowerCase().includes(query) ||
-                item.tag?.toLowerCase().includes(query) ||
-                item.received_date?.toLowerCase().includes(query)
-            );
+            items = items.filter((item: MailItem) => mailItemMatchesSearchQuery(item, searchQuery));
         }
 
         return items;
@@ -524,13 +518,13 @@ export default function MailInboxPage() {
         const isNew = !item.is_read && !isForwarded;
 
         if (isForwarded) {
-            return { label: "Forwarded", badgeClass: "bg-primary text-primary-foreground border-transparent" };
+            return { label: "Forwarded", badgeClass: "bg-primary text-white border-transparent" };
         }
         if (isScanned) {
             return { label: "Scanned", badgeClass: "bg-muted text-foreground border-transparent" };
         }
         if (isNew) {
-            return { label: "New", badgeClass: "bg-blue-600 text-primary-foreground border-transparent" };
+            return { label: "New", badgeClass: "bg-blue-600 text-white border-transparent" };
         }
         return { label: "Received", badgeClass: "bg-muted text-foreground border-transparent" };
     }, []);
@@ -673,7 +667,7 @@ export default function MailInboxPage() {
                                 <TabsTrigger
                                     value="inbox"
                                     className={cn(
-                                        "flex-1 md:flex-none h-7 md:h-auto px-3 md:px-5 py-1.5 md:py-3 text-caption md:text-body-sm font-medium rounded-md md:rounded-none border-0 md:border-b-2 md:border-transparent",
+                                        "flex-1 min-w-0 md:flex-none h-7 md:h-auto px-2 sm:px-3 md:px-5 py-1.5 md:py-3 text-caption md:text-body-sm font-medium rounded-md md:rounded-none border-0 md:border-b-2 md:border-transparent",
                                         "data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-0",
                                         "md:data-[state=active]:bg-transparent md:data-[state=active]:text-primary md:data-[state=active]:border-primary",
                                         "text-muted-foreground hover:text-foreground md:hover:text-foreground",
@@ -686,7 +680,7 @@ export default function MailInboxPage() {
                                 <TabsTrigger
                                     value="archived"
                                     className={cn(
-                                        "flex-1 md:flex-none h-7 md:h-auto px-3 md:px-5 py-1.5 md:py-3 text-caption md:text-body-sm font-medium rounded-md md:rounded-none border-0 md:border-b-2 md:border-transparent",
+                                        "flex-1 min-w-0 md:flex-none h-7 md:h-auto px-2 sm:px-3 md:px-5 py-1.5 md:py-3 text-caption md:text-body-sm font-medium rounded-md md:rounded-none border-0 md:border-b-2 md:border-transparent",
                                         "data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-0",
                                         "md:data-[state=active]:bg-transparent md:data-[state=active]:text-primary md:data-[state=active]:border-primary",
                                         "text-muted-foreground hover:text-foreground md:hover:text-foreground",
@@ -699,7 +693,7 @@ export default function MailInboxPage() {
                                 <TabsTrigger
                                     value="tags"
                                     className={cn(
-                                        "flex-1 md:flex-none h-7 md:h-auto px-3 md:px-5 py-1.5 md:py-3 text-caption md:text-body-sm font-medium rounded-md md:rounded-none border-0 md:border-b-2 md:border-transparent",
+                                        "flex-1 min-w-0 md:flex-none h-7 md:h-auto px-2 sm:px-3 md:px-5 py-1.5 md:py-3 text-caption md:text-body-sm font-medium rounded-md md:rounded-none border-0 md:border-b-2 md:border-transparent",
                                         "data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:ring-0",
                                         "md:data-[state=active]:bg-transparent md:data-[state=active]:text-primary md:data-[state=active]:border-primary",
                                         "text-muted-foreground hover:text-foreground md:hover:text-foreground",
@@ -823,13 +817,13 @@ export default function MailInboxPage() {
                                                                 }
                                                             }}
                                                             className={cn(
-                                                                "flex items-center gap-2.5 md:gap-5 rounded-lg border px-3 py-2 md:px-6 md:py-4",
+                                                                "flex flex-col md:flex-row md:items-center gap-2 md:gap-5 rounded-lg border px-3 py-2 md:px-6 md:py-4",
                                                                 "bg-card hover:bg-muted/50 active:bg-muted/80 transition-colors",
                                                                 "border-border hover:border-border md:hover:border-primary/30",
-                                                                "cursor-pointer touch-manipulation md:shadow-sm md:hover:shadow"
+                                                                "cursor-pointer touch-manipulation md:shadow-sm md:hover:shadow min-w-0"
                                                             )}
                                                         >
-                                                            <div className="flex items-center gap-2.5 flex-1 min-w-0 md:hidden">
+                                                            <div className="flex items-center gap-2 w-full min-w-0 md:hidden">
                                                                 <div
                                                                     className={cn(
                                                                         'flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center',
@@ -852,21 +846,17 @@ export default function MailInboxPage() {
                                                                 >
                                                                     {rowLabel}
                                                                 </p>
-                                                                {item.tag ? (
-                                                                    <span className="text-caption text-muted-foreground truncate shrink-0 max-w-[80px]">
-                                                                        {getTagLabel(item.tag)}
-                                                                    </span>
-                                                                ) : null}
+                                                                <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                                                                    <CreatableTagSelect
+                                                                        compact
+                                                                        value={item.tag ?? null}
+                                                                        availableTags={availableTags}
+                                                                        onValueChange={(newTag) => handleTagUpdate(item, newTag)}
+                                                                        getTagLabel={getTagLabel}
+                                                                        className="w-auto"
+                                                                    />
+                                                                </div>
                                                                 <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" strokeWidth={2} />
-                                                            </div>
-                                                            <div className="md:hidden w-full px-1 pb-2 -mt-0.5" onClick={(e) => e.stopPropagation()}>
-                                                                <CreatableTagSelect
-                                                                    value={item.tag ?? null}
-                                                                    availableTags={availableTags}
-                                                                    onValueChange={(newTag) => handleTagUpdate(item, newTag)}
-                                                                    getTagLabel={getTagLabel}
-                                                                    className="w-full max-w-full"
-                                                                />
                                                             </div>
                                                             <div className="hidden md:flex items-center gap-4 flex-1 min-w-0">
                                                                 <div className="flex-shrink-0">
@@ -939,13 +929,13 @@ export default function MailInboxPage() {
                                     tabIndex={0}
                                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleMailClick(item); } }}
                                     className={cn(
-                                        "flex items-center gap-2.5 md:gap-5 rounded-lg border px-3 py-2 md:px-6 md:py-4",
+                                        "flex flex-col md:flex-row md:items-center gap-2 md:gap-5 rounded-lg border px-3 py-2 md:px-6 md:py-4",
                                         "bg-card hover:bg-muted/50 active:bg-muted/80 transition-colors",
                                         "border-border hover:border-border md:hover:border-primary/30",
-                                        "cursor-pointer touch-manipulation md:shadow-sm md:hover:shadow"
+                                        "cursor-pointer touch-manipulation md:shadow-sm md:hover:shadow min-w-0"
                                     )}
                                 >
-                                    <div className="flex items-center gap-2.5 flex-1 min-w-0 md:hidden">
+                                    <div className="flex items-center gap-2 w-full min-w-0 md:hidden">
                                         <div className={cn(
                                             "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center",
                                             isRead ? "bg-muted" : "bg-primary/10"
@@ -961,19 +951,17 @@ export default function MailInboxPage() {
                                         )}>
                                             {rowLabel}
                                         </p>
-                                        {item.tag ? (
-                                            <span className="text-caption text-muted-foreground truncate shrink-0 max-w-[80px]">{getTagLabel(item.tag)}</span>
-                                        ) : null}
+                                        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                                            <CreatableTagSelect
+                                                compact
+                                                value={item.tag ?? null}
+                                                availableTags={availableTags}
+                                                onValueChange={(newTag) => handleTagUpdate(item, newTag)}
+                                                getTagLabel={getTagLabel}
+                                                className="w-auto"
+                                            />
+                                        </div>
                                         <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" strokeWidth={2} />
-                                    </div>
-                                    <div className="md:hidden w-full px-1 pb-2 -mt-0.5" onClick={(e) => e.stopPropagation()}>
-                                        <CreatableTagSelect
-                                            value={item.tag ?? null}
-                                            availableTags={availableTags}
-                                            onValueChange={(newTag) => handleTagUpdate(item, newTag)}
-                                            getTagLabel={getTagLabel}
-                                            className="w-full max-w-full"
-                                        />
                                     </div>
 
                                     <div className="hidden md:flex items-center gap-4 flex-1 min-w-0">

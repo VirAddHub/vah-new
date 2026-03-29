@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { mutate } from 'swr';
+import { PROFILE_SWR_KEY } from '@/lib/swrKeys';
 
 type LoginBrandVariant = 'default' | 'onDark';
 
@@ -229,6 +231,13 @@ export function LoginPageClient() {
       const user = data.data?.user || data.user;
       if (user) {
         localStorage.setItem('vah_user', JSON.stringify(user));
+      }
+
+      // Prime session-backed profile cache so the mail dashboard does not paint with stale/empty SWR first
+      try {
+        await mutate(PROFILE_SWR_KEY, undefined, { revalidate: true });
+      } catch {
+        /* non-fatal — dashboard will fetch on mount */
       }
 
       // Redirect to mail inbox (or admin dashboard for admins)

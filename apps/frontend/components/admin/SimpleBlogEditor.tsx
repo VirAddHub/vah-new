@@ -46,7 +46,7 @@ description: "${formData.description}"
 date: "${new Date().toISOString()}"
 updated: "${new Date().toISOString()}"
 tags: [${formData.tags.map(tag => `"${tag}"`).join(', ')}]
-cover: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvZmZpY2UlMjBidWlsZGluZyUyMGlsbHVzdHJhdGlvbnxlbnwxfHx8fDE3NTc0MTE2NTV8MA&ixlib=rb-4.1.0&q=80&w=1080"
+cover: ""
 status: "${formData.status}"
 ogTitle: "${formData.title}"
 ogDesc: "${formData.description}"
@@ -71,7 +71,7 @@ ${formData.content}`;
                     content: formData.content,
                     tags: formData.tags,
                     status: formData.status,
-                    cover: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvZmZpY2UlMjBidWlsZGluZyUyMGlsbHVzdHJhdGlvbnxlbnwxfHx8fDE3NTc0MTE2NTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+                    cover: '',
                     ogTitle: formData.title,
                     ogDesc: formData.description,
                     noindex: false

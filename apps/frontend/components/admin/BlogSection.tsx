@@ -182,8 +182,29 @@ export function BlogSection() {
             }
 
             if (!response.ok || !data?.ok) {
-                console.error('[create-post] failed', { status: response.status, data });
-                alert(`Failed to create post: ${data?.error || `HTTP ${response.status}`}`);
+                const errBody =
+                    data?.error &&
+                    typeof data.error === 'object' &&
+                    data.error !== null &&
+                    'body' in data.error
+                        ? (data.error as { body?: { message?: string; error?: string } }).body
+                        : undefined;
+                const msg =
+                    (typeof data?.error === 'string' ? data.error : null) ||
+                    data?.message ||
+                    errBody?.message ||
+                    errBody?.error ||
+                    (errBody && typeof errBody === 'object'
+                        ? JSON.stringify(errBody)
+                        : null) ||
+                    `HTTP ${response.status}`;
+                console.error('[create-post] failed', {
+                    status: response.status,
+                    ok: data?.ok,
+                    error: data?.error,
+                    message: data?.message,
+                });
+                alert(`Failed to create post: ${msg}`);
                 return;
             }
 
@@ -532,7 +553,7 @@ export function BlogSection() {
                                     content,
                                     tags: ['General'],
                                     status,
-                                    cover: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvZmZpY2UlMjBidWlsZGluZyUyMGlsbHVzdHJhdGlvbnxlbnwxfHx8fDE3NTc0MTE2NTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+                                    cover: '',
                                     ogTitle: title,
                                     ogDesc: description,
                                     noindex: false

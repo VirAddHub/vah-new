@@ -1,19 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { CreditCard, RefreshCw, Loader2 } from 'lucide-react';
 import { SubscriptionSummary } from '@/lib/account/types';
 import { toast } from '@/hooks/use-toast';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
-import {
-  PaymentMethodModal,
-  type PaymentMethodModalMode,
-} from '@/components/account/PaymentMethodModal';
-
 interface AccountBillingCardProps {
   subscription: SubscriptionSummary;
   onRefresh?: () => void;
@@ -24,16 +18,45 @@ export function AccountBillingCard({
   onRefresh,
 }: AccountBillingCardProps) {
   const [isLoading, setIsLoading] = useState<string | null>(null);
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [paymentModalMode, setPaymentModalMode] =
-    useState<PaymentMethodModalMode>('update');
   const { data: overview, mutate: mutateOverview } = useSWR(
     '/api/bff/billing/overview',
     swrFetcher
   );
 
   const hasMandate = overview?.data?.has_mandate || false;
-  const mandateStatus = overview?.data?.mandate_status || 'missing';
+
+  /** Stripe Customer Portal or GoCardless hosted flow — not an in-app card field. */
+  const handleOpenHostedPaymentSetup = async () => {
+    setIsLoading('payment-setup');
+    try {
+      const res = await fetch('/api/bff/billing/update-bank', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(
+          data.message || data.error || 'Failed to open payment setup'
+        );
+      }
+      const url = data.data?.redirect_url || data.data?.url;
+      if (!url || typeof url !== 'string') {
+        throw new Error('No payment link returned');
+      }
+      window.location.assign(url);
+    } catch (error: unknown) {
+      toast({
+        title: 'Could not open payment page',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Please try again in a moment.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(null);
+    }
+  };
 
   const handleReactivate = async () => {
     setIsLoading('reactivate');
@@ -159,44 +182,58 @@ export function AccountBillingCard({
 
   return (
     <Card
-      className="rounded-xl sm:rounded-2xl shadow-sm bg-card w-full max-w-full sm:max-w-md flex-shrink-0 min-w-0"
+      className="w-full min-w-0 max-w-full flex-shrink-0 rounded-xl border-border/80 bg-card shadow-sm sm:max-w-xl sm:rounded-2xl"
     >
-      <CardContent className="p-4 sm:p-7 h-full flex flex-col">
-        <div className="flex flex-col gap-3 sm:gap-3.5 flex-1">
-          {/* Header */}
-          <h3
-            className="text-body sm:text-h4 text-foreground"
-          >
-            Account & billing
-          </h3>
+      <CardContent className="flex h-full flex-col p-5 sm:p-8">
+        <div className="flex flex-1 flex-col gap-4 sm:gap-5">
+          <div>
+            <h3 className="text-h4 text-foreground sm:text-h3">Subscription</h3>
+            <p className="mt-1 text-caption text-muted-foreground sm:text-body-sm">
+              Plan, billing date, and how you pay.
+            </p>
+          </div>
 
-          {/* Plan: clarify monthly vs yearly */}
-          <div className="flex items-center justify-between gap-3 sm:gap-4 min-w-0">
-            <span
-              className="text-caption text-muted-foreground shrink-0"
-            >
-              Plan
+          <div className="flex items-start justify-between gap-4 min-w-0">
+            <span className="shrink-0 text-caption text-muted-foreground">
+              Current plan
             </span>
-            <span
-              className="text-caption text-muted-foreground text-right min-w-0 truncate max-w-[60%] sm:max-w-none"
-            >
-              {subscription.billing_period === 'annual'
-                ? `Annual (${subscription.price_label}/year)`
-                : `Monthly (${subscription.price_label}/month)`}
+            <div className="min-w-0 text-right">
+              <p className="text-body-sm font-medium text-foreground sm:text-body">
+                {subscription.plan_name}
+              </p>
+              <p className="mt-0.5 text-caption text-muted-foreground">
+                {subscription.billing_period === 'annual'
+                  ? `${subscription.price_label} / year`
+                  : `${subscription.price_label} / month`}
+              </p>
+            </div>
+          </div>
+          <div className="h-px w-full bg-border" />
+
+          <div className="flex items-center justify-between gap-4 min-w-0">
+            <span className="shrink-0 text-caption text-muted-foreground">
+              Payment method
+            </span>
+            <span className="text-right text-body-sm text-foreground">
+              {hasMandate ? 'On file' : 'Not added'}
             </span>
           </div>
-          <div className="w-full h-px bg-border"></div>
+          <div className="h-px w-full bg-border" />
 
-          {/* Status */}
-          <div className="flex items-center justify-between gap-3 sm:gap-4 min-w-0">
-            <span
-              className="text-caption text-muted-foreground shrink-0"
-            >
+          <div className="flex items-center justify-between gap-4 min-w-0">
+            <span className="shrink-0 text-caption text-muted-foreground">
+              Next billing date
+            </span>
+            <span className="min-w-0 truncate text-right text-body-sm text-foreground sm:max-w-none">
+              {nextBillingLabel}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 min-w-0">
+            <span className="shrink-0 text-caption text-muted-foreground">
               Status
             </span>
-            <span
-              className="text-caption text-muted-foreground text-right min-w-0"
-            >
+            <span className="text-right text-body-sm text-muted-foreground">
               {subscription.status === 'active'
                 ? 'Active'
                 : subscription.status === 'cancelled'
@@ -206,81 +243,71 @@ export function AccountBillingCard({
                     : 'Unknown'}
             </span>
           </div>
-          <div className="w-full h-px bg-border"></div>
 
-          {/* Next billing */}
-          <div className="flex items-center justify-between gap-3 sm:gap-4 min-w-0">
-            <span
-              className="text-caption text-muted-foreground shrink-0"
-            >
-              Next billing
-            </span>
-            <span
-              className="text-caption text-muted-foreground text-right min-w-0 truncate max-w-[55%] sm:max-w-none"
-            >
-              {nextBillingLabel}
-            </span>
-          </div>
-
-          {/* Payment details actions: always show so users can edit / set up payment */}
-          <div className="pt-4 border-t space-y-3">
-            {(subscription.status === 'cancelled' ||
-              subscription.status === 'past_due') && (
+          <div className="space-y-3 pt-2">
+            {hasMandate && subscription.status === 'active' && (
               <Button
-                onClick={handleReactivate}
-                disabled={isLoading === 'reactivate'}
-                className="w-full min-h-[44px] sm:min-h-0 touch-manipulation"
+                onClick={() => void handleOpenHostedPaymentSetup()}
+                disabled={isLoading === 'payment-setup'}
+                className="h-12 w-full touch-manipulation text-body-sm font-medium sm:h-11"
+                size="lg"
               >
-                {isLoading === 'reactivate' ? (
+                {isLoading === 'payment-setup' ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Reactivating...
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Opening secure payment page…
                   </>
                 ) : (
                   <>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Reactivate subscription
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Update payment method
                   </>
                 )}
               </Button>
             )}
             {subscription.status === 'active' && !hasMandate && (
               <Button
-                variant="outline"
-                onClick={() => {
-                  setPaymentModalMode('setup');
-                  setPaymentModalOpen(true);
-                }}
-                className="w-full min-h-[44px] sm:min-h-0 touch-manipulation"
+                onClick={() => void handleOpenHostedPaymentSetup()}
+                disabled={isLoading === 'payment-setup'}
+                className="h-12 w-full touch-manipulation text-body-sm font-medium sm:h-11"
+                size="lg"
               >
-                <CreditCard className="h-4 w-4 mr-2" />
-                Set up payment method
+                {isLoading === 'payment-setup' ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Opening secure payment page…
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Add payment method
+                  </>
+                )}
               </Button>
             )}
-            {hasMandate && (
+            {(subscription.status === 'cancelled' ||
+              subscription.status === 'past_due') && (
               <Button
-                onClick={() => {
-                  setPaymentModalMode('update');
-                  setPaymentModalOpen(true);
-                }}
-                className="w-full min-h-[44px] sm:min-h-0 touch-manipulation"
+                onClick={handleReactivate}
+                disabled={isLoading === 'reactivate'}
+                className="h-12 w-full touch-manipulation sm:h-11"
+                size="lg"
               >
-                <CreditCard className="h-4 w-4 mr-2" />
-                Update bank details
+                {isLoading === 'reactivate' ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Reactivating…
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Reactivate subscription
+                  </>
+                )}
               </Button>
             )}
           </div>
         </div>
-
-        <PaymentMethodModal
-          open={paymentModalOpen}
-          mode={paymentModalMode}
-          onClose={() => setPaymentModalOpen(false)}
-          onSuccess={async () => {
-            await mutateOverview();
-            onRefresh?.();
-          }}
-        />
       </CardContent>
     </Card>
   );

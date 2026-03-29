@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
+import { buildBackendMutationHeaders } from '@/lib/server/backendMutationHeaders';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -20,12 +21,13 @@ export async function POST(request: NextRequest) {
     const backend = getBackendOrigin();
     backendUrl = `${backend}/api/admin/blog/posts`;
 
+    const headers = await buildBackendMutationHeaders(backend, cookie, {
+      'Content-Type': 'application/json',
+    });
+
     const response = await fetch(backendUrl, {
       method: 'POST',
-      headers: {
-        'Cookie': cookie,
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(body),
       cache: 'no-store',
     });

@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle, Upload, AlertCircle, Loader2, Clock, XCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { API_BASE } from '@/lib/config';
+import { PROFILE_SWR_KEY } from '@/lib/swrKeys';
 
 type Feedback = { type: 'success' | 'error'; message: string } | null;
 
@@ -140,7 +141,7 @@ export function ChVerificationCard() {
       mutate();
       // Also refresh user profile since it contains CH status
       // This ensures the dashboard shows updated CH approval status immediately
-      await globalMutate('/api/profile');
+      await globalMutate(PROFILE_SWR_KEY);
       setFile(null);
       // Reset file input
       const fileInput = document.getElementById('ch-verification-file') as HTMLInputElement;

@@ -69,11 +69,11 @@ export function MailDetail({
         </h1>
 
         {/* Action buttons - stack on mobile, comfortable height */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 flex-wrap">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full min-w-0">
           <Button
             type="button"
             onClick={onView}
-            className="h-11 sm:h-10 px-5 transition-all duration-150 flex-1 sm:flex-none touch-manipulation"
+            className="h-11 sm:h-10 px-5 transition-all duration-150 w-full sm:w-auto sm:flex-none touch-manipulation"
           >
             View Scan
           </Button>
@@ -83,7 +83,7 @@ export function MailDetail({
               type="button"
               onClick={onUnarchive}
               variant="outline"
-              className="h-11 sm:h-10 px-5 transition-all duration-150 flex-1 sm:flex-none touch-manipulation"
+              className="h-11 sm:h-10 px-5 transition-all duration-150 w-full sm:w-auto sm:flex-none touch-manipulation"
             >
               <ArchiveRestore className="h-4 w-4 mr-2" strokeWidth={2} />
               Unarchive
@@ -93,14 +93,14 @@ export function MailDetail({
               type="button"
               onClick={onArchive}
               variant="outline"
-              className="h-11 sm:h-10 px-5 transition-all duration-150 flex-1 sm:flex-none touch-manipulation"
+              className="h-11 sm:h-10 px-5 transition-all duration-150 w-full sm:w-auto sm:flex-none touch-manipulation"
             >
               <Archive className="h-4 w-4 mr-2" strokeWidth={2} />
               Archive
             </Button>
           ) : null}
 
-          <div className="relative flex-1 sm:flex-none w-full sm:w-auto">
+          <div className="relative w-full min-w-0 sm:w-auto sm:flex-none">
             <Button
               type="button"
               onClick={onForward}

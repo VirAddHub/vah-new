@@ -6,7 +6,6 @@ import { usePlans } from '@/hooks/usePlans';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { Input } from './ui/input';
 import {
   CreditCard,
   Download,
@@ -15,12 +14,8 @@ import {
   Clock,
   DollarSign,
   FileText,
-  ExternalLink
+  Loader2,
 } from 'lucide-react';
-import {
-  PaymentMethodModal,
-  type PaymentMethodModalMode,
-} from '@/components/account/PaymentMethodModal';
 
 interface BillingDashboardProps {
   onNavigate?: (page: string) => void;
@@ -40,11 +35,8 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
   const [subscriptionStatus, setSubscriptionStatus] = useState<any>(null);
   const [billingInfo, setBillingInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [paymentModalMode, setPaymentModalMode] =
-    useState<PaymentMethodModalMode>('update');
+  const [paymentRedirectLoading, setPaymentRedirectLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
   
   // Get dynamic pricing from plans API
   const { getMonthlyPlan } = usePlans();
@@ -86,6 +78,34 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
 
     loadBillingData();
   }, []);
+
+  const handleOpenHostedPaymentSetup = async () => {
+    try {
+      setPaymentRedirectLoading(true);
+      setError(null);
+      const res = await fetch('/api/bff/billing/update-bank', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(
+          data.message || data.error || 'Failed to open payment setup'
+        );
+      }
+      const url = data.data?.redirect_url || data.data?.url;
+      if (!url || typeof url !== 'string') {
+        throw new Error('No payment link returned');
+      }
+      window.location.assign(url);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : 'Failed to open payment page'
+      );
+    } finally {
+      setPaymentRedirectLoading(false);
+    }
+  };
 
   const handleDownloadInvoice = async (invoiceId: string) => {
     try {
@@ -221,19 +241,23 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
 
             <div className="mt-6 flex flex-wrap gap-4">
               <Button
-                onClick={() => {
-                  const mode: PaymentMethodModalMode =
-                    subscriptionStatus?.plan_status === 'active'
-                      ? 'update'
-                      : 'setup';
-                  setPaymentModalMode(mode);
-                  setPaymentModalOpen(true);
-                }}
-                disabled={loading}
+                onClick={() => void handleOpenHostedPaymentSetup()}
+                disabled={loading || paymentRedirectLoading}
                 className="flex items-center gap-2"
               >
-                <CreditCard className="h-4 w-4" />
-                {subscriptionStatus?.plan_status === 'active' ? 'Update Payment Method' : 'Add Payment Method'}
+                {paymentRedirectLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Opening secure payment page…
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="h-4 w-4" />
+                    {subscriptionStatus?.plan_status === 'active'
+                      ? 'Update Payment Method'
+                      : 'Add Payment Method'}
+                  </>
+                )}
               </Button>
 
               {subscriptionStatus?.plan_status === 'active' && (
@@ -351,53 +375,7 @@ export function BillingDashboard({ onNavigate }: BillingDashboardProps) {
             )}
           </CardContent>
         </Card>
-
-        {/* Payment Method Setup */}
-        {redirectUrl && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ExternalLink className="h-5 w-5" />
-                Payment Method Setup
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                Click the button below to continue setting up your payment method with Stripe.
-              </p>
-              <Button
-                onClick={() => { window.location.href = redirectUrl; }}
-                className="flex items-center gap-2"
-              >
-                Continue Payment Setup
-              </Button>
-            </CardContent>
-          </Card>
-        )}
       </div>
-      <PaymentMethodModal
-        open={paymentModalOpen}
-        mode={paymentModalMode}
-        onClose={() => setPaymentModalOpen(false)}
-        onSuccess={async () => {
-          // Reload page to reflect updated billing info
-          try {
-            const [billingResponse, subscriptionResponse] = await Promise.all([
-              apiClient.getBilling(),
-              apiClient.getSubscriptionStatus(),
-            ]);
-
-            if (billingResponse.ok) {
-              setBillingInfo(billingResponse.data);
-            }
-            if (subscriptionResponse.ok) {
-              setSubscriptionStatus(subscriptionResponse.data);
-            }
-          } catch (err) {
-            console.error('Failed to refresh billing after payment update:', err);
-          }
-        }}
-      />
     </div>
   );
 }

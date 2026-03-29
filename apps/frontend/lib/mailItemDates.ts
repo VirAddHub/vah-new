@@ -91,3 +91,65 @@ export function getMailItemDisplayTitle(item: MailItem): string {
   if (fallback) return fallback;
   return 'Unknown Sender';
 }
+
+const LONG_MONTH_NAMES = [
+  'january',
+  'february',
+  'march',
+  'april',
+  'may',
+  'june',
+  'july',
+  'august',
+  'september',
+  'october',
+  'november',
+  'december',
+] as const;
+
+/**
+ * Lowercased, space-joined text used for client-side mail search.
+ * Includes the same formatted date users see in the list (e.g. "13 mar 2026") plus raw fields and full month names.
+ */
+export function getMailItemSearchBlob(item: MailItem): string {
+  const chunks: string[] = [
+    item.subject,
+    item.sender_name,
+    item.user_title,
+    item.tag,
+    item.status,
+    item.received_date,
+    item.received_at,
+    item.scanned_at,
+    item.received_at_ms != null && item.received_at_ms !== ''
+      ? String(item.received_at_ms)
+      : '',
+    item.created_at != null && item.created_at !== '' ? String(item.created_at) : '',
+    item.id !== undefined && item.id !== null ? String(item.id) : '',
+    getMailItemPrimaryLabel(item),
+    getMailItemListTitle(item),
+  ];
+
+  const raw = getMailItemDate(item);
+  if (raw !== undefined && raw !== null && raw !== '') {
+    const formatted = formatMailItemDate(raw);
+    if (formatted) chunks.push(formatted);
+    const parsed = toUtcDate(raw);
+    if (parsed) {
+      chunks.push(LONG_MONTH_NAMES[parsed.getUTCMonth()]);
+      chunks.push(String(parsed.getUTCFullYear()));
+      chunks.push(String(parsed.getUTCDate()));
+    }
+  }
+
+  return chunks
+    .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+    .join(' ')
+    .toLowerCase();
+}
+
+export function mailItemMatchesSearchQuery(item: MailItem, rawQuery: string): boolean {
+  const q = rawQuery.trim().toLowerCase();
+  if (!q) return true;
+  return getMailItemSearchBlob(item).includes(q);
+}

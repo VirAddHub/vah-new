@@ -237,13 +237,6 @@ router.post('/sync-from-sumsub', requireAuth, async (req: Request, res: Response
             throw e;
         }
 
-        if (resolvedApplicantId !== storedApplicantId) {
-            await pool.query(`UPDATE "user" SET sumsub_applicant_id = $1 WHERE id = $2`, [
-                resolvedApplicantId,
-                userId,
-            ]);
-        }
-
         const derived = deriveKycStatusFromSumsubReview(applicant?.review);
         const kycStatus =
             derived.kycStatus === 'approved'
@@ -256,26 +249,32 @@ router.post('/sync-from-sumsub', requireAuth, async (req: Request, res: Response
         const now = Date.now();
         const rejectReason = derived.kycStatus === 'rejected' ? derived.rejectReason : null;
 
-        await pool.query(
-            `UPDATE "user"
-             SET sumsub_review_status   = $1,
-                 sumsub_last_updated    = $2,
-                 sumsub_rejection_reason = $3
-             WHERE id = $4`,
-            [derived.statusLabel, now, rejectReason, userId]
-        );
-
-        const updates: string[] = ['kyc_status = $1', 'updated_at = $2'];
-        const values: unknown[] = [kycStatus, now];
-        let paramIndex = 3;
+        // One UPDATE: requires columns from migration 055_user_sumsub_and_kyc_approval_columns.sql
+        let p = 1;
+        const sets: string[] = [
+            `kyc_status = $${p++}`,
+            `updated_at = $${p++}`,
+            `sumsub_review_status = $${p++}`,
+            `sumsub_last_updated = $${p++}`,
+            `sumsub_rejection_reason = $${p++}`,
+            `sumsub_applicant_id = $${p++}`,
+        ];
+        const vals: unknown[] = [
+            kycStatus,
+            now,
+            derived.statusLabel,
+            now,
+            rejectReason,
+            resolvedApplicantId,
+        ];
 
         if (kycStatus === 'approved' && previousKycStatus !== 'approved') {
-            updates.push(`kyc_approved_at = $${paramIndex++}`);
-            values.push(new Date().toISOString());
+            sets.push(`kyc_approved_at = $${p++}`);
+            vals.push(new Date().toISOString());
         }
 
-        values.push(userId);
-        await pool.query(`UPDATE "user" SET ${updates.join(', ')} WHERE id = $${paramIndex}`, values);
+        vals.push(userId);
+        await pool.query(`UPDATE "user" SET ${sets.join(', ')} WHERE id = $${p}`, vals);
 
         return res.json({
             ok: true,

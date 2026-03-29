@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 type BlogPost = {
-    id: number;
+    id: number | string;
     slug: string;
     title: string;
     excerpt: string;
@@ -231,13 +231,18 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
                                         className="flex flex-col gap-3.5 w-full cursor-pointer"
                                         onClick={() => onNavigate?.('blog-post', { slug: post.slug })}
                                     >
-                                        {/* Image */}
-                                        <div className="relative w-full aspect-[5/3] rounded-2xl overflow-hidden">
-                                            <ImageWithFallback
-                                                src={post.imageUrl}
-                                                alt={post.title || "Blog post"}
-                                                className="w-full h-full object-cover"
-                                            />
+                                        <div className="relative w-full aspect-[5/3] rounded-2xl overflow-hidden bg-muted">
+                                            {post.imageUrl?.trim() ? (
+                                                <ImageWithFallback
+                                                    src={post.imageUrl}
+                                                    alt={post.title || "Blog post"}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="absolute inset-0 flex items-center justify-center text-body-sm text-muted-foreground">
+                                                    No preview image
+                                                </div>
+                                            )}
                                         </div>
                                         {/* Content */}
                                         <div className="flex flex-col gap-2.5">

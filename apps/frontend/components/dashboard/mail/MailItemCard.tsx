@@ -34,9 +34,9 @@ export function MailItemCard({
 
   const badgeClass =
     statusVariant === "new"
-      ? "bg-blue-600 text-primary-foreground border-transparent"
+      ? "bg-blue-600 text-white border-transparent"
       : statusVariant === "forwarded"
-        ? "bg-primary text-primary-foreground border-transparent"
+        ? "bg-primary text-white border-transparent"
         : statusVariant === "scanned"
           ? "bg-muted text-foreground border-transparent"
           : "bg-muted text-foreground border-transparent";

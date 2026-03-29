@@ -8,7 +8,10 @@ import type { DashboardUserProfile } from './types';
 
 interface DashboardSummaryProps {
   userProfile: DashboardUserProfile | null;
-  compliance: Compliance;
+  /** When null, verification status is not yet known — do not assume "unverified". */
+  compliance: Compliance | null;
+  identityReady: boolean;
+  onRefreshIdentity?: () => void;
   showIdentitySuccessBanner: boolean;
   onNavigate: (page: string, data?: any) => void;
 }
@@ -16,6 +19,8 @@ interface DashboardSummaryProps {
 export function DashboardSummary({
   userProfile,
   compliance,
+  identityReady,
+  onRefreshIdentity,
   showIdentitySuccessBanner,
   onNavigate,
 }: DashboardSummaryProps) {
@@ -34,7 +39,7 @@ export function DashboardSummary({
               <Button
                 size="sm"
                 onClick={() => onNavigate('business-owners')}
-                className="ml-4 bg-amber-600 hover:bg-amber-700 text-primary-foreground"
+                className="ml-4 bg-amber-600 hover:bg-amber-700 !text-white [&_svg]:!text-white"
               >
                 Add business owners
                 <ArrowRight className="h-4 w-4 ml-2" />
@@ -44,19 +49,39 @@ export function DashboardSummary({
         </Alert>
       )}
 
+      {!identityReady && userProfile && (
+        <div className="order-2 rounded-xl border border-border bg-muted/20 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-2 min-w-0 flex-1">
+              <div className="h-4 w-40 rounded bg-muted animate-pulse" />
+              <div className="h-3 w-full max-w-md rounded bg-muted animate-pulse" />
+            </div>
+            {onRefreshIdentity && (
+              <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={onRefreshIdentity}>
+                Refresh status
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Identity Compliance Card (desktop) */}
-      {(!compliance.canUseRegisteredOfficeAddress || showIdentitySuccessBanner) && (
+      {identityReady &&
+        compliance &&
+        (!compliance.canUseRegisteredOfficeAddress || showIdentitySuccessBanner) && (
         <div className="hidden md:block order-2 md:order-1">
           <IdentityComplianceCard compliance={compliance} kycStatus={userProfile?.kyc_status || null} />
         </div>
       )}
 
       {/* Mobile: compact identity status strip */}
-      {(!compliance.canUseRegisteredOfficeAddress || showIdentitySuccessBanner) && (
+      {identityReady &&
+        compliance &&
+        (!compliance.canUseRegisteredOfficeAddress || showIdentitySuccessBanner) && (
         <div className="md:hidden order-2 rounded-xl border border-border bg-background p-3">
           <div className="flex items-center justify-between gap-3">
             <div className="text-body-sm font-semibold text-foreground">
-              {compliance?.isKycApproved && compliance?.isChVerified ? '✔ Identity Verified' : '⏳ Identity check required'}
+              {compliance.isKycApproved && compliance.isChVerified ? '✔ Identity Verified' : '⏳ Identity check required'}
             </div>
           </div>
         </div>

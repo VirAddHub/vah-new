@@ -293,12 +293,18 @@ export default async function BlogPostPage({
                         href={`/blog/${popularPost.slug}`}
                         className="flex gap-6 p-6 bg-muted rounded-xl hover:opacity-90 transition-opacity"
                       >
-                        <div className="relative w-[191px] h-[174px] flex-shrink-0 rounded-lg overflow-hidden">
-                          <ImageWithFallback
-                            src={popularPost.imageUrl}
-                            alt={popularPost.title}
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="relative w-[191px] h-[174px] flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+                          {popularPost.imageUrl?.trim() ? (
+                            <ImageWithFallback
+                              src={popularPost.imageUrl}
+                              alt={popularPost.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-caption text-muted-foreground px-2 text-center">
+                              No image
+                            </div>
+                          )}
                         </div>
                         <div className="flex flex-col gap-3.5 flex-1 min-w-0">
                           <div className="bg-card rounded-full px-2.5 py-0 text-caption text-muted-foreground inline-flex items-center justify-center w-fit">
@@ -322,34 +328,26 @@ export default async function BlogPostPage({
           </div>
         </div>
 
-        {/* CTA Section */}
-        <div className="w-full bg-secondary py-12 lg:py-20 px-6 lg:px-20">
+        {/* CTA: solid primary card; avoid fixed Figma widths — cta-illustration.png is not shipped */}
+        <div className="w-full border-t border-border bg-muted/40 py-12 lg:py-16 px-6 lg:px-20">
           <div className="max-w-[1280px] mx-auto">
-            <div className="relative overflow-hidden rounded-2xl bg-secondary p-0">
-              <div className="grid md:grid-cols-[857px_1fr] gap-10 items-center">
-                {/* London landmarks illustration on left */}
-                <div className="relative w-full h-full min-h-[300px] md:min-h-[400px] flex items-center justify-center">
-                  <img
-                    src="/figma/cta-illustration.png"
-                    alt="London landmarks: London Eye, Big Ben, Tower Bridge"
-                    className="w-[857px] h-[817px] object-contain object-left"
-                  />
-                </div>
-                {/* Content on right */}
-                <div className="flex flex-col justify-center p-0 md:pl-0">
-                  <h2 className="text-h1 lg:text-display text-primary-foreground">
+            <div className="overflow-hidden rounded-2xl bg-primary px-8 py-10 lg:px-12 lg:py-12 shadow-md">
+              <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
+                <div className="min-w-0 space-y-3 text-center lg:text-left lg:max-w-xl">
+                  <h2 className="text-h1 lg:text-display font-semibold tracking-tight text-primary-foreground">
                     Get your London Business Address Today
                   </h2>
-                  <p className="mt-3 text-body text-primary-foreground/80">
-                    Everything included for <span className="text-primary font-normal">£9.99</span> per month.
+                  <p className="text-body text-primary-foreground/90">
+                    Everything included for{' '}
+                    <span className="font-medium text-primary-foreground">£9.99</span> per month.
                   </p>
-                  <Link
-                    href="/signup"
-                    className="mt-6 w-[268px] h-12 rounded-full bg-primary px-2.5 py-2.5 text-body font-medium text-primary-foreground hover:bg-primary/90 transition-colors uppercase flex items-center justify-center"
-                  >
-                    Schedule London Address
-                  </Link>
                 </div>
+                <Link
+                  href="/signup"
+                  className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-white px-8 text-body font-medium uppercase text-primary transition-colors hover:bg-white/90 w-full lg:w-auto"
+                >
+                  Schedule London Address
+                </Link>
               </div>
             </div>
           </div>

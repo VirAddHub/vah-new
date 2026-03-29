@@ -1,18 +1,15 @@
 'use client';
 
 import { useAuth } from '../contexts/AuthContext';
-import dynamic from 'next/dynamic';
 
-// Create a client-only version of AuthGate
-const ClientAuthGate = dynamic(() => Promise.resolve(AuthGateInner), { 
-    ssr: false,
-    loading: () => <div>Loading...</div>
-});
-
+/**
+ * Waits for AuthContext to finish its initial check before showing app chrome.
+ * Avoids `next/dynamic` + `ssr: false` here — that caused Next 15 to bail out of SSR
+ * with "Bail out to client-side rendering: next/dynamic" on every layout render.
+ */
 function AuthGateInner({ children }: { children: React.ReactNode }) {
     const { loading } = useAuth();
 
-    // Show loading spinner while checking authentication
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background">
@@ -24,10 +21,9 @@ function AuthGateInner({ children }: { children: React.ReactNode }) {
         );
     }
 
-    // Just render children - let middleware handle redirects
     return <>{children}</>;
 }
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
-    return <ClientAuthGate>{children}</ClientAuthGate>;
+    return <AuthGateInner>{children}</AuthGateInner>;
 }

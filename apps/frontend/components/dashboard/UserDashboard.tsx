@@ -44,6 +44,7 @@ import { ForwardingModal } from "@/components/dashboard/user/ForwardingModal";
 import { RightPanel } from "@/components/dashboard/user/RightPanel";
 import type { MailItem } from "@/components/dashboard/user/types";
 import { getMailItemPrimaryLabel } from "@/lib/mailItemDates";
+import { PROFILE_SWR_KEY } from "@/lib/swrKeys";
 import dynamic from 'next/dynamic';
 
 // Lazy load Sumsub widget to avoid SSR issues
@@ -92,29 +93,60 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
+function DashboardLoadingShell() {
+  return (
+    <div className="min-h-screen bg-background" aria-busy="true" aria-label="Loading dashboard">
+      <div className="h-14 border-b border-border bg-muted/30 animate-pulse" />
+      <main className="safe-pad mx-auto max-w-screen-xl py-8 space-y-6">
+        <div className="h-28 rounded-xl bg-muted/50 animate-pulse max-w-3xl" />
+        <div className="h-40 rounded-xl bg-muted/50 animate-pulse" />
+        <div className="h-72 rounded-xl bg-muted/50 animate-pulse" />
+      </main>
+    </div>
+  );
+}
+
+function ProfileErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-6">
+      <Card className="max-w-md w-full border-border shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-h3">Couldn&apos;t load your account</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-body text-muted-foreground">
+            Check your connection and try again. If this keeps happening, sign out and sign back in.
+          </p>
+          <Button type="button" onClick={onRetry} className="w-full sm:w-auto">
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardProps) {
   const { toast } = useToast();
-  // useMe handles fetching user profile via cookies without localStorage
   const { data: profileData, error: profileError, isLoading: profileLoading, mutate: refreshProfile } = useSWR(
-    '/api/profile',
+    PROFILE_SWR_KEY,
     fetcher,
     {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 60000
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 3000,
     }
   );
 
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const userProfile =
+    profileData?.ok && profileData?.data ? profileData.data : null;
 
-  // Sync profile data to local state
-  useEffect(() => {
-    if (profileData?.ok && profileData?.data) {
-      setUserProfile(profileData.data);
-    }
-    setLoading(profileLoading);
-  }, [profileData, profileLoading]);
+  const profileGate = useMemo<'loading' | 'error' | 'ready'>(() => {
+    if (profileError) return 'error';
+    if (userProfile) return 'ready';
+    if (profileLoading) return 'loading';
+    return 'error';
+  }, [profileError, userProfile, profileLoading]);
 
   const [selectedMail, setSelectedMail] = useState<string[]>([]);
   const [selectedMailDetail, setSelectedMailDetail] = useState<MailItem | null>(null);
@@ -293,7 +325,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     const isNew = !item.is_read && !isForwarded;
 
     if (isForwarded) {
-      return { label: "Forwarded", badgeClass: "bg-primary text-primary-foreground border-transparent" };
+      return { label: "Forwarded", badgeClass: "bg-primary text-white border-transparent" };
     }
     if (isScanned) {
       return { label: "Scanned", badgeClass: "bg-muted text-foreground border-transparent" };
@@ -597,19 +629,23 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const businessAddressLine3 = VAH_ADDRESS_LINES[2];
   const businessAddressLine4 = VAH_ADDRESS_LINES[3];
 
-  // Get compliance status from profile (computed by backend)
-  const compliance: Compliance = userProfile?.compliance || {
-    isKycApproved: false,
-    isChVerified: false,
-    canUseRegisteredOfficeAddress: false,
-  };
+  const rawCompliance = userProfile?.compliance as Compliance | undefined;
+  const identityReady =
+    profileGate === 'ready' &&
+    rawCompliance != null &&
+    typeof rawCompliance.isKycApproved === 'boolean' &&
+    typeof rawCompliance.isChVerified === 'boolean' &&
+    typeof rawCompliance.canUseRegisteredOfficeAddress === 'boolean';
 
-  // Address is gated by compliance.canUseRegisteredOfficeAddress (KYC-only)
-  const canUseAddress = compliance.canUseRegisteredOfficeAddress;
+  const compliance: Compliance | null = identityReady ? rawCompliance : null;
+
+  // Address / certificate actions: unknown !== false — gate until compliance is loaded
+  const canUseAddress = Boolean(compliance?.canUseRegisteredOfficeAddress);
 
   // Show the "Identity Checks Complete" success banner only for first 3 dashboard sessions
   // after verification. Tracked per-user in localStorage and counted once per tab session.
   useEffect(() => {
+    if (!identityReady || !compliance) return;
     try {
       const userId = (userProfile as any)?.id;
       if (!userId) return;
@@ -656,7 +692,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       // If storage is unavailable, default to showing it (safe UX)
       setShowIdentitySuccessBanner(true);
     }
-  }, [(userProfile as any)?.id, compliance.canUseRegisteredOfficeAddress]);
+  }, [(userProfile as any)?.id, identityReady, compliance?.canUseRegisteredOfficeAddress]);
 
   // Load forwarding requests
   const loadForwardingRequests = useCallback(async () => {
@@ -760,15 +796,12 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
     setShowForwardingConfirmation(true);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading dashboard...</p>
-        </div>
-      </div>
-    );
+  if (profileGate === 'loading') {
+    return <DashboardLoadingShell />;
+  }
+
+  if (profileGate === 'error' || !userProfile) {
+    return <ProfileErrorState onRetry={() => void refreshProfile()} />;
   }
 
   return (
@@ -792,12 +825,18 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             <DashboardSummary
               userProfile={userProfile}
               compliance={compliance}
+              identityReady={identityReady}
+              onRefreshIdentity={() => void refreshProfile()}
               showIdentitySuccessBanner={showIdentitySuccessBanner}
               onNavigate={handleNavigate}
             />
 
-            {/* KYC Verification Widget - Show if not approved */}
-            {(!compliance.isKycApproved || userProfile?.kyc_status === 'pending' || userProfile?.kyc_status === null) && (
+            {/* KYC Verification Widget - only after compliance is known (never assume unverified while loading) */}
+            {identityReady &&
+              compliance &&
+              (!compliance.isKycApproved ||
+                userProfile?.kyc_status === 'pending' ||
+                userProfile?.kyc_status === null) && (
               <Card className="border-primary/20 bg-primary/5 shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-body-lg">Complete Identity Verification</CardTitle>
@@ -815,7 +854,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
             <Card className="border-border shadow-sm order-1 md:order-2">
               <CardHeader className="pb-4">
                 <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                     <div className="min-w-0">
                       <h2 className="text-body-lg md:text-h2 font-semibold text-foreground truncate">
                         Inbox
@@ -825,12 +864,12 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         {mailLoading && <RefreshCw className="h-3 w-3 ml-2 inline animate-spin" />}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex w-full sm:w-auto sm:shrink-0 items-stretch sm:items-center gap-2">
                       {/* Mobile: Filter opens modal in MailManagement */}
                       <Button
                         variant="outline"
                         size="sm"
-                        className="md:hidden"
+                        className="md:hidden flex-1 sm:flex-none min-h-[44px] sm:min-h-0"
                         onClick={() => {
                           document.getElementById('mail-filters-open')?.click();
                         }}
@@ -845,7 +884,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                         size="sm"
                         onClick={() => refreshMail()}
                         disabled={mailLoading}
-                        className="shrink-0"
+                        className="flex-1 sm:flex-none shrink-0 min-h-[44px] sm:min-h-0"
                       >
                         <RefreshCw className={`h-4 w-4 mr-2 ${mailLoading ? 'animate-spin' : ''}`} />
                         Refresh
@@ -864,15 +903,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
 
                   {/* Bulk Actions - Show when items selected */}
                   {isSomeSelected && (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="default" className="text-body-sm">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                      <Badge variant="default" className="text-body-sm w-fit">
                         {selectedMail.length} selected
                       </Badge>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" className="w-full min-h-[44px] sm:min-h-0 sm:w-auto justify-center">
                         <Download className="h-4 w-4 mr-2" />
                         Download Selected
                       </Button>
-                      <Button size="sm" variant="primary" onClick={() => handleRequestForwarding()}>
+                      <Button size="sm" variant="primary" className="w-full min-h-[44px] sm:min-h-0 sm:w-auto justify-center" onClick={() => handleRequestForwarding()}>
                         <Truck className="h-4 w-4 mr-2" />
                         Request Forwarding
                       </Button>
@@ -920,22 +959,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                   <div className="text-caption text-muted-foreground">{businessAddressLine4}</div>
                 </div>
 
-                {/* Letter of Certification */}
-                <div className="space-y-2">
-                  <p className="text-caption font-semibold text-foreground">
-                    Letter of Certification
-                  </p>
+                <div>
                   <Button
                     type="button"
-                    className="w-full"
+                    className="w-full text-body font-semibold"
                     onClick={handleDownloadCertification}
                     disabled={!canUseAddress || isCertBusy}
                   >
-                    {isCertBusy ? "Preparing…" : "Download PDF"}
+                    {isCertBusy ? "Preparing…" : "Download certificate"}
                   </Button>
-                  <p className="text-caption text-muted-foreground leading-relaxed">
-                    Use for banks, payment providers and professional contacts.
-                  </p>
                 </div>
 
                 {/* Locked state message */}
@@ -1037,20 +1069,15 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
                     <div className="text-caption text-muted-foreground">{businessAddressLine4}</div>
                   </div>
 
-                  {/* Primary action */}
-                  <div className="space-y-2">
-                    {/* Letter of Certification: single action (generate if needed, then download) */}
+                  <div>
                     <Button
                       type="button"
-                      className="w-full"
+                      className="w-full text-body font-semibold"
                       onClick={handleDownloadCertification}
                       disabled={!canUseAddress || isCertBusy}
                     >
-                      {isCertBusy ? "Preparing your letter…" : "Download Letter of Certification (PDF)"}
+                      {isCertBusy ? "Preparing…" : "Download certificate"}
                     </Button>
-                    <p className="text-caption text-muted-foreground leading-relaxed">
-                      Use this letter for banks, payment providers, and professional contacts.
-                    </p>
                   </div>
 
                   {/* Locked state message */}

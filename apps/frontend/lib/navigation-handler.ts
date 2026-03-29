@@ -1,16 +1,14 @@
 /**
  * Shared navigation handler for marketing pages
- * Used by HeaderWithNav and FooterWithNav wrappers
+ * Used by HeaderWithNav, FooterWithNav, and /blog (BlogPage post clicks).
  */
 
 export function createNavigationHandler(router: { push: (path: string) => void }) {
-    return (page: string) => {
-        // Scroll to top before navigation
+    return (page: string, data?: unknown) => {
         if (typeof window !== 'undefined') {
             window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
         }
 
-        // Handle navigation based on page
         switch (page) {
             case 'home':
                 router.push('/');
@@ -21,6 +19,22 @@ export function createNavigationHandler(router: { push: (path: string) => void }
             case 'blog':
                 router.push('/blog');
                 break;
+            case 'blog-post': {
+                const slug =
+                    data &&
+                    typeof data === 'object' &&
+                    data !== null &&
+                    'slug' in data &&
+                    typeof (data as { slug: unknown }).slug === 'string'
+                        ? (data as { slug: string }).slug.trim()
+                        : '';
+                if (slug) {
+                    router.push(`/blog/${encodeURIComponent(slug)}`);
+                } else {
+                    router.push('/blog');
+                }
+                break;
+            }
             case 'signup':
                 router.push('/signup');
                 break;

@@ -13,6 +13,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { mutate as globalMutate } from 'swr';
+import { PROFILE_SWR_KEY } from '@/lib/swrKeys';
 import snsWebSdk from '@sumsub/websdk';
 
 export interface Compliance {
@@ -142,7 +143,7 @@ export function IdentityComplianceCard({
                                 });
                                 // Refresh profile to get updated KYC status
                                 setTimeout(() => {
-                                    globalMutate('/api/profile');
+                                    globalMutate(PROFILE_SWR_KEY);
                                     router.refresh();
                                 }, 2000);
                             } else if (reviewStatus === 'approved' || reviewResult === 'green') {
@@ -153,7 +154,7 @@ export function IdentityComplianceCard({
                                 });
                                 // Refresh profile to get updated KYC status
                                 setTimeout(() => {
-                                    globalMutate('/api/profile');
+                                    globalMutate(PROFILE_SWR_KEY);
                                     router.refresh();
                                 }, 1000);
                             }
@@ -167,7 +168,7 @@ export function IdentityComplianceCard({
                                 description: "Your identity verification has been submitted. We'll review it shortly.",
                             });
                             setTimeout(() => {
-                                globalMutate('/api/profile');
+                                globalMutate(PROFILE_SWR_KEY);
                                 router.refresh();
                             }, 2000);
                         }
@@ -250,7 +251,7 @@ export function IdentityComplianceCard({
                                         onClick={startKyc}
                                         disabled={startingKyc}
                                         size="sm"
-                                        className="bg-amber-600 hover:bg-amber-700 text-primary-foreground"
+                                        className="bg-amber-600 hover:bg-amber-700 !text-white [&_svg]:!text-white"
                                     >
                                         {startingKyc ? (
                                             <>

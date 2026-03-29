@@ -41,13 +41,11 @@ const nextConfig = {
     ],
   },
 
+  // Legacy / mistaken paths (SPA hash route name used as a URL segment)
   async redirects() {
     return [
-      {
-        source: '/about',
-        destination: '/',
-        permanent: true,
-      },
+      { source: '/blog-post', destination: '/blog', permanent: false },
+      { source: '/blog-post/:slug', destination: '/blog/:slug', permanent: false },
     ];
   },
 

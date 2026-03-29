@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
+import { buildBackendMutationHeaders } from '@/lib/server/backendMutationHeaders';
 
 export async function POST(req: NextRequest) {
   try {
     const backend = getBackendOrigin();
+    const cookie = req.headers.get("cookie") || "";
     const formData = await req.formData();
+
+    const headers = await buildBackendMutationHeaders(backend, cookie);
 
     const res = await fetch(`${backend}/api/admin/blog/upload`, {
     method: "POST",
-    headers: {
-      cookie: req.headers.get("cookie") || "",
-    },
+    headers,
     body: formData as any,
   });
 

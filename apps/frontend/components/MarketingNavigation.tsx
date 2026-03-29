@@ -30,16 +30,18 @@ export function MarketingNavigation({ onNavigate }: MarketingNavigationProps) {
         { label: 'Help Centre', page: 'help' },
     ];
 
+    /** Real Next.js routes so links work from the homepage SPA and from marketing layouts. */
     const handleNavClick = (page: string) => {
         window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-
-        if (onNavigate) {
-            onNavigate(page);
-        } else {
-            // Fallback: use router.push for client-side navigation
-            router.push(`/${page}`);
-        }
         setIsMenuOpen(false);
+
+        const path =
+            page === 'home'
+                ? '/'
+                : page === 'kyc' || page === 'kyc-policy'
+                  ? '/kyc'
+                  : `/${page}`;
+        router.push(path);
     };
 
     return (

@@ -2,8 +2,6 @@
 
 import { useMemo } from 'react';
 import { useBillingOverview, useInvoices } from '@/hooks/useDashboardData';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SubscriptionSummary } from '@/lib/account/types';
 import dynamic from 'next/dynamic';
 
@@ -107,41 +105,21 @@ export default function AccountBillingPage() {
                 <h1 className="text-h1 text-foreground mb-2 sm:mb-4">
                     Billing
                 </h1>
-                <p className="text-body-sm sm:text-body md:text-body-lg text-muted-foreground">
-                    Manage your subscription, payment method, and invoices
+                <p className="text-body-sm text-muted-foreground sm:text-body">
+                    Your plan, payment method, and invoice history.
                 </p>
             </div>
 
-            <Tabs defaultValue="payment" className="w-full min-w-0">
-                <TabsList className="mb-4 sm:mb-6 bg-transparent border-b border-border rounded-none p-0 h-auto w-full overflow-x-auto">
-                    <TabsTrigger
-                        value="payment"
-                        className="px-4 sm:px-6 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-muted-foreground font-normal data-[state=active]:font-medium text-body-sm sm:text-body shrink-0"
-                    >
-                        Payment Details
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="invoices"
-                        className="px-4 sm:px-6 py-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-muted-foreground font-normal data-[state=active]:font-medium text-body-sm sm:text-body shrink-0"
-                    >
-                        Invoices
-                    </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="payment" className="mt-4 sm:mt-6">
-                    <AccountBillingCard
-                        subscription={subscription}
-                        onRefresh={async () => {
-                            await mutateOverview();
-                            await mutateInvoices();
-                        }}
-                    />
-                </TabsContent>
-
-                <TabsContent value="invoices" className="mt-4 sm:mt-6">
-                    <InvoicesCard invoices={invoices} />
-                </TabsContent>
-            </Tabs>
+            <div className="flex w-full min-w-0 flex-col gap-8 sm:gap-10">
+                <AccountBillingCard
+                    subscription={subscription}
+                    onRefresh={async () => {
+                        await mutateOverview();
+                        await mutateInvoices();
+                    }}
+                />
+                <InvoicesCard invoices={invoices} />
+            </div>
         </div>
     );
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
+import { buildBackendMutationHeaders } from '@/lib/server/backendMutationHeaders';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -119,12 +120,13 @@ export async function PUT(
     const backend = getBackendOrigin();
     backendUrl = `${backend}/api/admin/blog/posts/${encodeURIComponent(slug)}`;
 
+    const headers = await buildBackendMutationHeaders(backend, cookie, {
+      'Content-Type': 'application/json',
+    });
+
     const response = await fetch(backendUrl, {
       method: 'PUT',
-      headers: {
-        'Cookie': cookie,
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(body),
       cache: 'no-store',
     });
@@ -312,12 +314,13 @@ export async function DELETE(
     const backend = getBackendOrigin();
     backendUrl = `${backend}/api/admin/blog/posts/${encodeURIComponent(slug)}`;
 
+    const deleteHeaders = await buildBackendMutationHeaders(backend, cookie, {
+      'Content-Type': 'application/json',
+    });
+
     const response = await fetch(backendUrl, {
       method: 'DELETE',
-      headers: {
-        'Cookie': cookie,
-        'Content-Type': 'application/json',
-      },
+      headers: deleteHeaders,
       cache: 'no-store',
     });
 

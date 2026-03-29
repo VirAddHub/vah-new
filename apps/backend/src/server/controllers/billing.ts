@@ -371,6 +371,7 @@ export async function getBillingOverview(req: Request, res: Response) {
         // Expose invoice total separately for UIs that need it (non-plan charges, etc.)
         latest_invoice_amount_pence: latestInvoice?.amount_pence || 0,
         pending_forwarding_fees_pence: await getPendingForwardingFees(userId),
+        billing_provider: getBillingProvider(),
       }
     });
   } catch (error) {
@@ -620,7 +621,7 @@ export async function postUpdateBank(req: Request, res: Response) {
         );
       }
       const appUrl = (process.env.APP_URL || process.env.APP_BASE_URL || 'https://virtualaddresshub.co.uk').replace(/\/+$/, '');
-      const { url } = await createStripePortalSession(customerId, `${appUrl}/billing`);
+      const { url } = await createStripePortalSession(customerId, `${appUrl}/account/billing`);
       return res.json({ ok: true, data: { redirect_url: url, url } });
     }
     const link = await gcCreateUpdateBankLink(userId);
@@ -657,7 +658,7 @@ export async function postReauthorise(req: Request, res: Response) {
         );
       }
       const appUrl = (process.env.APP_URL || process.env.APP_BASE_URL || 'https://virtualaddresshub.co.uk').replace(/\/+$/, '');
-      const { url } = await createStripePortalSession(customerId, `${appUrl}/billing`);
+      const { url } = await createStripePortalSession(customerId, `${appUrl}/account/billing`);
       return res.json({ ok: true, data: { redirect_url: url, url } });
     }
     const link = await gcCreateReauthoriseLink(userId);

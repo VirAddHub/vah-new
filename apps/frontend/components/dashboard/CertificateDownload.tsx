@@ -121,15 +121,12 @@ export function CertificateDownload({ profile, compliance }: CertificateDownload
     return (
         <div className="px-3 sm:px-4 pb-4 sm:pb-6 pt-3 sm:pt-4 border-t border-border">
             <div className="flex flex-col gap-3">
-                <p className="text-caption font-semibold text-foreground">
-                    Letter of Certification
-                </p>
                 {canDownload ? (
                     <>
                         <Button
                             onClick={handleDownloadCertification}
                             disabled={isCertBusy}
-                            className="w-full min-h-[44px] sm:min-h-0 bg-primary text-primary-foreground hover:bg-primary/90 text-body-sm font-medium py-2.5 sm:py-2.5 touch-manipulation"
+                            className="w-full min-h-[44px] sm:min-h-0 text-body font-semibold py-2.5 sm:py-2.5 touch-manipulation"
                         >
                             {isCertBusy ? (
                                 <>
@@ -139,13 +136,10 @@ export function CertificateDownload({ profile, compliance }: CertificateDownload
                             ) : (
                                 <>
                                     <FileText className="w-4 h-4 mr-2" />
-                                    Download PDF
+                                    Download certificate
                                 </>
                             )}
                         </Button>
-                        <p className="text-caption text-muted-foreground leading-relaxed">
-                            Use for banks, payment providers and professional contacts.
-                        </p>
                     </>
                 ) : (() => {
                     const reason = compliance

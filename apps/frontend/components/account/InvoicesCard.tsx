@@ -29,8 +29,8 @@ export function InvoicesCard({ invoices }: InvoicesCardProps) {
 
   return (
     <Card className="rounded-xl sm:rounded-2xl overflow-hidden">
-      <CardHeader className="p-4 sm:p-6 pb-2">
-        <CardTitle className="text-body-lg sm:text-h3">Invoices</CardTitle>
+      <CardHeader className="border-b border-border/60 p-4 pb-3 sm:p-6 sm:pb-4">
+        <CardTitle className="text-h4 text-foreground sm:text-h3">Invoices</CardTitle>
       </CardHeader>
       <CardContent className="p-4 sm:p-6 pt-0">
         {invoices.length === 0 ? (

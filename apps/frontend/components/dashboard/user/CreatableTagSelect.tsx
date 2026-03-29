@@ -13,6 +13,8 @@ interface CreatableTagSelectProps {
   onValueChange: (value: string | null) => void;
   getTagLabel: (tag: string | null) => string;
   className?: string;
+  /** Small corner-style trigger for narrow layouts (e.g. mobile mail rows). */
+  compact?: boolean;
 }
 
 /**
@@ -37,6 +39,7 @@ export function CreatableTagSelect({
   onValueChange,
   getTagLabel,
   className,
+  compact = false,
 }: CreatableTagSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -120,6 +123,8 @@ export function CreatableTagSelect({
   const normalizedInput = normalizeTag(inputValue);
   const isCreatingNew = inputValue.trim() && normalizedInput !== null && !availableTags.includes(normalizedInput);
 
+  const triggerLabel = compact && !currentTag ? 'Tag' : displayLabel;
+
   return (
     <div ref={containerRef} className={cn('relative', className)}>
       {/* Trigger Button */}
@@ -130,22 +135,42 @@ export function CreatableTagSelect({
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
+        aria-label={
+          currentTag
+            ? `Tag: ${getTagLabel(currentTag)}. Change tag.`
+            : 'Add or change tag'
+        }
         className={cn(
-          'h-9 w-[140px] text-body-sm border-border bg-card hover:bg-muted/50 justify-start transition-colors duration-150',
-          'focus:ring-1 focus:ring-primary'
+          'border-border justify-start transition-colors duration-150 shadow-none',
+          'focus-visible:ring-1 focus-visible:ring-primary',
+          compact
+            ? 'h-8 w-auto shrink-0 px-2 gap-1 rounded-md bg-muted/30 hover:bg-muted/50 text-caption font-medium text-muted-foreground hover:text-foreground border-border/80'
+            : 'h-9 w-full min-w-0 sm:w-[140px] max-w-full text-body-sm bg-card hover:bg-muted/50'
         )}
       >
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+        <div
+          className={cn(
+            'flex items-center gap-1 min-w-0',
+            compact ? 'max-w-[4.75rem]' : 'gap-1.5 flex-1'
+          )}
+        >
           <div className={cn('h-2 w-2 rounded-full flex-shrink-0', getTagColor(currentTag))} />
-          <span className="truncate">{displayLabel}</span>
+          <span className={cn('truncate', compact ? 'text-[11px] leading-tight' : '')}>
+            {triggerLabel}
+          </span>
         </div>
-        <ChevronDown className="h-3 w-3 ml-1 flex-shrink-0 opacity-50" />
+        <ChevronDown
+          className={cn('flex-shrink-0 opacity-60', compact ? 'h-3 w-3 ml-0' : 'h-3 w-3 ml-1')}
+        />
       </Button>
 
       {/* Dropdown */}
       {isOpen && (
         <div
-          className="absolute z-50 mt-1 w-[240px] rounded-md border border-border bg-card shadow-lg"
+          className={cn(
+            'absolute z-50 mt-1 w-[min(240px,calc(100vw-2rem))] rounded-md border border-border bg-card shadow-lg',
+            compact && 'right-0 left-auto'
+          )}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Input Field */}

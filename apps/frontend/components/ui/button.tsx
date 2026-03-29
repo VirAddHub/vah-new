@@ -26,7 +26,7 @@ const sizes: Record<Size, string> = {
 
 const variants: Record<Variant, string> = {
     primary:
-        "bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary",
+        "bg-primary !text-white hover:bg-primary/90 hover:!text-white focus-visible:ring-primary [&_svg]:!text-white",
     secondary:
         "bg-neutral-900 text-white hover:bg-neutral-800 focus-visible:ring-neutral-900",
     ghost:

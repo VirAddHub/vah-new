@@ -11,7 +11,7 @@ import { CreatableTagSelect } from "./dashboard/user/CreatableTagSelect";
 import { getTagColor } from "./dashboard/user/TagDot";
 import { useToast } from "./ui/use-toast";
 import { useTags } from "@/hooks/useDashboardData";
-import { getMailItemPrimaryLabel } from '@/lib/mailItemDates';
+import { getMailItemPrimaryLabel, mailItemMatchesSearchQuery } from '@/lib/mailItemDates';
 import { cn } from "@/lib/utils";
 import type { MailItem } from './dashboard/user/types';
 
@@ -90,14 +90,7 @@ export function MailManagement({
         }
 
         if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase();
-            items = items.filter(item =>
-                item.subject?.toLowerCase().includes(query) ||
-                item.sender_name?.toLowerCase().includes(query) ||
-                item.user_title?.toLowerCase().includes(query) ||
-                item.tag?.toLowerCase().includes(query) ||
-                item.received_date?.toLowerCase().includes(query)
-            );
+            items = items.filter((item) => mailItemMatchesSearchQuery(item, searchQuery));
         }
 
         return items;
@@ -209,16 +202,17 @@ export function MailManagement({
                     onOpen={() => onOpen(item)}
                 />
                 <div
-                    className="flex flex-wrap items-center gap-2 px-4 py-3 border-t border-border bg-muted/20"
+                    className="flex flex-wrap items-center justify-end gap-2 px-3 py-2 sm:px-4 sm:py-2.5 border-t border-border bg-muted/15"
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => e.stopPropagation()}
                 >
                     <CreatableTagSelect
+                        compact
                         value={item.tag ?? null}
                         availableTags={availableTags}
                         onValueChange={(v) => handleTagUpdate(item, v)}
                         getTagLabel={getTagLabel}
-                        className="min-w-[140px] flex-1"
+                        className="w-auto shrink-0"
                     />
                 </div>
             </div>
