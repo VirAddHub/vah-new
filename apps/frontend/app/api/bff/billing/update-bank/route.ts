@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
+import { bffSafeLogError } from '@/lib/server/bffSafeLog';
+
+const ROUTE = '/api/bff/billing/update-bank';
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,15 +59,14 @@ export async function POST(request: NextRequest) {
       { status: response.status }
     );
   } catch (error: any) {
-    // Handle backend origin configuration errors
     if (isBackendOriginConfigError(error)) {
-      console.error('[BFF update-bank] Server misconfigured:', error.message);
+      bffSafeLogError(ROUTE, 'misconfigured_backend_origin', request);
       return NextResponse.json(
         { ok: false, error: 'Server misconfigured', details: error.message },
         { status: 500 }
       );
     }
-    console.error('[BFF update-bank] error:', error);
+    bffSafeLogError(ROUTE, 'bff_exception', request);
     return NextResponse.json(
       { ok: false, error: 'Failed to create update bank link' },
       { status: 500 }

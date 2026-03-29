@@ -5,7 +5,15 @@
  * Redacts sensitive column values in sample output.
  */
 
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
+
+const require = createRequire(import.meta.url);
+const { getPgSslOption } = require(
+  join(dirname(fileURLToPath(import.meta.url)), "../../apps/backend/scripts/lib/pgSsl.cjs")
+);
 
 const TABLE_NAME_REGEX = /^[a-zA-Z0-9_]+$/;
 
@@ -101,7 +109,7 @@ async function main(): Promise<void> {
 
   const pool = new Pool({
     connectionString: url,
-    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+    ssl: getPgSslOption(),
     max: 1,
     allowExitOnIdle: true,
   });

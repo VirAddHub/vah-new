@@ -1,111 +1,48 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { isAllowedBffCorsOrigin } from './lib/bffCorsAllowlist';
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+/**
+ * Edge middleware — UX / navigation hints only. This is NOT authentication or authorization.
+ *
+ * Does not verify JWT signatures (no secrets in Edge, no duplicate of backend auth). Does not
+ * call `GET /api/bff/auth/whoami` or any backend. Every protected page must still enforce access
+ * in Server Components, Route Handlers, BFF routes, and the API (`requireAuth`, `requireAdmin`, etc.).
+ *
+ * For some HTML routes we only ask: does the `vah_session` cookie *look like* an unverified
+ * JWT-shaped blob (three base64url-like segments of non-trivial length)? That cuts empty,
+ * placeholder, and obvious junk cookies. A positive result does **not** mean valid, unexpired,
+ * non-revoked, or permitted — only “worth letting the request reach the app so real auth can run.”
+ */
 
-  // Skip internal routes and static assets
-  if (pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname.includes('.')) {
-    const response = NextResponse.next();
-    // Cache static assets for 1 year
-    if (pathname.startsWith('/_next/static/') ||
-      pathname.startsWith('/images/') ||
-      pathname.startsWith('/icons/') ||
-      pathname.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
-      response.headers.set(
-        'Cache-Control',
-        'public, max-age=31536000, immutable'
-      );
-    }
-    return response;
+const SESSION_COOKIE_NAME = 'vah_session';
+
+/** Minimum chars per segment — rejects trivial `x.y.z` placeholders; real JWT parts are longer. */
+const MIN_JWT_SHAPED_SEGMENT_LEN = 4;
+
+/**
+ * True if the cookie value has the *shape* of a compact JWT (header.payload.signature) without
+ * verifying crypto or claims. For middleware UX gating only.
+ */
+function hasPlausibleUnverifiedSessionCookieShape(raw: string | undefined): boolean {
+  if (raw == null) return false;
+  const v = raw.trim();
+  if (!v || v === 'null' || v === 'undefined') return false;
+  const parts = v.split('.');
+  if (parts.length !== 3) return false;
+  for (const p of parts) {
+    if (p.length < MIN_JWT_SHAPED_SEGMENT_LEN) return false;
+    if (!/^[A-Za-z0-9_-]+$/.test(p)) return false;
   }
+  return true;
+}
 
-  // Redirect /dashboard to /mail (mail inbox is the default dashboard view)
-  if (pathname === '/dashboard' || pathname === '/dashboard/') {
-    return NextResponse.redirect(new URL('/mail', request.url));
-  }
-  // Legacy email links: redirect to correct dashboard routes (both are protected)
-  if (pathname === '/support' || pathname === '/support/') {
-    return NextResponse.redirect(new URL('/account/support', request.url));
-  }
-  if (pathname === '/profile' || pathname === '/profile/') {
-    return NextResponse.redirect(new URL('/account/verification', request.url));
-  }
-
-  // Protected routes that require authentication
-  // Exceptions: public routes (no auth required)
-  const isPublicAccountRoute = pathname === '/account/confirm-email' || pathname.startsWith('/account/confirm-email/');
-  const isPublicVerifyRoute = pathname === '/verify-owner' || pathname.startsWith('/verify-owner/');
-  const isPublicEmailChangeRoute = pathname === '/verify-email-change' || pathname.startsWith('/verify-email-change/');
-  // All dashboard routes (dashboard group redirects /dashboard -> /mail; /mail, /forwarding, etc. are under (dashboard))
-  const PROTECTED_PREFIXES = ['/dashboard', '/account', '/admin', '/mail', '/forwarding', '/billing', '/business-owners'];
-  const isProtectedRoute = !isPublicAccountRoute && !isPublicVerifyRoute && !isPublicEmailChangeRoute && PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix));
-
-  // Check for authentication cookie
-  if (isProtectedRoute) {
-    const sessionCookie = request.cookies.get('vah_session');
-    // More strict validation - check for empty, null, undefined, or very short values
-    const hasValidSession = sessionCookie &&
-      sessionCookie.value !== 'null' &&
-      sessionCookie.value !== 'undefined' &&
-      sessionCookie.value !== '' &&
-      sessionCookie.value.trim().length > 10;
-
-    if (!hasValidSession) {
-      // Only redirect if not already going to login (prevent redirect loops)
-      if (pathname !== '/login') {
-        // Redirect to login with next parameter
-        const loginUrl = new URL('/login', request.url);
-        loginUrl.searchParams.set('next', pathname + request.nextUrl.search);
-        return NextResponse.redirect(loginUrl);
-      }
-    }
-  }
-
-  const response = NextResponse.next();
-
-  // Cache API routes for 5 minutes with stale-while-revalidate
-  if (pathname.startsWith('/api/')) {
-    // Skip caching for auth and dynamic endpoints
-    if (pathname.includes('/auth/') ||
-      pathname.includes('/webhooks/') ||
-      pathname.includes('/analytics/')) {
-      response.headers.set(
-        'Cache-Control',
-        'no-cache, no-store, must-revalidate'
-      );
-    } else {
-      response.headers.set(
-        'Cache-Control',
-        'public, s-maxage=300, stale-while-revalidate=3600'
-      );
-    }
-  }
-
-  // Cache static pages for 1 hour
-  if (pathname === '/' ||
-    pathname === '/about' ||
-    pathname === '/help' ||
-    pathname === '/terms' ||
-    pathname === '/privacy' ||
-    pathname === '/kyc-policy') {
-    response.headers.set(
-      'Cache-Control',
-      'public, s-maxage=3600, stale-while-revalidate=86400'
-    );
-  }
-
-  // Cache blog pages for 30 minutes
-  if (pathname.startsWith('/blog/')) {
-    response.headers.set(
-      'Cache-Control',
-      'public, s-maxage=1800, stale-while-revalidate=3600'
-    );
-  }
-
-  // Add security headers
+/**
+ * Baseline headers for HTML, `/api` Route Handlers, and static paths that pass through middleware.
+ * (Applied to `NextResponse.next()` so they merge onto the final response; does not replace
+ * route-specific `Cache-Control` or BFF CORS headers added elsewhere.)
+ */
+function applySecurityHeaders(response: NextResponse, _request: NextRequest) {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'origin-when-cross-origin');
@@ -115,45 +52,131 @@ export function middleware(request: NextRequest) {
     'Permissions-Policy',
     'camera=(self "https://in.sumsub.com" "https://static.sumsub.com"), microphone=(self "https://in.sumsub.com" "https://static.sumsub.com"), geolocation=()'
   );
+  if (process.env.NODE_ENV === 'production') {
+    response.headers.set(
+      'Strict-Transport-Security',
+      'max-age=63072000; includeSubDomains; preload'
+    );
+  }
+}
 
-  // Add CORS headers for API routes (FIND-03: allowlist replaces wildcard)
-  if (pathname.startsWith('/api/')) {
-    const ALLOWED_ORIGINS = new Set([
-      'https://virtualaddresshub.co.uk',
-      'https://www.virtualaddresshub.co.uk',
-      // Add staging / preview URLs here if needed:
-      // 'https://staging.virtualaddresshub.co.uk',
-    ]);
+/** CORS on Next `/api/*` is only relevant for cross-origin callers; omit when no Origin (same-origin). */
+function applyBffCorsHeaders(response: NextResponse, request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  if (!pathname.startsWith('/api/')) return;
+  const origin = request.headers.get('origin');
+  const isProd = process.env.NODE_ENV === 'production';
+  if (!origin || !isAllowedBffCorsOrigin(origin, isProd)) return;
+  response.headers.set('Access-Control-Allow-Origin', origin);
+  response.headers.set('Vary', 'Origin');
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  response.headers.set(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-CSRF-Token, X-Requested-With, Accept, Cache-Control, Pragma'
+  );
+}
 
-    const origin = request.headers.get('origin') ?? '';
-    const allowOrigin = ALLOWED_ORIGINS.has(origin)
-      ? origin
-      : 'https://virtualaddresshub.co.uk'; // Safe default: never wildcard
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-    response.headers.set('Access-Control-Allow-Origin', allowOrigin);
-    response.headers.set('Vary', 'Origin'); // Ensure CDN/proxy caches per-origin
-    response.headers.set('Access-Control-Allow-Credentials', 'true');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token');
+  // `/api` before `includes('.')` so paths like `/api/v1.0/...` always get BFF cache + security
+  // headers here instead of only the generic static branch.
+  if (pathname.startsWith('/api')) {
+    const response = NextResponse.next();
+    if (pathname.startsWith('/api/')) {
+      if (
+        pathname.includes('/auth/') ||
+        pathname.includes('/webhooks/') ||
+        pathname.includes('/analytics/')
+      ) {
+        response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      } else {
+        response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600');
+      }
+    }
+    applySecurityHeaders(response, request);
+    applyBffCorsHeaders(response, request);
+    return response;
   }
 
-  // FIND-07: Add HSTS to enforce HTTPS on all routes
-  response.headers.set(
-    'Strict-Transport-Security',
-    'max-age=63072000; includeSubDomains; preload'
-  );
+  if (pathname.startsWith('/_next') || pathname.includes('.')) {
+    const response = NextResponse.next();
+    if (
+      pathname.startsWith('/_next/static/') ||
+      pathname.startsWith('/images/') ||
+      pathname.startsWith('/icons/') ||
+      pathname.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)
+    ) {
+      response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+    applySecurityHeaders(response, request);
+    return response;
+  }
 
+  if (pathname === '/dashboard' || pathname === '/dashboard/') {
+    return NextResponse.redirect(new URL('/mail', request.url));
+  }
+  if (pathname === '/support' || pathname === '/support/') {
+    return NextResponse.redirect(new URL('/account/support', request.url));
+  }
+  if (pathname === '/profile' || pathname === '/profile/') {
+    return NextResponse.redirect(new URL('/account/verification', request.url));
+  }
+
+  const isPublicAccountRoute =
+    pathname === '/account/confirm-email' || pathname.startsWith('/account/confirm-email/');
+  const isPublicVerifyRoute = pathname === '/verify-owner' || pathname.startsWith('/verify-owner/');
+  const isPublicEmailChangeRoute =
+    pathname === '/verify-email-change' || pathname.startsWith('/verify-email-change/');
+  const PROTECTED_PREFIXES = [
+    '/dashboard',
+    '/account',
+    '/admin',
+    '/mail',
+    '/forwarding',
+    '/billing',
+    '/business-owners',
+  ];
+  const isProtectedRoute =
+    !isPublicAccountRoute &&
+    !isPublicVerifyRoute &&
+    !isPublicEmailChangeRoute &&
+    PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+
+  // UX-only: redirect likely logged-out visitors to /login before paint. Server/BFF still authorises.
+  if (isProtectedRoute) {
+    const sessionCookieValue = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+    if (!hasPlausibleUnverifiedSessionCookieShape(sessionCookieValue)) {
+      if (pathname !== '/login') {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('next', pathname + request.nextUrl.search);
+        return NextResponse.redirect(loginUrl);
+      }
+    }
+  }
+
+  const response = NextResponse.next();
+
+  if (pathname === '/' ||
+    pathname === '/about' ||
+    pathname === '/help' ||
+    pathname === '/terms' ||
+    pathname === '/privacy' ||
+    pathname === '/kyc-policy') {
+    response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+  }
+
+  if (pathname.startsWith('/blog/')) {
+    response.headers.set('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=3600');
+  }
+
+  applySecurityHeaders(response, request);
   return response;
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };

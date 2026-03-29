@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 const { Client } = require('pg');
+const { getPgSslOption } = require('./lib/pgSsl.cjs');
 
 async function queryAdminAccounts() {
     const DATABASE_URL = process.env.DATABASE_URL;
@@ -19,7 +20,7 @@ async function queryAdminAccounts() {
 
     const client = new Client({
         connectionString: DATABASE_URL,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        ssl: getPgSslOption()
     });
 
     try {

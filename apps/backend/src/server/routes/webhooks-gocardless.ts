@@ -94,7 +94,8 @@ router.post('/gocardless', async (req: Request, res: Response) => {
 
         // Verify webhook signature (always required in production)
         const isProd = process.env.NODE_ENV === 'production';
-        const secret = process.env.GC_WEBHOOK_SECRET || '';
+        const secret =
+          process.env.GC_WEBHOOK_SECRET || process.env.GOCARDLESS_WEBHOOK_SECRET || '';
 
         if (isProd && !secret) {
             logger.error('[gocardless] missing GC_WEBHOOK_SECRET');

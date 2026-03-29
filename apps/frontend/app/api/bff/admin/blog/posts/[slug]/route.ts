@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 import { buildBackendMutationHeaders } from '@/lib/server/backendMutationHeaders';
+import { requireBffAdmin } from '@/lib/server/requireBffAdmin';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -20,6 +21,9 @@ export async function GET(
   let backendUrl = '';
 
   try {
+    const denied = await requireBffAdmin(request);
+    if (denied) return denied;
+
     const cookie = request.headers.get('cookie') || '';
     const backend = getBackendOrigin();
     backendUrl = `${backend}/api/admin/blog/posts/${encodeURIComponent(slug)}`;
@@ -115,6 +119,9 @@ export async function PUT(
   let backendUrl = '';
 
   try {
+    const denied = await requireBffAdmin(request);
+    if (denied) return denied;
+
     const cookie = request.headers.get('cookie') || '';
     const body = await request.json();
     const backend = getBackendOrigin();
@@ -213,6 +220,9 @@ export async function PATCH(
   let backendUrl = '';
 
   try {
+    const denied = await requireBffAdmin(request);
+    if (denied) return denied;
+
     const cookie = request.headers.get('cookie') || '';
     const body = await request.json();
     const backend = getBackendOrigin();
@@ -310,6 +320,9 @@ export async function DELETE(
   let backendUrl = '';
 
   try {
+    const denied = await requireBffAdmin(request);
+    if (denied) return denied;
+
     const cookie = request.headers.get('cookie') || '';
     const backend = getBackendOrigin();
     backendUrl = `${backend}/api/admin/blog/posts/${encodeURIComponent(slug)}`;

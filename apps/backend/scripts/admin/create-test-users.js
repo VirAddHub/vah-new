@@ -1,10 +1,11 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
+const { getPgSslOption } = require('../lib/pgSsl.cjs');
 
 // Database connection - use the same as the server
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://vah_postgres_user:your_password_here@dpg-d2vikgnfte5s73c5nv80-a:5432/vah_postgres',
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  ssl: getPgSslOption()
 });
 
 async function createTestUsers() {

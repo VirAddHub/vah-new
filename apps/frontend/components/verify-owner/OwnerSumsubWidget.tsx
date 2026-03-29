@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { devError, devLog } from '@/lib/devConsole';
 
 interface OwnerSumsubWidgetProps {
   /** Sumsub SDK access token from POST verify/start */
@@ -37,11 +38,11 @@ export function OwnerSumsubWidget({
       const instance = (snsWebSdk.init(accessToken, () => Promise.resolve(accessToken)) as any)
         .withConf({ lang })
         .on('idCheck.onError', (err: unknown) => {
-          console.error('[OwnerSumsubWidget] onError', err);
+          devError('[OwnerSumsubWidget] onError', err);
           setError('Something went wrong with identity verification. Please try again.');
         })
         .on('idCheck.onReady', () => {
-          console.log('[OwnerSumsubWidget] ready');
+          devLog('[OwnerSumsubWidget] ready');
         })
         .onMessage((type: string, payload: Record<string, unknown>) => {
           if (type === 'idCheck.applicantStatus') {
@@ -68,7 +69,7 @@ export function OwnerSumsubWidget({
       sdkRef.current = instance;
       instance.launch(`#${containerId}`);
     } catch (err) {
-      console.error('[OwnerSumsubWidget] mount error', err);
+      devError('[OwnerSumsubWidget] mount error', err);
       setError(
         err instanceof Error ? err.message : 'Unable to load verification. Please try again.'
       );

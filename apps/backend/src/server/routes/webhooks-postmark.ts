@@ -1,16 +1,50 @@
 // apps/backend/src/server/routes/webhooks-postmark.ts
+import crypto from 'crypto';
 import type { Request, Response } from 'express';
 
-// Postmark webhook secret validation
-const WEBHOOK_SECRET = process.env.POSTMARK_WEBHOOK_SECRET || '';
+/**
+ * Inbound Postmark webhook shared secret (configure in Postmark → Webhooks → custom header).
+ * Production: must be set and sent on every request or we reject with 401 (fail-closed).
+ * Startup: `productionEnvValidation` also fatals if missing/short in NODE_ENV=production.
+ */
+const WEBHOOK_SECRET = (process.env.POSTMARK_WEBHOOK_SECRET || '').trim();
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
-function webhookSecretOk(secretHeader?: string) {
-    if (!WEBHOOK_SECRET) return true; // no secret => allow (CI/Staging)
-    return secretHeader === WEBHOOK_SECRET;
+function readPostmarkWebhookSecretHeader(req: Request): string | undefined {
+    const h = req.headers['x-postmark-webhook-secret'];
+    if (typeof h === 'string' && h.length > 0) return h;
+    if (Array.isArray(h) && h.length > 0 && typeof h[0] === 'string' && h[0].length > 0) {
+        return h[0];
+    }
+    return undefined;
+}
+
+/** Constant-time compare when lengths match; never true if either side is empty. */
+function postmarkWebhookSecretsMatch(expected: string, provided: string | undefined): boolean {
+    if (!expected || !provided) return false;
+    try {
+        const a = Buffer.from(expected, 'utf8');
+        const b = Buffer.from(provided, 'utf8');
+        if (a.length !== b.length) return false;
+        return crypto.timingSafeEqual(a, b);
+    } catch {
+        return false;
+    }
+}
+
+function webhookSecretOk(secretHeader: string | undefined): boolean {
+    if (IS_PRODUCTION) {
+        // Fail closed: no env secret → reject everything (also blocked at process startup).
+        if (!WEBHOOK_SECRET) return false;
+        return postmarkWebhookSecretsMatch(WEBHOOK_SECRET, secretHeader);
+    }
+    // Non-production only: allow unauthenticated webhooks when secret is not configured.
+    if (!WEBHOOK_SECRET) return true;
+    return postmarkWebhookSecretsMatch(WEBHOOK_SECRET, secretHeader);
 }
 
 export function postmarkWebhook(req: Request, res: Response) {
-    const secretHeader = req.headers['x-postmark-webhook-secret'] as string;
+    const secretHeader = readPostmarkWebhookSecretHeader(req);
     if (!webhookSecretOk(secretHeader)) {
         return res.status(401).json({ ok: false, error: 'unauthorized' });
     }

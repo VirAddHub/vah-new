@@ -12,6 +12,7 @@ import { formatFRId, formatDateUK } from "@/lib/utils/format";
 import { useToast } from "../ui/use-toast";
 import { useRouter } from "next/navigation";
 import { FWD_LABEL } from '../../lib/forwardingStatus';
+import type { WhoamiUser } from "@/lib/verifiedAdminSession";
 // Removed updateForwardingByAction import - now using direct status API
 
 type Api<T> = { ok: boolean; data?: T; error?: string };
@@ -49,9 +50,14 @@ type AdminLock = {
 
 interface CollaborativeForwardingBoardProps {
   onDataUpdate?: (requests: ForwardingRequest[]) => void;
+  /** From parent useVerifiedAdminSession — avoids a second whoami and localStorage for identity. */
+  verifiedAdminUser?: WhoamiUser | null;
 }
 
-export default function CollaborativeForwardingBoard({ onDataUpdate }: CollaborativeForwardingBoardProps = {}) {
+export default function CollaborativeForwardingBoard({
+  onDataUpdate,
+  verifiedAdminUser,
+}: CollaborativeForwardingBoardProps = {}) {
   // ALL HOOKS MUST BE CALLED UNCONDITIONALLY AT THE TOP LEVEL
   // This ensures the same number of hooks are called on every render
   
@@ -71,25 +77,30 @@ export default function CollaborativeForwardingBoard({ onDataUpdate }: Collabora
   
   // Context hooks - called unconditionally (will throw if context missing, which is expected)
   const { registerPolling, unregisterPolling } = useAdminHeartbeat();
-  
+
   // Refs - called unconditionally
   const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Get current admin info
+  // Display label only — parent passes BFF whoami user (not localStorage).
   useEffect(() => {
-    const storedUser = localStorage.getItem('vah_user');
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        setCurrentAdmin({
-          id: userData.id,
-          name: userData.first_name || userData.email || 'Admin'
-        });
-      } catch (e) {
-        console.error('Failed to parse stored user:', e);
-      }
+    if (!verifiedAdminUser?.id) {
+      setCurrentAdmin(null);
+      return;
     }
-  }, []);
+    const id = Number(verifiedAdminUser.id);
+    if (!Number.isFinite(id)) {
+      setCurrentAdmin(null);
+      return;
+    }
+    const first =
+      typeof (verifiedAdminUser as { first_name?: string }).first_name === "string"
+        ? (verifiedAdminUser as { first_name: string }).first_name
+        : "";
+    setCurrentAdmin({
+      id,
+      name: first || verifiedAdminUser.email || "Admin",
+    });
+  }, [verifiedAdminUser]);
 
   // Helper to get allowed next statuses
   // Simple status transitions for 3-stage Kanban - using backend status values

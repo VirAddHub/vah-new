@@ -4,11 +4,12 @@
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const { getPgSslOption } = require('../apps/backend/scripts/lib/pgSsl.cjs');
 
 async function runMigration() {
     const pool = new Pool({
         connectionString: process.env.DATABASE_URL || 'postgresql://vah_user:Vah2024!@dpg-d1j8j8k2i3mhq7b8qj8g-a.oregon-postgres.render.com/vah_db_7x8k',
-        ssl: { rejectUnauthorized: false }
+        ssl: getPgSslOption(),
     });
 
     try {

@@ -1,11 +1,12 @@
 import crypto from 'crypto';
 
-// Use a single canonical env var name to avoid deploy confusion.
+// Access token / webhook secret: GC_* preferred; GOCARDLESS_* supported (see env.example + productionEnvValidation).
 // IMPORTANT: do not throw at import time; some environments intentionally run
 // without GoCardless configured. Live API only (sandbox removed).
 function getGcConfig() {
   const accessToken = (process.env.GC_ACCESS_TOKEN ?? process.env.GOCARDLESS_ACCESS_TOKEN)?.trim();
-  const webhookSecret = process.env.GC_WEBHOOK_SECRET?.trim();
+  const webhookSecret =
+    (process.env.GC_WEBHOOK_SECRET ?? process.env.GOCARDLESS_WEBHOOK_SECRET)?.trim();
   const appUrl = (process.env.APP_URL ?? process.env.APP_BASE_URL)?.trim();
   const apiBase = 'https://api.gocardless.com';
 

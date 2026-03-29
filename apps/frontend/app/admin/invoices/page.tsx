@@ -9,6 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { AdminHeader } from "@/components/admin/parts/AdminHeader";
 import { Users, Truck, FileText, Package } from "lucide-react";
+import { useVerifiedAdminSession } from "@/hooks/useVerifiedAdminSession";
+import { buildAdminBffHeaders } from "@/lib/verifiedAdminSession";
 
 type AdminInvoiceRow = {
   id: number;
@@ -48,9 +50,14 @@ function parseDateMaybe(v: unknown): Date | null {
 
 export default function AdminInvoicesPage() {
   const router = useRouter();
-  const [loadingAuth, setLoadingAuth] = useState(true);
-  const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const { status: adminStatus, user } = useVerifiedAdminSession();
+
+  useEffect(() => {
+    if (adminStatus === "unauthenticated") router.replace("/admin/login");
+    else if (adminStatus === "forbidden") router.replace("/dashboard");
+  }, [adminStatus, router]);
+
+  const loadingAuth = adminStatus === "loading";
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,40 +78,13 @@ export default function AdminInvoicesPage() {
   const [total, setTotal] = useState<number | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
-    const t = localStorage.getItem("vah_jwt");
-    const storedUser = localStorage.getItem("vah_user");
-
-    if (!t) {
-      router.push("/admin/login");
-      return;
-    }
-
-    if (storedUser) {
-      try {
-        const u = JSON.parse(storedUser);
-        if (!u.is_admin && u.role !== "admin") {
-          router.push("/dashboard");
-          return;
-        }
-        setUser(u);
-      } catch {
-        router.push("/admin/login");
-        return;
-      }
-    }
-
-    setToken(t);
-    setLoadingAuth(false);
-  }, [router]);
-
   const moneyFmt = useMemo(
     () => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }),
     []
   );
 
   async function loadInvoices(nextPage = page) {
-    if (!token) return;
+    if (adminStatus !== "ready") return;
     setLoading(true);
     setError(null);
     try {
@@ -119,7 +99,7 @@ export default function AdminInvoicesPage() {
 
       const r = await fetch(`/api/bff/admin/invoices?${qs.toString()}`, {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: buildAdminBffHeaders(),
         cache: "no-store",
         credentials: "include",
       });
@@ -140,13 +120,13 @@ export default function AdminInvoicesPage() {
   }
 
   async function downloadPdf(inv: AdminInvoiceRow) {
-    if (!token) return;
+    if (adminStatus !== "ready") return;
     setError(null);
     try {
       const url = `/api/bff/admin/invoices/${inv.id}/download?disposition=attachment`;
       const r = await fetch(url, {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: buildAdminBffHeaders(),
         cache: "no-store",
         credentials: "include",
       });
@@ -175,17 +155,17 @@ export default function AdminInvoicesPage() {
   }
 
   useEffect(() => {
-    if (!loadingAuth && token) {
+    if (!loadingAuth && adminStatus === "ready") {
       loadInvoices(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadingAuth, token]);
+  }, [loadingAuth, adminStatus]);
 
   // Fetch user suggestions (admin user search)
   useEffect(() => {
     let cancelled = false;
     async function run() {
-      if (!token) return;
+      if (adminStatus !== "ready") return;
       const q = userQuery.trim();
       if (!q) {
         setUserSuggestions([]);
@@ -195,7 +175,7 @@ export default function AdminInvoicesPage() {
       try {
         const r = await fetch(`/api/bff/admin/users/search?q=${encodeURIComponent(q)}`, {
           method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
+          headers: buildAdminBffHeaders(),
           cache: "no-store",
           credentials: "include",
         });
@@ -216,20 +196,20 @@ export default function AdminInvoicesPage() {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [token, userQuery]);
+  }, [adminStatus, userQuery]);
 
   if (loadingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading admin…</p>
+          <p className="text-muted-foreground">Verifying admin access…</p>
         </div>
       </div>
     );
   }
 
-  if (!user) return null;
+  if (adminStatus !== "ready" || !user) return null;
 
   const handleLogout = async () => {
     // Prevent multiple logout attempts

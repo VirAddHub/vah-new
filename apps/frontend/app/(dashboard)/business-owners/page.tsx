@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Users, Plus, Mail, CheckCircle2, XCircle, Clock, Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { devError } from '@/lib/devConsole';
 
 interface BusinessOwner {
     id: number;
@@ -46,7 +47,7 @@ export default function BusinessOwnersPage() {
                 setOwners(result.data);
             }
         } catch (error) {
-            console.error('Failed to fetch business owners:', error);
+            devError('Failed to fetch business owners:', error);
         } finally {
             setLoading(false);
         }

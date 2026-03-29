@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendOrigin } from "@/lib/server/backendOrigin";
 import { isBackendOriginConfigError } from "@/lib/server/isBackendOriginError";
+import { requireBffAdmin } from "@/lib/server/requireBffAdmin";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -12,6 +13,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   try {
+    const denied = await requireBffAdmin(request);
+    if (denied) return denied;
+
     const cookie = request.headers.get("cookie") || "";
     const authHeader = request.headers.get("authorization") || "";
     const backend = getBackendOrigin();

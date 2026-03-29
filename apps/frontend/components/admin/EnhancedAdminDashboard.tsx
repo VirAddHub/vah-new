@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthedSWR } from "@/lib/useAuthedSWR";
+import type { WhoamiUser } from "@/lib/verifiedAdminSession";
 // Monitoring hooks removed - using Sentry instead
 // import { useAdminOverview, useAdminHealth, useAdminActivity, useForwardingStats } from "@/lib/hooks/useAdminOverview";
 // import RecentActivityCard from "@/components/admin/RecentActivityCard";
@@ -62,11 +63,18 @@ interface AdminDashboardProps {
     onLogout: () => void;
     onNavigate?: (page: string, data?: any) => void;
     onGoBack?: () => void;
+    /** Parent must pass the user from useVerifiedAdminSession (BFF whoami). */
+    verifiedAdminUser: WhoamiUser | null;
 }
 
 type AdminSection = "users" | "mail" | "forwarding" | "plans" | "blog";
 
-export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: AdminDashboardProps) {
+export function EnhancedAdminDashboard({
+    onLogout,
+    onNavigate,
+    onGoBack,
+    verifiedAdminUser,
+}: AdminDashboardProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [activeSection, setActiveSection] = useState<AdminSection>("users");
@@ -182,7 +190,9 @@ export function EnhancedAdminDashboard({ onLogout, onNavigate, onGoBack }: Admin
             case "mail":
                 return <MailSection />;
             case "forwarding":
-                return <CollaborativeForwardingBoard />;
+                return (
+                    <CollaborativeForwardingBoard verifiedAdminUser={verifiedAdminUser} />
+                );
             case "plans":
                 return <PlansSection />;
             case "blog":

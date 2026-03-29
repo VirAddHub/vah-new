@@ -2,14 +2,16 @@ import { Router, Request, Response } from 'express';
 import { Client } from 'pg';
 import fs from 'fs';
 import path from 'path';
+import { getPgSslOption } from '../lib/pgSslConfig';
+import { requireAdmin } from '../middleware/auth';
 
 const router = Router();
 
 /**
  * POST /api/direct-migrate
- * Direct migration endpoint that runs migrations inline
+ * Direct migration inline (admin only). Not mounted in production. Response omits table name lists.
  */
-router.post('/direct-migrate', async (req: Request, res: Response) => {
+router.post('/direct-migrate', requireAdmin, async (req: Request, res: Response) => {
     try {
         console.log('🚀 Starting direct migrations...');
         
@@ -21,9 +23,9 @@ router.post('/direct-migrate', async (req: Request, res: Response) => {
             });
         }
         
-        const client = new Client({ 
-            connectionString: dbUrl, 
-            ssl: { rejectUnauthorized: false } 
+        const client = new Client({
+            connectionString: dbUrl,
+            ssl: getPgSslOption(),
         });
         
         await client.connect();
@@ -43,7 +45,7 @@ router.post('/direct-migrate', async (req: Request, res: Response) => {
             return res.json({
                 ok: true,
                 message: 'Forwarding tables already exist',
-                tables: checkResult.rows.map(r => r.table_name)
+                forwardingTablesSatisfied: true,
             });
         }
         
@@ -93,7 +95,7 @@ router.post('/direct-migrate', async (req: Request, res: Response) => {
         res.json({
             ok: true,
             message: 'Migrations completed successfully',
-            tables: result.rows.map(r => r.table_name),
+            forwardingTablesSatisfied: result.rows.length >= 3,
             timestamp: new Date().toISOString()
         });
         

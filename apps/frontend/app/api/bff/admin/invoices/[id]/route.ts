@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendOrigin } from "@/lib/server/backendOrigin";
 import { isBackendOriginConfigError } from "@/lib/server/isBackendOriginError";
+import { requireBffAdmin } from "@/lib/server/requireBffAdmin";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -12,6 +13,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   try {
+    const denied = await requireBffAdmin(req);
+    if (denied) return denied;
+
     const backend = getBackendOrigin();
     const url = `${backend}/api/admin/invoices/${encodeURIComponent(id)}`;
 

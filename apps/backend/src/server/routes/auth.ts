@@ -9,6 +9,7 @@ import { ENV } from "../../env";
 import { upsertSubscriptionForUser } from "../services/subscription-linking";
 import { ok, unauthorized, badRequest, serverError } from "../lib/apiResponse";
 import { logger } from "../../lib/logger";
+import { isSecureEnv, sessionCookieSecurityOptions } from "../../lib/cookies";
 
 const router = Router();
 
@@ -465,13 +466,10 @@ router.post("/signup", async (req, res) => {
             role: 'user'
         });
 
-        // Set HttpOnly cookie for cross-site auth (frontend on different domain)
+        // Same flags as login (isSecureEnv → Lax+insecure cookie on local HTTP, None+Secure when cross-site HTTPS)
         res.cookie('vah_session', token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            path: '/',
-            maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000 // 60 minutes
+            ...sessionCookieSecurityOptions(),
+            maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000,
         });
 
         // Return standardized response format
@@ -573,13 +571,10 @@ router.post("/login", async (req, res) => {
             role: userData.role
         });
 
-        // Set HttpOnly cookie for iframe authentication (cross-site)
+        // Set HttpOnly cookie for cross-site BFF ↔ API
         res.cookie('vah_session', token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            path: '/',
-            maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000 // 60 minutes
+            ...sessionCookieSecurityOptions(),
+            maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000,
         });
 
         // REVISED: The user object in the response should match the payload for consistency
@@ -611,21 +606,12 @@ router.post("/login", async (req, res) => {
 // --- LOGOUT ---
 router.post("/logout", (req, res) => {
     try {
-        // Determine secure environment (matches how cookies are set in login/signup)
-        const isSecure = process.env.NODE_ENV === 'production' || process.env.FORCE_SECURE_COOKIES === 'true';
+        const isSecure = isSecureEnv();
 
         // Clear cookies using clearCookie (works for direct browser requests)
-        // Clear vah_session cookie with SAME attributes as when set
-        // Matches: httpOnly: true, secure: true, sameSite: 'none', path: '/'
-        res.clearCookie('vah_session', {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            path: '/',
-        });
+        res.clearCookie('vah_session', sessionCookieSecurityOptions());
 
-        // Clear CSRF token cookie with SAME attributes as when set
-        // Matches: httpOnly: false, secure: isSecure, sameSite: isSecure ? 'none' : 'lax', path: '/'
+        // Clear CSRF token cookie with SAME attributes as when set (non-httpOnly double-submit)
         res.clearCookie('vah_csrf_token', {
             httpOnly: false,
             secure: isSecure,

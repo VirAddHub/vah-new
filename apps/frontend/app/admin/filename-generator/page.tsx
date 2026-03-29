@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { Loader2, Search, Clipboard, ClipboardCheck, Users, Truck, FileText, Package } from "lucide-react";
 import { AdminHeader } from "@/components/admin/parts/AdminHeader";
+import { useVerifiedAdminSession } from "@/hooks/useVerifiedAdminSession";
+import { buildAdminBffHeaders } from "@/lib/verifiedAdminSession";
 
 type AdminUserHit = {
   id: number;
@@ -53,6 +55,13 @@ const todayString = () => {
 
 export default function FilenameGeneratorPage() {
   const router = useRouter();
+  const { status: adminStatus } = useVerifiedAdminSession();
+
+  useEffect(() => {
+    if (adminStatus === "unauthenticated") router.replace("/admin/login");
+    else if (adminStatus === "forbidden") router.replace("/dashboard");
+  }, [adminStatus, router]);
+
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,29 +76,6 @@ export default function FilenameGeneratorPage() {
     () => ["HMRC", "Companies House", ...Array.from({ length: 10 }, (_, i) => String(i + 1))],
     []
   );
-
-  // Check authentication
-  useEffect(() => {
-    const token = localStorage.getItem('vah_jwt');
-    const storedUser = localStorage.getItem('vah_user');
-
-    if (!token || !storedUser) {
-      router.push('/admin/login');
-      return;
-    }
-
-    try {
-      const userData = JSON.parse(storedUser);
-      if (!userData.is_admin && userData.role !== 'admin') {
-        router.push('/admin/login');
-        return;
-      }
-    } catch (e) {
-      console.error('Failed to parse stored user:', e);
-      router.push('/admin/login');
-      return;
-    }
-  }, [router]);
 
   useEffect(() => {
     setDate(todayString());
@@ -125,6 +111,7 @@ export default function FilenameGeneratorPage() {
           method: "GET",
           credentials: "include",
           cache: "no-store",
+          headers: buildAdminBffHeaders(),
         }
       );
 
@@ -219,6 +206,17 @@ export default function FilenameGeneratorPage() {
   ] as const;
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  if (adminStatus === "loading" || adminStatus === "unauthenticated" || adminStatus === "forbidden") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 animate-spin mx-auto text-muted-foreground" />
+          <p className="mt-4 text-muted-foreground text-sm">Verifying admin access…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

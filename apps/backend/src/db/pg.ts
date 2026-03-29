@@ -1,10 +1,11 @@
 import { Pool, PoolClient } from 'pg';
 import { BOOTSTRAP_SQL } from './schema';
+import { getPgSslOption } from '../lib/pgSslConfig';
 
 // Fix database connection configuration
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: getPgSslOption(),
   // Add proper connection settings
   connectionTimeoutMillis: 10000,
   idleTimeoutMillis: 30000,

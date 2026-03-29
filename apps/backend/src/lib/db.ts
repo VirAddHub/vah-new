@@ -1,6 +1,7 @@
 // PostgreSQL-only database helper - NO SQLite support
 import { Pool, PoolClient, QueryResultRow } from "pg";
 import { logger } from "./logger";
+import { getPgSslOption } from "./pgSslConfig";
 
 // Lazy DB initialization - don't connect at import time
 let pool: Pool | undefined;
@@ -19,7 +20,7 @@ export function getPool() {
 
         pool = new Pool({
             connectionString: url,
-            ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+            ssl: getPgSslOption(),
             // Production safety defaults (tunable via env)
             max: Number(process.env.PGPOOL_MAX || 20),
             idleTimeoutMillis: Number(process.env.PGPOOL_IDLE_TIMEOUT_MS || 30_000),

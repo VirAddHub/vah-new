@@ -41,8 +41,11 @@ export async function GET(request: NextRequest) {
     const text = await response.text();
     const textPreview = text.substring(0, 300);
 
-    // Log backend response for debugging
-    console.log(`[BFF auth/whoami] Backend response: ${status} from ${backendUrl}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[BFF auth/whoami] Backend response: ${status} from ${backendUrl}`);
+    } else {
+      console.log(`[BFF auth/whoami] Backend response: ${status}`);
+    }
 
     // Attempt JSON parse only if content looks like JSON
     let json: any = null;
@@ -99,7 +102,9 @@ export async function GET(request: NextRequest) {
       );
     }
     console.error(`[BFF auth/whoami] Exception in route ${routePath}:`, error);
-    console.error(`[BFF auth/whoami] Backend URL was: ${backendUrl}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(`[BFF auth/whoami] Backend URL was: ${backendUrl}`);
+    }
     console.error(`[BFF auth/whoami] Error stack:`, error?.stack);
     return NextResponse.json(
       { 

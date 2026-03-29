@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
+import { bffSafeLogError } from '@/lib/server/bffSafeLog';
+
+const ROUTE = '/api/bff/billing/payment-methods/setup-intent';
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,14 +66,14 @@ export async function POST(request: NextRequest) {
     );
   } catch (error: any) {
     if (isBackendOriginConfigError(error)) {
-      console.error('[BFF setup-intent] Server misconfigured:', error.message);
+      bffSafeLogError(ROUTE, 'misconfigured_backend_origin', request);
       return NextResponse.json(
         { ok: false, error: 'Server misconfigured', details: error.message },
         { status: 500 }
       );
     }
 
-    console.error('[BFF setup-intent] error:', error);
+    bffSafeLogError(ROUTE, 'bff_exception', request);
     return NextResponse.json(
       { ok: false, error: 'setup_intent_failed' },
       { status: 500 }

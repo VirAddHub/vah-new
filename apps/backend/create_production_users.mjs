@@ -5,15 +5,19 @@
  * This script creates users with known passwords for testing
  */
 
+import { createRequire } from 'module';
 import { Pool } from 'pg';
 import bcrypt from 'bcrypt';
+
+const require = createRequire(import.meta.url);
+const { getPgSslOption } = require('./scripts/lib/pgSsl.cjs');
 
 // You'll need to set this with your actual database password
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://vah_postgres_user:[PASSWORD]@dpg-d2vikgnfte5s73c5nv80-a:5432/vah_postgres';
 
 const pool = new Pool({
     connectionString: DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: getPgSslOption()
 });
 
 async function createProductionUsers() {

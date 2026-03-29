@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 import { buildBackendMutationHeaders } from '@/lib/server/backendMutationHeaders';
+import { requireBffAdmin } from '@/lib/server/requireBffAdmin';
 
 export async function POST(req: NextRequest) {
   try {
+    const denied = await requireBffAdmin(req);
+    if (denied) return denied;
+
     const backend = getBackendOrigin();
     const cookie = req.headers.get("cookie") || "";
     const formData = await req.formData();

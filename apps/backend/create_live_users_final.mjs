@@ -5,8 +5,12 @@
  * This script creates users directly in the PostgreSQL database
  */
 
+import { createRequire } from 'module';
 import { Pool } from 'pg';
 import bcrypt from 'bcrypt';
+
+const require = createRequire(import.meta.url);
+const { getPgSslOption } = require('./scripts/lib/pgSsl.cjs');
 
 // You need to set this with your actual database password from Render
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -20,7 +24,7 @@ if (!DATABASE_URL) {
 
 const pool = new Pool({
     connectionString: DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: getPgSslOption()
 });
 
 async function createLiveUsers() {

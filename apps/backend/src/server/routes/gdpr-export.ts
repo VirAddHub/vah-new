@@ -5,7 +5,8 @@
  * GET  /api/gdpr-export/export/status   — check the status of the latest export job
  *
  * Authentication: JWT required (via global middleware).
- * Rate-limited: 1 job per 12 hours per user (enforced in POST handler).
+ * Rate-limited: Express user-scoped bucket on all routes here (see gdprExportHttpUserLimiter) plus
+ * 1 job per 12 hours per user inside POST /export/request.
  * Privacy: file_path is never exposed to the client; only a signed token + download URL.
  */
 
@@ -14,6 +15,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
+import { gdprExportHttpUserLimiter } from '../../lib/routeGroupRateLimits';
 
 // Dynamically import archiver and fs-extra at call time to avoid top-level import errors
 // if those deps are missing from some environments. Both are already in package.json.
@@ -21,6 +23,8 @@ import fse from 'fs-extra';
 import archiver from 'archiver';
 
 const router = Router();
+
+router.use(gdprExportHttpUserLimiter);
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

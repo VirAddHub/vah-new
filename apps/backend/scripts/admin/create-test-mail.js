@@ -1,11 +1,12 @@
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const { getPgSslOption } = require('../lib/pgSsl.cjs');
 
 // Database connection - use the same as the server
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/vah_db', // pragma: allowlist secret
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: getPgSslOption()
 });
 
 async function createTestMail() {

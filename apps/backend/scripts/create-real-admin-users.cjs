@@ -2,6 +2,7 @@
 /* eslint-disable no-console */
 const { Client } = require('pg');
 const bcrypt = require('bcrypt');
+const { getPgSslOption } = require('./lib/pgSsl.cjs');
 
 async function createRealAdminUsers() {
     const DATABASE_URL = process.env.DATABASE_URL;
@@ -20,7 +21,7 @@ async function createRealAdminUsers() {
 
     const client = new Client({
         connectionString: DATABASE_URL,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        ssl: getPgSslOption()
     });
 
     try {

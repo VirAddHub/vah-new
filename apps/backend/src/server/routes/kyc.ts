@@ -8,6 +8,7 @@ import { buildAppUrl } from '../../lib/mailer';
 import { sumsubFetch, sumsubGetApplicantForUserSync } from '../../lib/sumsub';
 import { deriveKycStatusFromSumsubReview } from '../../lib/sumsubKycReview';
 import { resolveSumsubApiConfig, resolveSumsubLevelName } from '../../lib/sumsubConfig';
+import { kycWriteUserLimiter } from '../../lib/routeGroupRateLimits';
 
 const router = Router();
 
@@ -64,7 +65,7 @@ router.get('/status', requireAuth, async (req: Request, res: Response) => {
  * POST /api/kyc/start
  * Start KYC verification process with Sumsub
  */
-router.post('/start', requireAuth, async (req: Request, res: Response) => {
+router.post('/start', requireAuth, kycWriteUserLimiter, async (req: Request, res: Response) => {
     try {
         if (!req.user || req.user.id == null) {
             return res.status(401).json({ ok: false, error: "unauthenticated", message: "Please log in to start verification." });
@@ -184,7 +185,7 @@ router.post('/start', requireAuth, async (req: Request, res: Response) => {
  * Pull latest applicant review from Sumsub API and update user.kyc_status.
  * Use when the dashboard is stale (e.g. webhook delayed, misconfigured secret, or local dev).
  */
-router.post('/sync-from-sumsub', requireAuth, async (req: Request, res: Response) => {
+router.post('/sync-from-sumsub', requireAuth, kycWriteUserLimiter, async (req: Request, res: Response) => {
     try {
         const userId = Number(req.user!.id);
         if (!Number.isFinite(userId)) {
@@ -295,7 +296,7 @@ router.post('/sync-from-sumsub', requireAuth, async (req: Request, res: Response
     }
 });
 
-router.post('/upload-documents', requireAuth, async (req: Request, res: Response) => {
+router.post('/upload-documents', requireAuth, kycWriteUserLimiter, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
 

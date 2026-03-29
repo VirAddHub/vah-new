@@ -1,6 +1,7 @@
 const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const { getPgSslOption } = require('../../scripts/lib/pgSsl.cjs');
 
 async function runStartupMigrations() {
     console.log('🚀 Running startup migrations...');
@@ -13,7 +14,7 @@ async function runStartupMigrations() {
 
     const client = new Client({
         connectionString: dbUrl,
-        ssl: { rejectUnauthorized: false }
+        ssl: getPgSslOption(),
     });
 
     try {

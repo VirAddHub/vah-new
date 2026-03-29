@@ -6,6 +6,7 @@
  */
 
 const { Client } = require('pg');
+const { getPgSslOption } = require('../apps/backend/scripts/lib/pgSsl.cjs');
 
 async function switchUserPlans() {
     const databaseUrl = process.env.DATABASE_URL;
@@ -18,7 +19,7 @@ async function switchUserPlans() {
 
     const client = new Client({
         connectionString: databaseUrl,
-        ssl: { rejectUnauthorized: false }
+        ssl: getPgSslOption(),
     });
 
     try {
@@ -79,7 +80,7 @@ async function switchUserPlan(userId, planId) {
     const databaseUrl = process.env.DATABASE_URL;
     const client = new Client({
         connectionString: databaseUrl,
-        ssl: { rejectUnauthorized: false }
+        ssl: getPgSslOption(),
     });
 
     try {

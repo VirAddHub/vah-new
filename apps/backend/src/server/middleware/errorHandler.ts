@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { fail } from '../lib/apiResponse';
+import { safeAccessPath } from '../../lib/accessLog';
 
 /**
  * Global error handler middleware
@@ -24,7 +25,7 @@ export function errorHandler(
     console.error('[ErrorHandler]', {
         message: err?.message,
         stack: isProduction ? undefined : err?.stack,
-        path: req.path,
+        path: safeAccessPath(req),
         method: req.method,
         statusCode: err?.statusCode || err?.status,
     });

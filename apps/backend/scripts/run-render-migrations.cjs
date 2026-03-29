@@ -1,6 +1,7 @@
 const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const { getPgSslOption } = require('./lib/pgSsl.cjs');
 
 // Try different connection string formats
 const baseString = 'postgresql://vah_postgres_40zq_user:uTRWGQlKebPeTjsEwvYb6rAw8YMNbLZX@dpg-d3coq7l6ubrc73f0bt3g-a/vah_postgres_40zq';
@@ -15,7 +16,7 @@ const connectionStrings = [
 async function tryConnection(connectionString, index) {
     const client = new Client({ 
         connectionString,
-        ssl: { rejectUnauthorized: false },
+        ssl: getPgSslOption(),
         connectionTimeoutMillis: 10000
     });
 

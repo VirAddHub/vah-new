@@ -1,4 +1,8 @@
 'use client';
+/**
+ * @deprecated Unused demo — mocks is_admin and must not be used for access control.
+ * Use /admin/dashboard + useVerifiedAdminSession (BFF whoami) instead.
+ */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { safeGet } from '@/lib/safeRequest';

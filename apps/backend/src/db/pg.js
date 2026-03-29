@@ -1,9 +1,10 @@
 const { Pool } = require('pg');
 const { BOOTSTRAP_SQL } = require('./schema');
+const { getPgSslOption } = require('../../scripts/lib/pgSsl.cjs');
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.PGSSLMODE ? { rejectUnauthorized: false } : undefined,
+    ssl: getPgSslOption(),
 });
 
 async function withClient(fn) {

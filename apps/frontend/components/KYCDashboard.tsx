@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/apiClient';
+import { devError } from '@/lib/devConsole';
 import { isOk } from '@/types/api';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -68,7 +69,7 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
         }
 
       } catch (err) {
-        console.error('Failed to load KYC data:', err);
+        devError('Failed to load KYC data:', err);
         setError('Failed to load KYC information');
       } finally {
         setLoading(false);
@@ -100,7 +101,7 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
         setError(response.error || legacyMsg || 'Failed to submit business information');
       }
     } catch (err) {
-      console.error('Failed to submit business info:', err);
+      devError('Failed to submit business info:', err);
       setError('Failed to submit business information');
     } finally {
       setSubmitting(false);
@@ -121,7 +122,7 @@ export function KYCDashboard({ onNavigate }: KYCDashboardProps) {
         setError('Failed to start KYC process');
       }
     } catch (err) {
-      console.error('Failed to start KYC:', err);
+      devError('Failed to start KYC:', err);
       setError('Failed to start KYC process');
     } finally {
       setSubmitting(false);

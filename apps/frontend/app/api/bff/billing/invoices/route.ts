@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
+import { bffSafeLogError } from '@/lib/server/bffSafeLog';
 
 export async function GET(request: NextRequest) {
   const routePath = '/api/bff/billing/invoices';
   let backendUrl = '';
-  
+
   try {
     const cookie = request.headers.get('cookie') || '';
     const { searchParams } = new URL(request.url);
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     const response = await fetch(backendUrl, {
       method: 'GET',
       headers: {
-        'Cookie': cookie,
+        Cookie: cookie,
         'Content-Type': 'application/json',
       },
     });
@@ -24,50 +25,54 @@ export async function GET(request: NextRequest) {
     const text = await response.text();
     const textPreview = text.substring(0, 300);
 
-    // Log backend response for debugging
-    console.error(`[BFF billing invoices] Backend response: ${status} from ${backendUrl}, body preview: ${textPreview}`);
+    if (status < 200 || status >= 300) {
+      bffSafeLogError(routePath, 'backend_upstream_error', request, {
+        upstreamStatus: status,
+      });
+    }
 
-    // Attempt JSON parse only if content looks like JSON
     let json: any = null;
     const contentType = response.headers.get('content-type') || '';
-    const looksLikeJson = contentType.includes('application/json') || text.trim().startsWith('{') || text.trim().startsWith('[');
-    
+    const looksLikeJson =
+      contentType.includes('application/json') ||
+      text.trim().startsWith('{') ||
+      text.trim().startsWith('[');
+
     if (looksLikeJson && text.trim().length > 0) {
       try {
         json = JSON.parse(text);
-      } catch (parseError) {
-        console.error(`[BFF billing invoices] JSON parse failed for ${status} response:`, parseError);
+      } catch {
+        bffSafeLogError(routePath, 'backend_json_parse_failed', request, {
+          upstreamStatus: status,
+        });
         return NextResponse.json(
-          { 
-            ok: false, 
-            error: { 
-              code: 'BACKEND_NON_JSON', 
-              status, 
-              body: textPreview 
-            } 
-          }, 
+          {
+            ok: false,
+            error: {
+              code: 'BACKEND_NON_JSON',
+              status,
+              body: textPreview,
+            },
+          },
           { status: 502 }
         );
       }
     }
 
-    // If backend status is not 2xx, return backend error
     if (status < 200 || status >= 300) {
       return NextResponse.json(
-        { 
-          ok: false, 
-          error: { 
-            code: 'BACKEND_ERROR', 
-            status, 
-            body: json ?? textPreview 
-          } 
-        }, 
+        {
+          ok: false,
+          error: {
+            code: 'BACKEND_ERROR',
+            status,
+            body: json ?? textPreview,
+          },
+        },
         { status: 502 }
       );
     }
 
-    // Normalise invoice PDF URL to a same-origin BFF download endpoint
-    // so the browser can download with the user's cookies.
     if (json?.ok && json?.data?.items && Array.isArray(json.data.items)) {
       json.data.items = json.data.items.map((inv: any) => {
         const hasPdf = Boolean(inv?.pdf_url || inv?.pdf_path);
@@ -78,28 +83,24 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Backend is 2xx and JSON parsed successfully
     return NextResponse.json(json ?? { raw: textPreview }, { status: 200 });
   } catch (error: any) {
-    // Handle backend origin configuration errors
     if (isBackendOriginConfigError(error)) {
-      console.error(`[BFF billing invoices] Server misconfigured: ${error.message}`);
+      bffSafeLogError(routePath, 'misconfigured_backend_origin', request);
       return NextResponse.json(
         { ok: false, error: 'Server misconfigured', details: error.message },
         { status: 500 }
       );
     }
-    console.error(`[BFF billing invoices] Exception in route ${routePath}:`, error);
-    console.error(`[BFF billing invoices] Backend URL was: ${backendUrl}`);
-    console.error(`[BFF billing invoices] Error stack:`, error?.stack);
+    bffSafeLogError(routePath, 'bff_exception', request);
     return NextResponse.json(
-      { 
-        ok: false, 
-        error: { 
-          code: 'BFF_EXCEPTION', 
+      {
+        ok: false,
+        error: {
+          code: 'BFF_EXCEPTION',
           message: error?.message,
-          route: routePath 
-        }
+          route: routePath,
+        },
       },
       { status: 500 }
     );

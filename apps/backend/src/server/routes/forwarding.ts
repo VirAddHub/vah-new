@@ -7,6 +7,7 @@ import { selectPaged } from '../db-helpers';
 import { createForwardingRequest } from '../../modules/forwarding/forwarding.service';
 import { extractUKPostcode, hasUKPostcode, normalizeUKPostcode, UK_POSTCODE_REGEX } from '../utils/ukPostcode';
 import { param } from '../../lib/express-params';
+import { forwardingMutationUserLimiter } from '../../lib/routeGroupRateLimits';
 
 const router = Router();
 const pool = getPool();
@@ -115,7 +116,11 @@ router.get('/forwarding/requests/:id', requireAuth, async (req: Request, res: Re
  * Body: { mail_item_id, reason?, method? }
  * Returns: { ok: true, data: { forwarding_request, pricing, mail_tag, charge_amount } }
  */
-router.post('/forwarding/requests', requireAuth, async (req: Request, res: Response) => {
+router.post(
+    '/forwarding/requests',
+    requireAuth,
+    forwardingMutationUserLimiter,
+    async (req: Request, res: Response) => {
     // First-line logging at the top
     console.log('[forwarding] incoming', {
         user_id: (req as any).user?.id,
@@ -477,7 +482,7 @@ router.post('/forwarding/requests', requireAuth, async (req: Request, res: Respo
  * POST /api/forwarding/requests/bulk
  * Bulk forward multiple mail items
  */
-router.post('/requests/bulk', requireAuth, async (req: Request, res: Response) => {
+router.post('/requests/bulk', requireAuth, forwardingMutationUserLimiter, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { ids } = req.body;
 

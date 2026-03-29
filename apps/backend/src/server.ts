@@ -8,8 +8,6 @@ import cookieParser from 'cookie-parser';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import winston from 'winston';
 import compression from 'compression';
-import morgan from 'morgan';
-import crypto from 'crypto';
 import joi from 'joi';
 import { body, query, param, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
@@ -18,11 +16,12 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express';
 
 // Centralized environment config
 import { HOST, PORT } from './config/env';
+import { validateProductionConfigOrThrow } from './config/productionEnvValidation';
 import { logGraphConfigAtStartup } from './config/azure';
 import { logSumsubConfigAtStartup } from './lib/sumsubConfig';
+import { safeHttpAccessLog } from './lib/accessLog';
 
-// CORS middleware
-import { corsMiddleware } from './cors';
+import { isCorsOriginAllowed } from './lib/corsAllowlist';
 
 // Health routes (no DB dependencies)
 import { health } from './server/routes/health';
@@ -154,7 +153,9 @@ app.use(
 );
 
 // security + CORS (must be before browser-facing routes)
-app.use(helmet());
+// CSP is applied in a dedicated middleware below (API-only strict policy). Helmet's default CSP
+// targets HTML apps and would duplicate or conflict with that header.
+app.use(helmet({ contentSecurityPolicy: false }));
 // HSTS: tell browsers to only use HTTPS for this domain (prod only)
 if (process.env.NODE_ENV === 'production') {
     // 2 years, include subdomains, preload list compatible
@@ -177,50 +178,21 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // CORS first - apply to ALL responses including errors
+// With credentials: true, origins are explicit (never *). Misconfigured CORS_ORIGINS breaks credentialed browsers only — it does not open cross-site cookie access to arbitrary origins.
+// Production: canonical prod hosts + CORS_ORIGINS / ALLOWED_ORIGINS only (see lib/corsAllowlist.ts).
+// Non-production: trusted prod set + localhost + CORS_PREVIEW_ORIGINS (explicit URLs; no default Vercel regex).
 app.use(cors({
     origin: (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
         const isProd = process.env.NODE_ENV === 'production';
-        
-        // Support both CORS_ORIGINS and ALLOWED_ORIGINS env vars (for backwards compatibility)
-        const corsOriginsEnv = process.env.CORS_ORIGINS || process.env.ALLOWED_ORIGINS || '';
-        const envOrigins = corsOriginsEnv
-            .split(',')
-            .map(s => s.trim())
-            .filter(Boolean);
-        
-        const allowedOrigins = [
-            // prod domains
-            'https://virtualaddresshub.co.uk',
-            'https://www.virtualaddresshub.co.uk',
-            // explicit staging/frontends
-            'https://vah-new-frontend-75d6.vercel.app',
-            'https://vah-frontend-final.vercel.app',
-            // local dev - only allow in non-production (or if explicitly set in env)
-            ...(isProd ? [] : ['http://localhost:3000', 'http://localhost:3001']),
-            // env-configured origins (from CORS_ORIGINS or ALLOWED_ORIGINS)
-            ...envOrigins,
-        ];
 
-        // Allow requests with no origin (mobile apps, curl, Postman, server-to-server)
         if (!origin) {
             return cb(null, true);
         }
 
-        // Check if origin is in allowlist
-        if (allowedOrigins.includes(origin)) {
+        if (isCorsOriginAllowed(origin, isProd)) {
             return cb(null, true);
         }
 
-        // Allow Vercel preview deployment URLs (pattern: https://vah-new-frontend-*-*.vercel.app)
-        // These include preview deployments with hashes and project identifiers
-        if (/^https:\/\/vah-new-frontend-.*\.vercel\.app$/.test(origin)) {
-            return cb(null, true);
-        }
-        if (/^https:\/\/vah-frontend-final-.*\.vercel\.app$/.test(origin)) {
-            return cb(null, true);
-        }
-
-        // Reject all other origins with explicit error
         logger.warn('[cors] blocked_origin', { origin });
         return cb(new Error(`CORS policy: Origin ${origin} not allowed`), false);
     },
@@ -263,66 +235,55 @@ const logger = winston.createLogger({
 });
 
 
-// Morgan HTTP logging
-app.use(morgan('combined', {
-    stream: {
-        write: (message: string) => logger.info(message.trim())
-    }
-}));
+// HTTP access log: structured, no query strings or full URLs (avoids leaking tokens in ?params).
+// Sets X-Request-ID (honours incoming X-Request-ID when it is a valid UUID for trace correlation).
+app.use(safeHttpAccessLog(logger));
 
-// Request ID middleware
-app.use((req: Request, res: Response, next: NextFunction) => {
-    const requestId = crypto.randomUUID();
-    req.headers['x-request-id'] = requestId;
-    res.set('X-Request-ID', requestId);
+/**
+ * Content-Security-Policy for this service (API-first Express host).
+ *
+ * This is not the product document origin (Next.js sets CSP for HTML). Here we mostly return
+ * JSON, PDF, ZIP, CSV, and binary images (e.g. admin-media sendFile) — not HTML documents.
+ * If a response is ever misinterpreted as HTML, this policy stays maximally strict: no
+ * script/style/connect/worker surface, no plugins (object), no framing parent, no form posts.
+ *
+ * Explicit script-src/style-src/connect-src/worker-src duplicate default-src 'none' so the file
+ * is easy to audit and future edits to default-src cannot accidentally widen execution.
+ *
+ * No unsafe-inline, unsafe-eval, or broad URL allowlists.
+ *
+ * Retained:
+ * - report-uri (legacy; widely implemented) → same-origin POST /api/csp-report
+ * - upgrade-insecure-requests in production only (hardening; avoids changing local http:// dev)
+ *
+ * Note: handlers mounted before this middleware (e.g. early /api health + raw webhooks) finish
+ * the response without passing through here, so they typically omit this header — acceptable
+ * for non-HTML JSON/health and signature-verified webhook bodies.
+ */
+function buildApiContentSecurityPolicy(): string {
+    const reportPath = '/api/csp-report';
+    const parts = [
+        "default-src 'none'",
+        "script-src 'none'",
+        "style-src 'none'",
+        "connect-src 'none'",
+        "worker-src 'none'",
+        "frame-ancestors 'none'",
+        "base-uri 'none'",
+        "form-action 'none'",
+        "object-src 'none'",
+        `report-uri ${reportPath}`,
+    ];
+    if (process.env.NODE_ENV === 'production') {
+        parts.splice(parts.length - 1, 0, 'upgrade-insecure-requests');
+    }
+    return parts.join('; ');
+}
+
+app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('Content-Security-Policy', buildApiContentSecurityPolicy());
     next();
 });
-
-// CSP middleware (report-uri for violation reporting; endpoint is rate-limited)
-app.use((req: Request, res: Response, next: NextFunction) => {
-    const reportUri = '/api/csp-report';
-    res.set('Content-Security-Policy',
-        "default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-        "style-src 'self' 'unsafe-inline'; " +
-        "img-src 'self' data: https:; " +
-        "connect-src 'self' https:; " +
-        "font-src 'self' data:; " +
-        "object-src 'none'; " +
-        "base-uri 'self'; " +
-        "form-action 'self'; " +
-        "report-uri " + reportUri
-    );
-    next();
-});
-
-// CSRF protection for state-changing routes
-const csrfProtection = (req: Request, res: Response, next: NextFunction) => {
-    // Skip CSRF for webhooks and API routes that don't change state
-    if (req.path.startsWith('/api/webhooks/') ||
-        req.path.startsWith('/api/metrics') ||
-        req.method === 'GET') {
-        return next();
-    }
-
-    const headerToken = req.headers['x-csrf-token'];
-    const tokenFromHeader = typeof headerToken === 'string' ? headerToken : undefined;
-    const body = req.body as unknown;
-    const tokenFromBody =
-        body && typeof body === 'object' && '_csrf' in body && typeof (body as { _csrf?: unknown })._csrf === 'string'
-            ? (body as { _csrf: string })._csrf
-            : undefined;
-    const token = tokenFromHeader || tokenFromBody;
-
-    const maybeSession = req as unknown as { session?: { csrfToken?: unknown } };
-    const sessionToken = typeof maybeSession.session?.csrfToken === 'string' ? maybeSession.session.csrfToken : undefined;
-
-    if (!token || !sessionToken || token !== sessionToken) {
-        return res.status(403).json({ error: 'Invalid CSRF token' });
-    }
-
-    next();
-};
 
 // ---- Health routes already mounted above (before helmet/cors) ----
 
@@ -354,12 +315,14 @@ const authLimiter = rateLimit({
 });
 
 // Apply rate limiter to API routes only (health check already excluded)
-// Optional staging toggle to disable rate limiting (does NOT disable auth limiter)
-const disableLimiter = process.env.DISABLE_RATE_LIMIT === '1';
-
-if (process.env.NODE_ENV === 'production' && disableLimiter) {
-    logger.warn('[security] DISABLE_RATE_LIMIT is set in production; general API rate limit is off (auth routes remain limited).');
-}
+// Non-production: DISABLE_RATE_LIMIT=1 or =true disables the *general* API limiter only (see below).
+// Production: same env values are rejected at startup (productionEnvValidation.ts) — limiter is always mounted.
+// Auth routes use authLimiter below; it is never gated by DISABLE_RATE_LIMIT.
+const disableLimiterRaw = String(process.env.DISABLE_RATE_LIMIT ?? '').trim();
+const disableLimiterRequested =
+    disableLimiterRaw === '1' || disableLimiterRaw.toLowerCase() === 'true';
+const isProductionEnv = process.env.NODE_ENV === 'production';
+const disableLimiter = disableLimiterRequested && !isProductionEnv;
 
 if (process.env.DISABLE_RATE_LIMIT_FOR_HEALTHZ === '1' && process.env.NODE_ENV === 'test') {
     // In test mode, wrap limiter to skip health checks
@@ -408,6 +371,15 @@ const ensureColumn = async (table: string, column: string, type: string) => {
 // Initialize database and start server
 async function start() {
     await initializeDatabase();
+
+    try {
+        validateProductionConfigOrThrow();
+    } catch (e) {
+        logger.error('[boot] production_env_validation_failed', {
+            message: e instanceof Error ? e.message : String(e),
+        });
+        process.exit(1);
+    }
 
     // Database is ready, proceed with route mounting
 
@@ -473,6 +445,7 @@ async function start() {
 
     // Auth rate limiter (never disabled)
     app.use('/api/auth', authLimiter);
+    // Additional per-group limiters: lib/routeGroupRateLimits.ts (forwarding, mail forward, KYC writes, GDPR export API)
 
     // CSP report endpoint (rate-limited, no auth) — browsers POST violation reports here
     const cspReportLimiter = rateLimit({
@@ -504,7 +477,13 @@ async function start() {
     // Public blog cover images (before mail router so unauthenticated requests succeed)
     app.use('/api', adminMediaRouter);
     logger.info('[mount] /api (media/blog, public) mounted (TS handler)');
-    app.use('/api', debugEmailRouter);
+    // debug-email can send arbitrary templates — never mount in production (env validation is not enough).
+    if (process.env.NODE_ENV !== 'production') {
+        app.use('/api', debugEmailRouter);
+        logger.info('[mount] /api (debug-email) mounted (non-production only)');
+    } else {
+        logger.info('[mount] /api (debug-email) disabled (production)');
+    }
 
     // NEW: Mount missing endpoints
     // Disable ETags for mail routes to prevent 304 responses
@@ -577,10 +556,8 @@ async function start() {
     app.use('/api', idealPostcodesRouter);
     logger.info('[mount] /api (ideal-postcodes) mounted');
 
-    app.use('/api/debug', debugRouterLegacy);
     app.use('/api', opsSelfTestRouter);
     logger.info('[mount] /api (ops-self-test) mounted');
-    logger.info('[mount] /api/debug mounted');
     app.use('/api/kyc', kycRouter);
     logger.info('[mount] /api/kyc (TS status/upload) mounted');
     app.use('/api/support', supportRouter);
@@ -597,10 +574,24 @@ async function start() {
     app.use('/api', bffMailScanRouter); // compat for /api/legacy/mail-items/:id/download
     logger.info('[mount] /api (legacy mail scan compat) mounted');
 
-    app.use('/api', migrateRouter);
-    app.use('/api', triggerMigrateRouter);
-    app.use('/api', webhookMigrateRouter);
-    app.use('/api', directMigrateRouter);
+    // Migration / schema mutation HTTP routes — never mount in production (unauthenticated
+    // DDL, exec of migration scripts). When enabled (non-prod), migrate routes use requireAdmin;
+    // GET /migrate/status returns aggregate flags only (no table/column names in JSON).
+    if (process.env.NODE_ENV !== 'production') {
+        app.use('/api', migrateRouter);
+        app.use('/api', triggerMigrateRouter);
+        app.use('/api', webhookMigrateRouter);
+        app.use('/api', directMigrateRouter);
+        logger.info('[mount] /api migration routes enabled (non-production only)');
+        const whSecret = process.env.MIGRATE_WEBHOOK_SECRET?.trim();
+        if (!whSecret || whSecret.length < 32) {
+            logger.warn(
+                '[mount] POST /api/webhook/migrate will return 401 until MIGRATE_WEBHOOK_SECRET is set (≥32 chars)'
+            );
+        }
+    } else {
+        logger.info('[mount] /api migration routes disabled (production)');
+    }
 
     // Dev routes (staging/local only) - disabled in production for security
     if (process.env.NODE_ENV !== 'production') {
@@ -621,8 +612,13 @@ async function start() {
     app.use('/api/admin-repair', adminRepairRouter);
     logger.info('[mount] /api/admin-repair mounted (TS handler)');
 
-    app.use('/api/debug', debugRouterLegacy);
-    logger.info('[mount] /api/debug mounted (TS handler)');
+    // /api/debug includes unauthenticated endpoints (e.g. export-jobs/ping); mount only outside production.
+    if (process.env.NODE_ENV !== 'production') {
+        app.use('/api/debug', debugRouterLegacy);
+        logger.info('[mount] /api/debug mounted (non-production only)');
+    } else {
+        logger.info('[mount] /api/debug disabled (production)');
+    }
 
     app.use('/api/downloads', downloadsRouter);
     logger.info('[mount] /api/downloads mounted (TS handler)');
@@ -633,10 +629,6 @@ async function start() {
 
     app.use('/api/gdpr-export', gdprExportRouter);
     logger.info('[mount] /api/gdpr-export mounted (TS handler)');
-
-    // Global error handler (must be last, after all routes)
-    app.use(errorHandler);
-    logger.info('[mount] Error handler middleware mounted');
 
     app.use('/api/mail/forward', mailForwardRouter);
     logger.info('[mount] /api/mail/forward mounted (TS handler)');
@@ -658,23 +650,11 @@ async function start() {
     app.use(webhookRouter);
     logger.info('[mount] webhook routes mounted');
 
-    // 404 handler that still returns CORS
-    app.use((req, res) => {
-        const origin = req.headers.origin as string;
-        const allowedOrigins = [
-            'https://vah-new-frontend-75d6.vercel.app',
-            'https://vah-frontend-final.vercel.app',
-            'http://localhost:3000'
-        ];
-        if (origin && allowedOrigins.includes(origin)) {
-            res.set('Access-Control-Allow-Origin', origin);
-            res.set('Access-Control-Allow-Credentials', 'true');
-        }
+    // 404 — global `cors()` middleware already sets ACAO/ACAC on the response
+    app.use((_req, res) => {
         res.status(404).json({ ok: false, error: 'not_found' });
     });
 
-    // Global error handler (must be last, after all routes)
-    // Note: CORS is handled by corsMiddleware above, so errorHandler doesn't need to set CORS headers
     app.use(errorHandler);
     logger.info('[mount] Error handler middleware mounted');
 

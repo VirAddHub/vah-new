@@ -10,6 +10,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
+import { devError, devLog } from "@/lib/devConsole";
 
 type KycStatus = "not_started" | "pending" | "approved" | "rejected" | null;
 
@@ -58,7 +59,7 @@ export function KycBanner({ kycStatus }: KycBannerProps) {
                 });
             }
         } catch (error) {
-            console.error("[KycBanner] Error starting KYC:", error);
+            devError("[KycBanner] Error starting KYC:", error);
             toast({
                 title: "Error",
                 description: "Failed to start verification. Please try again.",
@@ -88,7 +89,7 @@ export function KycBanner({ kycStatus }: KycBannerProps) {
                 }
             };
             script.onerror = () => {
-                console.error("[KycBanner] Failed to load Sumsub SDK");
+                devError("[KycBanner] Failed to load Sumsub SDK");
                 toast({
                     title: "Error",
                     description: "Failed to load verification interface. Please refresh and try again.",
@@ -116,7 +117,7 @@ export function KycBanner({ kycStatus }: KycBannerProps) {
                 })
                     .withConf({ lang: "en" })
                     .on("onError", (e: any) => {
-                        console.error("[KycBanner] Sumsub error:", e);
+                        devError("[KycBanner] Sumsub error:", e);
                         toast({
                             title: "Verification Error",
                             description: e.message || "An error occurred during verification.",
@@ -124,13 +125,13 @@ export function KycBanner({ kycStatus }: KycBannerProps) {
                         });
                     })
                     .on("onReady", () => {
-                        console.log("[KycBanner] Sumsub ready");
+                        devLog("[KycBanner] Sumsub ready");
                     })
                     .on("onStepCompleted", () => {
-                        console.log("[KycBanner] Step completed");
+                        devLog("[KycBanner] Step completed");
                     })
                     .on("onApplicantSubmitted", () => {
-                        console.log("[KycBanner] Applicant submitted");
+                        devLog("[KycBanner] Applicant submitted");
                         // Close dialog and show success message
                         setOpen(false);
                         toast({
@@ -146,7 +147,7 @@ export function KycBanner({ kycStatus }: KycBannerProps) {
 
                 snsWebSdk.launch("#sumsub-root");
             } catch (error) {
-                console.error("[KycBanner] Failed to initialize Sumsub:", error);
+                devError("[KycBanner] Failed to initialize Sumsub:", error);
                 toast({
                     title: "Error",
                     description: "Failed to initialize verification interface. Please try again.",

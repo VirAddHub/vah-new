@@ -18,9 +18,23 @@
 import path from 'path';
 import fs from 'fs';
 import { Router, Request, Response } from 'express';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getPool } from '../db';
 
 const router = Router();
+
+/** Token is unguessable, but cap per-IP DB hits and bandwidth if URLs leak or scanners hit the route. */
+const gdprExportDownloadIpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
+  handler: (_req, res) => {
+    res.setHeader('Retry-After', '900');
+    return res.status(429).send('Too many requests');
+  },
+});
 
 /**
  * GET /api/downloads/export/:token
@@ -28,7 +42,7 @@ const router = Router();
  * Streams the GDPR export ZIP if the token is valid and not expired.
  * No authentication middleware — the token itself is the credential.
  */
-router.get('/export/:token', async (req: Request, res: Response) => {
+router.get('/export/:token', gdprExportDownloadIpLimiter, async (req: Request, res: Response) => {
   const token = String(req.params.token ?? '').trim();
   if (!token) return res.status(400).send('Missing token');
 

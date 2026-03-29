@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendOrigin } from "@/lib/server/backendOrigin";
 import { isBackendOriginConfigError } from "@/lib/server/isBackendOriginError";
+import { requireBffAdmin } from "@/lib/server/requireBffAdmin";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -11,58 +12,30 @@ export async function POST(
 ) {
   const { id } = await params;
 
-  console.log("[BFF Admin Mail Item Mark Destroyed] called", { id });
-
-  // Step 1: Validate mail item ID
   if (!id || id === "undefined" || id === "null") {
-    return NextResponse.json(
-      { ok: false, error: "invalid_mail_item_id" },
-      { status: 400 }
-    );
+    return NextResponse.json({ ok: false, error: "invalid_mail_item_id" }, { status: 400 });
   }
 
-  // Step 2: Extract authentication headers to forward to backend
-  // Backend's requireAdmin middleware will validate admin status
-  // We don't validate here - just forward everything and let backend handle it
-  
-  // Read headers case-insensitively (some clients send lowercase headers)
-  const cookieHeader = req.headers.get("cookie") || req.headers.get("Cookie") || "";
-  let authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
-  
-  // Try Next.js cookie API to rebuild cookie string if needed
-  const sessionCookie = req.cookies.get('vah_session');
-  const roleCookie = req.cookies.get('vah_role');
-  const userCookie = req.cookies.get('vah_user');
-
-  // Log all headers for debugging (but don't log sensitive values)
-  const allHeaders = Object.fromEntries(req.headers.entries());
-  const headerKeys = Object.keys(allHeaders);
-  
-  console.log("[BFF Admin Mail Item Mark Destroyed] Request received", {
-    hasCookieHeader: !!cookieHeader,
-    hasAuthHeader: !!authHeader,
-    hasSessionCookie: !!sessionCookie,
-    cookieHeaderLength: cookieHeader.length,
-    authHeaderLength: authHeader.length,
-    headerKeys: headerKeys.filter(k => k.toLowerCase().includes('auth') || k.toLowerCase().includes('cookie')),
-    allHeaderKeys: headerKeys
-  });
-
   try {
+    const denied = await requireBffAdmin(req);
+    if (denied) return denied;
+
     const backend = getBackendOrigin();
     const url = `${backend}/api/admin/mail-items/${encodeURIComponent(id)}/mark-destroyed`;
 
-    // Step 3: Forward authentication to backend (cookies AND/OR JWT token)
-    // Use the cookie header we already read (or rebuild from req.cookies if needed)
-    let cookieString = cookieHeader;
-    
-    // If we don't have a cookie header but have individual cookies, rebuild it
-    if (!cookieString && (sessionCookie || roleCookie || userCookie)) {
-      const cookieParts: string[] = [];
-      if (sessionCookie) cookieParts.push(`vah_session=${sessionCookie.value}`);
-      if (roleCookie) cookieParts.push(`vah_role=${roleCookie.value}`);
-      if (userCookie) cookieParts.push(`vah_user=${encodeURIComponent(userCookie.value)}`);
-      cookieString = cookieParts.join('; ');
+    let cookieHeader = req.headers.get("cookie") || req.headers.get("Cookie") || "";
+    let authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
+
+    const sessionCookie = req.cookies.get("vah_session");
+    const roleCookie = req.cookies.get("vah_role");
+    const userCookie = req.cookies.get("vah_user");
+
+    if (!cookieHeader && (sessionCookie || roleCookie || userCookie)) {
+      const parts: string[] = [];
+      if (sessionCookie) parts.push(`vah_session=${sessionCookie.value}`);
+      if (roleCookie) parts.push(`vah_role=${roleCookie.value}`);
+      if (userCookie) parts.push(`vah_user=${encodeURIComponent(userCookie.value)}`);
+      cookieHeader = parts.join("; ");
     }
 
     const headers: HeadersInit = {
@@ -70,20 +43,12 @@ export async function POST(
       "Content-Type": "application/json",
     };
 
-    // Forward cookies if available
-    if (cookieString) {
-      headers["Cookie"] = cookieString;
-    }
+    if (cookieHeader) headers["Cookie"] = cookieHeader;
+    if (authHeader) headers["Authorization"] = authHeader;
 
-    // Forward Authorization header if available (JWT token)
-    if (authHeader) {
-      headers["Authorization"] = authHeader;
-    }
-
-    // CSRF: Backend requires X-CSRF-Token for state-changing requests. Extract from cookie or fetch from backend.
     let csrfToken: string | null = null;
-    if (cookieString) {
-      const m = cookieString.match(/(?:^|;\s*)vah_csrf_token=([^;]+)/);
+    if (cookieHeader) {
+      const m = cookieHeader.match(/(?:^|;\s*)vah_csrf_token=([^;]+)/);
       if (m?.[1]) {
         try {
           csrfToken = decodeURIComponent(m[1].trim());
@@ -96,15 +61,15 @@ export async function POST(
       try {
         const csrfRes = await fetch(`${backend}/api/csrf`, {
           method: "GET",
-          headers: cookieString ? { Cookie: cookieString } : {},
+          headers: cookieHeader ? { Cookie: cookieHeader } : {},
           cache: "no-store",
         });
         if (csrfRes.ok) {
           const d = await csrfRes.json();
           csrfToken = d?.csrfToken ?? d?.token ?? null;
         }
-      } catch (e) {
-        console.warn("[BFF Admin Mail Item Mark Destroyed] CSRF fetch failed", e);
+      } catch {
+        /* CSRF prefetch failed */
       }
     }
     if (csrfToken) {
@@ -118,51 +83,31 @@ export async function POST(
       cache: "no-store",
     });
 
-    // Handle response - try to parse as JSON, fallback to error object
-    let data;
     const text = await r.text();
+    let data: unknown;
     try {
       data = text ? JSON.parse(text) : { ok: r.ok };
-    } catch (parseError) {
-      // If JSON parsing fails, return error object with the raw text
-      console.error("[BFF Admin Mail Item Mark Destroyed] Failed to parse response", {
-        status: r.status,
-        text: text.substring(0, 200), // Log first 200 chars
-        error: parseError
-      });
+    } catch {
       data = {
         ok: false,
         error: "invalid_response",
         message: text || r.statusText || "Unknown error",
-        status: r.status
+        status: r.status,
       };
     }
-    
-    // Log backend response for debugging (especially errors)
-    if (!r.ok || !data.ok) {
-      console.error("[BFF Admin Mail Item Mark Destroyed] Backend returned error", {
-        status: r.status,
-        backendResponse: data,
-        responseText: text.substring(0, 500) // Log first 500 chars
-      });
-    }
 
-    return NextResponse.json(data, {
+    return NextResponse.json(data as object, {
       status: r.status,
       headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (isBackendOriginConfigError(error)) {
       return NextResponse.json(
-        { ok: false, error: "server_misconfigured", details: error.message },
+        { ok: false, error: "server_misconfigured", details: (error as Error).message },
         { status: 500 }
       );
     }
 
-    console.error("[BFF Admin Mail Item Mark Destroyed] fatal", error);
-    return NextResponse.json(
-      { ok: false, error: "bff_proxy_failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, error: "bff_proxy_failed" }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 const { Client } = require('pg');
+const { getPgSslOption } = require('./lib/pgSsl.cjs');
 
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!/^postgres/i.test(DATABASE_URL || '')) {
@@ -11,7 +12,7 @@ if (!/^postgres/i.test(DATABASE_URL || '')) {
 (async () => {
     const client = new Client({ 
         connectionString: DATABASE_URL, 
-        ssl: { rejectUnauthorized: false } 
+        ssl: getPgSslOption()
     });
     
     try {

@@ -3,6 +3,7 @@
 const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const { getPgSslOption } = require('../apps/backend/scripts/lib/pgSsl.cjs');
 
 async function runSchemaFix() {
     console.log('🔧 Running schema fix migration...');
@@ -17,7 +18,7 @@ async function runSchemaFix() {
 
     const client = new Client({
         connectionString: dbUrl,
-        ssl: { rejectUnauthorized: false }
+        ssl: getPgSslOption(),
     });
 
     try {

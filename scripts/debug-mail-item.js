@@ -6,6 +6,7 @@
  */
 
 const { Client } = require('pg');
+const { getPgSslOption } = require('../apps/backend/scripts/lib/pgSsl.cjs');
 
 async function debugMailItem() {
     // Use environment variable for database URL
@@ -17,7 +18,8 @@ async function debugMailItem() {
     }
 
     const client = new Client({
-        connectionString: dbUrl
+        connectionString: dbUrl,
+        ssl: getPgSslOption(),
     });
 
     try {

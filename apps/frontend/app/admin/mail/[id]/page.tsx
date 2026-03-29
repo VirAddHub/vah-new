@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Truck, FileText, Settings, Package, Trash2, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useVerifiedAdminSession } from "@/hooks/useVerifiedAdminSession";
+import { buildAdminBffHeaders } from "@/lib/verifiedAdminSession";
 
 function parseDateMaybe(v: unknown): Date | null {
   if (typeof v === "number" && Number.isFinite(v)) {
@@ -33,9 +35,15 @@ export default function AdminMailDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id;
 
-  const [loadingAuth, setLoadingAuth] = useState(true);
-  const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const { status: adminStatus } = useVerifiedAdminSession();
+
+  useEffect(() => {
+    if (adminStatus === "unauthenticated") router.replace("/admin/login");
+    else if (adminStatus === "forbidden") router.replace("/dashboard");
+  }, [adminStatus, router]);
+
+  const loadingAuth = adminStatus === "loading";
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -52,41 +60,14 @@ export default function AdminMailDetailPage() {
     []
   );
 
-  useEffect(() => {
-    const t = localStorage.getItem("vah_jwt");
-    const storedUser = localStorage.getItem("vah_user");
-
-    if (!t) {
-      router.push("/admin/login");
-      return;
-    }
-
-    if (storedUser) {
-      try {
-        const u = JSON.parse(storedUser);
-        if (!u.is_admin && u.role !== "admin") {
-          router.push("/dashboard");
-          return;
-        }
-        setUser(u);
-      } catch {
-        router.push("/admin/login");
-        return;
-      }
-    }
-
-    setToken(t);
-    setLoadingAuth(false);
-  }, [router]);
-
   async function load() {
-    if (!token || !id) return;
+    if (adminStatus !== "ready" || !id) return;
     setLoading(true);
     setError(null);
     try {
       const r = await fetch(`/api/bff/admin/mail-items/${encodeURIComponent(id)}`, {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: buildAdminBffHeaders(),
         cache: "no-store",
         credentials: "include",
       });
@@ -101,7 +82,7 @@ export default function AdminMailDetailPage() {
   }
 
   async function markAsDestroyed() {
-    if (!token || !id) return;
+    if (adminStatus !== "ready" || !id) return;
     if (!confirm("Are you sure you want to mark this mail item as physically destroyed? This action will be logged in the audit trail.")) {
       return;
     }
@@ -111,10 +92,7 @@ export default function AdminMailDetailPage() {
     try {
       const r = await fetch(`/api/bff/admin/mail-items/${encodeURIComponent(id)}/mark-destroyed`, {
         method: "POST",
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: buildAdminBffHeaders({ "Content-Type": "application/json" }),
         cache: "no-store",
         credentials: "include",
       });
@@ -142,16 +120,16 @@ export default function AdminMailDetailPage() {
   }
 
   useEffect(() => {
-    if (!loadingAuth && token && id) load();
+    if (!loadingAuth && adminStatus === "ready" && id) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadingAuth, token, id]);
+  }, [loadingAuth, adminStatus, id]);
 
   if (loadingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading admin…</p>
+          <p className="text-muted-foreground">Verifying admin access…</p>
         </div>
       </div>
     );

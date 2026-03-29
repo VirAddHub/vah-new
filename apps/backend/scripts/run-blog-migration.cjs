@@ -1,6 +1,7 @@
 const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const { getPgSslOption } = require('./lib/pgSsl.cjs');
 
 // Use the provided connection string
 // Note: Render PostgreSQL connection strings may need .render.com suffix or port
@@ -12,7 +13,7 @@ console.log('🔗 Attempting connection to:', connectionString.replace(/:[^:@]+@
 (async () => {
     const client = new Client({ 
         connectionString,
-        ssl: { rejectUnauthorized: false }
+        ssl: getPgSslOption()
     });
 
     try {

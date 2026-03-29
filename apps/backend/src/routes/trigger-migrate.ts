@@ -1,12 +1,13 @@
 import { Router, Request, Response } from 'express';
+import { requireAdmin } from '../middleware/auth';
 
 const router = Router();
 
 /**
  * GET /api/trigger-migrate
- * Trigger database migrations (one-time use)
+ * Trigger database migrations (admin only). Not mounted in production.
  */
-router.get('/trigger-migrate', async (req: Request, res: Response) => {
+router.get('/trigger-migrate', requireAdmin, async (req: Request, res: Response) => {
     try {
         console.log('🚀 Triggering migrations via API...');
 

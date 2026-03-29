@@ -7,10 +7,12 @@
  */
 
 import { Router, Request, Response } from 'express';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getPool } from '../db';
 import { getStripe, getStripePriceId, redactStripeId } from '../../lib/stripe';
 import { getStripeConfig } from '../../config/billing';
 import { logger } from '../../lib/logger';
+import { stripeCheckoutCreateLimiter } from '../../lib/sensitiveRouteRateLimits';
 
 const router = Router();
 
@@ -100,7 +102,23 @@ export async function createStripeCheckoutSession(
   return { url };
 }
 
-router.post('/checkout-session', requireAuth, async (req: Request, res: Response) => {
+/** Poll after checkout — lighter than session creation; still cap Stripe API + enumeration. */
+const stripeSessionStatusLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const u = (req as { user?: { id?: number } }).user;
+    return u?.id != null ? `stripe-session-status:${u.id}` : ipKeyGenerator(req.ip ?? '');
+  },
+  handler: (_req, res) => {
+    res.setHeader('Retry-After', '900');
+    return res.status(429).json({ ok: false, error: 'rate_limited' });
+  },
+});
+
+router.post('/checkout-session', requireAuth, stripeCheckoutCreateLimiter, async (req: Request, res: Response) => {
   const userId = Number(req.user!.id);
   const body = (req.body || {}) as CreateStripeCheckoutSessionBody;
   try {
@@ -121,7 +139,7 @@ router.post('/checkout-session', requireAuth, async (req: Request, res: Response
 /*  POST /checkout-session-embedded  (ui_mode: "embedded")            */
 /*  Returns { ok, data: { client_secret } }                           */
 /* ------------------------------------------------------------------ */
-router.post('/checkout-session-embedded', requireAuth, async (req: Request, res: Response) => {
+router.post('/checkout-session-embedded', requireAuth, stripeCheckoutCreateLimiter, async (req: Request, res: Response) => {
   const userId = Number(req.user!.id);
   const body = (req.body || {}) as CreateStripeCheckoutSessionBody;
   const billingPeriod = (body.billing_period || 'monthly') === 'annual' ? 'annual' : 'monthly';
@@ -166,7 +184,7 @@ router.post('/checkout-session-embedded', requireAuth, async (req: Request, res:
 /*  GET /session-status?session_id=cs_xxx                             */
 /*  Returns { ok, data: { status, payment_status, customer_email } }  */
 /* ------------------------------------------------------------------ */
-router.get('/session-status', requireAuth, async (req: Request, res: Response) => {
+router.get('/session-status', requireAuth, stripeSessionStatusLimiter, async (req: Request, res: Response) => {
   const sessionId = req.query.session_id as string;
   if (!sessionId) {
     return res.status(400).json({ ok: false, error: 'missing_session_id' });

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { devError, devLog, devWarn } from "@/lib/devConsole";
 import { cn } from "@/lib/utils";
 
 type SumsubTokenResponse = {
@@ -124,9 +125,7 @@ async function fetchSumsubToken(): Promise<string> {
     }
 
     if (res.status === 502 || res.status === 503 || res.status === 504) {
-      if (isDev) {
-        console.warn("[SumsubKycWidget] Sumsub token route upstream error", res.status, data);
-      }
+      devWarn("[SumsubKycWidget] Sumsub token route upstream error", res.status, data);
       throw new Error(
         "The verification service is temporarily unavailable. Please try again in a few minutes."
       );
@@ -174,14 +173,12 @@ async function fetchSumsubToken(): Promise<string> {
     }
 
     if (res.status >= 500) {
-      if (isDev) {
-        console.warn("[SumsubKycWidget] Sumsub token fetch failed", {
-          status: res.status,
-          jsonOk,
-          body: data,
-          textPreview: text.slice(0, 600),
-        });
-      }
+      devWarn("[SumsubKycWidget] Sumsub token fetch failed", {
+        status: res.status,
+        jsonOk,
+        body: data,
+        textPreview: text.slice(0, 600),
+      });
 
       const fromPayload = pickUserFacingBffDetail(data);
       if (fromPayload) {
@@ -201,9 +198,7 @@ async function fetchSumsubToken(): Promise<string> {
       );
     }
 
-    if (isDev) {
-      console.warn("[SumsubKycWidget] Sumsub token fetch failed", res.status, data);
-    }
+    devWarn("[SumsubKycWidget] Sumsub token fetch failed", res.status, data);
     const errorMsg =
       (typeof data?.message === "string" && data.message) ||
       data?.error ||
@@ -291,9 +286,7 @@ export function SumsubKycWidget({ hideIntro = false }: SumsubKycWidgetProps) {
       setShowSdkContainer(true);
       setLaunchToken(accessToken);
     } catch (err) {
-      if (isDev) {
-        console.warn("[SumsubKycWidget] startVerification", err);
-      }
+      devWarn("[SumsubKycWidget] startVerification", err);
       const errorMessage =
         err instanceof Error ? err.message : "Unable to start identity verification. Please try again.";
 
@@ -341,11 +334,11 @@ export function SumsubKycWidget({ hideIntro = false }: SumsubKycWidgetProps) {
       if (cancelled) return;
       try {
         const sync = await postSyncKycFromSumsub();
-        if (isDev && !sync.ok) {
-          console.warn("[SumsubKycWidget] post-completion sync failed", sync);
+        if (!sync.ok) {
+          devWarn("[SumsubKycWidget] post-completion sync failed", sync);
         }
       } catch (e) {
-        if (isDev) console.warn("[SumsubKycWidget] post-completion sync error", e);
+        devWarn("[SumsubKycWidget] post-completion sync error", e);
       }
       if (!cancelled) {
         window.location.reload();
@@ -363,9 +356,7 @@ export function SumsubKycWidget({ hideIntro = false }: SumsubKycWidgetProps) {
           .init(launchToken, tokenRefreshCallback)
           .withConf({ lang: "en", theme: "light" })
           .on("idCheck.onError", (sdkError: unknown) => {
-            if (isDev) {
-              console.warn("[SumsubKycWidget] idCheck.onError", sdkError);
-            }
+            devWarn("[SumsubKycWidget] idCheck.onError", sdkError);
             // Sumsub often fires this with `{}` while still showing its own UI (e.g. camera denied).
             if (isEmptyPlainObject(sdkError)) {
               return;
@@ -373,14 +364,10 @@ export function SumsubKycWidget({ hideIntro = false }: SumsubKycWidgetProps) {
             setError(userMessageForSumsubSdkError(sdkError));
           })
           .on("idCheck.onReady", () => {
-            if (isDev) {
-              console.log("[SumsubKycWidget] Sumsub ready");
-            }
+            devLog("[SumsubKycWidget] Sumsub ready");
           })
           .onMessage((type: string, payload: any) => {
-            if (isDev) {
-              console.log("[SumsubKycWidget] onMessage", type, payload);
-            }
+            devLog("[SumsubKycWidget] onMessage", type);
 
             if (type === "idCheck.applicantStatus") {
               const reviewStatus = payload?.reviewStatus;
@@ -392,17 +379,13 @@ export function SumsubKycWidget({ hideIntro = false }: SumsubKycWidgetProps) {
                 reviewStatus === "approved";
 
               if (done) {
-                if (isDev) {
-                  console.log("[SumsubKycWidget] Verification completed/approved");
-                }
+                devLog("[SumsubKycWidget] Verification completed/approved");
                 void syncThenReload();
               }
             }
 
             if (type === "onApplicantApproved" || type === "onApplicantSubmitted") {
-              if (isDev) {
-                console.log("[SumsubKycWidget] Applicant approved/submitted");
-              }
+              devLog("[SumsubKycWidget] Applicant approved/submitted");
               void syncThenReload();
             }
           })
@@ -424,7 +407,7 @@ export function SumsubKycWidget({ hideIntro = false }: SumsubKycWidgetProps) {
         instance.launch("#sumsub-websdk-container");
         setStarted(true);
       } catch (e) {
-        console.error(e);
+        devError("[SumsubKycWidget] mountSdk failed", e);
         setError(
           e instanceof Error ? e.message : "Unable to start identity verification. Please try again."
         );

@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle2, XCircle, Loader2, User, ShieldCheck } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { OwnerSumsubWidget } from '@/components/verify-owner/OwnerSumsubWidget';
+import { devError } from '@/lib/devConsole';
 
 type PageStatus =
   | 'loading'
@@ -109,7 +110,7 @@ function VerifyOwnerContent() {
         setMessage(data?.message || 'This verification link is invalid or has expired.');
       } catch (error) {
         if (cancelled) return;
-        console.error('[VerifyOwner] Error:', error);
+        devError('[VerifyOwner] Error:', error);
         setStatus('invalid_token');
         setMessage('Failed to verify link. Please try again.');
       }
@@ -145,7 +146,7 @@ function VerifyOwnerContent() {
         );
       }
     } catch (error) {
-      console.error('[VerifyOwner] Start error:', error);
+      devError('[VerifyOwner] Start error:', error);
       setMessage('Failed to start verification. Please try again.');
     } finally {
       setStartLoading(false);

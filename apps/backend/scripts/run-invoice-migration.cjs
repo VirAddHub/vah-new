@@ -6,6 +6,7 @@
 const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
+const { getPgSslOption } = require('./lib/pgSsl.cjs');
 
 // Get connection string from environment or use default
 const connectionString = process.env.DATABASE_URL || 
@@ -14,7 +15,7 @@ const connectionString = process.env.DATABASE_URL ||
 (async () => {
     const client = new Client({ 
         connectionString,
-        ssl: { rejectUnauthorized: false }
+        ssl: getPgSslOption()
     });
 
     try {

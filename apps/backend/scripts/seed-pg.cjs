@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 const { Client } = require('pg');
+const { getPgSslOption } = require('./lib/pgSsl.cjs');
 
 (async () => {
-    const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: getPgSslOption() });
     await client.connect();
 
     try {

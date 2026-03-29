@@ -18,6 +18,9 @@
 
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
+import { isSecureEnv } from '../lib/cookies';
+import { safeAccessPath } from '../lib/accessLog';
+import { logger } from '../lib/logger';
 
 const CSRF_TOKEN_COOKIE_NAME = 'vah_csrf_token';
 const CSRF_TOKEN_HEADER_NAME = 'X-CSRF-Token';
@@ -44,13 +47,12 @@ export function getOrCreateCsrfToken(req: Request, res: Response): string {
   // Generate new token
   const newToken = generateCsrfToken();
 
-  // Set cookie (not httpOnly so client JS can read it for Double Submit pattern)
-  // Secure and SameSite: 'none' to match session cookie
-  const isSecure = process.env.NODE_ENV === 'production' || process.env.FORCE_SECURE_COOKIES === 'true';
+  // Align Secure / SameSite with `vah_session` (see lib/cookies.ts isSecureEnv — includes COOKIE_SECURE).
+  const secure = isSecureEnv();
   res.cookie(CSRF_TOKEN_COOKIE_NAME, newToken, {
     httpOnly: false, // Client needs to read this for Double Submit pattern
-    secure: isSecure,
-    sameSite: isSecure ? 'none' : 'lax',
+    secure,
+    sameSite: secure ? 'none' : 'lax',
     path: '/',
     maxAge: CSRF_TOKEN_MAX_AGE * 1000
   });
@@ -92,7 +94,10 @@ export function requireCsrfToken(req: Request, res: Response, next: NextFunction
   // IMPORTANT: Do NOT add broad path prefixes here — only exact webhook/internal paths.
   if (
     fullPath.startsWith('/api/webhooks/') ||
-    fullPath.startsWith('/api/internal/')
+    fullPath.startsWith('/api/internal/') ||
+    // Migrate webhook: machine secret in Authorization / X-Migrate-Webhook-Secret (see webhook-migrate.ts).
+    // Route is unmounted in production; CSRF is not used as protection for this POST.
+    fullPath === '/api/webhook/migrate'
   ) {
     return next();
   }
@@ -125,11 +130,11 @@ export function requireCsrfToken(req: Request, res: Response, next: NextFunction
 
   // Validate both tokens exist and match
   if (!cookieToken || !headerToken) {
-    console.warn('[CSRF] Missing token', {
-      path: req.path,
+    logger.warn('[csrf] token_missing', {
+      path: safeAccessPath(req),
       method: req.method,
       hasCookie: !!cookieToken,
-      hasHeader: !!headerToken
+      hasHeader: !!headerToken,
     });
     return res.status(403).json({
       ok: false,
@@ -138,12 +143,15 @@ export function requireCsrfToken(req: Request, res: Response, next: NextFunction
     });
   }
 
-  if (cookieToken !== headerToken) {
-    console.warn('[CSRF] Token mismatch', {
-      path: req.path,
+  const a = Buffer.from(cookieToken, 'utf8');
+  const b = Buffer.from(headerToken, 'utf8');
+  const match = a.length === b.length && crypto.timingSafeEqual(a, b);
+  if (!match) {
+    logger.warn('[csrf] token_mismatch', {
+      path: safeAccessPath(req),
       method: req.method,
       cookieLength: cookieToken?.length,
-      headerLength: headerToken?.length
+      headerLength: headerToken?.length,
     });
     return res.status(403).json({
       ok: false,

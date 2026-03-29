@@ -85,7 +85,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const ranOnceRef = useRef(false);
 
     const hasUser = !!user;
-    const isAdmin = Boolean(user?.is_admin);
+    const isAdmin =
+        Boolean(user?.is_admin) ||
+        (typeof user?.role === "string" && user.role.toLowerCase() === "admin");
 
     // Initialize auth state on mount - ONLY ONCE
     useEffect(() => {

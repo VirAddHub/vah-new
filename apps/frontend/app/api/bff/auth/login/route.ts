@@ -33,8 +33,9 @@ export async function POST(request: NextRequest) {
     const text = await response.text();
     const textPreview = text.substring(0, 300);
 
-    // Log backend response for debugging
-    console.log(`[BFF auth/login] Backend response: ${status} from ${backendUrl}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[BFF auth/login] Backend response: ${status}`);
+    }
 
     // Attempt JSON parse only if content looks like JSON
     let json: any = null;
@@ -45,7 +46,9 @@ export async function POST(request: NextRequest) {
       try {
         json = JSON.parse(text);
       } catch (parseError) {
-        console.error(`[BFF auth/login] JSON parse failed for ${status} response:`, parseError);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error(`[BFF auth/login] JSON parse failed for ${status} response:`, parseError);
+        }
         return NextResponse.json(
           { 
             ok: false, 
@@ -91,17 +94,14 @@ export async function POST(request: NextRequest) {
     // Forward all Set-Cookie headers from backend
     const setCookieHeaders = response.headers.getSetCookie();
     if (setCookieHeaders && setCookieHeaders.length > 0) {
-      console.log(`[BFF auth/login] Forwarding ${setCookieHeaders.length} Set-Cookie headers to browser`);
       setCookieHeaders.forEach(cookie => {
         responseHeaders.append('Set-Cookie', cookie);
       });
     } else {
-      // Also check for single Set-Cookie header (some backends use this)
       const setCookie = response.headers.get('set-cookie');
       if (setCookie) {
-        console.log(`[BFF auth/login] Forwarding Set-Cookie header to browser`);
         responseHeaders.set('Set-Cookie', setCookie);
-      } else {
+      } else if (process.env.NODE_ENV !== 'production') {
         console.warn(`[BFF auth/login] No Set-Cookie headers from backend - cookies may not be set`);
       }
     }
@@ -113,7 +113,9 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     // Handle backend origin configuration errors
     if (isBackendOriginConfigError(error)) {
-      console.error(`[BFF auth/login] Server misconfigured: ${error.message}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error(`[BFF auth/login] Server misconfigured: ${error.message}`);
+      }
       return NextResponse.json(
         { ok: false, error: 'Server misconfigured', details: error.message },
         {
@@ -126,9 +128,13 @@ export async function POST(request: NextRequest) {
         }
       );
     }
-    console.error(`[BFF auth/login] Exception in route ${routePath}:`, error);
-    console.error(`[BFF auth/login] Backend URL was: ${backendUrl}`);
-    console.error(`[BFF auth/login] Error stack:`, error?.stack);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(`[BFF auth/login] Exception in route ${routePath}:`, error);
+      console.error(`[BFF auth/login] Backend URL was: ${backendUrl}`);
+      console.error(`[BFF auth/login] Error stack:`, error?.stack);
+    } else {
+      console.error(`[BFF auth/login] exception`, { route: routePath });
+    }
     return NextResponse.json(
       { 
         ok: false, 

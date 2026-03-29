@@ -2,11 +2,12 @@
 // scripts/apply-migration.js - Apply database migrations on Render
 
 const { Pool } = require('pg');
+const { getPgSslOption } = require('./lib/pgSsl.cjs');
 
 async function applyMigration() {
     const pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        ssl: getPgSslOption()
     });
 
     try {

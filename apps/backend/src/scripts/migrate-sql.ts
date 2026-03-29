@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { Client } from "pg";
+import { getPgSslOption } from "../lib/pgSslConfig";
 
 function log(msg: string) {
   console.log(`[migrate-sql] ${msg}`);
@@ -56,7 +57,7 @@ async function main() {
     return;
   }
 
-  const client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
+  const client = new Client({ connectionString: dbUrl, ssl: getPgSslOption() });
   await client.connect();
 
   try {

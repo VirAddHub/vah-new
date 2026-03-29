@@ -4,9 +4,13 @@
  * This script uses environment variables for secure password management
  */
 
+import { createRequire } from 'module';
 import { Client } from 'pg';
 import crypto from 'crypto';
 import readline from 'readline';
+
+const require = createRequire(import.meta.url);
+const { getPgSslOption } = require('./lib/pgSsl.cjs');
 
 // Configuration
 const config = {
@@ -162,7 +166,7 @@ async function main() {
 
     const client = new Client({
         connectionString: config.databaseUrl,
-        ssl: { rejectUnauthorized: false }
+        ssl: getPgSslOption()
     });
 
     try {

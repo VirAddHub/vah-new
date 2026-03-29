@@ -42,6 +42,22 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onr
  * Safely parse JSON from a Response, checking content-type first
  * Throws a clear error if response is not JSON
  */
+/**
+ * Triggers Next.js cache revalidation via the BFF (session cookie + optional Bearer).
+ * Never send REVALIDATE_SECRET or any NEXT_PUBLIC_* secret from the browser — the BFF verifies admin via backend whoami.
+ */
+async function revalidateBlogCacheServer(slug: string): Promise<void> {
+    const token = getToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    await fetch('/api/bff/admin/blog/revalidate', {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({ tag: 'blog', slug }),
+    });
+}
+
 async function parseJsonSafe(res: Response): Promise<any> {
     const contentType = res.headers.get('content-type') || '';
 
@@ -211,16 +227,8 @@ export function BlogSection() {
             const { slug, status } = data.data || {};
             await logAdminAction('blog_post_created', { slug: formData.slug, title: formData.title });
 
-            // Revalidate blog pages to show new post
             try {
-                await fetch('/api/revalidate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-revalidate-secret': process.env.NEXT_PUBLIC_REVALIDATE_SECRET || ''
-                    },
-                    body: JSON.stringify({ tag: 'blog', slug: formData.slug })
-                });
+                await revalidateBlogCacheServer(formData.slug);
             } catch (revalidateError) {
                 console.warn('Failed to revalidate blog pages:', revalidateError);
             }
@@ -276,16 +284,8 @@ export function BlogSection() {
 
             await logAdminAction('blog_post_updated', { slug: editingPost.slug, title: formData.title });
 
-            // Revalidate blog pages to show updated post
             try {
-                await fetch('/api/revalidate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-revalidate-secret': process.env.NEXT_PUBLIC_REVALIDATE_SECRET || ''
-                    },
-                    body: JSON.stringify({ tag: 'blog', slug: editingPost.slug })
-                });
+                await revalidateBlogCacheServer(editingPost.slug);
             } catch (revalidateError) {
                 console.warn('Failed to revalidate blog pages:', revalidateError);
             }
@@ -354,16 +354,8 @@ export function BlogSection() {
 
             await logAdminAction('blog_post_deleted', { slug, title });
 
-            // Revalidate blog pages to remove deleted post
             try {
-                await fetch('/api/revalidate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-revalidate-secret': process.env.NEXT_PUBLIC_REVALIDATE_SECRET || ''
-                    },
-                    body: JSON.stringify({ tag: 'blog', slug })
-                });
+                await revalidateBlogCacheServer(slug);
             } catch (revalidateError) {
                 console.warn('Failed to revalidate blog pages:', revalidateError);
             }

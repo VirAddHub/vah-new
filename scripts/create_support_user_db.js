@@ -7,6 +7,7 @@
 
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
+const { getPgSslOption } = require('../apps/backend/scripts/lib/pgSsl.cjs');
 
 // Database connection from environment
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -18,7 +19,7 @@ if (!DATABASE_URL) {
 
 const pool = new Pool({
     connectionString: DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: getPgSslOption(),
 });
 
 async function createSupportUser() {

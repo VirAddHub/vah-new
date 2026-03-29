@@ -15,9 +15,26 @@
  */
 
 import { Router, Request, Response } from 'express';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getPool } from '../db';
 
 const router = Router();
+
+/** Data repair — rare; tight cap per admin to limit blast radius if creds leak. */
+const adminRepairMutationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 8,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const u = (req as { user?: { id?: number } }).user;
+    return u?.id != null ? `admin-repair:mutation:${u.id}` : ipKeyGenerator(req.ip ?? '');
+  },
+  handler: (_req, res) => {
+    res.setHeader('Retry-After', '3600');
+    return res.status(429).json({ ok: false, error: 'rate_limited' });
+  },
+});
 
 // ─── FTS tombstones (intentionally disabled) ──────────────────────────────────
 
@@ -47,7 +64,7 @@ router.post('/fts/rebuild', (_req: Request, res: Response) => {
  * Idempotent — safe to run multiple times (WHERE expires_at IS NULL guard).
  * Uses STORAGE_RETENTION_DAYS env var (default 14 days).
  */
-router.post('/backfill-expiry', async (req: Request, res: Response) => {
+router.post('/backfill-expiry', adminRepairMutationLimiter, async (req: Request, res: Response) => {
   if (!req.user?.is_admin) {
     return res.status(403).json({ ok: false, error: 'forbidden' });
   }

@@ -2,6 +2,7 @@
 // Payment and subscription management endpoints
 
 import { Router, Request, Response } from 'express';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getPool } from '../db';
 import { pricingService } from '../services/pricing';
 import { param } from '../../lib/express-params';
@@ -11,9 +12,26 @@ import { sendPlanCancelled, buildAppUrl, sendWelcomeKycEmail } from '../../lib/m
 import { logger } from '../../lib/logger';
 import { safeErrorMessage } from '../../lib/safeError';
 import { getBillingProvider } from '../../config/billing';
+import { stripeCheckoutCreateLimiter } from '../../lib/sensitiveRouteRateLimits';
 import { createStripeCheckoutSession } from './stripe-checkout';
 
 const router = Router();
+
+/** Cancels / reactivates affect email + DB — keep low enough to deter scripted churn. */
+const paymentsSubscriptionWriteLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 25,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+        const u = (req as { user?: { id?: number } }).user;
+        return u?.id != null ? `payments:subscription-write:${u.id}` : ipKeyGenerator(req.ip ?? '');
+    },
+    handler: (_req, res) => {
+        res.setHeader('Retry-After', '900');
+        return res.status(429).json({ ok: false, error: 'rate_limited' });
+    },
+});
 
 // Middleware to require authentication
 function requireAuth(req: Request, res: Response, next: Function) {
@@ -91,7 +109,7 @@ router.get('/subscriptions/status', requireAuth, async (req: Request, res: Respo
  * POST /api/payments/subscriptions
  * Manage subscription (cancel, reactivate)
  */
-router.post('/subscriptions', requireAuth, async (req: Request, res: Response) => {
+router.post('/subscriptions', requireAuth, paymentsSubscriptionWriteLimiter, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { action } = req.body;
     const pool = getPool();
@@ -155,7 +173,7 @@ router.post('/subscriptions', requireAuth, async (req: Request, res: Response) =
  * POST /api/payments/redirect-flows
  * Create Stripe Checkout Session
  */
-router.post('/redirect-flows', requireAuth, async (req: Request, res: Response) => {
+router.post('/redirect-flows', requireAuth, stripeCheckoutCreateLimiter, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
 

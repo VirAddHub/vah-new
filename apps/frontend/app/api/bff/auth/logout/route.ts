@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
+import { isCookieSecureDeployment } from '@/lib/server/cookieSecureEnv';
 
 // Force dynamic rendering - never cache this route
 export const dynamic = 'force-dynamic';
@@ -31,8 +32,9 @@ export async function POST(request: NextRequest) {
     const text = await response.text();
     const textPreview = text.substring(0, 300);
 
-    // Log backend response for debugging
-    console.log(`[BFF auth/logout] Backend response: ${status} from ${backendUrl}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[BFF auth/logout] Backend response: ${status}`);
+    }
 
     // Attempt JSON parse only if content looks like JSON
     let json: any = null;
@@ -43,7 +45,9 @@ export async function POST(request: NextRequest) {
       try {
         json = JSON.parse(text);
       } catch (parseError) {
-        console.error(`[BFF auth/logout] JSON parse failed for ${status} response:`, parseError);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error(`[BFF auth/logout] JSON parse failed for ${status} response:`, parseError);
+        }
         return NextResponse.json(
           {
             ok: false,
@@ -69,33 +73,23 @@ export async function POST(request: NextRequest) {
     // Check both getSetCookie() (Next.js) and get('set-cookie') (standard)
     const setCookieHeaders = response.headers.getSetCookie();
     const setCookieRaw = response.headers.get('set-cookie');
-    
-    console.log(`[BFF auth/logout] Backend Set-Cookie headers:`, {
-      getSetCookie: setCookieHeaders,
-      raw: setCookieRaw,
-      allHeaders: Object.fromEntries(response.headers.entries())
-    });
-    
+
     if (setCookieHeaders && setCookieHeaders.length > 0) {
-      console.log(`[BFF auth/logout] Forwarding ${setCookieHeaders.length} Set-Cookie headers to browser`);
       setCookieHeaders.forEach(cookie => {
         responseHeaders.append('Set-Cookie', cookie);
       });
     } else if (setCookieRaw) {
-      // Also check for single Set-Cookie header
-        console.log(`[BFF auth/logout] Forwarding Set-Cookie header to browser`);
-      // Handle multiple Set-Cookie headers (they come as comma-separated or array)
       const cookies = Array.isArray(setCookieRaw) ? setCookieRaw : setCookieRaw.split(', ');
       cookies.forEach(cookie => {
         responseHeaders.append('Set-Cookie', cookie.trim());
       });
-    } else {
+    } else if (process.env.NODE_ENV !== 'production') {
       console.warn(`[BFF auth/logout] No Set-Cookie headers from backend - will use fallback clearing`);
     }
 
     // Force clear known auth cookies to ensure clean state (safety net if backend headers fail)
     // Use SAME attributes as when cookies are set to ensure they clear properly
-    const isSecure = process.env.NODE_ENV === 'production' || process.env.FORCE_SECURE_COOKIES === 'true';
+    const isSecure = isCookieSecureDeployment();
     const baseClearOptions = 'Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0';
     const secureFlag = isSecure ? '; Secure' : '';
     const sameSiteValue = isSecure ? 'None' : 'Lax';
@@ -119,7 +113,9 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     // Handle backend origin configuration errors
     if (isBackendOriginConfigError(error)) {
-      console.error(`[BFF auth/logout] Server misconfigured:`, error.message);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error(`[BFF auth/logout] Server misconfigured:`, error.message);
+      }
       return NextResponse.json(
         {
           ok: false,
@@ -130,7 +126,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error(`[BFF auth/logout] Unexpected error:`, error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(`[BFF auth/logout] Unexpected error:`, error);
+    } else {
+      console.error('[BFF auth/logout] unexpected_error');
+    }
     return NextResponse.json(
       {
         ok: false,

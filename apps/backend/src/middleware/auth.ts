@@ -3,6 +3,8 @@ import { verifyToken, extractTokenFromHeader, generateToken } from '../lib/jwt';
 import { getPool } from '../server/db';
 import { SESSION_IDLE_TIMEOUT_SECONDS, SESSION_REFRESH_THRESHOLD_SECONDS } from '../config/auth';
 import { logger } from '../lib/logger';
+import { sessionCookieSecurityOptions } from '../lib/cookies';
+import { safeAccessPath } from '../lib/accessLog';
 
 function errorMessage(e: unknown): string {
     if (e && typeof e === 'object' && 'message' in e) {
@@ -59,7 +61,7 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
         if (!isPublicAuthRoute(req.path)) {
             logger.warn('[jwt] token_verification_failed', { path: req.path });
         }
-        res.clearCookie('vah_session', { path: '/', httpOnly: true, secure: true, sameSite: 'none' });
+        res.clearCookie('vah_session', sessionCookieSecurityOptions());
         return next();
     }
 
@@ -72,9 +74,9 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
     if (secondsLeft <= 0) {
         // Don't log warnings for public auth routes (login, signup, etc.) as expired tokens are expected
         if (!isPublicAuthRoute(req.path)) {
-            logger.warn('[jwt] token_expired', { path: req.path });
+            logger.warn('[jwt] token_expired', { path: safeAccessPath(req) });
         }
-        res.clearCookie('vah_session', { path: '/', httpOnly: true, secure: true, sameSite: 'none' });
+        res.clearCookie('vah_session', sessionCookieSecurityOptions());
         return next();
     }
 
@@ -116,11 +118,8 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
                 // Set new cookie with refreshed token (only if headers not sent)
                 if (!res.headersSent) {
                     res.cookie('vah_session', newToken, {
-                        httpOnly: true,
-                        secure: true,
-                        sameSite: 'none',
-                        path: '/',
-                        maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000, // 60 minutes
+                        ...sessionCookieSecurityOptions(),
+                        maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000,
                     });
                     if (process.env.NODE_ENV !== 'production') {
                         logger.debug('[jwt] token_refreshed', { userId });

@@ -83,8 +83,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (status < 200 || status >= 300) {
-      // Log once so Vercel/terminal shows the exact upstream reason (unblocks HAR without response body)
-      console.error('[BFF auth/signup] upstream error', { status, url: backendUrl, data: json ?? textPreview });
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('[BFF auth/signup] upstream error', { status, url: backendUrl, data: json ?? textPreview });
+      } else {
+        console.error('[BFF auth/signup] upstream error', { status });
+      }
       // Return backend body as-is so frontend gets error.code (e.g. EMAIL_ALREADY_EXISTS) and HAR shows it
       return NextResponse.json(json ?? { ok: false, error: textPreview }, { status, headers: responseHeaders });
     }
@@ -104,7 +107,11 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    console.error(`[BFF auth/signup] Exception:`, error?.message);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(`[BFF auth/signup] Exception:`, error?.message);
+    } else {
+      console.error('[BFF auth/signup] exception');
+    }
     return NextResponse.json(
       { ok: false, error: { code: 'BFF_EXCEPTION', message: error?.message || 'Failed to sign up' } },
       { status: 500 }

@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const { getPgSslOption } = require('../lib/pgSsl.cjs');
 
 async function fixDatabaseColumns() {
     const databaseUrl = process.env.DATABASE_URL;
@@ -10,9 +11,7 @@ async function fixDatabaseColumns() {
 
     const pool = new Pool({
         connectionString: databaseUrl,
-        ssl: {
-            rejectUnauthorized: false // Required for Render's managed Postgres
-        }
+        ssl: getPgSslOption()
     });
 
     try {

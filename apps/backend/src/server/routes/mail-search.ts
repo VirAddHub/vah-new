@@ -15,6 +15,7 @@
 
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
+import { safeAccessPath } from '../../lib/accessLog';
 
 const router = Router();
 
@@ -113,7 +114,7 @@ router.get('/search', async (req: Request, res: Response) => {
 
 // tiny probe to confirm mount + auth
 router.get('/search/test', (req: Request, res: Response) => {
-    res.json({ ok: true, path: req.originalUrl, user: req.user || null });
+    res.json({ ok: true, path: safeAccessPath(req), user: req.user || null });
 });
 
 export default router;

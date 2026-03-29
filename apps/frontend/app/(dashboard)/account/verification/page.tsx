@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { getOwnerStatusMeta } from '@/lib/verification-state';
+import { devError } from '@/lib/devConsole';
 
 const SumsubKycWidget = dynamic(() => import('../SumsubKycWidget').then(mod => ({ default: mod.SumsubKycWidget })), { ssr: false });
 
@@ -176,7 +177,7 @@ export default function AccountVerificationPage() {
                 toast({ title: 'Could not resend', description: msg, variant: 'destructive' });
             }
         } catch (error) {
-            console.error('Error resending verification:', error);
+            devError('Error resending verification:', error);
             toast({ title: 'Error', description: 'An error occurred. Please try again.', variant: 'destructive' });
         } finally {
             setResendingId(null);
@@ -280,7 +281,7 @@ export default function AccountVerificationPage() {
             mutateBootstrap();
             setCompanyModalOpen(false);
         } catch (e) {
-            console.error(e);
+            devError('Save company details failed:', e);
             toast({ title: 'Error', description: 'Something went wrong. Please try again.', variant: 'destructive' });
         } finally {
             setCompanySaveBusy(false);

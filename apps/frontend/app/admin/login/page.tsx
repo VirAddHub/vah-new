@@ -1,86 +1,111 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { EnhancedAdminDashboard } from '../../../components/EnhancedAdminDashboard';
-import { AuthProvider, useAuth } from '../../../contexts/AuthContext';
+import { useEffect, Suspense } from "react";
+import { useRouter } from "next/navigation";
+import { EnhancedAdminDashboard } from "@/components/EnhancedAdminDashboard";
+import { clearToken } from "@/lib/token-manager";
+import { useVerifiedAdminSession } from "@/hooks/useVerifiedAdminSession";
 
-function AdminPageContent() {
-    const { isAuthenticated, isAdmin, logout } = useAuth();
-    const [showDashboard, setShowDashboard] = useState(false);
+/**
+ * Admin entry: access is decided only by GET /api/bff/auth/whoami → backend /api/auth/whoami
+ * (useVerifiedAdminSession). Do not use AuthContext.isAdmin or stored vah_user for gating.
+ */
+export default function AdminLoginPage() {
+    const router = useRouter();
+    const { status, user } = useVerifiedAdminSession();
 
     useEffect(() => {
-        // Only redirect if not already showing dashboard
-        if (isAuthenticated && isAdmin) {
-            setShowDashboard(true);
-        } else if (isAuthenticated && !isAdmin) {
-            // Redirect regular users to their dashboard (not admin login to avoid loop)
-            if (!showDashboard) {
-                window.location.replace('/dashboard');
-            }
-        } else {
-            // Don't redirect unauthenticated users - they're already on login page
-            // This prevents redirect loops
-            setShowDashboard(false);
+        if (status === "unauthenticated") {
+            router.replace(
+                "/login?next=" + encodeURIComponent("/admin/dashboard")
+            );
+            return;
         }
-    }, [isAuthenticated, isAdmin, showDashboard]);
+        if (status === "forbidden") {
+            router.replace("/dashboard");
+        }
+    }, [status, router]);
+
+    if (status === "loading") {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+                    <p className="text-muted-foreground">Verifying admin access…</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (status !== "ready") {
+        return null;
+    }
 
     const handleLogout = async () => {
-        // Prevent multiple logout attempts
         if ((handleLogout as any).__isLoggingOut) {
             return;
         }
         (handleLogout as any).__isLoggingOut = true;
 
         try {
-            await logout();
+            await fetch("/api/bff/auth/logout", {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
         } catch (error) {
-            console.error('Logout failed:', error);
+            console.error("Logout API call failed:", error);
         } finally {
-            // Clear all auth state
-            localStorage.removeItem('vah_jwt');
-            localStorage.removeItem('vah_user');
-            // Force clear cookies
-            const isSecure = window.location.protocol === 'https:';
-            const sameSiteValue = isSecure ? 'None' : 'Lax';
-            const secureFlag = isSecure ? '; Secure' : '';
+            clearToken();
+            localStorage.removeItem("vah_jwt");
+            localStorage.removeItem("vah_user");
+            const isSecure = window.location.protocol === "https:";
+            const sameSiteValue = isSecure ? "None" : "Lax";
+            const secureFlag = isSecure ? "; Secure" : "";
             document.cookie = `vah_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=${sameSiteValue}${secureFlag}`;
             document.cookie = `vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=${sameSiteValue}${secureFlag}`;
             document.cookie = `vah_role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=${sameSiteValue}${secureFlag}`;
             document.cookie = `vah_user=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=${sameSiteValue}${secureFlag}`;
             document.cookie = `vah_jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=${sameSiteValue}${secureFlag}`;
-            
+
             window.stop();
             setTimeout(() => {
-                window.location.replace('/admin/login');
+                window.location.replace("/admin/login");
             }, 200);
         }
     };
 
-    const handleGoBack = () => {
-        window.location.href = '/';
+    const handleNavigate = (page: string) => {
+        if (page === "home") {
+            router.push("/");
+        } else {
+            router.push(`/${page}`);
+        }
     };
 
-    if (showDashboard) {
-        return (
+    const handleGoBack = () => {
+        router.push("/");
+    };
+
+    return (
+        <Suspense
+            fallback={
+                <div className="min-h-screen flex items-center justify-center bg-background">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+                        <p className="text-muted-foreground">Loading admin dashboard...</p>
+                    </div>
+                </div>
+            }
+        >
             <EnhancedAdminDashboard
                 onLogout={handleLogout}
-                onNavigate={(page: string, data?: any) => {
-                    console.log('Navigate to:', page, data);
-                    // Handle navigation to different admin pages
-                }}
+                onNavigate={handleNavigate}
                 onGoBack={handleGoBack}
+                verifiedAdminUser={user}
             />
-        );
-    }
-
-    // While auth is resolving for admin login, render nothing to avoid flashes.
-    return null;
-}
-
-export default function AdminLoginPage() {
-    return (
-        <AuthProvider>
-            <AdminPageContent />
-        </AuthProvider>
+        </Suspense>
     );
 }

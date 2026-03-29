@@ -5,15 +5,19 @@
  * This script creates an admin user and a regular user
  */
 
+import { createRequire } from 'module';
 import { Pool } from 'pg';
 import bcrypt from 'bcrypt';
+
+const require = createRequire(import.meta.url);
+const { getPgSslOption } = require('./scripts/lib/pgSsl.cjs');
 
 // Database connection - you'll need to get the full connection string from Render
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://vah_postgres_user:[PASSWORD]@dpg-d2vikgnfte5s73c5nv80-a:5432/vah_postgres';
 
 const pool = new Pool({
     connectionString: DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: getPgSslOption()
 });
 
 async function createUsers() {

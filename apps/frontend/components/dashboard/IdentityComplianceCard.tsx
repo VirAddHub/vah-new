@@ -14,6 +14,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { mutate as globalMutate } from 'swr';
 import { DASHBOARD_BOOTSTRAP_KEY } from '@/lib/swrKeys';
+import { devError, devLog, devWarn } from '@/lib/devConsole';
 import snsWebSdk from '@sumsub/websdk';
 
 export interface Compliance {
@@ -86,7 +87,7 @@ export function IdentityComplianceCard({
             setKycToken(token);
             setKycOpen(true);
         } catch (error: any) {
-            console.error("[IdentityComplianceCard] Error starting KYC:", error);
+            devError("[IdentityComplianceCard] Error starting KYC:", error);
             const errorMessage = error.message || "Failed to start verification. Please try again.";
             setError(errorMessage);
             toast({
@@ -117,7 +118,7 @@ export function IdentityComplianceCard({
                         lang: 'en',
                     })
                     .on('idCheck.onError', (error: unknown) => {
-                        console.error('[IdentityComplianceCard] Sumsub onError', error);
+                        devError('[IdentityComplianceCard] Sumsub onError', error);
                         toast({
                             title: "Verification Error",
                             description: (error as any)?.message || "An error occurred during verification.",
@@ -125,10 +126,11 @@ export function IdentityComplianceCard({
                         });
                     })
                     .on('idCheck.onReady', () => {
-                        console.log('[IdentityComplianceCard] Sumsub ready');
+                        devLog('[IdentityComplianceCard] Sumsub ready');
                     })
                     .onMessage((type: string, payload: any) => {
-                        console.log('[IdentityComplianceCard] Sumsub onMessage', type, payload);
+                        // Avoid logging full payload in any environment (may contain applicant metadata).
+                        devLog('[IdentityComplianceCard] Sumsub onMessage', type);
 
                         // When review is completed/approved, trigger a profile refresh
                         if (type === 'idCheck.applicantStatus') {
@@ -177,7 +179,7 @@ export function IdentityComplianceCard({
 
                 sdkInstance.launch('#sumsub-websdk-container');
             } catch (error) {
-                console.error('[IdentityComplianceCard] Failed to initialize Sumsub:', error);
+                devError('[IdentityComplianceCard] Failed to initialize Sumsub:', error);
                 toast({
                     title: "Error",
                     description: "Failed to initialize verification interface. Please try again.",
@@ -193,7 +195,7 @@ export function IdentityComplianceCard({
                 try {
                     sdkInstance.destroy();
                 } catch (err) {
-                    console.warn('[IdentityComplianceCard] Error destroying SDK instance:', err);
+                    devWarn('[IdentityComplianceCard] Error destroying SDK instance:', err);
                 }
             }
         };

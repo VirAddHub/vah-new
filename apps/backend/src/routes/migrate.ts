@@ -2,16 +2,18 @@ import { Router, Request, Response } from 'express';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { getPool } from '../server/db';
+import { getPgSslOption } from '../lib/pgSslConfig';
+import { requireAdmin } from '../middleware/auth';
 
 const execAsync = promisify(exec);
 const router = Router();
 
 /**
  * POST /api/migrate/run
- * Run database migrations
+ * Run database migrations (admin only). Router not mounted in production (server.ts).
  * Body: { from?: number, to?: number, dryRun?: boolean }
  */
-router.post('/migrate/run', async (req: Request, res: Response) => {
+router.post('/migrate/run', requireAdmin, async (req: Request, res: Response) => {
     try {
         const { from, to, dryRun = false } = req.body;
 
@@ -62,14 +64,15 @@ router.post('/migrate/run', async (req: Request, res: Response) => {
 
 /**
  * GET /api/migrate/status
- * Check migration status
+ * Non-production only (router unmounted in production). Admin JWT required.
+ * Returns aggregate readiness only — no table names, column names, or information_schema dumps.
  */
-router.get('/migrate/status', async (req: Request, res: Response) => {
+router.get('/migrate/status', requireAdmin, async (req: Request, res: Response) => {
     try {
         const { Client } = require('pg');
         const client = new Client({
             connectionString: process.env.DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
+            ssl: getPgSslOption(),
         });
 
         await client.connect();
@@ -84,27 +87,27 @@ router.get('/migrate/status', async (req: Request, res: Response) => {
 
         await client.end();
 
+        const forwardingTablesSatisfied = result.rows.length >= 3;
         res.json({
             ok: true,
-            tables: result.rows.map((r: any) => r.table_name),
-            migrationStatus: result.rows.length >= 3 ? 'complete' : 'pending'
+            migrationStatus: forwardingTablesSatisfied ? 'complete' : 'pending',
+            forwardingTablesSatisfied,
         });
 
     } catch (error: any) {
         console.error('[Migration Status] Error:', error);
         res.status(500).json({
             ok: false,
-            error: 'Failed to check migration status',
-            message: error.message
+            error: 'status_check_failed',
         });
     }
 });
 
 /**
  * POST /api/migrate/fix-columns
- * Fix missing database columns (admin only)
+ * Fix missing database columns (admin only). Router not mounted in production (server.ts).
  */
-router.post('/migrate/fix-columns', async (req: Request, res: Response) => {
+router.post('/migrate/fix-columns', requireAdmin, async (req: Request, res: Response) => {
     const pool = getPool();
 
     try {

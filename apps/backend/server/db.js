@@ -3,6 +3,7 @@
 // All database operations use PostgreSQL - no other database is supported
 
 const { Pool } = require('pg');
+const { getPgSslOption } = require('../scripts/lib/pgSsl.cjs');
 
 let pool = null;
 
@@ -15,7 +16,7 @@ function getPool() {
 
         pool = new Pool({
             connectionString,
-            ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+            ssl: getPgSslOption(),
             // Add proper connection settings to prevent SASL errors
             connectionTimeoutMillis: 10000,
             idleTimeoutMillis: 30000,

@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /* Ensure compat column exists (stability while old builds may still run) */
 const { Client } = require('pg');
+const { getPgSslOption } = require('./lib/pgSsl.cjs');
 
 (async () => {
   const cs = process.env.DATABASE_URL;
   if (!cs) { console.error('[repair] DATABASE_URL missing'); process.exit(1); }
 
-  const client = new Client({ connectionString: cs, ssl: { rejectUnauthorized: false } });
+  const client = new Client({ connectionString: cs, ssl: getPgSslOption() });
   try {
     await client.connect();
 

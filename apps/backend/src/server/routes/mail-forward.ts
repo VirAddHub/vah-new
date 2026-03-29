@@ -3,6 +3,7 @@ import express, { Request, Response } from 'express';
 import { getPool } from '../db';
 import fetch from 'node-fetch';
 import { GDPR_FORWARDING_WINDOW_MS } from '../../config/gdpr';
+import { physicalMailForwardUserLimiter } from '../../lib/routeGroupRateLimits';
 
 const router = express.Router();
 
@@ -35,7 +36,7 @@ async function auditForward(userId: number, mailId: number, result: string, reas
 }
 
 /** POST /api/mail/forward  { mail_item_id, recipient, notes?, adminOverride? } */
-router.post('/forward', async (req: Request, res: Response) => {
+router.post('/forward', physicalMailForwardUserLimiter, async (req: Request, res: Response) => {
     const userId = Number(req.user?.id || 0);
     if (!userId) {
         return res.status(401).json({ ok: false, error: 'unauthenticated' });

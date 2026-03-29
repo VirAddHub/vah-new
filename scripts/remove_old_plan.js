@@ -6,6 +6,7 @@
  */
 
 const { Client } = require('pg');
+const { getPgSslOption } = require('../apps/backend/scripts/lib/pgSsl.cjs');
 
 async function removeOldPlan() {
     // You'll need to set your DATABASE_URL environment variable
@@ -19,7 +20,7 @@ async function removeOldPlan() {
 
     const client = new Client({
         connectionString: databaseUrl,
-        ssl: { rejectUnauthorized: false }
+        ssl: getPgSslOption(),
     });
 
     try {
