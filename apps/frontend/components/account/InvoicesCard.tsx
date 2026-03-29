@@ -8,10 +8,40 @@ import { FileText, Download } from 'lucide-react';
 import { InvoiceRow } from '@/lib/account/types';
 
 interface InvoicesCardProps {
+  /** True until the invoices request has finished (success or error). */
+  isLoading: boolean;
+  /** True when the request failed or returned ok !== true. */
+  loadError: boolean;
   invoices: InvoiceRow[];
+  onRetry?: () => void;
 }
 
-export function InvoicesCard({ invoices }: InvoicesCardProps) {
+function InvoicesTableSkeleton() {
+  return (
+    <div
+      className="space-y-3 rounded-lg border border-border p-4"
+      aria-busy="true"
+      aria-label="Loading invoices"
+    >
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="flex gap-3 sm:gap-4">
+          <div className="h-4 flex-1 max-w-[8rem] animate-pulse rounded bg-muted" />
+          <div className="h-4 hidden flex-[2] animate-pulse rounded bg-muted sm:block" />
+          <div className="h-4 w-14 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-16 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-20 animate-pulse rounded bg-muted ml-auto" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function InvoicesCard({
+  isLoading,
+  loadError,
+  invoices,
+  onRetry,
+}: InvoicesCardProps) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'paid':
@@ -33,7 +63,20 @@ export function InvoicesCard({ invoices }: InvoicesCardProps) {
         <CardTitle className="text-h4 text-foreground sm:text-h3">Invoices</CardTitle>
       </CardHeader>
       <CardContent className="p-4 sm:p-6 pt-0">
-        {invoices.length === 0 ? (
+        {isLoading ? (
+          <InvoicesTableSkeleton />
+        ) : loadError ? (
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-6 text-center">
+            <p className="text-body-sm text-muted-foreground">
+              We could not load your invoices. Please try again.
+            </p>
+            {onRetry ? (
+              <Button type="button" variant="outline" size="sm" className="mt-4" onClick={onRetry}>
+                Try again
+              </Button>
+            ) : null}
+          </div>
+        ) : invoices.length === 0 ? (
           <div className="p-8 text-center border-2 border-dashed rounded-lg">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">No invoices yet</p>

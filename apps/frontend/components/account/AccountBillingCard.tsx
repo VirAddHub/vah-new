@@ -3,11 +3,10 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CreditCard, RefreshCw, Loader2 } from 'lucide-react';
+import { RefreshCw, Loader2, ExternalLink } from 'lucide-react';
 import { SubscriptionSummary } from '@/lib/account/types';
 import { toast } from '@/hooks/use-toast';
-import useSWR from 'swr';
-import { swrFetcher } from '@/services/http';
+import { useBillingOverview } from '@/hooks/useDashboardData';
 interface AccountBillingCardProps {
   subscription: SubscriptionSummary;
   onRefresh?: () => void;
@@ -18,43 +17,46 @@ export function AccountBillingCard({
   onRefresh,
 }: AccountBillingCardProps) {
   const [isLoading, setIsLoading] = useState<string | null>(null);
-  const { data: overview, mutate: mutateOverview } = useSWR(
-    '/api/bff/billing/overview',
-    swrFetcher
-  );
+  const [manageBillingBusy, setManageBillingBusy] = useState(false);
+  const { data: overview, mutate: mutateOverview } = useBillingOverview();
 
-  const hasMandate = overview?.data?.has_mandate || false;
+  const canOpenBillingPortal =
+    subscription.status === 'active' || subscription.status === 'past_due';
 
-  /** Stripe Customer Portal or GoCardless hosted flow — not an in-app card field. */
-  const handleOpenHostedPaymentSetup = async () => {
-    setIsLoading('payment-setup');
+  const handleManageBilling = async () => {
+    if (manageBillingBusy) return;
+    setManageBillingBusy(true);
     try {
-      const res = await fetch('/api/bff/billing/update-bank', {
+      const response = await fetch('/api/bff/billing/update-bank', {
         method: 'POST',
         credentials: 'include',
       });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        throw new Error(
-          data.message || data.error || 'Failed to open payment setup'
-        );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) {
+        const msg =
+          data?.message ||
+          data?.error ||
+          'Could not open billing management. Please try again.';
+        throw new Error(typeof msg === 'string' ? msg : 'Request failed');
       }
-      const url = data.data?.redirect_url || data.data?.url;
-      if (!url || typeof url !== 'string') {
-        throw new Error('No payment link returned');
+      const url =
+        (typeof data.data?.redirect_url === 'string' && data.data.redirect_url) ||
+        (typeof data.data?.url === 'string' && data.data.url) ||
+        null;
+      if (!url) {
+        throw new Error('No billing link returned. Please try again or contact support.');
       }
-      window.location.assign(url);
+      window.location.href = url;
     } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Something went wrong. Please try again.';
       toast({
-        title: 'Could not open payment page',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Please try again in a moment.',
+        title: 'Could not open billing',
+        description: message,
         variant: 'destructive',
       });
     } finally {
-      setIsLoading(null);
+      setManageBillingBusy(false);
     }
   };
 
@@ -189,7 +191,7 @@ export function AccountBillingCard({
           <div>
             <h3 className="text-h4 text-foreground sm:text-h3">Subscription</h3>
             <p className="mt-1 text-caption text-muted-foreground sm:text-body-sm">
-              Plan, billing date, and how you pay.
+              Your current subscription details.
             </p>
           </div>
 
@@ -207,16 +209,6 @@ export function AccountBillingCard({
                   : `${subscription.price_label} / month`}
               </p>
             </div>
-          </div>
-          <div className="h-px w-full bg-border" />
-
-          <div className="flex items-center justify-between gap-4 min-w-0">
-            <span className="shrink-0 text-caption text-muted-foreground">
-              Payment method
-            </span>
-            <span className="text-right text-body-sm text-foreground">
-              {hasMandate ? 'On file' : 'Not added'}
-            </span>
           </div>
           <div className="h-px w-full bg-border" />
 
@@ -244,49 +236,36 @@ export function AccountBillingCard({
             </span>
           </div>
 
-          <div className="space-y-3 pt-2">
-            {hasMandate && subscription.status === 'active' && (
+          {canOpenBillingPortal && (
+            <div className="border-t border-border/60 pt-4">
               <Button
-                onClick={() => void handleOpenHostedPaymentSetup()}
-                disabled={isLoading === 'payment-setup'}
-                className="h-12 w-full touch-manipulation text-body-sm font-medium sm:h-11"
-                size="lg"
+                type="button"
+                variant="outline"
+                disabled={manageBillingBusy}
+                onClick={handleManageBilling}
+                className="h-11 min-h-[44px] w-full touch-manipulation border-border bg-background/90 text-body-sm font-medium text-muted-foreground shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-[box-shadow,transform,border-color] duration-200 hover:border-foreground/15 hover:bg-muted/40 hover:text-foreground sm:h-11 sm:w-auto sm:hover:-translate-y-px active:scale-[0.99] sm:active:scale-100"
               >
-                {isLoading === 'payment-setup' ? (
+                {manageBillingBusy ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Opening secure payment page…
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                    Opening…
                   </>
                 ) : (
                   <>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Update payment method
+                    Manage billing
+                    <ExternalLink className="ml-2 h-4 w-4 opacity-70" aria-hidden />
                   </>
                 )}
               </Button>
-            )}
-            {subscription.status === 'active' && !hasMandate && (
-              <Button
-                onClick={() => void handleOpenHostedPaymentSetup()}
-                disabled={isLoading === 'payment-setup'}
-                className="h-12 w-full touch-manipulation text-body-sm font-medium sm:h-11"
-                size="lg"
-              >
-                {isLoading === 'payment-setup' ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Opening secure payment page…
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Add payment method
-                  </>
-                )}
-              </Button>
-            )}
-            {(subscription.status === 'cancelled' ||
-              subscription.status === 'past_due') && (
+              <p className="mt-2 text-caption leading-snug text-muted-foreground">
+                Manage your subscription and payment details securely.
+              </p>
+            </div>
+          )}
+
+          {(subscription.status === 'cancelled' ||
+            subscription.status === 'past_due') && (
+            <div className="space-y-3 pt-2">
               <Button
                 onClick={handleReactivate}
                 disabled={isLoading === 'reactivate'}
@@ -305,8 +284,8 @@ export function AccountBillingCard({
                   </>
                 )}
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

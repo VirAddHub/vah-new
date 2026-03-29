@@ -3,12 +3,12 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
-import { Card, CardContent } from '@/components/ui/card';
+import { useDashboardBootstrap } from '@/hooks/useDashboardData';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, AlertCircle, Mail, Building2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Mail, ArrowRight } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
 import {
     Dialog,
     DialogContent,
@@ -23,6 +23,54 @@ import { useToast } from '@/components/ui/use-toast';
 import { getOwnerStatusMeta } from '@/lib/verification-state';
 
 const SumsubKycWidget = dynamic(() => import('../SumsubKycWidget').then(mod => ({ default: mod.SumsubKycWidget })), { ssr: false });
+
+/** Match `AccountBillingCard` / Billing page. */
+const BILLING_LIKE_CARD =
+    'w-full min-w-0 max-w-full flex-shrink-0 rounded-xl border-border/80 bg-card shadow-sm sm:max-w-xl sm:rounded-2xl';
+
+const BILLING_LIKE_CARD_WIDE =
+    'w-full min-w-0 max-w-full flex-shrink-0 rounded-xl border-border/80 bg-card shadow-sm sm:max-w-2xl sm:rounded-2xl';
+
+type VerificationUiKind = 'approved' | 'pending_review' | 'action_required' | 'rejected';
+
+const VERIFICATION_STATUS_COPY: Record<
+    VerificationUiKind,
+    { title: string; body: string }
+> = {
+    approved: {
+        title: 'Verification approved',
+        body: 'Your identity check has been completed successfully. You can now use your VirtualAddressHub address and access the relevant account features.',
+    },
+    pending_review: {
+        title: 'Verification in progress',
+        body: 'We are reviewing your identity check. You will be able to use all relevant account features once verification is complete.',
+    },
+    action_required: {
+        title: 'Action required',
+        body: 'We need a bit more information to complete your identity check. Please return to verification and follow the next steps.',
+    },
+    rejected: {
+        title: 'Verification unsuccessful',
+        body: 'We could not complete your identity check. Please review the details provided and try again or contact support.',
+    },
+};
+
+function resolveVerificationUiKind(
+    verificationState: 'verified' | 'pending_others' | 'action_required',
+    rawKycLower: string
+): VerificationUiKind {
+    const k = rawKycLower;
+    if (k === 'rejected' || k === 'failed' || k === 'declined') {
+        return 'rejected';
+    }
+    if (verificationState === 'verified' || verificationState === 'pending_others') {
+        return 'approved';
+    }
+    if (k === 'pending') {
+        return 'pending_review';
+    }
+    return 'action_required';
+}
 
 interface BusinessOwner {
     id: string | number;
@@ -44,26 +92,42 @@ interface CompanySearchResult {
 }
 
 export default function AccountVerificationPage() {
-    const router = useRouter();
-    
-    // Fetch profile, compliance (backend source of truth), and owners
-    const { data: profileData, mutate: mutateProfile } = useSWR('/api/bff/profile', swrFetcher);
-    const { data: complianceData } = useSWR('/api/bff/profile/compliance', swrFetcher);
-    const { data: userData } = useSWR('/api/bff/auth/whoami', swrFetcher);
+    const {
+        data: boot,
+        mutate: mutateBootstrap,
+        isLoading: bootLoading,
+        error: bootError,
+    } = useDashboardBootstrap();
     const { data: ownersData, mutate: mutateOwners } = useSWR('/api/bff/business-owners', swrFetcher);
 
-    const user = userData?.data?.user || userData?.data || null;
-    const profile = profileData?.data;
-    const compliance = complianceData?.data;
+    const user =
+        boot?.ok && boot.data?.whoami && typeof boot.data.whoami === 'object'
+            ? ((boot.data.whoami as { user?: unknown }).user as Record<string, unknown> | null | undefined) ??
+              null
+            : null;
+    const profile = boot?.ok ? (boot.data.profile as any) : undefined;
+    const compliance = boot?.ok ? (boot.data.compliance as any) : undefined;
     const owners: BusinessOwner[] = ownersData?.data?.owners || [];
     const companyNumberOnFile = (profile?.companies_house_number || profile?.company_number || '').trim();
     const companyNameOnFile = (profile?.company_name || '').trim();
 
-    // Verification state: prefer backend compliance.verificationState when available
+    /** Raw KYC from profile / whoami (lowercase) for copy + state derivation. */
+    const rawKycLower = useMemo(() => {
+        if (!boot || boot.ok !== true) return '';
+        const p = boot.data.profile as Record<string, unknown> | undefined;
+        const who = boot.data.whoami as { user?: Record<string, unknown> } | undefined;
+        const u = who?.user;
+        return String(p?.kyc_status ?? u?.kyc_status ?? '')
+            .trim()
+            .toLowerCase();
+    }, [boot]);
+
+    /** Only derive after bootstrap succeeded — avoids defaulting to "pending" / action_required before data exists. */
     const primaryKycStatus = useMemo(() => {
-        const status = profile?.kyc_status || user?.kyc_status || 'pending';
+        if (!boot || boot.ok !== true) return null;
+        const status = rawKycLower || 'pending';
         return status === 'approved' || status === 'verified' ? 'verified' : 'pending';
-    }, [profile, user]);
+    }, [boot, rawKycLower]);
 
     const pendingOwners = useMemo(() => {
         return owners.filter(owner =>
@@ -73,13 +137,15 @@ export default function AccountVerificationPage() {
     }, [owners]);
 
     const verificationState = useMemo(() => {
-        if (compliance?.verificationState) {
-            return compliance.verificationState as 'verified' | 'pending_others' | 'action_required';
+        if (!boot || boot.ok !== true) return null;
+        const c = boot.data.compliance as { verificationState?: string } | undefined;
+        if (c?.verificationState) {
+            return c.verificationState as 'verified' | 'pending_others' | 'action_required';
         }
         if (primaryKycStatus === 'verified' && pendingOwners.length === 0) return 'verified';
         if (primaryKycStatus === 'verified' && pendingOwners.length > 0) return 'pending_others';
         return 'action_required';
-    }, [compliance?.verificationState, primaryKycStatus, pendingOwners]);
+    }, [boot, primaryKycStatus, pendingOwners]);
 
     const [resendingId, setResendingId] = useState<string | number | null>(null);
     const handleResend = async (ownerId: string | number) => {
@@ -211,7 +277,7 @@ export default function AccountVerificationPage() {
                 return;
             }
             toast({ title: 'Companies House details saved', description: 'Your company number and name have been saved.' });
-            mutateProfile();
+            mutateBootstrap();
             setCompanyModalOpen(false);
         } catch (e) {
             console.error(e);
@@ -221,212 +287,190 @@ export default function AccountVerificationPage() {
         }
     };
 
+    if (bootLoading && boot === undefined) {
+        return (
+            <div className="w-full space-y-6" aria-busy="true" aria-label="Loading verification">
+                <div className="mb-5 sm:mb-6 md:mb-8 space-y-2">
+                    <div className="h-9 w-72 max-w-full animate-pulse rounded-md bg-muted" />
+                    <div className="h-5 w-full max-w-lg animate-pulse rounded-md bg-muted/70" />
+                </div>
+                <div className="h-52 max-w-xl animate-pulse rounded-xl bg-muted/40" />
+                <div className="h-52 max-w-xl animate-pulse rounded-xl bg-muted/40" />
+            </div>
+        );
+    }
+
+    if (bootError || (boot && boot.ok !== true)) {
+        return (
+            <div className="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-sm">
+                <p className="mb-4 text-body text-muted-foreground">
+                    We couldn&apos;t load your account data. Please try again.
+                </p>
+                <Button type="button" onClick={() => void mutateBootstrap()}>
+                    Retry
+                </Button>
+            </div>
+        );
+    }
+
+    if (verificationState === null) {
+        return null;
+    }
+
+    const uiKind = resolveVerificationUiKind(verificationState, rawKycLower);
+    const statusCopy = VERIFICATION_STATUS_COPY[uiKind];
+
     return (
-        <div className="w-full max-w-3xl">
-            {/* Page Header */}
+        <div className="w-full">
             <div className="mb-5 sm:mb-6 md:mb-8">
-                <h1 className="text-h2 sm:text-h2 lg:text-h1 font-semibold text-foreground mb-1.5 sm:mb-2 leading-tight tracking-tight">
-                    Identity Verification
-                </h1>
-                <p className="text-body-sm sm:text-body text-muted-foreground leading-relaxed">
-                    {verificationState === 'verified' 
-                        ? 'Your identity check has been approved'
-                        : verificationState === 'pending_others'
-                        ? 'Waiting for other directors to complete verification'
-                        : 'Complete verification to fully activate your account and compliance features'
-                    }
+                <h1 className="mb-2 text-h1 text-foreground sm:mb-4">Identity Verification</h1>
+                <p className="text-body-sm text-muted-foreground sm:text-body">
+                    Check your verification status and any required next steps.
                 </p>
             </div>
 
-            {/* Companies House details card — top of Verification */}
-            <Card className="rounded-xl sm:rounded-2xl border border-border bg-card mb-4 sm:mb-6">
-                <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-start gap-3 md:gap-4">
-                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                            <Building2 className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
-                        </div>
-                        <div className="flex-1 space-y-2 md:space-y-3 min-w-0">
-                            <h2 className="text-body-lg font-semibold text-foreground">
-                                Companies House details
-                            </h2>
+            <div className="flex w-full min-w-0 flex-col gap-8 sm:gap-10">
+                {/* Companies House details */}
+                <Card className={BILLING_LIKE_CARD}>
+                    <CardContent className="flex h-full flex-col p-5 sm:p-8">
+                        <div className="flex flex-1 flex-col gap-4 sm:gap-5">
+                            <div>
+                                <h3 className="text-h4 text-foreground sm:text-h3">Companies House details</h3>
+                                <p className="mt-1 text-caption text-muted-foreground sm:text-body-sm">
+                                    Your company details on file.
+                                </p>
+                            </div>
                             {companyNumberOnFile ? (
                                 <>
-                                    <div className="space-y-1.5 text-body-sm">
-                                        <p className="flex flex-wrap gap-x-2 gap-y-0.5">
-                                            <span className="text-muted-foreground">Company number</span>
-                                            <span className="font-medium text-foreground">{companyNumberOnFile}</span>
-                                        </p>
-                                        {companyNameOnFile && (
-                                            <p className="flex flex-wrap gap-x-2 gap-y-0.5">
-                                                <span className="text-muted-foreground">Company name</span>
-                                                <span className="font-medium text-foreground">{companyNameOnFile}</span>
-                                            </p>
-                                        )}
+                                    <div className="flex min-w-0 items-start justify-between gap-4">
+                                        <span className="shrink-0 text-caption text-muted-foreground">
+                                            Company number
+                                        </span>
+                                        <span className="min-w-0 text-right text-body-sm font-medium tabular-nums text-foreground sm:text-body">
+                                            {companyNumberOnFile}
+                                        </span>
                                     </div>
+                                    {companyNameOnFile ? (
+                                        <>
+                                            <div className="h-px w-full bg-border" />
+                                            <div className="flex min-w-0 items-start justify-between gap-4">
+                                                <span className="shrink-0 text-caption text-muted-foreground">
+                                                    Company name
+                                                </span>
+                                                <span className="min-w-0 max-w-[min(100%,16rem)] text-right text-body-sm font-medium leading-snug text-foreground sm:max-w-[20rem] sm:text-body">
+                                                    {companyNameOnFile}
+                                                </span>
+                                            </div>
+                                        </>
+                                    ) : null}
                                 </>
                             ) : (
-                                <>
-                                    <p className="text-body-sm text-muted-foreground leading-relaxed">
-                                        Not incorporated yet? That&apos;s fine — add your company number once available.
+                                <div className="space-y-3">
+                                    <p className="text-body text-muted-foreground leading-relaxed">
+                                        Not incorporated yet? Add your company number when it is available.
                                     </p>
                                     <Button
+                                        type="button"
                                         onClick={handleOpenCompanyModal}
-                                        className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
+                                        className="h-12 w-full touch-manipulation sm:h-11 sm:w-auto"
+                                        size="lg"
                                     >
                                         Add Companies House number
+                                        <ArrowRight className="ml-2 h-4 w-4" aria-hidden />
                                     </Button>
-                                    <p className="text-caption text-muted-foreground leading-relaxed">
+                                    <p className="text-caption text-muted-foreground leading-snug">
                                         Required before issuing proof of address certificates.
                                     </p>
-                                </>
+                                </div>
                             )}
                         </div>
-                    </div>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
 
-            {/* STATE: VERIFIED */}
-            {verificationState === 'verified' && (
-                <Card className="rounded-xl sm:rounded-2xl border border-border bg-card mb-4 sm:mb-6">
-                <CardContent className="p-4 sm:p-6 md:p-8">
-                        <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
-                            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                                <CheckCircle2 className="w-6 h-6 text-green-700" strokeWidth={2} />
-                            </div>
-                            <div className="flex-1">
-                                <h2 className="text-h3 font-semibold text-foreground mb-2">
-                                    Identity verification complete
-                                </h2>
-                                <p className="text-body text-muted-foreground leading-relaxed mb-6">
-                                    Your identity check (ID verification) has been approved. You have full access to your business address and all account features.
-                                </p>
-                                <Button
-                                    onClick={() => router.push('/account/overview')}
-                                    variant="outline"
-                                    size="sm"
-                                >
-                                    View Account
-                                </Button>
-                            </div>
-                        </div>
-                </CardContent>
-            </Card>
-            )}
-
-            {/* STATE: PENDING - OTHER DIRECTORS/PSCs */}
-            {verificationState === 'pending_others' && (
-                <>
-                    {/* Primary User Verified */}
-                    <Card className="rounded-xl sm:rounded-2xl border border-border bg-card mb-4 sm:mb-6">
-                <CardContent className="p-4 sm:p-6 md:p-8">
-                            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
-                                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                                    <CheckCircle2 className="w-6 h-6 text-green-700" strokeWidth={2} />
-                                </div>
-                        <div className="flex-1">
-                                    <h2 className="text-h3 font-semibold text-foreground mb-2">
-                                        Your Verification Complete
-                                    </h2>
-                                    <p className="text-body text-muted-foreground leading-relaxed">
-                                        You are verified. Waiting for other directors to complete their verification.
-                                    </p>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-                    {/* Pending Owners */}
-                    <Card className="rounded-xl sm:rounded-2xl border border-border bg-card mb-4 sm:mb-6">
-                <CardContent className="p-4 sm:p-6 md:p-8">
-                            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 mb-4 sm:mb-6">
-                                <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
-                                    <AlertCircle className="w-6 h-6 text-yellow-700" strokeWidth={2} />
-                                </div>
-                                <div className="flex-1">
-                                    <h2 className="text-h3 font-semibold text-foreground mb-2">
-                                        Pending Verification
-                                    </h2>
-                                    <p className="text-body text-muted-foreground leading-relaxed mb-4">
-                                        The following individuals must complete verification before we can issue proof of address certificates.
-                                    </p>
-                                    <p className="text-body-sm text-muted-foreground leading-relaxed mb-6">
-                                        Your address can still be used for incorporation and Companies House setup; the proof of address certificate will be available once all required directors have verified.
-                                    </p>
-                                    
-                                    {/* Owners List */}
-                                    <div className="space-y-3">
-                                        {pendingOwners.map((owner) => (
-                                            <div 
-                                                key={owner.id}
-                                                className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
-                                            >
-                                                <div className="flex-1">
-                                                    <p className="text-body-sm font-medium text-foreground">
-                                                        {owner.fullName || owner.firstName || owner.first_name} {owner.lastName || owner.last_name || ''}
-                                                    </p>
-                                                    {owner.email && (
-                                                        <p className="text-body-sm text-muted-foreground mt-1">
-                                                            {owner.email}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <Badge
-                                                        variant={getOwnerStatusMeta(owner.status).variant}
-                                                        className={
-                                                            owner.status === 'pending' || owner.status === 'not_started'
-                                                                ? 'bg-yellow-100 text-yellow-800 border-0'
-                                                                : undefined
-                                                        }
-                                                    >
-                                                        {getOwnerStatusMeta(owner.status).label}
-                                                    </Badge>
-                                                    {owner.email && (
-                                                        <Button
-                                                            onClick={() => handleResend(owner.id)}
-                                                            disabled={resendingId === owner.id}
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="text-primary hover:text-primary/80"
-                                                        >
-                                                            <Mail className="w-4 h-4 mr-2" strokeWidth={2} />
-                                                            {resendingId === owner.id ? 'Sending…' : 'Resend verification'}
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+                {(verificationState === 'verified' || verificationState === 'pending_others') && (
+                    <Card className={BILLING_LIKE_CARD}>
+                        <CardContent className="flex h-full flex-col p-5 sm:p-8">
+                            <div className="flex flex-1 flex-col gap-4 sm:gap-5">
+                                <h3 className="text-h4 text-foreground sm:text-h3">{statusCopy.title}</h3>
+                                <p className="text-body text-muted-foreground leading-relaxed">{statusCopy.body}</p>
                             </div>
                         </CardContent>
                     </Card>
+                )}
 
-                </>
-            )}
-
-            {/* STATE: ACTION REQUIRED */}
-            {verificationState === 'action_required' && (
-                <>
-                    {/* Verification Required — CTA + Sumsub on same page after Start */}
-                    <Card className="mb-4 rounded-xl border border-border bg-card sm:mb-6 sm:rounded-2xl">
-                        <CardContent className="p-4 sm:p-6 md:p-8">
-                            <div className="min-w-0 space-y-4">
+                {verificationState === 'pending_others' && (
+                    <Card className={BILLING_LIKE_CARD}>
+                        <CardContent className="flex h-full flex-col p-5 sm:p-8">
+                            <div className="flex flex-1 flex-col gap-4 sm:gap-5">
                                 <div>
-                                    <h2 className="text-h3 font-semibold text-foreground">
-                                        Verification required
-                                    </h2>
-                                    <p className="mt-2 text-body text-muted-foreground leading-relaxed">
-                                        Tap the button below to open secure identity verification on this page. It usually takes about 5–10 minutes.
+                                    <h3 className="text-h4 text-foreground sm:text-h3">Pending verification</h3>
+                                    <p className="mt-1 text-caption text-muted-foreground sm:text-body-sm">
+                                        Directors or PSCs who still need to verify.
                                     </p>
                                 </div>
+                                <p className="text-body text-muted-foreground leading-relaxed">
+                                    The following individuals must complete verification before we can issue proof of
+                                    address certificates. Your address can still be used for incorporation and Companies
+                                    House setup.
+                                </p>
+                                <ul className="space-y-3" aria-label="Pending verifications">
+                                    {pendingOwners.map((owner) => (
+                                        <li
+                                            key={owner.id}
+                                            className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                                        >
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-body-sm font-medium text-foreground">
+                                                    {owner.fullName || owner.firstName || owner.first_name}{' '}
+                                                    {owner.lastName || owner.last_name || ''}
+                                                </p>
+                                                {owner.email ? (
+                                                    <p className="mt-0.5 text-body-sm text-muted-foreground">
+                                                        {owner.email}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                            <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+                                                <Badge
+                                                    variant="outline"
+                                                    className="border-border bg-background font-medium normal-case tracking-normal text-muted-foreground"
+                                                >
+                                                    {getOwnerStatusMeta(owner.status).label}
+                                                </Badge>
+                                                {owner.email ? (
+                                                    <Button
+                                                        type="button"
+                                                        onClick={() => handleResend(owner.id)}
+                                                        disabled={resendingId === owner.id}
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-9 text-foreground/90 hover:bg-muted/60 hover:text-foreground"
+                                                    >
+                                                        <Mail className="mr-2 h-4 w-4" strokeWidth={1.75} aria-hidden />
+                                                        {resendingId === owner.id ? 'Sending…' : 'Resend verification'}
+                                                    </Button>
+                                                ) : null}
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {verificationState === 'action_required' && (
+                    <Card className={BILLING_LIKE_CARD_WIDE}>
+                        <CardContent className="flex h-full flex-col p-5 sm:p-8">
+                            <div className="flex flex-1 flex-col gap-4 sm:gap-5">
+                                <h3 className="text-h4 text-foreground sm:text-h3">{statusCopy.title}</h3>
+                                <p className="text-body text-muted-foreground leading-relaxed">{statusCopy.body}</p>
                                 <SumsubKycWidget hideIntro />
                             </div>
                         </CardContent>
                     </Card>
-
-                </>
-            )}
+                )}
+            </div>
 
             {/* Add Companies House number modal */}
             <Dialog open={companyModalOpen} onOpenChange={setCompanyModalOpen}>

@@ -40,7 +40,7 @@ export type InvoiceRow = {
   invoice_no: string;
   description: string;
   total_label: string; // e.g. "£21.60"
-  status: "paid" | "not_paid" | "void" | "unknown";
+  status: "paid" | "not_paid" | "void" | "failed" | "unknown";
   date_label: string; // e.g. "31 Jul 23"
   download_url?: string;
 };

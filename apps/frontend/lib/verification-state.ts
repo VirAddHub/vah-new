@@ -143,7 +143,13 @@ export function isPrimaryVerificationRequiredForNav(options: {
   if (state === 'verified' || state === 'pending_others') return false;
   if (state === 'action_required') return true;
 
-  const k = (options.kycStatus || '').toLowerCase();
+  // No compliance state yet (e.g. bootstrap still loading): do not show "Required"
+  // — avoids a false flash on every refresh before /dashboard/bootstrap returns.
+  if (options.kycStatus === undefined || options.kycStatus === null) {
+    return false;
+  }
+
+  const k = String(options.kycStatus).toLowerCase();
   const done = k === 'approved' || k === 'verified';
   return !done;
 }

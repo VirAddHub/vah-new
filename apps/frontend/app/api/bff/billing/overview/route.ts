@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const routePath = '/api/bff/billing/overview';
   let backendUrl = '';
@@ -17,6 +19,7 @@ export async function GET(request: NextRequest) {
         'Cookie': cookie,
         'Content-Type': 'application/json',
       },
+      cache: 'no-store',
     });
 
     const status = response.status;
@@ -66,7 +69,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Backend is 2xx and JSON parsed successfully
-    return NextResponse.json(json ?? { raw: textPreview }, { status: 200 });
+    return NextResponse.json(json ?? { raw: textPreview }, {
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        Pragma: 'no-cache',
+        Expires: '0',
+      },
+    });
   } catch (error: any) {
     // Handle backend origin configuration errors
     if (isBackendOriginConfigError(error)) {

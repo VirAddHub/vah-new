@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { LayoutDashboard, CreditCard, MapPin, ShieldCheck, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useProfile, useCompliance } from '@/hooks/useDashboardData';
+import { useDashboardBootstrap } from '@/hooks/useDashboardData';
 import { isPrimaryVerificationRequiredForNav } from '@/lib/verification-state';
 
 interface NavItem {
@@ -23,10 +23,9 @@ const navItems: NavItem[] = [
 
 export function AccountNavigation() {
     const pathname = usePathname();
-    const { data: profileData } = useProfile();
-    const { data: complianceData } = useCompliance();
-    const profile = profileData?.data;
-    const compliance = complianceData?.data;
+    const { data: boot } = useDashboardBootstrap();
+    const profile = boot?.ok ? (boot.data.profile as any) : undefined;
+    const compliance = boot?.ok ? (boot.data.compliance as any) : undefined;
     const verificationNavRequired = isPrimaryVerificationRequiredForNav({
         verificationState: compliance?.verificationState,
         kycStatus: profile?.kyc_status,

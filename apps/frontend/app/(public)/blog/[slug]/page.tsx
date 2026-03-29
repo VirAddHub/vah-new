@@ -1,10 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { HeaderWithNav } from '@/components/layout/HeaderWithNav';
-import { FooterWithNav } from '@/components/layout/FooterWithNav';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { parseJsonSafe } from '@/lib/http';
 import { formatBlogDate } from '@/lib/blog-date-formatter';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
@@ -88,16 +86,13 @@ async function getPost(slug: string): Promise<BlogPost | null> {
   }
 }
 
-async function getPopularPosts(currentSlug: string): Promise<BlogPostListItem[]> {
+async function getRelatedPosts(currentSlug: string): Promise<BlogPostListItem[]> {
   try {
     const base = await resolveAppBaseUrl();
-    const res = await fetch(
-      `${base}/api/bff/blog/list`,
-      {
-        cache: 'no-store',
-        headers: { accept: 'application/json' },
-      },
-    );
+    const res = await fetch(`${base}/api/bff/blog/list`, {
+      cache: 'no-store',
+      headers: { accept: 'application/json' },
+    });
 
     if (!res.ok) {
       return [];
@@ -107,20 +102,17 @@ async function getPopularPosts(currentSlug: string): Promise<BlogPostListItem[]>
     try {
       json = await parseJsonSafe(res);
     } catch (err: any) {
-      console.error('[BlogPostPage] Failed to fetch popular posts:', err);
+      console.error('[BlogPostPage] Failed to fetch related posts:', err);
       return [];
     }
 
     if (!json?.ok || !json?.data) return [];
-    
-    // Filter out current post and take first 3
-    const posts = (json.data as BlogPostListItem[])
-      .filter(post => post.slug !== currentSlug)
+
+    return (json.data as BlogPostListItem[])
+      .filter((post) => post.slug !== currentSlug)
       .slice(0, 3);
-    
-    return posts;
   } catch (error) {
-    console.error('[BlogPostPage] Failed to fetch popular posts', error);
+    console.error('[BlogPostPage] Failed to fetch related posts', error);
     return [];
   }
 }
@@ -152,6 +144,27 @@ export async function generateMetadata({
   };
 }
 
+function ArticleMeta({
+  dateLabel,
+  categoryLabel,
+  readTime,
+}: {
+  dateLabel: string;
+  categoryLabel: string | null;
+  readTime?: string;
+}) {
+  const parts: string[] = [];
+  if (dateLabel) parts.push(dateLabel);
+  if (categoryLabel) parts.push(categoryLabel);
+  if (readTime?.trim()) parts.push(readTime.trim());
+
+  if (parts.length === 0) return null;
+
+  return (
+    <p className="text-caption text-muted-foreground">{parts.join(' · ')}</p>
+  );
+}
+
 export default async function BlogPostPage({
   params,
 }: {
@@ -159,199 +172,235 @@ export default async function BlogPostPage({
 }) {
   const { slug } = await params;
   const post = await getPost(slug);
-  const popularPosts = await getPopularPosts(slug);
+  const relatedPosts = await getRelatedPosts(slug);
 
   if (!post) {
     return notFound();
   }
 
   const hasHtml = typeof post.html === 'string' && post.html.trim().length > 0;
+  const dateLabel = formatBlogDate(post.dateLong || post.date || post.updated);
+  const categoryLabel =
+    post.tags && post.tags.length > 0 ? post.tags[0] : null;
 
   return (
     <div className="bg-background">
-        {/* Main Content Area */}
-        <div className="max-w-[1440px] mx-auto px-6 lg:px-20 py-12 lg:py-20">
-          <div className="flex gap-10 items-start">
-            {/* Left Column - Main Content */}
-            <div className="flex-1">
-              <div className="flex flex-col items-center gap-12">
-                {/* Back to blogs */}
-                <div className="w-full max-w-[1172px] flex justify-start">
+      <article className="mx-auto w-full max-w-3xl px-4 pb-16 pt-8 sm:px-6 lg:px-8 lg:pb-24 lg:pt-12">
+        <Link
+          href="/blog"
+          className="mb-8 inline-flex items-center gap-2 text-caption font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          Back to blog
+        </Link>
+
+        <header className="mb-10 border-b border-border pb-10">
+          <ArticleMeta dateLabel={dateLabel} categoryLabel={categoryLabel} readTime={post.readTime} />
+          <h1 className="mt-4 text-pretty text-h1 font-semibold tracking-tight text-foreground lg:text-[2rem] lg:leading-tight">
+            {post.title}
+          </h1>
+          {post.excerpt || post.description ? (
+            <p className="mt-4 max-w-2xl text-body-lg leading-relaxed text-muted-foreground">
+              {post.excerpt || post.description}
+            </p>
+          ) : null}
+        </header>
+
+        {post.cover ? (
+          <div className="mb-10 overflow-hidden rounded-xl border border-border bg-muted/30">
+            <div className="relative aspect-[2/1] w-full max-h-[min(56vh,420px)] sm:max-h-[480px]">
+              <ImageWithFallback
+                src={post.cover}
+                alt={post.title}
+                className="h-full w-full object-cover"
+              />
+            </div>
+          </div>
+        ) : null}
+
+        <div className="blog-article-body max-w-[65ch]">
+          {hasHtml ? (
+            <div
+              className="blog-article-html"
+              dangerouslySetInnerHTML={{ __html: post.html as string }}
+              suppressHydrationWarning
+            />
+          ) : (
+            <div className="space-y-1">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  h2: ({ children, ...props }) => (
+                    <h2
+                      className="mb-3 mt-10 text-xl font-semibold tracking-tight text-foreground first:mt-0 sm:text-2xl"
+                      {...props}
+                    >
+                      {children}
+                    </h2>
+                  ),
+                  h3: ({ children, ...props }) => (
+                    <h3
+                      className="mb-2 mt-8 text-lg font-semibold tracking-tight text-foreground sm:text-xl"
+                      {...props}
+                    >
+                      {children}
+                    </h3>
+                  ),
+                  p: ({ children, ...props }) => (
+                    <p
+                      className="mb-6 text-[1.0625rem] leading-[1.75] text-foreground/90 last:mb-0"
+                      {...props}
+                    >
+                      {children}
+                    </p>
+                  ),
+                  ul: ({ children, ...props }) => (
+                    <ul className="mb-6 list-disc space-y-2 pl-5 text-[1.0625rem] leading-relaxed text-foreground/90 marker:text-muted-foreground" {...props}>
+                      {children}
+                    </ul>
+                  ),
+                  ol: ({ children, ...props }) => (
+                    <ol className="mb-6 list-decimal space-y-2 pl-5 text-[1.0625rem] leading-relaxed text-foreground/90 marker:text-muted-foreground" {...props}>
+                      {children}
+                    </ol>
+                  ),
+                  li: ({ children, ...props }) => (
+                    <li className="pl-1" {...props}>
+                      {children}
+                    </li>
+                  ),
+                  a: ({ children, ...props }) => (
+                    <a className="font-medium text-primary underline underline-offset-4 hover:text-primary/90" {...props}>
+                      {children}
+                    </a>
+                  ),
+                  strong: ({ children, ...props }) => (
+                    <strong className="font-semibold text-foreground" {...props}>
+                      {children}
+                    </strong>
+                  ),
+                  blockquote: ({ children, ...props }) => (
+                    <blockquote
+                      className="my-6 border-l-2 border-primary/40 pl-4 text-foreground/85 italic"
+                      {...props}
+                    >
+                      {children}
+                    </blockquote>
+                  ),
+                  code: ({ className, children, ...props }) => {
+                    const isBlock = className?.includes('language-');
+                    if (isBlock) {
+                      return (
+                        <code className={className} {...props}>
+                          {children}
+                        </code>
+                      );
+                    }
+                    return (
+                      <code
+                        className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.9em] text-foreground"
+                        {...props}
+                      >
+                        {children}
+                      </code>
+                    );
+                  },
+                  pre: ({ children, ...props }) => (
+                    <pre
+                      className="mb-6 overflow-x-auto rounded-lg border border-border bg-muted/50 p-4 text-sm"
+                      {...props}
+                    >
+                      {children}
+                    </pre>
+                  ),
+                  img: ({ alt, className, ...props }) => (
+                    // eslint-disable-next-line @next/next/no-img-element -- markdown images are external/unknown URLs
+                    <img
+                      {...props}
+                      alt={alt ?? ''}
+                      className={`my-8 w-full max-w-full rounded-lg border border-border ${className ?? ''}`}
+                    />
+                  ),
+                }}
+              >
+                {post.content ?? ''}
+              </ReactMarkdown>
+            </div>
+          )}
+        </div>
+      </article>
+
+      {relatedPosts.length > 0 ? (
+        <section
+          className="border-t border-border bg-muted/20 px-4 py-14 sm:px-6 lg:px-8 lg:py-20"
+          aria-labelledby="related-heading"
+        >
+          <div className="mx-auto max-w-3xl lg:max-w-5xl">
+            <h2 id="related-heading" className="text-h2 font-semibold tracking-tight text-foreground">
+              Related articles
+            </h2>
+            <p className="mt-2 text-body-sm text-muted-foreground">More from the blog</p>
+            <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+              {relatedPosts.map((related) => (
+                <li key={related.slug}>
                   <Link
-                    href="/blog"
-                    className="inline-flex items-center gap-2 text-body font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    href={`/blog/${related.slug}`}
+                    className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-primary/25 hover:bg-card/80"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-                    Back to blogs
-                  </Link>
-                </div>
-                {/* Heading */}
-                <h1 className="text-h1 lg:text-display text-foreground text-center max-w-[1172px]">
-                  {post.title}
-                </h1>
-
-                {/* Featured Image */}
-                {post.cover && (
-                  <div className="w-full max-w-[1172px]">
-                    <div className="relative w-full h-[549px] rounded-2xl overflow-hidden">
-                      <ImageWithFallback
-                        src={post.cover}
-                        alt={post.title}
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="relative aspect-[16/10] w-full bg-muted">
+                      {related.imageUrl?.trim() ? (
+                        <ImageWithFallback
+                          src={related.imageUrl}
+                          alt={related.title}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-caption text-muted-foreground">
+                          No cover
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
-
-                {/* Article Content */}
-                <div className="w-full max-w-[1172px]">
-                  <div className="flex flex-col gap-5">
-                    {hasHtml ? (
-                      <article
-                        className="prose prose-lg max-w-none prose-headings:text-foreground prose-p:text-muted-foreground"
-                        dangerouslySetInnerHTML={{ 
-                          __html: (post.html as string).replace(
-                            /<h2/g, 
-                            '<h2 style="font-size: 1.5rem; font-weight: 500; line-height: 1.375; margin-bottom: 14px; margin-top: 20px;"'
-                          ).replace(
-                            /<p/g,
-                            '<p style="font-size: 1.125rem; font-weight: 400; line-height: 1.4; margin-bottom: 20px;"'
-                          ).replace(
-                            /<ul/g,
-                            '<ul style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; list-style: none; padding-left: 0;"'
-                          ).replace(
-                            /<li/g,
-                            '<li style="display: flex; align-items: start; gap: 12px;"'
-                          )
-                        }}
-                        suppressHydrationWarning
-                      />
-                    ) : (
-                      <article 
-                        className="prose prose-lg max-w-none"
-                      >
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            h2: ({ node, children, ...props }) => (
-                              <h2 
-                                className="text-h2 font-medium text-foreground mb-3.5 mt-5" 
-                                {...props}
-                              >
-                                {children}
-                              </h2>
-                            ),
-                            p: ({ node, children, ...props }) => (
-                              <p 
-                                className="text-body-lg text-muted-foreground mb-5" 
-                                {...props}
-                              >
-                                {children}
-                              </p>
-                            ),
-                            ul: ({ node, children, ...props }) => (
-                              <ul className="flex flex-col gap-2.5 mb-5" {...props}>
-                                {children}
-                              </ul>
-                            ),
-                            li: ({ node, children, ...props }) => (
-                              <li className="flex items-start gap-3" {...props}>
-                                <img
-                                  src="/figma/check-16.svg"
-                                  alt=""
-                                  aria-hidden="true"
-                                  className="h-4.5 w-4.5 flex-shrink-0 mt-0.5"
-                                />
-                                <span className="text-body-lg text-muted-foreground">{children}</span>
-                              </li>
-                            ),
-                            img: ({ node, ...props }) => (
-                              <img {...props} className="max-w-full h-auto rounded-2xl" />
-                            ),
-                          }}
-                        >
-                          {post.content ?? ""}
-                        </ReactMarkdown>
-                      </article>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column - Popular Articles Sidebar */}
-            <div className="w-[417px] flex-shrink-0">
-              <div className="flex flex-col gap-10">
-                <div>
-                  <h2 className="text-h1 lg:text-display text-foreground mb-4">
-                    Popular Articles
-                  </h2>
-                  <div className="flex flex-col gap-5">
-                    {popularPosts.map((popularPost) => (
-                      <Link
-                        key={popularPost.slug}
-                        href={`/blog/${popularPost.slug}`}
-                        className="flex gap-6 p-6 bg-muted rounded-xl hover:opacity-90 transition-opacity"
-                      >
-                        <div className="relative w-[191px] h-[174px] flex-shrink-0 rounded-lg overflow-hidden bg-muted">
-                          {popularPost.imageUrl?.trim() ? (
-                            <ImageWithFallback
-                              src={popularPost.imageUrl}
-                              alt={popularPost.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="absolute inset-0 flex items-center justify-center text-caption text-muted-foreground px-2 text-center">
-                              No image
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-3.5 flex-1 min-w-0">
-                          <div className="bg-card rounded-full px-2.5 py-0 text-caption text-muted-foreground inline-flex items-center justify-center w-fit">
-                            {popularPost.category}
-                          </div>
-                          <div className="flex flex-col gap-2.5">
-                            <h3 className="text-h3 font-medium text-foreground line-clamp-2">
-                              {popularPost.title}
-                            </h3>
-                            <p className="text-body text-muted-foreground line-clamp-3">
-                              {popularPost.excerpt}
-                            </p>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+                    <div className="flex flex-1 flex-col gap-2 p-4">
+                      {related.category ? (
+                        <span className="w-fit rounded-full bg-muted px-2.5 py-0.5 text-caption text-muted-foreground">
+                          {related.category}
+                        </span>
+                      ) : null}
+                      <h3 className="text-body-lg font-semibold leading-snug text-foreground group-hover:text-primary">
+                        {related.title}
+                      </h3>
+                      <p className="line-clamp-2 flex-1 text-body-sm leading-relaxed text-muted-foreground">
+                        {related.excerpt}
+                      </p>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
+        </section>
+      ) : null}
 
-        {/* CTA: solid primary card; avoid fixed Figma widths — cta-illustration.png is not shipped */}
-        <div className="w-full border-t border-border bg-muted/40 py-12 lg:py-16 px-6 lg:px-20">
-          <div className="max-w-[1280px] mx-auto">
-            <div className="overflow-hidden rounded-2xl bg-primary px-8 py-10 lg:px-12 lg:py-12 shadow-md">
-              <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
-                <div className="min-w-0 space-y-3 text-center lg:text-left lg:max-w-xl">
-                  <h2 className="text-h1 lg:text-display font-semibold tracking-tight text-primary-foreground">
-                    Get your London Business Address Today
-                  </h2>
-                  <p className="text-body text-primary-foreground/90">
-                    Everything included for{' '}
-                    <span className="font-medium text-primary-foreground">£9.99</span> per month.
-                  </p>
-                </div>
-                <Link
-                  href="/signup"
-                  className="inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-white px-8 text-body font-medium uppercase text-primary transition-colors hover:bg-white/90 w-full lg:w-auto"
-                >
-                  Schedule London Address
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="border-t border-border px-4 py-10 sm:px-6 lg:px-8">
+        <p className="mx-auto max-w-3xl text-center text-body-sm text-muted-foreground">
+          Running a UK business?{' '}
+          <Link href="/signup" className="font-medium text-primary underline underline-offset-4 hover:text-primary/90">
+            Get a London business address
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

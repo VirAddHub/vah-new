@@ -21,7 +21,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { useDashboardView } from '@/contexts/DashboardViewContext';
-import { useProfile, useCompliance } from '@/hooks/useDashboardData';
+import { useDashboardBootstrap } from '@/hooks/useDashboardData';
 import { isPrimaryVerificationRequiredForNav } from '@/lib/verification-state';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -77,12 +77,10 @@ export function DashboardSidebar() {
     const { toast } = useToast();
     const [isMobile, setIsMobile] = useState(false);
     
-    // Fetch profile data once (shared across dashboard, no duplicate fetches)
-    // This data is used by CertificateDownload component
-    const { data: profileData } = useProfile();
-    const { data: complianceData } = useCompliance();
-    const profile = profileData?.data;
-    const compliance = complianceData?.data;
+    // Single bootstrap bundle — same source as mail dashboard (no competing SWR caches)
+    const { data: boot, isLoading: bootLoading, error: bootError } = useDashboardBootstrap();
+    const profile = boot?.ok ? (boot.data.profile as any) : undefined;
+    const compliance = boot?.ok ? (boot.data.compliance as any) : undefined;
     const verificationNavRequired = isPrimaryVerificationRequiredForNav({
         verificationState: compliance?.verificationState,
         kycStatus: profile?.kyc_status,
@@ -225,7 +223,16 @@ export function DashboardSidebar() {
 
                 {/* Certificate Download - Pinned to bottom */}
                 <div className="shrink-0 bg-card">
-                    <CertificateDownload profile={profile} compliance={profile?.compliance} />
+                    {boot?.ok === true ? (
+                        <CertificateDownload profile={profile} compliance={compliance} />
+                    ) : bootLoading && !bootError ? (
+                        <div className="border-t border-border px-3 pb-4 pt-3 sm:px-4 sm:pb-6 sm:pt-4">
+                            <div
+                                className="h-11 w-full animate-pulse rounded-lg bg-muted/50"
+                                aria-hidden
+                            />
+                        </div>
+                    ) : null}
                 </div>
             </div>
         </aside>
@@ -429,7 +436,16 @@ export function DashboardSidebar() {
 
                             {/* Footer with Certificate Download and Sign Out - Pinned to bottom */}
                             <div className="shrink-0 border-t border-border bg-card">
-                                <CertificateDownload profile={profile} compliance={profile?.compliance} />
+                                {boot?.ok === true ? (
+                                    <CertificateDownload profile={profile} compliance={compliance} />
+                                ) : bootLoading && !bootError ? (
+                                    <div className="border-t border-border px-3 pb-4 pt-3 sm:px-4 sm:pb-6 sm:pt-4">
+                                        <div
+                                            className="h-11 w-full animate-pulse rounded-lg bg-muted/50"
+                                            aria-hidden
+                                        />
+                                    </div>
+                                ) : null}
                                 
                                 {/* Sign Out */}
                                 <div

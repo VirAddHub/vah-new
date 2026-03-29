@@ -197,7 +197,7 @@ export default function AccountPage() {
           />
 
           {/* Section E - Invoices */}
-          <InvoicesCard invoices={invoices} />
+          <InvoicesCard isLoading={false} loadError={false} invoices={invoices} />
         </div>
       </main>
       <Footer />

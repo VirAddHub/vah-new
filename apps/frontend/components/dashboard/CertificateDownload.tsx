@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { FileText, Download, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import {
   getCertificateBlockMeta,
@@ -20,6 +20,10 @@ interface ComplianceSnapshot {
 
 interface CertificateDownloadProps {
     /**
+     * `quiet` — de-emphasise on dense pages (e.g. Support) so sidebar CTAs do not compete.
+     */
+    variant?: 'default' | 'quiet';
+    /**
      * Profile data containing KYC status and company number.
      * If not provided, component will show disabled state.
      */
@@ -35,7 +39,12 @@ interface CertificateDownloadProps {
     compliance?: ComplianceSnapshot | null;
 }
 
-export function CertificateDownload({ profile, compliance }: CertificateDownloadProps) {
+export function CertificateDownload({
+    profile,
+    compliance,
+    variant = 'default',
+}: CertificateDownloadProps) {
+    const quiet = variant === 'quiet';
     const [isCertBusy, setIsCertBusy] = useState(false);
     const { toast } = useToast();
 
@@ -119,26 +128,30 @@ export function CertificateDownload({ profile, compliance }: CertificateDownload
     };
 
     return (
-        <div className="px-3 sm:px-4 pb-4 sm:pb-6 pt-3 sm:pt-4 border-t border-border">
-            <div className="flex flex-col gap-3">
+        <div
+            className={
+                quiet
+                    ? 'border-t border-border/50 bg-transparent px-3 py-2.5 sm:px-3 sm:pb-3 sm:pt-2.5'
+                    : 'border-t border-border px-3 pb-4 pt-3 sm:px-4 sm:pb-6 sm:pt-4'
+            }
+        >
+            <div className={quiet ? 'flex flex-col gap-2' : 'flex flex-col gap-3'}>
                 {canDownload ? (
                     <>
                         <Button
+                            type="button"
                             onClick={handleDownloadCertification}
                             disabled={isCertBusy}
-                            className="w-full min-h-[44px] sm:min-h-0 text-body font-semibold py-2.5 sm:py-2.5 touch-manipulation"
+                            variant={quiet ? 'outline' : 'primary'}
+                            size={quiet ? 'sm' : 'md'}
+                            fullWidth
+                            className={
+                                quiet
+                                    ? 'touch-manipulation border-border font-normal text-body-sm text-muted-foreground hover:text-foreground'
+                                    : 'touch-manipulation text-body font-semibold'
+                            }
                         >
-                            {isCertBusy ? (
-                                <>
-                                    <Download className="w-4 h-4 mr-2 animate-pulse" />
-                                    Preparing…
-                                </>
-                            ) : (
-                                <>
-                                    <FileText className="w-4 h-4 mr-2" />
-                                    Download certificate
-                                </>
-                            )}
+                            {isCertBusy ? 'Preparing…' : 'Download certificate'}
                         </Button>
                     </>
                 ) : (() => {
@@ -147,14 +160,26 @@ export function CertificateDownload({ profile, compliance }: CertificateDownload
                         : (!isKycApproved ? 'primary' : 'company');
                     const meta = getCertificateBlockMeta(reason);
                     return (
-                        <div className="rounded-md bg-amber-50 border border-amber-200 p-3">
+                        <div
+                            className={
+                                quiet
+                                    ? 'rounded-md border border-amber-200/70 bg-amber-50/80 p-2.5'
+                                    : 'rounded-md border border-amber-200 bg-amber-50 p-3'
+                            }
+                        >
                             <div className="flex items-start gap-2">
-                                <AlertCircle className="w-4 h-4 text-amber-900 mt-0.5 flex-shrink-0" />
-                                <div className="flex flex-col gap-1">
-                                    <p className="text-caption font-medium text-amber-900 leading-tight">
+                                <AlertCircle
+                                    className={`mt-0.5 flex-shrink-0 text-amber-900 ${quiet ? 'h-3.5 w-3.5' : 'h-4 w-4'}`}
+                                />
+                                <div className="flex flex-col gap-0.5">
+                                    <p
+                                        className={`font-medium leading-tight text-amber-900 ${quiet ? 'text-[0.6875rem]' : 'text-caption'}`}
+                                    >
                                         {meta.title}
                                     </p>
-                                    <p className="text-caption text-amber-900/80 leading-tight">
+                                    <p
+                                        className={`leading-tight text-amber-900/80 ${quiet ? 'text-[0.6875rem]' : 'text-caption'}`}
+                                    >
                                         {meta.description}
                                     </p>
                                 </div>

@@ -3,11 +3,13 @@
 import { useMemo } from 'react';
 import useSWR from 'swr';
 import { swrFetcher } from '@/services/http';
+import { useProfile, useWhoAmI } from '@/hooks/useDashboardData';
 import { Card, CardContent } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
 import { REGISTERED_OFFICE_ADDRESS } from '@/lib/config/address';
 import { toast } from '@/hooks/use-toast';
 import { mutate as globalMutate } from 'swr';
+import { DASHBOARD_BOOTSTRAP_KEY } from '@/lib/swrKeys';
 import { useRouter } from 'next/navigation';
 
 const ForwardingAddressCard = dynamic(() => import('@/components/account/ForwardingAddressCard').then(mod => ({ default: mod.ForwardingAddressCard })), { ssr: false });
@@ -17,8 +19,8 @@ export default function AccountAddressesPage() {
 
     // Fetch account data
     const { data: accountData, mutate: mutateAccount } = useSWR<{ ok: boolean; data: any }>('/api/bff/account', swrFetcher);
-    const { data: profileData, mutate: mutateProfile } = useSWR('/api/bff/profile', swrFetcher);
-    const { data: userData, mutate: mutateUser } = useSWR('/api/bff/auth/whoami', swrFetcher);
+    const { data: profileData, mutate: mutateProfile } = useProfile();
+    const { data: userData, mutate: mutateUser } = useWhoAmI();
 
     const user = userData?.data?.user || userData?.data || null;
     const profile = profileData?.data;
@@ -90,9 +92,8 @@ export default function AccountAddressesPage() {
                 mutateProfile(),
                 mutateAccount(),
                 mutateUser(),
-                globalMutate('/api/bff/profile'),
+                globalMutate(DASHBOARD_BOOTSTRAP_KEY),
                 globalMutate('/api/bff/account'),
-                globalMutate('/api/bff/auth/whoami'),
             ]);
 
             router.refresh();
@@ -118,7 +119,7 @@ export default function AccountAddressesPage() {
                     Addresses
                 </h1>
                 <p className="text-body-sm sm:text-body md:text-body-lg text-muted-foreground">
-                    Manage your business and forwarding addresses
+                    View your registered business address and manage your mail forwarding address
                 </p>
             </div>
 

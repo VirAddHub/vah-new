@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import useSWR from 'swr';
+import { useDashboardBootstrap } from '@/hooks/useDashboardData';
 import Link from "next/link";
 import {
   Building2,
@@ -44,7 +45,6 @@ import { ForwardingModal } from "@/components/dashboard/user/ForwardingModal";
 import { RightPanel } from "@/components/dashboard/user/RightPanel";
 import type { MailItem } from "@/components/dashboard/user/types";
 import { getMailItemPrimaryLabel } from "@/lib/mailItemDates";
-import { PROFILE_SWR_KEY } from "@/lib/swrKeys";
 import dynamic from 'next/dynamic';
 
 // Lazy load Sumsub widget to avoid SSR issues
@@ -128,25 +128,30 @@ function ProfileErrorState({ onRetry }: { onRetry: () => void }) {
 
 export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardProps) {
   const { toast } = useToast();
-  const { data: profileData, error: profileError, isLoading: profileLoading, mutate: refreshProfile } = useSWR(
-    PROFILE_SWR_KEY,
-    fetcher,
-    {
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
-      dedupingInterval: 3000,
-    }
-  );
+  const {
+    data: bootData,
+    error: bootError,
+    isLoading: bootLoading,
+    mutate: refreshBootstrap,
+  } = useDashboardBootstrap();
 
   const userProfile =
-    profileData?.ok && profileData?.data ? profileData.data : null;
+    bootData?.ok && bootData.data?.profile != null
+      ? (bootData.data.profile as any)
+      : null;
+
+  /** Prefer top-level compliance from bootstrap (same payload as nav); profile may omit it. */
+  const complianceFromBootstrap =
+    bootData?.ok === true && bootData.data?.compliance != null
+      ? (bootData.data.compliance as Compliance)
+      : undefined;
 
   const profileGate = useMemo<'loading' | 'error' | 'ready'>(() => {
-    if (profileError) return 'error';
+    if (bootError) return 'error';
     if (userProfile) return 'ready';
-    if (profileLoading) return 'loading';
+    if (bootLoading) return 'loading';
     return 'error';
-  }, [profileError, userProfile, profileLoading]);
+  }, [bootError, userProfile, bootLoading]);
 
   const [selectedMail, setSelectedMail] = useState<string[]>([]);
   const [selectedMailDetail, setSelectedMailDetail] = useState<MailItem | null>(null);
@@ -629,7 +634,9 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   const businessAddressLine3 = VAH_ADDRESS_LINES[2];
   const businessAddressLine4 = VAH_ADDRESS_LINES[3];
 
-  const rawCompliance = userProfile?.compliance as Compliance | undefined;
+  const rawCompliance =
+    complianceFromBootstrap ??
+    (userProfile?.compliance as Compliance | undefined);
   const identityReady =
     profileGate === 'ready' &&
     rawCompliance != null &&
@@ -801,7 +808,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
   }
 
   if (profileGate === 'error' || !userProfile) {
-    return <ProfileErrorState onRetry={() => void refreshProfile()} />;
+    return <ProfileErrorState onRetry={() => void refreshBootstrap()} />;
   }
 
   return (
@@ -826,7 +833,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
               userProfile={userProfile}
               compliance={compliance}
               identityReady={identityReady}
-              onRefreshIdentity={() => void refreshProfile()}
+              onRefreshIdentity={() => void refreshBootstrap()}
               showIdentitySuccessBanner={showIdentitySuccessBanner}
               onNavigate={handleNavigate}
             />

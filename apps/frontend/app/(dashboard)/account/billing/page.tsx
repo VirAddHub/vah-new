@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useBillingOverview, useInvoices } from '@/hooks/useDashboardData';
-import { SubscriptionSummary } from '@/lib/account/types';
+import { InvoiceRow, SubscriptionSummary } from '@/lib/account/types';
 import dynamic from 'next/dynamic';
 
 const AccountBillingCard = dynamic(() => import('@/components/account/AccountBillingCard').then(mod => ({ default: mod.AccountBillingCard })), { ssr: false });
@@ -11,10 +11,35 @@ const InvoicesCard = dynamic(() => import('@/components/account/InvoicesCard').t
 export default function AccountBillingPage() {
     // Fetch billing data using stable hooks
     const { data: overview, mutate: mutateOverview } = useBillingOverview();
-    const { data: invoicesData, mutate: mutateInvoices } = useInvoices();
+    const {
+        data: invoicesData,
+        error: invoicesSwrError,
+        isLoading: invoicesIsLoading,
+        mutate: mutateInvoices,
+    } = useInvoices();
 
     const o = overview?.data;
-    const invoicesRaw = invoicesData?.data?.items || [];
+
+    const invoicesFetchFailed = Boolean(invoicesSwrError);
+    const invoicesApiNotOk =
+        invoicesData != null &&
+        typeof invoicesData === 'object' &&
+        (invoicesData as { ok?: boolean }).ok !== true;
+    const invoicesLoadError = invoicesFetchFailed || invoicesApiNotOk;
+
+    const invoicesItemsReady =
+        invoicesData != null &&
+        typeof invoicesData === 'object' &&
+        (invoicesData as { ok?: boolean }).ok === true;
+
+    const invoicesRaw = invoicesItemsReady
+        ? Array.isArray((invoicesData as { data?: { items?: unknown } }).data?.items)
+            ? ((invoicesData as { data: { items: unknown[] } }).data.items)
+            : []
+        : [];
+
+    const invoicesSectionLoading =
+        !invoicesLoadError && (invoicesIsLoading || invoicesData === undefined);
 
     // Build subscription summary
     const subscription = useMemo<SubscriptionSummary>(() => {
@@ -35,8 +60,8 @@ export default function AccountBillingPage() {
     }, [o]);
 
     // Transform invoices
-    const invoices = useMemo(() => {
-        return invoicesRaw.map((inv: any) => {
+    const invoices = useMemo((): InvoiceRow[] => {
+        return invoicesRaw.map((inv: any): InvoiceRow => {
             let dateLabel = 'N/A';
 
             if (inv.period_end) {
@@ -94,7 +119,7 @@ export default function AccountBillingPage() {
                 total_label: inv.amount_pence ? `£${(inv.amount_pence / 100).toFixed(2)}` : '£0.00',
                 status: inv.status === 'paid' ? 'paid' : inv.status === 'void' ? 'void' : inv.status === 'failed' ? 'failed' : 'not_paid',
                 date_label: dateLabel,
-                download_url: downloadUrl
+                download_url: downloadUrl ?? undefined,
             };
         });
     }, [invoicesRaw]);
@@ -106,7 +131,7 @@ export default function AccountBillingPage() {
                     Billing
                 </h1>
                 <p className="text-body-sm text-muted-foreground sm:text-body">
-                    Your plan, payment method, and invoice history.
+                    View your subscription and invoices.
                 </p>
             </div>
 
@@ -118,7 +143,12 @@ export default function AccountBillingPage() {
                         await mutateInvoices();
                     }}
                 />
-                <InvoicesCard invoices={invoices} />
+                <InvoicesCard
+                    isLoading={invoicesSectionLoading}
+                    loadError={invoicesLoadError}
+                    invoices={invoices}
+                    onRetry={() => void mutateInvoices()}
+                />
             </div>
         </div>
     );

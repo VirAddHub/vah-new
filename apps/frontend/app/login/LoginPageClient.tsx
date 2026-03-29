@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { mutate } from 'swr';
-import { PROFILE_SWR_KEY } from '@/lib/swrKeys';
+import { DASHBOARD_BOOTSTRAP_KEY } from '@/lib/swrKeys';
 
 type LoginBrandVariant = 'default' | 'onDark';
 
@@ -233,12 +233,58 @@ export function LoginPageClient() {
         localStorage.setItem('vah_user', JSON.stringify(user));
       }
 
-      // Prime session-backed profile cache so the mail dashboard does not paint with stale/empty SWR first
+      // Drop any in-memory SWR for the previous session before confirming the new one
       try {
-        await mutate(PROFILE_SWR_KEY, undefined, { revalidate: true });
+        await mutate(DASHBOARD_BOOTSTRAP_KEY, undefined, { revalidate: false });
       } catch {
-        /* non-fatal — dashboard will fetch on mount */
+        /* non-fatal */
       }
+
+      const whoRes = await fetch('/api/bff/auth/whoami', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      const whoJson = await whoRes.json().catch(() => ({}));
+      const whoOk =
+        whoRes.ok &&
+        whoJson?.ok === true &&
+        (whoJson?.data?.user?.id != null || whoJson?.data?.user != null);
+
+      if (!whoOk) {
+        setError('Could not confirm your session. Please try signing in again.');
+        setLoading(false);
+        isSubmittingRef.current = false;
+        return;
+      }
+
+      const bootRes = await fetch('/api/bff/dashboard/bootstrap', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+      const bootJson = await bootRes.json().catch(() => ({}));
+      if (!bootRes.ok || bootJson?.ok !== true) {
+        setError('Could not load your account. Please try again.');
+        setLoading(false);
+        isSubmittingRef.current = false;
+        return;
+      }
+
+      try {
+        await mutate(DASHBOARD_BOOTSTRAP_KEY, bootJson, { revalidate: false });
+      } catch {
+        /* non-fatal */
+      }
+
+      if (process.env.NEXT_PUBLIC_DASHBOARD_BOOTSTRAP_DEBUG === '1') {
+        // eslint-disable-next-line no-console
+        console.info('[login] whoami + bootstrap confirmed', {
+          t: Date.now(),
+          fetchedAt: bootJson?.data?.fetchedAt,
+        });
+      }
+
+      setLoading(false);
+      isSubmittingRef.current = false;
 
       // Redirect to mail inbox (or admin dashboard for admins)
       const isAdmin = user?.is_admin || user?.role === 'admin';
