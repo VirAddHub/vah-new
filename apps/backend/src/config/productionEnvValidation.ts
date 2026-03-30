@@ -9,7 +9,11 @@
  */
 
 import { isStripeEnabled, getStripeConfig, getBillingProvider } from './billing';
-import { isSumsubApiConfigured, resolveSumsubWebhookSecret } from '../lib/sumsubConfig';
+import {
+  isSumsubApiConfigured,
+  resolveSumsubApiConfig,
+  resolveSumsubWebhookSecret,
+} from '../lib/sumsubConfig';
 import { logger } from '../lib/logger';
 import { isDatabaseSslInsecureEnvRequested } from '../lib/pgSslConfig';
 
@@ -83,11 +87,15 @@ export function collectProductionEnvIssues(): ProductionEnvCheckResult {
   }
 
   // --- Inbound webhooks (fail closed where the route already does) ---
-  // Postmark: webhooks-postmark.ts returns 401 if secret missing/mismatch in production.
-  const postmarkWh = trim('POSTMARK_WEBHOOK_SECRET');
-  if (!postmarkWh || postmarkWh.length < 16) {
+  // Postmark: webhooks-postmark.ts reads POSTMARK_WEBHOOK_SECRET || POSTMARK_WEBHOOK_PASS (same header verify).
+  const postmarkWh = trim('POSTMARK_WEBHOOK_SECRET') || trim('POSTMARK_WEBHOOK_PASS');
+  if (!postmarkWh || postmarkWh.length < 8) {
     fatal.push(
-      'POSTMARK_WEBHOOK_SECRET must be set (min 16 characters) in production — inbound Postmark webhooks would otherwise reject all traffic or be misconfigured.'
+      'POSTMARK_WEBHOOK_SECRET or POSTMARK_WEBHOOK_PASS must be set (min 8 characters) in production — inbound Postmark webhooks verify this against X-Postmark-Webhook-Secret.'
+    );
+  } else if (postmarkWh.length < 16) {
+    warnings.push(
+      'Postmark webhook secret is under 16 characters — fine for early/sandbox-style setups; prefer 16+ for stronger inbound webhook authentication.'
     );
   }
 
@@ -108,13 +116,15 @@ export function collectProductionEnvIssues(): ProductionEnvCheckResult {
 
   if (isSumsubApiConfigured()) {
     const wh = resolveSumsubWebhookSecret();
+    const sumsubMode = resolveSumsubApiConfig()?.mode;
+    const sumsubWhMinLen = sumsubMode === 'sandbox' ? 8 : 16;
     if (!wh.secret) {
       fatal.push(
         'Sumsub API is configured but no webhook secret is set. Set SUMSUB_WEBHOOK_SECRET or SUMSUB_WEBHOOK_SECRET_SANDBOX (matching your mode).'
       );
-    } else if (wh.secret.length < 16) {
+    } else if (wh.secret.length < sumsubWhMinLen) {
       fatal.push(
-        `Sumsub webhook secret (${wh.source}) must be at least 16 characters in production (same bar as POSTMARK_WEBHOOK_SECRET).`
+        `Sumsub webhook secret (${wh.source}) must be at least ${sumsubWhMinLen} characters in production (${sumsubMode === 'sandbox' ? 'sandbox' : 'live'} mode).`
       );
     }
   }

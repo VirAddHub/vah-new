@@ -6,8 +6,14 @@ import type { Request, Response } from 'express';
  * Inbound Postmark webhook shared secret (configure in Postmark → Webhooks → custom header).
  * Production: must be set and sent on every request or we reject with 401 (fail-closed).
  * Startup: `productionEnvValidation` also fatals if missing/short in NODE_ENV=production.
+ *
+ * `POSTMARK_WEBHOOK_PASS` is accepted as an alias for hosts that already use that name.
  */
-const WEBHOOK_SECRET = (process.env.POSTMARK_WEBHOOK_SECRET || '').trim();
+const WEBHOOK_SECRET = (
+  process.env.POSTMARK_WEBHOOK_SECRET ||
+  process.env.POSTMARK_WEBHOOK_PASS ||
+  ''
+).trim();
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 function readPostmarkWebhookSecretHeader(req: Request): string | undefined {

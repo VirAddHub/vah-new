@@ -6,7 +6,8 @@ export const APP_BASE_URL =
   process.env.APP_URL?.trim() ||
   'http://localhost:3000';
 
-export const POSTMARK_WEBHOOK_SECRET = process.env.POSTMARK_WEBHOOK_SECRET || '';
+export const POSTMARK_WEBHOOK_SECRET =
+  process.env.POSTMARK_WEBHOOK_SECRET || process.env.POSTMARK_WEBHOOK_PASS || '';
 export const POSTMARK_TOKEN = process.env.POSTMARK_TOKEN || '';
 
 export const PORT = Number(process.env.PORT || 3001);
