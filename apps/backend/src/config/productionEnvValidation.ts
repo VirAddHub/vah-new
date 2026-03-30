@@ -117,14 +117,17 @@ export function collectProductionEnvIssues(): ProductionEnvCheckResult {
   if (isSumsubApiConfigured()) {
     const wh = resolveSumsubWebhookSecret();
     const sumsubMode = resolveSumsubApiConfig()?.mode;
-    const sumsubWhMinLen = sumsubMode === 'sandbox' ? 8 : 16;
     if (!wh.secret) {
       fatal.push(
         'Sumsub API is configured but no webhook secret is set. Set SUMSUB_WEBHOOK_SECRET or SUMSUB_WEBHOOK_SECRET_SANDBOX (matching your mode).'
       );
-    } else if (wh.secret.length < sumsubWhMinLen) {
+    } else if (sumsubMode === 'live' && wh.secret.length < 16) {
       fatal.push(
-        `Sumsub webhook secret (${wh.source}) must be at least ${sumsubWhMinLen} characters in production (${sumsubMode === 'sandbox' ? 'sandbox' : 'live'} mode).`
+        `Sumsub webhook secret (${wh.source}) must be at least 16 characters in production (live mode).`
+      );
+    } else if (sumsubMode === 'sandbox' && wh.secret.length < 8) {
+      warnings.push(
+        `Sumsub sandbox webhook secret (${wh.source}) is under 8 characters — boot continues; paste the full signing secret from the Sumsub sandbox webhook settings or webhooks may return 401.`
       );
     }
   }
