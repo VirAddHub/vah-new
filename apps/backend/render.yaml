@@ -80,7 +80,9 @@ services:
     # Runs every 1 minute: "* * * * *" (minute hour day month weekday)
     # To change interval: "*/2 * * * *" = every 2 min, "*/5 * * * *" = every 5 min, "*/10 * * * *" = every 10 min
     schedule: "* * * * *"
+    # poppler-utils provides `pdftoppm` for PDF→PNG (OpenAI vision) when OPENAI_API_KEY is set
     buildCommand: |
+      apt-get update -y && apt-get install -y poppler-utils
       npm ci
       npm run build
     runCommand: cd apps/backend && node dist/src/workers/onedriveMailIngest.js

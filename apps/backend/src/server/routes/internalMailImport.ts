@@ -15,7 +15,9 @@
  *   fileName: string,
  *   oneDriveFileId?: string,
  *   oneDriveDownloadUrl?: string,
- *   createdAt?: string
+ *   createdAt?: string,
+ *   sender?: string | null,
+ *   mailType?: string | null
  * }
  * 
  * Response:
@@ -43,6 +45,8 @@ const MailImportPayload = z.object({
   oneDriveFileId: z.string().optional(),
   oneDriveDownloadUrl: z.string().url().optional().nullable(),
   createdAt: z.string().optional(),
+  sender: z.union([z.string(), z.null()]).optional(),
+  mailType: z.union([z.string(), z.null()]).optional(),
 });
 
 // Convert tag slug to human-readable title
@@ -317,7 +321,13 @@ router.post('/from-onedrive', async (req, res) => {
     const dateFromName = tryParseDateFromFilename(payload.fileName);
     // Date is stored in received_date, not included in subject
     const subject = `${tagTitle} letter`;
-    const senderName = tagTitle;
+    const aiSender =
+      payload.sender != null && String(payload.sender).trim() ? String(payload.sender).trim() : null;
+    const senderName = aiSender ?? tagTitle;
+    const mailTypeValue =
+      payload.mailType != null && String(payload.mailType).trim()
+        ? String(payload.mailType).trim()
+        : null;
     
     // Use date from filename if available, otherwise use receivedAtMs
     const finalReceivedDate = dateFromName 
@@ -344,9 +354,10 @@ router.post('/from-onedrive', async (req, res) => {
         `INSERT INTO mail_item (
           idempotency_key, user_id, business_id, subject, sender_name, received_date,
           scan_file_url, file_size, scanned, status, tag, source_slug, notes,
-          received_at_ms, created_at, updated_at, locked, locked_reason, admin_note
+          received_at_ms, created_at, updated_at, locked, locked_reason, admin_note,
+          mail_type
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
         ON CONFLICT (idempotency_key) DO UPDATE SET
           user_id = EXCLUDED.user_id,
           business_id = EXCLUDED.business_id,
@@ -363,7 +374,8 @@ router.post('/from-onedrive', async (req, res) => {
           updated_at = EXCLUDED.updated_at,
           locked = EXCLUDED.locked,
           locked_reason = EXCLUDED.locked_reason,
-          admin_note = EXCLUDED.admin_note
+          admin_note = EXCLUDED.admin_note,
+          mail_type = EXCLUDED.mail_type
         RETURNING id, subject, status, tag, locked, locked_reason`,
         [
           idempotencyKey,                    // $1: idempotency_key
@@ -385,6 +397,7 @@ router.post('/from-onedrive', async (req, res) => {
           locked,                             // $17: locked
           lockedReason,                       // $18: locked_reason
           locked ? `Ingested while ${lockedReason}` : null, // $19: admin_note
+          mailTypeValue,                      // $20: mail_type (AI classification)
         ]
       );
     } else {
@@ -400,9 +413,10 @@ router.post('/from-onedrive', async (req, res) => {
         `INSERT INTO mail_item (
           idempotency_key, user_id, business_id, subject, sender_name, received_date,
           scan_file_url, file_size, scanned, status, tag, source_slug, notes,
-          received_at_ms, created_at, updated_at, admin_note
+          received_at_ms, created_at, updated_at, admin_note,
+          mail_type
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
         ON CONFLICT (idempotency_key) DO UPDATE SET
           user_id = EXCLUDED.user_id,
           business_id = EXCLUDED.business_id,
@@ -417,7 +431,8 @@ router.post('/from-onedrive', async (req, res) => {
           notes = EXCLUDED.notes,
           received_at_ms = EXCLUDED.received_at_ms,
           updated_at = EXCLUDED.updated_at,
-          admin_note = EXCLUDED.admin_note
+          admin_note = EXCLUDED.admin_note,
+          mail_type = EXCLUDED.mail_type
         RETURNING id, subject, status, tag`,
         [
           idempotencyKey,                    // $1: idempotency_key
@@ -437,6 +452,7 @@ router.post('/from-onedrive', async (req, res) => {
           now,                                // $15: created_at
           now,                                // $16: updated_at
           locked ? `Ingested while ${lockedReason} (locked columns not available)` : null, // $17: admin_note
+          mailTypeValue,                      // $18: mail_type (AI classification)
         ]
       );
     }

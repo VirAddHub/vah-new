@@ -18,6 +18,8 @@
  * Environment variables:
  * - MAIL_IMPORT_WEBHOOK_URL (required) - URL of the internal backend endpoint
  * - MAIL_IMPORT_WEBHOOK_SECRET (required) - Shared secret for authentication
+ * - OPENAI_API_KEY (optional) - If set, classifies each PDF (sender + mailType) via gpt-4o-mini before webhook POST
+ *   Requires `pdftoppm` (poppler-utils) on the host: first page is rasterised to PNG, then sent to the API.
  * - ONEDRIVE_MAIL_POLL_INTERVAL_MS (optional) - Polling interval in ms (default: 300000 = 5 minutes)
  * - ONEDRIVE_MAIL_PROCESSED_FOLDER_ID or GRAPH_MAIL_PROCESSED_FOLDER_ID (optional) - OneDrive folder ID for processed/archive folder
  *   - If set, files are moved here after successful import (new imports only, not duplicates)
@@ -28,8 +30,119 @@
  *   - Examples: 120000 (2 min), 300000 (5 min), 600000 (10 min)
  */
 
+import { execFileSync } from 'child_process';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import { listInboxFiles, moveFileToProcessed } from '../services/onedriveClient';
 import { parseMailFilename } from '../services/mailFilenameParser';
+
+function unlinkSafe(filePath: string): void {
+  try {
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** First PNG written by pdftoppm for this output prefix (page suffix varies by poppler version). */
+function resolvePdftoppmPng(tmpDir: string, baseName: string): string | null {
+  let names: string[];
+  try {
+    names = fs.readdirSync(tmpDir);
+  } catch {
+    return null;
+  }
+  const png = names
+    .filter(n => n.startsWith(`${baseName}-`) && n.endsWith('.png'))
+    .sort()[0];
+  return png ? path.join(tmpDir, png) : null;
+}
+
+async function extractSenderFromPdf(downloadUrl: string): Promise<{ sender: string | null; mailType: string | null }> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    return { sender: null, mailType: null };
+  }
+
+  const stamp = `${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+  const tmpDir = os.tmpdir();
+  const baseName = `mail_${stamp}`;
+  const tmpPdf = path.join(tmpDir, `${baseName}.pdf`);
+  const tmpImgBase = path.join(tmpDir, baseName);
+  let pngPath: string | null = null;
+
+  try {
+    const pdfResponse = await fetch(downloadUrl);
+    if (!pdfResponse.ok) return { sender: null, mailType: null };
+
+    const pdfBytes = new Uint8Array(await pdfResponse.arrayBuffer());
+    fs.writeFileSync(tmpPdf, pdfBytes);
+
+    execFileSync('pdftoppm', ['-r', '150', '-l', '1', '-png', tmpPdf, tmpImgBase], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      maxBuffer: 10 * 1024 * 1024,
+    });
+
+    pngPath = resolvePdftoppmPng(tmpDir, baseName);
+    if (!pngPath) {
+      console.warn('[extractSenderFromPdf] pdftoppm did not produce a PNG');
+      return { sender: null, mailType: null };
+    }
+
+    const imgBase64 = fs.readFileSync(pngPath).toString('base64');
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        max_tokens: 100,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Look at this letter. Reply with JSON only, no markdown: { "sender": "organisation or person name", "mailType": "letter or bill or parcel notice etc" }. If unsure, use null.',
+              },
+              {
+                type: 'image_url',
+                image_url: { url: `data:image/png;base64,${imgBase64}` },
+              },
+            ],
+          },
+        ],
+      }),
+    });
+
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const raw = data.choices?.[0]?.message?.content ?? '{}';
+    const text = raw
+      .trim()
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```$/i, '')
+      .trim();
+    const parsed = JSON.parse(text) as { sender?: unknown; mailType?: unknown };
+    const sender =
+      parsed.sender != null && String(parsed.sender).trim() ? String(parsed.sender).trim() : null;
+    const mailType =
+      parsed.mailType != null && String(parsed.mailType).trim() ? String(parsed.mailType).trim() : null;
+    return { sender, mailType };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn('[extractSenderFromPdf] Failed:', msg);
+    return { sender: null, mailType: null };
+  } finally {
+    unlinkSafe(tmpPdf);
+    if (pngPath) unlinkSafe(pngPath);
+  }
+}
 
 const WEBHOOK_URL = process.env.MAIL_IMPORT_WEBHOOK_URL;
 const WEBHOOK_SECRET = process.env.MAIL_IMPORT_WEBHOOK_SECRET;
@@ -68,6 +181,10 @@ async function processFile(file: { id: string; name: string; createdDateTime: st
   const createdAt =
     parsed.dateIso ? `${parsed.dateIso}T00:00:00.000Z` : file.createdDateTime;
 
+  const aiData = file.downloadUrl
+    ? await extractSenderFromPdf(file.downloadUrl)
+    : { sender: null, mailType: null };
+
   const payload = {
     userId: parsed.userId,
     sourceSlug: parsed.sourceSlug,
@@ -75,6 +192,8 @@ async function processFile(file: { id: string; name: string; createdDateTime: st
     oneDriveFileId: file.id,
     oneDriveDownloadUrl: file.downloadUrl ?? null,
     createdAt,
+    sender: aiData.sender,
+    mailType: aiData.mailType,
   };
 
   // Call webhook
