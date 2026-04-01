@@ -34,7 +34,11 @@ import { execFileSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { listInboxFiles, moveFileToProcessed } from '../services/onedriveClient';
+import {
+  listInboxFiles,
+  moveFileToProcessed,
+  downloadDriveItemPdfBytes,
+} from '../services/onedriveClient';
 import { parseMailFilename } from '../services/mailFilenameParser';
 
 function unlinkSafe(filePath: string): void {
@@ -46,6 +50,48 @@ function unlinkSafe(filePath: string): void {
 }
 
 /** First PNG written by pdftoppm for this output prefix (page suffix varies by poppler version). */
+function isPdfMagic(buf: Uint8Array): boolean {
+  if (buf.length < 5) return false;
+  return String.fromCharCode(buf[0], buf[1], buf[2], buf[3], buf[4]).startsWith('%PDF');
+}
+
+/** PDF bytes for AI: prefer URL (graph download); if HTML or missing, use Graph /content. */
+async function loadPdfBytesForAi(
+  downloadUrl: string | undefined,
+  fileId: string
+): Promise<Uint8Array | null> {
+  if (downloadUrl) {
+    try {
+      const r = await fetch(downloadUrl);
+      if (r.ok) {
+        const buf = new Uint8Array(await r.arrayBuffer());
+        if (isPdfMagic(buf)) {
+          return buf;
+        }
+        console.warn('[onedriveMailIngest] downloadUrl did not return PDF bytes (likely HTML page)', {
+          fileId,
+          contentType: r.headers.get('content-type'),
+        });
+      } else {
+        console.warn('[onedriveMailIngest] downloadUrl fetch not ok', { fileId, status: r.status });
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn('[onedriveMailIngest] downloadUrl fetch error', { fileId, message: msg });
+    }
+  }
+
+  const graphBuf = await downloadDriveItemPdfBytes(fileId);
+  if (graphBuf && graphBuf.length > 0) {
+    const u8 = new Uint8Array(graphBuf);
+    if (isPdfMagic(u8)) {
+      return u8;
+    }
+  }
+  console.warn('[onedriveMailIngest] Could not load PDF bytes for AI', { fileId });
+  return null;
+}
+
 function resolvePdftoppmPng(tmpDir: string, baseName: string): string | null {
   let names: string[];
   try {
@@ -59,7 +105,10 @@ function resolvePdftoppmPng(tmpDir: string, baseName: string): string | null {
   return png ? path.join(tmpDir, png) : null;
 }
 
-async function extractSenderFromPdf(downloadUrl: string): Promise<{ sender: string | null; mailType: string | null }> {
+async function extractSenderFromPdf(
+  downloadUrl: string | undefined,
+  fileId: string
+): Promise<{ sender: string | null; mailType: string | null }> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return { sender: null, mailType: null };
@@ -73,10 +122,10 @@ async function extractSenderFromPdf(downloadUrl: string): Promise<{ sender: stri
   let pngPath: string | null = null;
 
   try {
-    const pdfResponse = await fetch(downloadUrl);
-    if (!pdfResponse.ok) return { sender: null, mailType: null };
-
-    const pdfBytes = new Uint8Array(await pdfResponse.arrayBuffer());
+    const pdfBytes = await loadPdfBytesForAi(downloadUrl, fileId);
+    if (!pdfBytes) {
+      return { sender: null, mailType: null };
+    }
     fs.writeFileSync(tmpPdf, pdfBytes);
 
     execFileSync('pdftoppm', ['-r', '150', '-l', '1', '-png', tmpPdf, tmpImgBase], {
@@ -181,9 +230,7 @@ async function processFile(file: { id: string; name: string; createdDateTime: st
   const createdAt =
     parsed.dateIso ? `${parsed.dateIso}T00:00:00.000Z` : file.createdDateTime;
 
-  const aiData = file.downloadUrl
-    ? await extractSenderFromPdf(file.downloadUrl)
-    : { sender: null, mailType: null };
+  const aiData = await extractSenderFromPdf(file.downloadUrl, file.id);
 
   const payload = {
     userId: parsed.userId,

@@ -130,12 +130,58 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
       id: item.id,
       name: item.name,
       createdDateTime: item.createdDateTime,
-      downloadUrl: item.webUrl || item['@microsoft.graph.downloadUrl'], // Prefer webUrl (stable SharePoint URL) over downloadUrl (temporary)
+      // Prefer @microsoft.graph.downloadUrl for server-side fetch (PDF bytes). webUrl is a SharePoint
+      // HTML page — anonymous fetch returns HTML, breaking pdftoppm / OpenAI vision in the worker.
+      downloadUrl: item['@microsoft.graph.downloadUrl'] || item.webUrl,
       size: item.size,
     });
   }
 
   return files;
+}
+
+/**
+ * Download raw file bytes via Graph (Bearer). Use when @microsoft.graph.downloadUrl is missing
+ * or fetch returned HTML — required for worker PDF→PNG→OpenAI pipeline.
+ */
+export async function downloadDriveItemPdfBytes(fileId: string): Promise<Buffer | null> {
+  const token = await getGraphAccessToken();
+  const driveId = process.env.ONEDRIVE_DRIVE_ID;
+  const userUpn = process.env.ONEDRIVE_USER_UPN || process.env.MS_SHAREPOINT_USER_UPN || process.env.GRAPH_USER_UPN;
+
+  let baseUrl: string;
+  if (driveId && driveId !== 'me') {
+    baseUrl = `https://graph.microsoft.com/v1.0/drives/${encodeURIComponent(driveId)}`;
+  } else if (userUpn) {
+    baseUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userUpn)}/drive`;
+  } else {
+    console.error('[onedriveClient] downloadDriveItemPdfBytes: set ONEDRIVE_DRIVE_ID or ONEDRIVE_USER_UPN');
+    return null;
+  }
+
+  const url = `${baseUrl}/items/${encodeURIComponent(fileId)}/content`;
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    redirect: 'follow',
+  });
+
+  if (!response.ok) {
+    const t = await response.text().catch(() => '');
+    console.error(`[onedriveClient] downloadDriveItemPdfBytes failed: ${response.status}`, t.slice(0, 200));
+    return null;
+  }
+
+  const buf = Buffer.from(await response.arrayBuffer());
+  if (buf.length >= 5) {
+    const head = buf.slice(0, 5).toString('ascii');
+    if (head.startsWith('%PDF')) {
+      return buf;
+    }
+  }
+  console.warn('[onedriveClient] downloadDriveItemPdfBytes: response was not a PDF');
+  return null;
 }
 
 /**
@@ -215,7 +261,8 @@ export async function moveFileToProcessed(fileId: string): Promise<OneDriveFile>
     id: finalItem.id,
     name: finalItem.name || '',
     createdDateTime: finalItem.createdDateTime || '',
-    downloadUrl: finalItem.webUrl || finalItem['@microsoft.graph.downloadUrl'] || '', // Prefer webUrl (stable SharePoint URL) over downloadUrl (temporary)
+    // Stable browser link for DB / users; worker AI uses Graph /content if needed
+    downloadUrl: finalItem.webUrl || finalItem['@microsoft.graph.downloadUrl'] || '',
     size: finalItem.size || 0,
   };
 }
