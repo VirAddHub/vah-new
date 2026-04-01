@@ -19,7 +19,7 @@
  * - MAIL_IMPORT_WEBHOOK_URL (required) - URL of the internal backend endpoint
  * - MAIL_IMPORT_WEBHOOK_SECRET (required) - Shared secret for authentication
  * - OPENAI_API_KEY (optional) - If set, classifies each PDF (sender + mailType) via gpt-4o-mini before webhook POST
- *   Requires `pdftoppm` (poppler-utils) on the host: first page is rasterised to PNG, then sent to the API.
+ *   Sends PDF as data:application/pdf;base64 in the chat vision payload (no poppler / system deps).
  * - ONEDRIVE_MAIL_POLL_INTERVAL_MS (optional) - Polling interval in ms (default: 300000 = 5 minutes)
  * - ONEDRIVE_MAIL_PROCESSED_FOLDER_ID or GRAPH_MAIL_PROCESSED_FOLDER_ID (optional) - OneDrive folder ID for processed/archive folder
  *   - If set, files are moved here after successful import (new imports only, not duplicates)
@@ -30,10 +30,6 @@
  *   - Examples: 120000 (2 min), 300000 (5 min), 600000 (10 min)
  */
 
-import { execFileSync } from 'child_process';
-import fs from 'fs';
-import os from 'os';
-import path from 'path';
 import {
   listInboxFiles,
   moveFileToProcessed,
@@ -41,15 +37,6 @@ import {
 } from '../services/onedriveClient';
 import { parseMailFilename } from '../services/mailFilenameParser';
 
-function unlinkSafe(filePath: string): void {
-  try {
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-  } catch {
-    /* ignore */
-  }
-}
-
-/** First PNG written by pdftoppm for this output prefix (page suffix varies by poppler version). */
 function isPdfMagic(buf: Uint8Array): boolean {
   if (buf.length < 5) return false;
   return String.fromCharCode(buf[0], buf[1], buf[2], buf[3], buf[4]).startsWith('%PDF');
@@ -92,19 +79,6 @@ async function loadPdfBytesForAi(
   return null;
 }
 
-function resolvePdftoppmPng(tmpDir: string, baseName: string): string | null {
-  let names: string[];
-  try {
-    names = fs.readdirSync(tmpDir);
-  } catch {
-    return null;
-  }
-  const png = names
-    .filter(n => n.startsWith(`${baseName}-`) && n.endsWith('.png'))
-    .sort()[0];
-  return png ? path.join(tmpDir, png) : null;
-}
-
 async function extractSenderFromPdf(
   downloadUrl: string | undefined,
   fileId: string
@@ -114,32 +88,13 @@ async function extractSenderFromPdf(
     return { sender: null, mailType: null };
   }
 
-  const stamp = `${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-  const tmpDir = os.tmpdir();
-  const baseName = `mail_${stamp}`;
-  const tmpPdf = path.join(tmpDir, `${baseName}.pdf`);
-  const tmpImgBase = path.join(tmpDir, baseName);
-  let pngPath: string | null = null;
-
   try {
     const pdfBytes = await loadPdfBytesForAi(downloadUrl, fileId);
-    if (!pdfBytes) {
-      return { sender: null, mailType: null };
-    }
-    fs.writeFileSync(tmpPdf, pdfBytes);
-
-    execFileSync('pdftoppm', ['-r', '150', '-l', '1', '-png', tmpPdf, tmpImgBase], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-      maxBuffer: 10 * 1024 * 1024,
-    });
-
-    pngPath = resolvePdftoppmPng(tmpDir, baseName);
-    if (!pngPath) {
-      console.warn('[extractSenderFromPdf] pdftoppm did not produce a PNG');
+    if (!pdfBytes || pdfBytes.length === 0) {
       return { sender: null, mailType: null };
     }
 
-    const imgBase64 = fs.readFileSync(pngPath).toString('base64');
+    const base64Pdf = Buffer.from(pdfBytes).toString('base64');
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -160,7 +115,9 @@ async function extractSenderFromPdf(
               },
               {
                 type: 'image_url',
-                image_url: { url: `data:image/png;base64,${imgBase64}` },
+                image_url: {
+                  url: `data:application/pdf;base64,${base64Pdf}`,
+                },
               },
             ],
           },
@@ -169,8 +126,18 @@ async function extractSenderFromPdf(
     });
 
     const data = (await response.json()) as {
+      error?: { message?: string };
       choices?: Array<{ message?: { content?: string } }>;
     };
+
+    if (!response.ok) {
+      console.warn('[extractSenderFromPdf] OpenAI HTTP error', {
+        status: response.status,
+        message: data?.error?.message,
+      });
+      return { sender: null, mailType: null };
+    }
+
     const raw = data.choices?.[0]?.message?.content ?? '{}';
     const text = raw
       .trim()
@@ -187,9 +154,6 @@ async function extractSenderFromPdf(
     const msg = err instanceof Error ? err.message : String(err);
     console.warn('[extractSenderFromPdf] Failed:', msg);
     return { sender: null, mailType: null };
-  } finally {
-    unlinkSafe(tmpPdf);
-    if (pngPath) unlinkSafe(pngPath);
   }
 }
 
