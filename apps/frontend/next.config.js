@@ -69,36 +69,9 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
 
-  // Webpack optimizations
-  webpack: (config, { dev, isServer }) => {
-    if (!dev && !isServer) {
-      // Optimize bundle splitting
-      config.optimization.splitChunks = {
-        chunks: 'all',
-        cacheGroups: {
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            chunks: 'all',
-            priority: 10,
-          },
-          common: {
-            name: 'common',
-            minChunks: 2,
-            chunks: 'all',
-            priority: 5,
-            reuseExistingChunk: true,
-          },
-        },
-      };
-
-      // Tree shaking optimizations
-      config.optimization.usedExports = true;
-      config.optimization.sideEffects = false;
-    }
-
-    return config;
-  },
+  // Do not override webpack `optimization.splitChunks`. Replacing Next.js defaults breaks App Router
+  // CSS/JS chunk separation: the document can end up with <script src="...css">, which fails under
+  // X-Content-Type-Options: nosniff ("MIME type text/css is not executable").
 
   // ESLint and TypeScript configs
   // Do not ignore build errors: keep CI/build honest.
