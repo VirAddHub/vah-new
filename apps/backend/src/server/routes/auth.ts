@@ -535,7 +535,17 @@ router.post("/login", async (req, res) => {
 
         const userData = user.rows[0];
 
-        const isValidPassword = await bcrypt.compare(password, userData.password);
+        const passwordHash = userData.password;
+        if (passwordHash == null || typeof passwordHash !== 'string' || passwordHash.length === 0) {
+            logger.warn('[auth/login] no_password_hash', { userId: userData.id });
+            return res.status(401).json({
+                ok: false,
+                error: "invalid_credentials",
+                message: "Invalid email or password",
+            });
+        }
+
+        const isValidPassword = await bcrypt.compare(password, passwordHash);
 
         if (!isValidPassword) {
             return res.status(401).json({
@@ -563,12 +573,12 @@ router.post("/login", async (req, res) => {
                 });
             });
 
-        // Generate JWT token
+        // Generate JWT token (coerce id — pg may return string/bigint for some drivers)
         const token = generateToken({
-            id: userData.id,
+            id: Number(userData.id),
             email: userData.email,
-            is_admin: userData.is_admin,
-            role: userData.role
+            is_admin: Boolean(userData.is_admin),
+            role: userData.role != null ? String(userData.role) : 'user',
         });
 
         // Set HttpOnly cookie for cross-site BFF ↔ API
@@ -593,8 +603,13 @@ router.post("/login", async (req, res) => {
             }
         });
 
-    } catch (error) {
-        logger.error('[auth/login] error', { message: (error as any)?.message ?? String(error) });
+    } catch (error: unknown) {
+        const e = error as { message?: string; code?: string; name?: string };
+        logger.error('[auth/login] error', {
+            message: e?.message ?? String(error),
+            code: e?.code,
+            name: e?.name,
+        });
         res.status(500).json({
             ok: false,
             error: "internal_error",
