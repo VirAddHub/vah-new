@@ -3,8 +3,9 @@
  * PostgreSQL TLS options for node-pg (CommonJS).
  * Keep in sync with apps/backend/src/lib/pgSslConfig.ts
  *
- * Production: always verify server certs (rejectUnauthorized: true). DATABASE_SSL_INSECURE
- * is ignored in production (one-time stderr warning) — API startup fails if it is set.
+ * Production: TLS with rejectUnauthorized true by default.
+ * DATABASE_SSL_REJECT_UNAUTHORIZED=false disables verification (self-signed DB certs).
+ * DATABASE_SSL_INSECURE is ignored in production (stderr warning) — API startup fails if set.
  * Non-production: no TLS (typical local Postgres).
  *
  * DATABASE_SSL_CA — PEM string or path to CA bundle for custom roots.
@@ -18,7 +19,13 @@ function isDatabaseSslInsecureEnvRequested() {
     );
 }
 
+function isDatabaseSslRejectUnauthorizedDisabled() {
+    const v = String(process.env.DATABASE_SSL_REJECT_UNAUTHORIZED || '').trim().toLowerCase();
+    return v === 'false' || v === '0';
+}
+
 let warnedInsecureIgnoredInProd = false;
+let warnedRejectUnauthorizedFalse = false;
 
 function getPgSslOption() {
     const isProd = process.env.NODE_ENV === 'production';
@@ -51,7 +58,20 @@ function getPgSslOption() {
         }
     }
 
-    return ca ? { rejectUnauthorized: true, ca } : { rejectUnauthorized: true };
+    const rejectUnauthorized = !isDatabaseSslRejectUnauthorizedDisabled();
+
+    if (!rejectUnauthorized && !warnedRejectUnauthorizedFalse) {
+        warnedRejectUnauthorizedFalse = true;
+        console.warn(
+            '[pgSsl] DATABASE_SSL_REJECT_UNAUTHORIZED=false — PostgreSQL TLS certificate verification is disabled. Prefer DATABASE_SSL_CA with your provider CA bundle in production.'
+        );
+    }
+
+    return ca ? { rejectUnauthorized, ca } : { rejectUnauthorized };
 }
 
-module.exports = { getPgSslOption, isDatabaseSslInsecureEnvRequested };
+module.exports = {
+    getPgSslOption,
+    isDatabaseSslInsecureEnvRequested,
+    isDatabaseSslRejectUnauthorizedDisabled,
+};

@@ -15,7 +15,10 @@ import {
   resolveSumsubWebhookSecret,
 } from '../lib/sumsubConfig';
 import { logger } from '../lib/logger';
-import { isDatabaseSslInsecureEnvRequested } from '../lib/pgSslConfig';
+import {
+  isDatabaseSslInsecureEnvRequested,
+  isDatabaseSslRejectUnauthorizedDisabled,
+} from '../lib/pgSslConfig';
 
 const WEAK_JWT_SECRETS = new Set(
   [
@@ -68,6 +71,12 @@ export function collectProductionEnvIssues(): ProductionEnvCheckResult {
   if (isDatabaseSslInsecureEnvRequested()) {
     fatal.push(
       'DATABASE_SSL_INSECURE must not be set in production — PostgreSQL TLS verification cannot be disabled. Remove it from the host environment.'
+    );
+  }
+
+  if (isDatabaseSslRejectUnauthorizedDisabled()) {
+    warnings.push(
+      'DATABASE_SSL_REJECT_UNAUTHORIZED=false — PostgreSQL TLS certificate verification is disabled (mitigates self-signed CA errors). Prefer DATABASE_SSL_CA with your provider’s PEM when possible; disabling verification exposes TLS to MITM on the DB link.'
     );
   }
 
