@@ -545,7 +545,21 @@ router.post("/login", async (req, res) => {
             });
         }
 
-        const isValidPassword = await bcrypt.compare(password, passwordHash);
+        let isValidPassword = false;
+        try {
+            isValidPassword = await bcrypt.compare(password, passwordHash);
+        } catch (bcryptErr: unknown) {
+            const be = bcryptErr as { message?: string };
+            logger.error('[auth/login] bcrypt_compare_threw', {
+                message: be?.message ?? String(bcryptErr),
+                userId: userData.id,
+            });
+            return res.status(401).json({
+                ok: false,
+                error: "invalid_credentials",
+                message: "Invalid email or password",
+            });
+        }
 
         if (!isValidPassword) {
             return res.status(401).json({
@@ -573,13 +587,37 @@ router.post("/login", async (req, res) => {
                 });
             });
 
-        // Generate JWT token (coerce id — pg may return string/bigint for some drivers)
-        const token = generateToken({
-            id: Number(userData.id),
-            email: userData.email,
-            is_admin: Boolean(userData.is_admin),
-            role: userData.role != null ? String(userData.role) : 'user',
-        });
+        const emailForJwt = userData.email != null ? String(userData.email) : '';
+        if (!emailForJwt) {
+            logger.error('[auth/login] user_missing_email', { userId: userData.id });
+            return res.status(500).json({
+                ok: false,
+                error: 'internal_error',
+                message: 'An error occurred during login',
+            });
+        }
+
+        // Generate JWT — all fields must be JSON-serializable types (no BigInt in payload)
+        let token: string;
+        try {
+            token = generateToken({
+                id: Number(userData.id),
+                email: emailForJwt,
+                is_admin: Boolean(userData.is_admin),
+                role: userData.role != null ? String(userData.role) : 'user',
+            });
+        } catch (jwtErr: unknown) {
+            const je = jwtErr as { message?: string };
+            logger.error('[auth/login] generateToken_failed', {
+                message: je?.message ?? String(jwtErr),
+                userId: userData.id,
+            });
+            return res.status(500).json({
+                ok: false,
+                error: 'internal_error',
+                message: 'An error occurred during login',
+            });
+        }
 
         // Set HttpOnly cookie for cross-site BFF ↔ API
         res.cookie('vah_session', token, {
@@ -587,28 +625,31 @@ router.post("/login", async (req, res) => {
             maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000,
         });
 
-        // REVISED: The user object in the response should match the payload for consistency
+        // Explicit primitives — avoid JSON.stringify throwing on BigInt / odd pg types in response body
+        const userPayload = {
+            user_id: Number(userData.id),
+            email: emailForJwt,
+            first_name: userData.first_name != null ? String(userData.first_name) : null,
+            last_name: userData.last_name != null ? String(userData.last_name) : null,
+            is_admin: Boolean(userData.is_admin),
+            role: userData.role != null ? String(userData.role) : null,
+        };
+
         res.json({
             ok: true,
             data: {
-                user: { // Nest user data inside a user object
-                    user_id: userData.id,
-                    email: userData.email,
-                    first_name: userData.first_name,
-                    last_name: userData.last_name,
-                    is_admin: userData.is_admin,
-                    role: userData.role,
-                },
-                token: token
-            }
+                user: userPayload,
+                token,
+            },
         });
 
     } catch (error: unknown) {
-        const e = error as { message?: string; code?: string; name?: string };
+        const e = error as { message?: string; code?: string; name?: string; stack?: string };
         logger.error('[auth/login] error', {
             message: e?.message ?? String(error),
             code: e?.code,
             name: e?.name,
+            stack: e?.stack,
         });
         res.status(500).json({
             ok: false,
