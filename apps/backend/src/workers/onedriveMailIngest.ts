@@ -474,6 +474,7 @@ async function runOnce(): Promise<void> {
           oneDriveFileId,
           fileName: file.name,
           reason: 'File already processed in this worker process',
+          note: 'No [extractSenderFromPdf] here — dedupe skips before processFile (AI runs only on first pass per file ID this session)',
           processedCount: processedOneDriveFileIds.size,
         });
         skippedCount++;
