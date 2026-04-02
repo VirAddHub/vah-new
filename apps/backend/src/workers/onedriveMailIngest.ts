@@ -34,8 +34,18 @@ import {
   listInboxFiles,
   moveFileToProcessed,
   downloadDriveItemPdfBytes,
+  type OneDriveFile,
 } from '../services/onedriveClient';
 import { parseMailFilename } from '../services/mailFilenameParser';
+
+/**
+ * OneDrive keeps the same drive item `id` when you replace a file in place. Deduping only on `id`
+ * would skip AI + webhook forever after the first import. Include revision metadata so a new upload
+ * (new lastModified / size) is processed again in the same worker session.
+ */
+function inboxSnapshotKey(file: OneDriveFile): string {
+  return `${file.id}|${file.lastModifiedDateTime ?? ''}|${file.size ?? ''}`;
+}
 
 /** Log once per process if AI is disabled (avoids per-file spam). */
 let loggedOpenAiKeyMissing = false;
@@ -194,16 +204,15 @@ if (!WEBHOOK_SECRET) {
 const WEBHOOK_URL_STRING: string = WEBHOOK_URL;
 const WEBHOOK_SECRET_STRING: string = WEBHOOK_SECRET;
 
-// In-memory dedupe: track processed OneDrive file IDs to avoid re-sending same files
-// This prevents the worker from repeatedly POSTing files that were already processed
-// in this worker process lifetime (backend dedupe is still the safety net)
-const processedOneDriveFileIds = new Set<string>();
+// In-memory dedupe: track processed inbox snapshots (id + lastModified + size) per worker process.
+// Backend dedupe remains the safety net for true duplicates.
+const processedInboxSnapshots = new Set<string>();
 
 /**
  * Process a single file: parse, call webhook
  * Returns: 'created' | 'skipped' | 'failed'
  */
-async function processFile(file: { id: string; name: string; createdDateTime: string; downloadUrl?: string }): Promise<'created' | 'skipped' | 'failed'> {
+async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 'failed'> {
   // Parse filename
   const parsed = parseMailFilename(file.name);
 
@@ -447,7 +456,7 @@ async function runOnce(): Promise<void> {
     // List all PDF files in inbox
     const files = await listInboxFiles();
     console.log(`[onedriveMailIngest] 📦 Found ${files.length} PDF file(s) in inbox`);
-    console.log(`[onedriveMailIngest] 📊 In-memory dedupe cache: ${processedOneDriveFileIds.size} file(s) already processed`);
+    console.log(`[onedriveMailIngest] 📊 In-memory dedupe cache: ${processedInboxSnapshots.size} snapshot(s) already processed`);
 
     if (files.length === 0) {
       console.log('[onedriveMailIngest] No files to process');
@@ -468,14 +477,18 @@ async function runOnce(): Promise<void> {
         continue;
       }
 
-      // Skip if we've already processed this file in this worker process
-      if (processedOneDriveFileIds.has(oneDriveFileId)) {
+      const snapshotKey = inboxSnapshotKey(file);
+
+      // Skip if we've already processed this exact inbox snapshot in this worker process
+      if (processedInboxSnapshots.has(snapshotKey)) {
         console.log('[onedriveMailIngest] ⏭️  SKIPPING already-processed file (in-memory dedupe)', {
           oneDriveFileId,
           fileName: file.name,
-          reason: 'File already processed in this worker process',
-          note: 'No [extractSenderFromPdf] here — dedupe skips before processFile (AI runs only on first pass per file ID this session)',
-          processedCount: processedOneDriveFileIds.size,
+          lastModifiedDateTime: file.lastModifiedDateTime,
+          size: file.size,
+          reason: 'Same id + lastModified + size already processed in this worker process',
+          note: 'No [extractSenderFromPdf] here — dedupe skips before processFile. Replace file in OneDrive (new mtime/size) to re-run.',
+          processedCount: processedInboxSnapshots.size,
         });
         skippedCount++;
         continue;
@@ -486,12 +499,14 @@ async function runOnce(): Promise<void> {
 
         // Only mark as processed after a successful call (created or skipped by backend)
         if (result === 'created' || result === 'skipped') {
-          processedOneDriveFileIds.add(oneDriveFileId);
+          processedInboxSnapshots.add(snapshotKey);
           console.log('[onedriveMailIngest] ✅ Marked file as processed (in-memory)', {
             oneDriveFileId,
             fileName: file.name,
+            lastModifiedDateTime: file.lastModifiedDateTime,
+            size: file.size,
             result,
-            totalProcessed: processedOneDriveFileIds.size,
+            totalProcessed: processedInboxSnapshots.size,
           });
         }
 
@@ -513,7 +528,7 @@ async function runOnce(): Promise<void> {
       created: createdCount,
       skipped: skippedCount,
       failed: failedCount,
-      totalInCache: processedOneDriveFileIds.size,
+      totalInCache: processedInboxSnapshots.size,
       summary: `${createdCount} new, ${skippedCount} skipped (${skippedCount > 0 ? 'in-memory dedupe' : 'none'}), ${failedCount} failed`,
     });
 

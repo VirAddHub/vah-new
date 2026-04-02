@@ -20,6 +20,8 @@ export type OneDriveFile = {
   id: string;
   name: string;
   createdDateTime: string;
+  /** Updates when content is replaced in place (same id, new bytes). */
+  lastModifiedDateTime?: string;
   downloadUrl?: string;
   size?: number;
 };
@@ -74,7 +76,7 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
     throw new Error('Either ONEDRIVE_DRIVE_ID (not "me") or ONEDRIVE_USER_UPN must be set for app-only authentication');
   }
 
-  const url = `${baseUrl}/items/${encodeURIComponent(inboxFolderId)}/children?$select=id,name,createdDateTime,size,@microsoft.graph.downloadUrl,webUrl,file`;
+  const url = `${baseUrl}/items/${encodeURIComponent(inboxFolderId)}/children?$select=id,name,createdDateTime,lastModifiedDateTime,size,@microsoft.graph.downloadUrl,webUrl,file`;
 
   console.log(`[onedriveClient] Attempting to list files from folder ID: ${inboxFolderId}`);
   console.log(`[onedriveClient] Using base URL: ${baseUrl}`);
@@ -130,6 +132,7 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
       id: item.id,
       name: item.name,
       createdDateTime: item.createdDateTime,
+      lastModifiedDateTime: item.lastModifiedDateTime,
       // Prefer @microsoft.graph.downloadUrl for server-side fetch (PDF bytes). webUrl is a SharePoint
       // HTML page — anonymous fetch returns HTML, breaking pdftoppm / OpenAI vision in the worker.
       downloadUrl: item['@microsoft.graph.downloadUrl'] || item.webUrl,
@@ -211,7 +214,7 @@ export async function moveFileToProcessed(fileId: string): Promise<OneDriveFile>
 
   // Move file using PATCH with parentReference
   // Request webUrl (stable SharePoint URL) and downloadUrl in the response
-  const url = `${baseUrl}/items/${encodeURIComponent(fileId)}?$select=id,name,createdDateTime,size,webUrl,@microsoft.graph.downloadUrl,file`;
+  const url = `${baseUrl}/items/${encodeURIComponent(fileId)}?$select=id,name,createdDateTime,lastModifiedDateTime,size,webUrl,@microsoft.graph.downloadUrl,file`;
 
   const response = await fetch(url, {
     method: 'PATCH',
@@ -232,10 +235,18 @@ export async function moveFileToProcessed(fileId: string): Promise<OneDriveFile>
   }
 
   // Parse the moved file's metadata from PATCH response
-  const movedItem = await response.json() as { id: string; name?: string; createdDateTime?: string; size?: number; webUrl?: string; '@microsoft.graph.downloadUrl'?: string };
+  const movedItem = await response.json() as {
+    id: string;
+    name?: string;
+    createdDateTime?: string;
+    lastModifiedDateTime?: string;
+    size?: number;
+    webUrl?: string;
+    '@microsoft.graph.downloadUrl'?: string;
+  };
 
   // Fetch the item again to ensure we get the updated webUrl (SharePoint URLs may not update immediately in PATCH response)
-  const getUrl = `${baseUrl}/items/${encodeURIComponent(movedItem.id)}?$select=id,name,createdDateTime,size,webUrl,@microsoft.graph.downloadUrl,file`;
+  const getUrl = `${baseUrl}/items/${encodeURIComponent(movedItem.id)}?$select=id,name,createdDateTime,lastModifiedDateTime,size,webUrl,@microsoft.graph.downloadUrl,file`;
   const getResponse = await fetch(getUrl, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -261,6 +272,7 @@ export async function moveFileToProcessed(fileId: string): Promise<OneDriveFile>
     id: finalItem.id,
     name: finalItem.name || '',
     createdDateTime: finalItem.createdDateTime || '',
+    lastModifiedDateTime: finalItem.lastModifiedDateTime,
     // Stable browser link for DB / users; worker AI uses Graph /content if needed
     downloadUrl: finalItem.webUrl || finalItem['@microsoft.graph.downloadUrl'] || '',
     size: finalItem.size || 0,
