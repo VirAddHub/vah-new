@@ -37,6 +37,9 @@ import {
 } from '../services/onedriveClient';
 import { parseMailFilename } from '../services/mailFilenameParser';
 
+/** Log once per process if AI is disabled (avoids per-file spam). */
+let loggedOpenAiKeyMissing = false;
+
 function isPdfMagic(buf: Uint8Array): boolean {
   if (buf.length < 5) return false;
   return String.fromCharCode(buf[0], buf[1], buf[2], buf[3], buf[4]).startsWith('%PDF');
@@ -81,20 +84,34 @@ async function loadPdfBytesForAi(
 
 async function extractSenderFromPdf(
   downloadUrl: string | undefined,
-  fileId: string
+  fileId: string,
+  fileName?: string
 ): Promise<{ sender: string | null; mailType: string | null }> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
+    if (!loggedOpenAiKeyMissing) {
+      loggedOpenAiKeyMissing = true;
+      console.warn(
+        '[extractSenderFromPdf] OPENAI_API_KEY not set — AI classification skipped for all files (set on the worker service, not only the API)'
+      );
+    }
     return { sender: null, mailType: null };
   }
 
   try {
     const pdfBytes = await loadPdfBytesForAi(downloadUrl, fileId);
     if (!pdfBytes || pdfBytes.length === 0) {
+      console.warn('[extractSenderFromPdf] No PDF bytes for AI', { fileId, fileName });
       return { sender: null, mailType: null };
     }
 
     const base64Pdf = Buffer.from(pdfBytes).toString('base64');
+
+    console.log('[extractSenderFromPdf] calling OpenAI (base64 data URL, gpt-4o-mini)', {
+      fileName: fileName ?? fileId,
+      fileId,
+      pdfBytes: pdfBytes.length,
+    });
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -149,6 +166,11 @@ async function extractSenderFromPdf(
       parsed.sender != null && String(parsed.sender).trim() ? String(parsed.sender).trim() : null;
     const mailType =
       parsed.mailType != null && String(parsed.mailType).trim() ? String(parsed.mailType).trim() : null;
+    console.log('[extractSenderFromPdf] done', {
+      fileName: fileName ?? fileId,
+      sender: sender ?? '(null)',
+      mailType: mailType ?? '(null)',
+    });
     return { sender, mailType };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -194,7 +216,7 @@ async function processFile(file: { id: string; name: string; createdDateTime: st
   const createdAt =
     parsed.dateIso ? `${parsed.dateIso}T00:00:00.000Z` : file.createdDateTime;
 
-  const aiData = await extractSenderFromPdf(file.downloadUrl, file.id);
+  const aiData = await extractSenderFromPdf(file.downloadUrl, file.id, file.name);
 
   const payload = {
     userId: parsed.userId,
@@ -534,6 +556,9 @@ async function startDaemon(): Promise<void> {
   const intervalMinutes = intervalMs / (60 * 1000);
 
   console.log(`[onedriveMailIngest] Starting daemon loop (interval = ${intervalMinutes} minutes)`);
+  console.log(
+    '[onedriveMailIngest] Worker AI path: PDF bytes → base64 data URL → Chat Completions (no poppler). Requires OPENAI_API_KEY on this service.'
+  );
 
   // Run immediately on boot
   await runOnceSafely();
