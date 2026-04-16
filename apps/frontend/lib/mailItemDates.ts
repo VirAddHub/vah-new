@@ -68,27 +68,33 @@ export function formatMailItemDate(dateValue: string | number | undefined | null
  * Title fallbacks when no receipt date is shown as the primary label (subject / sender / tag / id).
  */
 export function getMailItemListTitle(item: MailItem): string {
-  const t = (item.user_title || item.sender_name || item.subject || '').toString().trim();
+  const t = (item.sender_name || item.user_title || item.subject || '').toString().trim();
   if (t) return t;
   if (item.id !== undefined && item.id !== null && `${item.id}`.length > 0) return String(item.id);
   return 'Mail';
 }
 
-/** List row + detail headline: formatted receipt date when known, else {@link getMailItemListTitle}. */
+/** List row + detail headline: Sender/User Title first, then formatted receipt date, then fallbacks. */
 export function getMailItemPrimaryLabel(item: MailItem): string {
+  const title = (item.sender_name || item.user_title || item.subject || '').toString().trim();
+  if (title) return title;
+
   const formatted = formatMailItemDate(getMailItemDate(item));
   if (formatted) return formatted;
+  
   return getMailItemListTitle(item);
 }
 
-/** Detail / header: date first when known, then title fallbacks. */
+/** Detail / header: Sender/User Title first, then date, then fallbacks. */
 export function getMailItemDisplayTitle(item: MailItem): string {
+  const fallback = (item.sender_name || item.user_title || item.subject || '').toString().trim();
+  if (fallback) return fallback;
+
   const raw = getMailItemDate(item);
   const formatted =
     raw !== undefined && raw !== null && raw !== '' ? formatMailItemDate(raw) : '';
   if (formatted) return formatted;
-  const fallback = (item.user_title || item.sender_name || item.subject || '').toString().trim();
-  if (fallback) return fallback;
+  
   return 'Unknown Sender';
 }
 
