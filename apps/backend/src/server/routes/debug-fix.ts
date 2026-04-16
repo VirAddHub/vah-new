@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { requireAdmin } from '../../middleware/auth';
 import { getPool } from '../db';
+import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
 
@@ -81,7 +82,7 @@ router.post('/fix-forwarding-addresses', requireAdmin, async (req: Request, res:
 
     } catch (error: any) {
         console.error('[POST /api/debug/fix-forwarding-addresses] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 

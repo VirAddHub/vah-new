@@ -34,8 +34,21 @@ import { nowMs } from '../../lib/time';
 import { notifyOpsMailCreated } from '../../services/postmarkNotifications';
 import { sendMailScanned } from '../../lib/mailer';
 import { isUserEntitled } from '../services/entitlement';
+import crypto from 'crypto';
 
 const router = Router();
+
+/**
+ * Compare two strings in constant time to prevent timing-oracle attacks.
+ * Returns false if either argument is falsy.
+ */
+function timingSafeStringEqual(a: string, b: string): boolean {
+  try {
+    return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  } catch {
+    return false; // Buffer lengths differ — still no match
+  }
+}
 
 // Payload validation schema
 const MailImportPayload = z.object({
@@ -123,7 +136,7 @@ router.post('/from-onedrive', async (req, res) => {
       });
     }
 
-    if (!secret || secret !== expectedSecret) {
+    if (!secret || !timingSafeStringEqual(String(secret), expectedSecret)) {
       console.warn('[internalMailImport] Invalid or missing secret header');
       return res.status(401).json({
         ok: false,
@@ -561,8 +574,7 @@ router.post('/from-onedrive', async (req, res) => {
       return res.status(500).json({
         ok: false,
         error: 'email_mismatch',
-        message: `Email address mismatch. Expected: ${user.email}, Found: ${userForEmail.email}`,
-        fileName: payload.fileName,
+        message: 'Internal data consistency error. Please contact support.',
       });
     }
 
@@ -708,7 +720,7 @@ router.patch('/from-onedrive/:mailId/scan-url', async (req, res) => {
       });
     }
 
-    if (!secret || secret !== expectedSecret) {
+    if (!secret || !timingSafeStringEqual(String(secret), expectedSecret)) {
       console.warn('[internalMailImport] Invalid or missing secret header');
       return res.status(401).json({
         ok: false,

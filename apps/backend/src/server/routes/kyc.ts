@@ -9,6 +9,7 @@ import { sumsubFetch, sumsubGetApplicantForUserSync } from '../../lib/sumsub';
 import { deriveKycStatusFromSumsubReview } from '../../lib/sumsubKycReview';
 import { resolveSumsubApiConfig, resolveSumsubLevelName } from '../../lib/sumsubConfig';
 import { kycWriteUserLimiter } from '../../lib/routeGroupRateLimits';
+import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
 
@@ -56,7 +57,7 @@ router.get('/status', requireAuth, async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error('[GET /api/kyc/status] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -92,12 +93,8 @@ router.post('/start', requireAuth, kycWriteUserLimiter, async (req: Request, res
             return res.status(501).json({
                 ok: false,
                 status: 501,
-                error: 'Sumsub not configured',
-                code: 'SUMSUB_NOT_CONFIGURED',
-                message:
-                    'Sumsub credentials are missing. For live: SUMSUB_APP_TOKEN + SUMSUB_APP_SECRET or SUMSUB_SECRET_KEY. ' +
-                    'For sandbox: SUMSUB_APP_TOKEN_SANDBOX + SUMSUB_SECRET_KEY_SANDBOX or SUMSUB_APP_SECRET_SANDBOX (live secrets are not used with the sandbox token).',
-                debug: { hint: 'Do not set SUMSUB_SECRET_KEY if you only intend to use sandbox credentials.' },
+                error: 'kyc_service_unavailable',
+                message: 'Identity verification is currently unavailable. Please contact support.',
             });
         }
 
@@ -287,38 +284,23 @@ router.post('/sync-from-sumsub', requireAuth, kycWriteUserLimiter, async (req: R
         });
     } catch (e) {
         console.error('[POST /api/kyc/sync-from-sumsub]', e);
-        const message = e instanceof Error ? e.message : String(e);
+        const message = safeErrorMessage(e);
         return res.status(502).json({
             ok: false,
             error: 'sumsub_sync_failed',
-            message: message.length > 500 ? `${message.slice(0, 500)}…` : message,
+            message,
         });
     }
 });
 
 router.post('/upload-documents', requireAuth, kycWriteUserLimiter, async (req: Request, res: Response) => {
-    const userId = req.user!.id;
-    const pool = getPool();
-
-    try {
-        // TODO: Handle file upload with multer
-        // TODO: Upload to Sumsub API
-        // For now, just update status to pending
-
-        await pool.query(`
-            UPDATE "user"
-            SET kyc_status = 'pending', updated_at = $1
-            WHERE id = $2
-        `, [Date.now(), userId]);
-
-        return res.json({
-            ok: true,
-            message: 'Documents uploaded successfully. Your verification is being reviewed.'
-        });
-    } catch (error: any) {
-        console.error('[POST /api/kyc/upload-documents] error:', error);
-        return res.status(500).json({ ok: false, error: 'upload_error', message: error.message });
-    }
+    // M-6 fix: This endpoint is not yet implemented. Returning 501 instead of
+    // silently mutating kyc_status to 'pending' for any authenticated user.
+    return res.status(501).json({
+        ok: false,
+        error: 'not_implemented',
+        message: 'Document upload is not yet available. Please use the identity verification flow instead.',
+    });
 });
 
 export default router;

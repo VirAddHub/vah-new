@@ -46,25 +46,17 @@ export default function ForwardingPage() {
     const [selectedRequest, setSelectedRequest] = useState<ForwardingRequest | null>(null);
 
     useEffect(() => {
-        // Check authentication
-        const token = localStorage.getItem('vah_jwt');
-        if (!token) {
-            router.push('/login');
-            return;
-        }
-
         loadData();
     }, [router]);
 
     const loadData = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('vah_jwt');
 
             // Load mail items (keep logic but don't display)
             const mailResponse = await fetch('/api/mail', {
                 headers: {
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    'Content-Type': 'application/json',
                 },
                 credentials: 'include',
             });

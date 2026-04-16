@@ -58,6 +58,22 @@ function applySecurityHeaders(response: NextResponse, _request: NextRequest) {
       'max-age=63072000; includeSubDomains; preload'
     );
   }
+
+  // L-2: Content Security Policy
+  response.headers.set(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://in.sumsub.com https://static.sumsub.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "img-src 'self' data: https://res.cloudinary.com https://images.unsplash.com",
+      "connect-src 'self' https://api.sumsub.com https://api.virtualaddresshub.co.uk",
+      "frame-src https://in.sumsub.com",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; ')
+  );
 }
 
 /** CORS on Next `/api/*` is only relevant for cross-origin callers; omit when no Origin (same-origin). */

@@ -8,6 +8,7 @@ import { createForwardingRequest } from '../../modules/forwarding/forwarding.ser
 import { extractUKPostcode, hasUKPostcode, normalizeUKPostcode, UK_POSTCODE_REGEX } from '../utils/ukPostcode';
 import { param } from '../../lib/express-params';
 import { forwardingMutationUserLimiter } from '../../lib/routeGroupRateLimits';
+import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
 const pool = getPool();
@@ -71,7 +72,7 @@ router.get('/forwarding/requests', requireAuth, async (req: Request, res: Respon
         return res.json({ ok: true, ...result });
     } catch (error: any) {
         console.error('[GET /api/forwarding/requests] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -106,7 +107,7 @@ router.get('/forwarding/requests/:id', requireAuth, async (req: Request, res: Re
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
         console.error('[GET /api/forwarding/requests/:id] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -543,7 +544,7 @@ router.post('/requests/bulk', requireAuth, forwardingMutationUserLimiter, async 
         return res.json({ ok: true, forwarded, errors });
     } catch (error: any) {
         console.error('[POST /api/forwarding/requests/bulk] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 

@@ -40,7 +40,7 @@ export const spacing = {
 /**
  * TYPOGRAPHY SCALE
  * 
- * Single font family: Inter
+ * Primary UI font: Poppins (aligned with Tailwind `font-sans` / next/font)
  * Hierarchy via weight, size, spacing, line-height only
  * 
  * Principles:
@@ -56,7 +56,7 @@ export const typography = {
     lineHeight: '1.1',
     weight: '600',
     letterSpacing: '-0.025em',
-    family: 'Inter, sans-serif',
+    family: 'Poppins, system-ui, sans-serif',
   },
   // H1 - Page titles
   h1: {
@@ -64,7 +64,7 @@ export const typography = {
     lineHeight: '1.2',
     weight: '600',
     letterSpacing: '-0.02em',
-    family: 'Inter, sans-serif',
+    family: 'Poppins, system-ui, sans-serif',
   },
   // H2 - Section headers
   h2: {
@@ -72,7 +72,7 @@ export const typography = {
     lineHeight: '1.3',
     weight: '600',
     letterSpacing: '-0.015em',
-    family: 'Inter, sans-serif',
+    family: 'Poppins, system-ui, sans-serif',
   },
   // H3 - Subsection headers
   h3: {
@@ -80,7 +80,7 @@ export const typography = {
     lineHeight: '1.4',
     weight: '600',
     letterSpacing: '-0.01em',
-    family: 'Inter, sans-serif',
+    family: 'Poppins, system-ui, sans-serif',
   },
   // H4 - Card titles, smaller headings
   h4: {
@@ -88,7 +88,7 @@ export const typography = {
     lineHeight: '1.4',
     weight: '600',
     letterSpacing: '-0.005em',
-    family: 'Inter, sans-serif',
+    family: 'Poppins, system-ui, sans-serif',
   },
   // H5 - Smallest headings
   h5: {
@@ -96,7 +96,7 @@ export const typography = {
     lineHeight: '1.5',
     weight: '600',
     letterSpacing: '0',
-    family: 'Inter, sans-serif',
+    family: 'Poppins, system-ui, sans-serif',
   },
   // Body Large - Hero subtext, important descriptions
   bodyLg: {
@@ -104,7 +104,7 @@ export const typography = {
     lineHeight: '1.7',
     weight: '400',
     letterSpacing: '0',
-    family: 'Inter, sans-serif',
+    family: 'Poppins, system-ui, sans-serif',
   },
   // Body - Default text (most common)
   body: {
@@ -112,7 +112,7 @@ export const typography = {
     lineHeight: '1.6',
     weight: '400',
     letterSpacing: '0',
-    family: 'Inter, sans-serif',
+    family: 'Poppins, system-ui, sans-serif',
   },
   // Body Small - Secondary text, captions
   bodySm: {
@@ -120,7 +120,7 @@ export const typography = {
     lineHeight: '1.5',
     weight: '400',
     letterSpacing: '0',
-    family: 'Inter, sans-serif',
+    family: 'Poppins, system-ui, sans-serif',
   },
   // Label - Form labels, UI labels
   label: {
@@ -128,7 +128,7 @@ export const typography = {
     lineHeight: '1.4',
     weight: '500',
     letterSpacing: '0',
-    family: 'Inter, sans-serif',
+    family: 'Poppins, system-ui, sans-serif',
   },
   // Caption - Metadata, timestamps, tiny text
   caption: {
@@ -136,7 +136,7 @@ export const typography = {
     lineHeight: '1.4',
     weight: '400',
     letterSpacing: '0.01em',
-    family: 'Inter, sans-serif',
+    family: 'Poppins, system-ui, sans-serif',
   },
 } as const;
 

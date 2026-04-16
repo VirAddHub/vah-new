@@ -13,17 +13,8 @@ export function FontLoader() {
                 if ('fonts' in document) {
                     await document.fonts.ready;
 
-                    // Check for Inter (loaded via next/font)
-                    const interFaces = Array.from(document.fonts).filter(
-                        (font: FontFace) => font.family.includes('Inter')
-                    );
-
-                    if (interFaces.length > 0) {
-                        setFontsLoaded(true);
-                    } else {
-                        // Fonts loaded via next/font, just mark as loaded
-                        setFontsLoaded(true);
-                    }
+                    // Poppins / Playfair via next/font — mark ready once FontFace set is settled
+                    setFontsLoaded(true);
                 } else {
                     // Fallback for older browsers
                     setTimeout(() => setFontsLoaded(true), 1000);

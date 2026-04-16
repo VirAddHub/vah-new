@@ -9,12 +9,12 @@
  *
  * The previous version of this file:
  *  - injected a Google Fonts <link rel="preload" as="style"> even though
- *    next/font already loads Inter — causing duplicate / conflicting loads
+ *    next/font already loads UI fonts — causing duplicate / conflicting loads
  *  - called deferNonCriticalJS() which iterated ALL script[src] elements and
  *    added defer="" to them at runtime, interfering with Next.js chunk loading
  *    and producing "Refused to execute script … MIME type text/css" errors
  *    when it touched module-preload links Next.js injects for CSS chunks
- *  - injected a <style> tag to redefine @font-face font-display:swap for Inter,
+ *  - injected a <style> tag to redefine @font-face font-display:swap,
  *    which already has display:swap configured in next/font
  *
  * None of those functions are needed. Web Vitals measurement (initWebVitals)

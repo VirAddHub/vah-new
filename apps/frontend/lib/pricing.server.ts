@@ -15,6 +15,9 @@ const FALLBACK: ServerPricing = {
   annualPrice: 89.99,
 };
 
+/** Max time to wait for `/api/plans` during SSR so `/` never hangs if the API is cold or unreachable. */
+const SERVER_PRICING_FETCH_MS = 5000;
+
 /**
  * Fetch plan prices from the backend on the server.
  * Returns fallback values if the API fails so the client never sees £0/blank.
@@ -26,6 +29,7 @@ export async function getServerPricing(): Promise<ServerPricing> {
     const res = await fetch(url, {
       next: { revalidate: 60 },
       headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' },
+      signal: AbortSignal.timeout(SERVER_PRICING_FETCH_MS),
     });
 
     if (!res.ok) return FALLBACK;

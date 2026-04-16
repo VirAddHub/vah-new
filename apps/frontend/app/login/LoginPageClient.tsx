@@ -225,12 +225,12 @@ export function LoginPageClient() {
       // Phase A: Also store in localStorage for legacy support
       const token = data.data?.token || data.token;
       if (token) {
-        localStorage.setItem('vah_jwt', token);
+        // Token handled by HttpOnly cookie
       }
 
       const user = data.data?.user || data.user;
       if (user) {
-        localStorage.setItem('vah_user', JSON.stringify(user));
+        // User object handled by API
       }
 
       // Drop any in-memory SWR for the previous session before confirming the new one
@@ -287,8 +287,25 @@ export function LoginPageClient() {
       isSubmittingRef.current = false;
 
       // Redirect to mail inbox (or admin dashboard for admins)
+      // M-3: Validate the ?next= redirect target to prevent open redirect attacks.
+      // Only allow relative paths that start with '/' and don't begin with '//'.
+      const rawNext = searchParams.get('next') ?? '';
+      function isSafeNextUrl(url: string): boolean {
+        if (!url || !url.startsWith('/') || url.startsWith('//')) return false;
+        try {
+          // Reject any value that parses as an absolute URL (has a scheme)
+          const parsed = new URL(url, 'https://placeholder.invalid');
+          return parsed.host === 'placeholder.invalid';
+        } catch {
+          return false;
+        }
+      }
+      const safeNext = isSafeNextUrl(rawNext) ? rawNext : null;
+
       const isAdmin = user?.is_admin || user?.role === 'admin';
-      if (isAdmin) {
+      if (safeNext) {
+        router.replace(safeNext);
+      } else if (isAdmin) {
         router.replace('/admin/dashboard');
       } else {
         router.replace('/mail');

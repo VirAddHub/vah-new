@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { VAHLogo } from "./VAHLogo";
+import { AmbientFooter } from "@/components/homepage/HomepageAtmosphere";
 
 interface FooterProps {
     onNavigate?: (page: string) => void;
@@ -85,10 +86,9 @@ export function Footer({ onNavigate }: FooterProps) {
     };
 
     return (
-        <footer
-            className="pt-8 pb-8 text-foreground lg:pt-16 lg:pb-10"
-        >
-            <div className="mx-auto max-w-7xl px-8">
+        <footer className="relative overflow-hidden border-t border-border/80 bg-muted/90 pt-8 pb-8 text-foreground lg:pt-16 lg:pb-10">
+            <AmbientFooter />
+            <div className="relative z-10 mx-auto max-w-7xl px-8">
                 {/* Mobile/Tablet Footer (< 1024px) */}
                 <div className="flex flex-col items-center text-center lg:hidden">
                     <div className="mb-4">

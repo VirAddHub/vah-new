@@ -150,8 +150,8 @@ export default function AdminInvoiceDetailPage() {
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
-      localStorage.removeItem('vah_jwt');
-      localStorage.removeItem('vah_user');
+      // Removed
+      // Removed
       const isSecure = window.location.protocol === 'https:';
       const sameSiteValue = isSecure ? 'None' : 'Lax';
       const secureFlag = isSecure ? '; Secure' : '';

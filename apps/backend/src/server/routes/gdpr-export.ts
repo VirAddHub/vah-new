@@ -97,7 +97,7 @@ async function runGdprExport(jobId: number): Promise<void> {
   try {
     // Mark running
     const jobCheck = await pool.query(
-      `SELECT * FROM export_job WHERE id = $1`,
+      `SELECT id, status FROM export_job WHERE id = $1`,
       [jobId],
     );
     const job = jobCheck.rows[0];
@@ -116,7 +116,7 @@ async function runGdprExport(jobId: number): Promise<void> {
   }
 
   try {
-    const jobResult = await pool.query(`SELECT * FROM export_job WHERE id = $1`, [jobId]);
+    const jobResult = await pool.query(`SELECT id, user_id FROM export_job WHERE id = $1`, [jobId]);
     const job = jobResult.rows[0];
     if (!job) return;
 

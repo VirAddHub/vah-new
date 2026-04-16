@@ -5,6 +5,7 @@ import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { cachedAdminQuery } from '../../lib/query-cache';
+import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
 
@@ -77,7 +78,7 @@ router.get('/stats', requireAdmin, async (req: Request, res: Response) => {
         return res.status(500).json({
             ok: false,
             error: 'database_error',
-            message: error.message
+            message: safeErrorMessage(error)
         });
     }
 });

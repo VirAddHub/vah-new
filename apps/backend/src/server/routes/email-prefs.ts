@@ -3,6 +3,7 @@
 
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
+import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
 
@@ -41,7 +42,7 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
         return res.json({ ok: true, prefs: result.rows[0] });
     } catch (error: any) {
         console.error('[GET /api/email-prefs] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -93,7 +94,7 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
         return res.json({ ok: true });
     } catch (error: any) {
         console.error('[POST /api/email-prefs] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 

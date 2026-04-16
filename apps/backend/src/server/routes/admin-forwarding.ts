@@ -9,6 +9,7 @@ import { adminListForwarding, adminUpdateForwarding } from '../../modules/forwar
 import { getPool } from '../db';
 import { sendMailForwarded } from '../../lib/mailer';
 import { parseForwardingStatus, FWD_LABEL } from '@vah/shared';
+import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
 
@@ -111,7 +112,7 @@ router.get('/forwarding/stats', adminForwardingLimiter, async (req: Request, res
         });
     } catch (error: any) {
         console.error('[GET /api/admin/forwarding/stats] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -311,7 +312,7 @@ router.post('/forwarding/complete', async (req: Request, res: Response) => {
         return res.status(500).json({
             ok: false,
             error: 'database_error',
-            message: error.message
+            message: safeErrorMessage(error)
         });
     }
 });
@@ -433,7 +434,7 @@ router.delete('/forwarding/requests/:id', requireAdmin, adminForwardingLimiter, 
         return res.status(500).json({
             ok: false,
             error: 'database_error',
-            message: error.message
+            message: safeErrorMessage(error)
         });
     }
 });

@@ -1,86 +1,100 @@
 'use client';
 
-import { Mail, MapPin, ShieldCheck } from 'lucide-react';
-
 const steps = [
     {
         k: 'verify',
         title: 'Verify Your Account',
         description: 'Verify your account by completing the required identity checks for regulated address services.',
-        LucideIcon: ShieldCheck,
     },
     {
         k: 'use',
         title: 'Start using your address',
         description: 'Once approved, you can begin using your address across your company records and business communications.',
-        LucideIcon: MapPin,
     },
     {
         k: 'handle',
         title: 'We process your post',
         description: 'Incoming mail is logged, scanned, and added to your dashboard for secure online access.',
-        LucideIcon: Mail,
     },
 ];
 
 export default function HowItWorks() {
     return (
-        <section className="w-full bg-background pt-12 pb-16 sm:pb-20 lg:pt-24 lg:pb-24" aria-labelledby="how-it-works-heading">
-            <div className="safe-pad mx-auto w-full max-w-[1280px] px-6 sm:px-8 lg:px-12">
-                <header className="mb-6 text-center sm:mb-8 md:mb-10 lg:mb-16">
-                    <h2 id="how-it-works-heading" className="mb-2 text-h2 sm:mb-3 sm:text-h1 lg:text-display text-foreground">
+        <section
+            className="w-full bg-background py-16 sm:py-20 lg:py-28"
+            aria-labelledby="how-it-works-heading"
+        >
+            <div className="mx-auto w-full max-w-5xl px-6 sm:px-8 lg:px-12">
+
+                {/* Section header */}
+                <div className="mb-10 text-center sm:mb-12 lg:mb-14">
+                    <h2
+                        id="how-it-works-heading"
+                        className="text-h2 font-poppins !font-normal text-foreground sm:text-h1 md:text-display lg:text-display leading-tight tracking-tight"
+                    >
                         How It Works
                     </h2>
-                    <p className="text-body-sm text-muted-foreground sm:text-body lg:text-body-lg">
-                        Getting started is simple
-                    </p>
-                </header>
-
-                {/* Mobile: compact vertical step list (< lg) */}
-                <div className="lg:hidden">
-                    <div className="mx-auto max-w-md">
-                        {steps.map((step) => {
-                            const Icon = step.LucideIcon;
-                            return (
-                                <div key={step.k} className="flex items-start gap-4 py-4">
-                                    <span
-                                        aria-hidden="true"
-                                        className="h-9 w-9 shrink-0 rounded-full border border-primary/20 bg-primary/5 flex items-center justify-center mt-0.5"
-                                    >
-                                        <Icon className="h-4 w-4 text-primary" />
-                                    </span>
-                                    <div>
-                                        <h3 className="text-body font-semibold text-foreground">
-                                            {step.title}
-                                        </h3>
-                                        <p className="mt-1 text-body-sm text-muted-foreground">
-                                            {step.description}
-                                        </p>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
                 </div>
 
-                {/* Desktop (lg+): 3-column grid */}
-                <div className="hidden lg:block">
-                    <div className="grid grid-cols-3 gap-12 text-center">
-                        {steps.map((step) => (
-                            <div key={step.k} className="flex flex-col items-center">
-                                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/5 border border-primary/20 shrink-0">
-                                    <step.LucideIcon strokeWidth={1.5} className="h-10 w-10 text-primary" />
-                                </div>
-                                <h3 className="mt-6 text-h4 text-foreground">
+                {/* ── Mobile: vertical stack with connecting line (below md) ── */}
+                <div className="md:hidden mx-auto max-w-sm">
+                    {steps.map((step, index) => (
+                        <div key={step.k} className="flex items-start gap-5">
+
+                            {/* Left column: dot + line segment running to next dot */}
+                            <div className="flex flex-col items-center self-stretch shrink-0 pt-0.5">
+                                <div className="relative z-10 w-2.5 h-2.5 rounded-full bg-emerald-600 ring-2 ring-white shrink-0" />
+                                {index < steps.length - 1 && (
+                                    <div className="flex-1 w-px bg-gray-200" />
+                                )}
+                            </div>
+
+                            {/* Right column: title + description */}
+                            <div className={index < steps.length - 1 ? 'pb-10' : ''}>
+                                <h3 className="font-poppins font-semibold text-base text-foreground">
                                     {step.title}
                                 </h3>
-                                <p className="mt-2 text-body text-muted-foreground max-w-[260px]">
+                                <p className="mt-1.5 font-poppins font-normal text-sm text-muted-foreground">
                                     {step.description}
                                 </p>
                             </div>
-                        ))}
-                    </div>
+
+                        </div>
+                    ))}
                 </div>
+
+                {/* ── Desktop: horizontal layout with connecting line (md and above) ── */}
+                <div className="hidden md:flex">
+                    {steps.map((step, index) => (
+                        <div key={step.k} className="flex flex-col items-center flex-1">
+
+                            {/* Dot row — line segments flank each dot, dot-to-dot only */}
+                            <div className="flex items-center w-full">
+                                {index > 0
+                                    ? <div className="flex-1 h-px bg-gray-200" />
+                                    : <div className="flex-1" />
+                                }
+                                <div className="relative z-10 w-2.5 h-2.5 rounded-full bg-emerald-600 ring-2 ring-white shrink-0" />
+                                {index < steps.length - 1
+                                    ? <div className="flex-1 h-px bg-gray-200" />
+                                    : <div className="flex-1" />
+                                }
+                            </div>
+
+                            {/* Content centered below dot */}
+                            <div className="mt-8 text-center px-4 max-w-[240px]">
+                                <h3 className="font-poppins font-semibold text-base text-foreground">
+                                    {step.title}
+                                </h3>
+                                <p className="mt-2 font-poppins font-normal text-sm text-muted-foreground">
+                                    {step.description}
+                                </p>
+                            </div>
+
+                        </div>
+                    ))}
+                </div>
+
             </div>
         </section>
     );

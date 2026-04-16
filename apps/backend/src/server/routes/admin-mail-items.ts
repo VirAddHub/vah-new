@@ -6,6 +6,7 @@ import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { param } from '../../lib/express-params';
+import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
 
@@ -183,7 +184,7 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
         const result = await exec;
         return res.json(result);
     } catch (error: any) {
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     } finally {
         setTimeout(() => inflight.delete(key), COALESCE_TTL_MS);
     }
@@ -204,7 +205,24 @@ router.get('/mail-items/:id', requireAdmin, async (req: Request, res: Response) 
     try {
         const result = await pool.query(`
             SELECT
-                m.*,
+                m.id,
+                m.user_id,
+                m.file_id,
+                m.subject,
+                m.sender_name,
+                m.tag,
+                m.notes,
+                m.status,
+                m.forwarding_status,
+                m.scanned,
+                m.deleted,
+                m.physical_destruction_date,
+                m.received_date,
+                m.received_at_ms,
+                m.created_at,
+                m.updated_at,
+                m.expires_at,
+                m.scan_file_url,
                 u.email as user_email,
                 u.first_name,
                 u.last_name,
@@ -235,7 +253,7 @@ router.get('/mail-items/:id', requireAdmin, async (req: Request, res: Response) 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
         console.error('[GET /api/admin/mail-items/:id] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -317,16 +335,19 @@ router.put('/mail-items/:id', requireAdmin, async (req: Request, res: Response) 
             return res.status(404).json({ ok: false, error: 'not_found' });
         }
 
-        // Log admin action
+        // M-7 fix: Log only the declared allowed fields, never raw req.body.
+        // This prevents oversized payloads inflating audit logs and avoids
+        // storing unexpected or sensitive injected fields.
+        const auditPayload = { status, subject, sender_name, tag, notes, forwarding_status };
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
             VALUES ($1, 'update_mail_item', 'mail_item', $2, $3, $4)
-        `, [adminId, mailId, JSON.stringify(req.body), Date.now()]);
+        `, [adminId, mailId, JSON.stringify(auditPayload), Date.now()]);
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
         console.error('[PUT /api/admin/mail-items/:id] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -390,7 +411,7 @@ router.post('/mail-items/:id/log-physical-dispatch', requireAdmin, async (req: R
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
         console.error('[POST /api/admin/mail-items/:id/log-physical-dispatch] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -904,7 +925,7 @@ router.post('/mail-items/bulk', requireAdmin, async (req: Request, res: Response
         return res.json({ ok: true, updated: updateResult.rowCount ?? 0, ids });
     } catch (error: any) {
         console.error('[POST /api/admin/mail-items/bulk] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 

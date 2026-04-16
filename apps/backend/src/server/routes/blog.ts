@@ -9,6 +9,7 @@
 
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
+import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
 
@@ -140,7 +141,7 @@ router.get('/blog/posts/:slug', async (req: Request, res: Response) => {
         return res.status(500).json({
             ok: false,
             error: "server_error",
-            message: error?.message || "Unexpected error"
+            message: safeErrorMessage(error) || "Unexpected error"
         });
     }
 });

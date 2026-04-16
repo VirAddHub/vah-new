@@ -14,6 +14,7 @@
 
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
+import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
 
@@ -60,7 +61,7 @@ router.get('/', async (req: Request, res: Response) => {
       return res.json({ ok: true, items: [] });
     }
     console.error('[GET /api/admin-forward-audit] error:', error);
-    return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
   }
 });
 

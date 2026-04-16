@@ -7,6 +7,7 @@ import { requireAdmin } from '../../middleware/auth';
 import { pricingService } from '../services/pricing';
 import { TimestampUtils } from '../../lib/timestamp-utils';
 import { param } from '../../lib/express-params';
+import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
 
@@ -49,7 +50,7 @@ router.get('/plans', requireAdmin, async (req: Request, res: Response) => {
         return res.status(500).json({
             ok: false,
             error: 'database_error',
-            message: error.message
+            message: safeErrorMessage(error)
         });
     }
 });
@@ -81,7 +82,7 @@ router.get('/plans/:id', requireAdmin, async (req: Request, res: Response) => {
         return res.status(500).json({
             ok: false,
             error: 'database_error',
-            message: error.message
+            message: safeErrorMessage(error)
         });
     }
 });
@@ -175,7 +176,7 @@ router.post('/plans', requireAdmin, async (req: Request, res: Response) => {
         return res.status(500).json({
             ok: false,
             error: 'database_error',
-            message: error.message
+            message: safeErrorMessage(error)
         });
     }
 });
@@ -454,7 +455,7 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
         return res.status(500).json({
             ok: false,
             error: 'database_error',
-            message: error.message
+            message: safeErrorMessage(error)
         });
     }
 });
@@ -497,7 +498,7 @@ router.delete('/plans/:id', requireAdmin, async (req: Request, res: Response) =>
         return res.status(500).json({
             ok: false,
             error: 'database_error',
-            message: error.message
+            message: safeErrorMessage(error)
         });
     }
 });

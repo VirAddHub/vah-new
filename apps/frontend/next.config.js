@@ -36,8 +36,6 @@ const nextConfig = {
       { protocol: "https", hostname: "vah-api.onrender.com" },
       { protocol: "https", hostname: "virtualaddresshub.co.uk" },
       { protocol: "https", hostname: "www.virtualaddresshub.co.uk" },
-      { protocol: "https", hostname: "imgbb.com" },
-      { protocol: "https", hostname: "i.ibb.co" },
     ],
   },
 

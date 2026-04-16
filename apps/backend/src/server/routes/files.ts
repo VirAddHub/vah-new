@@ -119,9 +119,7 @@ router.get('/', async (req: Request, res: Response) => {
  * Enforces per-user rate limit of 30 requests/60s.
  */
 router.post('/:id/signed-url', async (req: Request, res: Response) => {
-  const ip = String(req.headers['x-forwarded-for'] ?? req.ip ?? '')
-    .split(',')[0]
-    .trim();
+  const ip = String(req.ip ?? '').trim();
 
   const userId = Number(req.user?.id ?? 0);
   if (!userId) return res.status(401).json({ ok: false, error: 'unauthenticated' });
@@ -141,7 +139,10 @@ router.post('/:id/signed-url', async (req: Request, res: Response) => {
     const pool = getPool();
 
     // Load file row — ownership check enforced
-    const fileResult = await pool.query(`SELECT * FROM file WHERE id = $1`, [fileId]);
+    const fileResult = await pool.query(
+      `SELECT id, user_id, deleted, drive_id, item_id, path, name, mime, share_url, share_expires_at FROM file WHERE id = $1`,
+      [fileId]
+    );
     const f = fileResult.rows[0] ?? null;
 
     if (!f || Number(f.user_id) !== userId) {

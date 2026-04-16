@@ -4,6 +4,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { fileTypeFromBuffer } from "file-type";
 import { requireAdmin } from "../../middleware/auth";
+import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
 
@@ -145,20 +146,47 @@ router.post("/blog/upload", requireAdmin, upload.single('image'), async (req: Re
 router.get("/media/blog/:filename", (req: Request, res: Response) => {
     try {
         const filename = req.params.filename as string;
+
+        // H-1: Path traversal prevention
+        // Reject any path separators, null bytes, or traversal sequences before path.join
+        if (!filename || /[\/\\\0]|\.\.|^\.$/.test(filename)) {
+            return res.status(400).json({ ok: false, error: "invalid_filename" });
+        }
+
         const filePath = path.join(UPLOADS_DIR, filename);
 
-        if (!fs.existsSync(filePath)) {
+        // Verify the resolved real path is still inside UPLOADS_DIR after join
+        // This catches edge cases that simple regex might miss
+        let resolvedPath: string;
+        try {
+            resolvedPath = fs.realpathSync(filePath);
+        } catch {
+            // realpathSync throws if the file doesn't exist
             return res.status(404).json({ ok: false, error: "Image not found" });
+        }
+
+        const resolvedBase = fs.realpathSync(UPLOADS_DIR);
+        if (!resolvedPath.startsWith(resolvedBase + path.sep)) {
+            return res.status(400).json({ ok: false, error: "invalid_filename" });
         }
 
         // Set cache headers for better performance
         res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 year
-        res.setHeader('Content-Type', 'image/jpeg'); // Default to JPEG
+        // Detect content type from extension rather than hardcoding JPEG
+        const ext = path.extname(filename).toLowerCase();
+        const mimeMap: Record<string, string> = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif',
+            '.webp': 'image/webp',
+        };
+        res.setHeader('Content-Type', mimeMap[ext] ?? 'image/jpeg');
 
-        // Send the file
-        res.sendFile(filePath);
+        // Send the file using the resolved (canonical) path
+        res.sendFile(resolvedPath);
     } catch (error) {
-        console.error("Error serving image:", error);
+        console.error("Error serving image:", safeErrorMessage(error));
         res.status(500).json({ ok: false, error: "Failed to serve image" });
     }
 });

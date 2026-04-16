@@ -30,11 +30,6 @@ export function KycBanner({ kycStatus }: KycBannerProps) {
     const [open, setOpen] = useState(false);
     const { toast } = useToast();
 
-    // If approved, don't show banner
-    if (kycStatus === "approved") {
-        return null;
-    }
-
     const startKyc = async () => {
         setStarting(true);
         try {
@@ -158,6 +153,10 @@ export function KycBanner({ kycStatus }: KycBannerProps) {
 
         loadSumsubSDK();
     }, [open, token, toast]);
+
+    if (kycStatus === "approved") {
+        return null;
+    }
 
     const buttonText =
         kycStatus === "pending"

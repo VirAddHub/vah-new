@@ -21,10 +21,10 @@ module.exports = {
         },
         extend: {
             fontFamily: {
-                sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-                // Accent: italic Noto Serif only for a few highlighted words in headings.
-                // Include explicit fallback family per request.
-                accent: ['var(--font-accent)', '"Noto Serif"', 'serif'],
+                // Default stack: Poppins everywhere (marketing, dashboard, blog, help)
+                sans: ['var(--font-poppins)', 'system-ui', 'sans-serif'],
+                playfair: ['var(--font-playfair)', 'Georgia', 'serif'],
+                poppins: ['var(--font-poppins)', 'system-ui', 'sans-serif'],
             },
             screens: {
                 xs: "360px",

@@ -1,7 +1,7 @@
 // app/layout.tsx
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import { Inter, Noto_Serif } from 'next/font/google';
+import { playfair, poppins } from '@/lib/fonts';
 import { ToastRoot } from '@/components/ToastRoot';
 import { SWRProvider } from '@/components/SWRProvider';
 import { Providers } from '@/components/Providers';
@@ -9,29 +9,8 @@ import { WebVitalsProvider } from '@/components/WebVitalsProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 /**
- * Global Typography: Inter Only
- * 
- * Single font family across entire application:
- * - App UI, dashboard, blog, help centre
- * - Hierarchy via weight (400/500/600/700), size, spacing
- * - No Poppins, no font mixing
+ * Global typography: Poppins as default (`font-sans` → `--font-poppins`). Playfair variable on `<html>` for optional display headings (`next/font`, display: swap).
  */
-const inter = Inter({
-    subsets: ['latin'],
-    weight: ['400', '500', '600', '700'],
-    variable: '--font-sans',
-    display: 'swap',
-});
-
-// Accent font (italic only) for a few highlighted words in headings.
-// Keep Inter as the default UI font.
-const notoSerifItalic = Noto_Serif({
-    subsets: ['latin'],
-    weight: ['400', '500', '600', '700'],
-    style: ['italic'],
-    variable: '--font-accent',
-    display: 'swap',
-});
 
 export const metadata: Metadata = {
     metadataBase: new URL('https://virtualaddresshub.com'),
@@ -110,7 +89,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="en">
+        <html lang="en" className={`${playfair.variable} ${poppins.variable}`} suppressHydrationWarning>
             <head>
                 <meta name="format-detection" content="telephone=no" />
                 <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -167,7 +146,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     }}
                 />
             </head>
-            <body className={`${inter.variable} ${notoSerifItalic.variable} font-sans min-h-screen bg-background text-foreground antialiased`} suppressHydrationWarning>
+            <body className="font-sans font-normal min-h-screen bg-background text-foreground antialiased" suppressHydrationWarning>
                 <a
                     href="#main-content"
                     className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md"

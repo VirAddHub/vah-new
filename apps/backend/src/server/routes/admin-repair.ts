@@ -17,6 +17,7 @@
 import { Router, Request, Response } from 'express';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getPool } from '../db';
+import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
 
@@ -90,7 +91,7 @@ router.post('/backfill-expiry', adminRepairMutationLimiter, async (req: Request,
     return res.json({ ok: true, updated, days, now });
   } catch (error: any) {
     console.error('[POST /api/admin-repair/backfill-expiry] error:', error);
-    return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+    return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
   }
 });
 

@@ -2,10 +2,20 @@ import { Router } from "express";
 import { ENV } from "../../env";
 import { getPool } from "../db";
 import { v4 as uuid } from "uuid";
+import crypto from "crypto";
 
 // Security: Disable dev routes in production
 if (process.env.NODE_ENV === 'production') {
     console.warn('⚠️  Dev routes disabled in production');
+}
+
+/** Compare two strings in constant time (H-2 fix). */
+function timingSafeStringEqual(a: string, b: string): boolean {
+  try {
+    return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  } catch {
+    return false;
+  }
 }
 import {
     sendWelcomeEmail,
@@ -37,9 +47,9 @@ function ensureAllowed(req: any, res: any, next: any) {
         return res.status(404).json({ ok: false, error: "not found" });
     }
 
-    // Security: Require correct header
+    // Security: Require correct header (constant-time comparison prevents timing oracle)
     const secret = req.headers["x-dev-seed-secret"];
-    if (!secret || secret !== ENV.DEV_SEED_SECRET) {
+    if (!secret || !timingSafeStringEqual(String(secret), ENV.DEV_SEED_SECRET)) {
         return res.status(401).json({ ok: false, error: "unauthorized" });
     }
 

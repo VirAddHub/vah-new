@@ -14,7 +14,7 @@
     --safe-right: env(safe-area-inset-right, 0px);
 }
 
-/* Inter font is loaded via next/font in layout.tsx */
+/* Playfair + Poppins loaded via next/font in layout (lib/fonts.ts); default UI is Poppins */
 
 /* ========================================
    RESPONSIVE FOUNDATION - NO OVERLAP SETUP
@@ -90,11 +90,11 @@ iframe {
     transition: box-shadow 0.2s ease;
 }
 
-/* Fonts are loaded via next/font in layout.tsx (Inter) */
+/* Fonts are loaded via next/font in layout.tsx (Poppins + Playfair) */
 
 /* Tailwind V4 Theme Configuration */
 @theme {
-    --font-family-sans: var(--font-sans), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    --font-family-sans: var(--font-poppins), system-ui, sans-serif;
 
     --color-background: hsl(var(--background));
     --color-foreground: hsl(var(--foreground));
@@ -250,7 +250,7 @@ iframe {
     /* Scoped typography */
     html,
     body {
-        font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+        font-family: var(--font-poppins), system-ui, sans-serif;
         font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
         background-color: hsl(var(--background));
         color: hsl(var(--foreground));
@@ -262,7 +262,7 @@ iframe {
 
     /* Typography defaults - components control their own sizing */
     /* Headings inherit from Tailwind utilities in components */
-    /* Body text uses Inter via font-sans */
+    /* Body text uses Poppins (Tailwind font-sans / --font-poppins) */
 
     small {
         font-size: 0.75rem;
@@ -337,7 +337,7 @@ iframe {
     }
 
     /* Font utilities use CSS variables from next/font */
-    /* .font-sans uses var(--font-sans) from Tailwind config (Inter) */
+    /* .font-sans uses var(--font-poppins) from Tailwind config */
 
     /* Blog Post Content Styling */
     .prose h2 {

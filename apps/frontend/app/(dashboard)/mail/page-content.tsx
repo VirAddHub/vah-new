@@ -351,12 +351,10 @@ export default function MailInboxPage() {
     // Mark mail as read
     const markAsRead = useCallback(async (item: MailItem) => {
         try {
-            const token = typeof window !== 'undefined' ? localStorage.getItem('vah_jwt') : null;
             const response = await fetch(`/api/bff/mail-items/${item.id}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
                 credentials: 'include',
                 body: JSON.stringify({ is_read: true }),

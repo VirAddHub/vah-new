@@ -1,5 +1,6 @@
 module.exports = {
   root: true,
+  extends: ["next/core-web-vitals"],
   parser: "@typescript-eslint/parser",
   plugins: ["@typescript-eslint", "react-hooks"],
   parserOptions: {
@@ -8,6 +9,8 @@ module.exports = {
     ecmaFeatures: { jsx: true },
   },
   rules: {
+    // Next extends react/recommended; this rule is noisy for marketing/blog copy.
+    "react/no-unescaped-entities": "warn",
     // Ban deprecated API client imports (warn in dev, error in CI)
     "no-restricted-imports": ["warn", {
       paths: [

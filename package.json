@@ -24,9 +24,9 @@
         "format:check": "prettier -c ."
     },
     "devDependencies": {
+        "minimatch": "3.1.2",
         "@types/pg": "^8.10.0",
         "tsx": "^4.7.0",
-        "@next/bundle-analyzer": "^16.0.4",
         "@types/connect-pg-simple": "^7.0.3",
         "@types/cors": "^2.8.19",
         "@types/express-session": "^1.18.2",
@@ -38,6 +38,7 @@
         "@types/react-dom": "18.3.0"
     },
     "overrides": {
+        "minimatch": "3.1.2",
         "dompurify": "^3.3.2",
         "marked": "^16.4.0",
         "elliptic": "^6.6.1",
@@ -46,7 +47,6 @@
         "cipher-base": "^1.0.4",
         "browserify-sign": "^4.2.1",
         "@babel/traverse": "^7.23.2",
-        "brace-expansion": "^2.0.1",
         "braces": "^3.0.3",
         "serialize-javascript": "^6.0.1",
         "prismjs": "^1.30.0",
@@ -54,8 +54,7 @@
         "tar": "^7.5.10",
         "axios": "^1.13.5",
         "@tootallnate/once": "^3.0.1",
-        "esbuild": "^0.25.0",
-        "minimatch": "^10.2.1"
+        "esbuild": "^0.25.0"
     },
     "dependencies": {
         "pg": "^8.11.0",

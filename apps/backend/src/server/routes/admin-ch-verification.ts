@@ -8,6 +8,7 @@ import { sendChVerificationReminder } from '../../lib/mailer';
 import { param } from '../../lib/express-params';
 import fs from 'fs';
 import path from 'path';
+import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
 
@@ -71,7 +72,7 @@ router.get('/ch-verification-reminders', requireAdmin, async (req: Request, res:
                 console.error(`[CH Reminders] Failed to send to user ${user.id}:`, error);
                 errors.push({
                     userId: user.id,
-                    error: error.message || 'Unknown error',
+                    error: 'send_failed',
                 });
                 // Continue with other users even if one fails
             }
@@ -90,7 +91,7 @@ router.get('/ch-verification-reminders', requireAdmin, async (req: Request, res:
         return res.status(500).json({
             ok: false,
             error: 'database_error',
-            message: error.message,
+            message: safeErrorMessage(error),
         });
     }
 });
@@ -155,7 +156,7 @@ router.get('/ch-verification/submissions', requireAdmin, async (req: Request, re
         return res.status(500).json({
             ok: false,
             error: 'database_error',
-            message: error.message
+            message: safeErrorMessage(error)
         });
     }
 });
@@ -195,7 +196,7 @@ router.post('/ch-verification/:userId/approve', requireAdmin, async (req: Reques
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
         console.error('[POST /api/admin/ch-verification/:userId/approve] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -238,7 +239,7 @@ router.post('/ch-verification/:userId/reject', requireAdmin, async (req: Request
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
         console.error('[POST /api/admin/ch-verification/:userId/reject] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -314,7 +315,7 @@ router.get('/ch-verification/proof/:userId', requireAdmin, async (req: Request, 
         fileStream.pipe(res);
     } catch (error: any) {
         console.error('[GET /api/admin/ch-verification/proof/:userId] error:', error);
-        return res.status(500).json({ ok: false, error: 'file_serve_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'file_serve_error', message: safeErrorMessage(error) });
     }
 });
 

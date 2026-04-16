@@ -2,9 +2,11 @@
  * csrf-protection.ts
  *
  * Implements the Double Submit Cookie pattern for CSRF protection.
- * A CSRF token is stored in both localStorage (or memory) and a cookie.
- * On mutating API requests, the client sends the token in a header.
- * The server-side middleware validates that the header token matches the cookie token.
+ * The canonical CSRF token for outgoing requests is the `vah_csrf_token` cookie,
+ * read directly from `document.cookie` in the API client (apiClient.ts).
+ *
+ * The functions below exist for backward-compatibility but are intentionally
+ * in-memory only — NOT localStorage — to prevent third-party script exfiltration.
  */
 import { nanoid } from 'nanoid';
 
@@ -18,62 +20,59 @@ export function generateCSRFToken(): string {
   return nanoid(32); // Generates a 32-character secure random string
 }
 
-// --- Token Storage (Client-Side) ---
+// --- In-memory token store (M-2 fix: never localStorage) ---
+// CSRF tokens must not be readable by third-party scripts.
+// The real token is always read from document.cookie by the API client.
 
 const CSRF_TOKEN_KEY = 'csrf_token';
+const _memStore = new Map<string, string>();
 
 /**
- * Stores the CSRF token in client-side storage (e.g., localStorage).
- * @param {string} token The CSRF token to store.
+ * Store the CSRF token in memory only (never localStorage).
+ * NOTE: The canonical CSRF token source is document.cookie ('vah_csrf_token'),
+ * not this in-memory store. This is kept for backward-compatibility only.
  */
 export function storeCSRFToken(token: string): void {
-  try {
-    localStorage.setItem(CSRF_TOKEN_KEY, token);
-  } catch (error) {
-    console.warn('localStorage is not available. CSRF token will be stored in memory.');
-    // Fallback to in-memory storage if localStorage is blocked or unavailable
-    (globalThis as any)[CSRF_TOKEN_KEY] = token;
-  }
+  _memStore.set(CSRF_TOKEN_KEY, token);
 }
 
 /**
- * Retrieves the CSRF token from client-side storage.
- * @returns {string | null} The stored CSRF token, or null if not found.
+ * Retrieve the CSRF token from in-memory store.
+ * Prefer reading from document.cookie ('vah_csrf_token') directly.
  */
 export function getStoredCSRFToken(): string | null {
-  try {
-    return localStorage.getItem(CSRF_TOKEN_KEY);
-  } catch (error) {
-    return (globalThis as any)[CSRF_TOKEN_KEY] || null;
-  }
+  return _memStore.get(CSRF_TOKEN_KEY) ?? null;
 }
 
 /**
- * Clears the CSRF token from client-side storage.
+ * Clear the CSRF token from in-memory store.
  */
 export function clearStoredCSRFToken(): void {
-  try {
-    localStorage.removeItem(CSRF_TOKEN_KEY);
-  } catch (error) {
-    delete (globalThis as any)[CSRF_TOKEN_KEY];
-  }
+  _memStore.delete(CSRF_TOKEN_KEY);
 }
 
 /**
- * Clear CSRF token (on logout) - Legacy compatibility function
+ * Clear CSRF token (on logout).
+ * Clears both in-memory and the cookie, so session state is fully reset.
  */
 export function clearCSRFToken(): void {
   if (typeof window === 'undefined') return;
-  
-  localStorage.removeItem(CSRF_TOKEN_KEY);
+  _memStore.delete(CSRF_TOKEN_KEY);
   document.cookie = 'vah_csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
 }
 
 /**
- * Add CSRF token to request headers - Legacy compatibility function
+ * @deprecated Use the API client (apiClient.ts / http.ts) which reads the token
+ * directly from document.cookie. Do not use addCSRFHeader directly.
  */
 export function addCSRFHeader(headers: HeadersInit = {}): HeadersInit {
-  const token = getStoredCSRFToken() || generateCSRFToken();
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(
+      '[csrf-protection] addCSRFHeader is deprecated. The API client reads vah_csrf_token ' +
+      'from document.cookie automatically. Do not call addCSRFHeader directly.'
+    );
+  }
+  const token = getStoredCSRFToken() ?? generateCSRFToken();
   return {
     ...headers,
     'X-CSRF-Token': token,

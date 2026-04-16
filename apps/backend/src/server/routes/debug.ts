@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../../middleware/auth';
 import { getPool } from '../db';
+import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
 
@@ -95,7 +96,7 @@ router.get('/forwarding-address', requireAuth, async (req: Request, res: Respons
         });
     } catch (error: any) {
         console.error('[GET /api/debug/forwarding-address] error:', error);
-        return res.status(500).json({ ok: false, error: 'database_error', message: error.message });
+        return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
 
@@ -110,7 +111,7 @@ router.get('/export-jobs/ping', async (req: Request, res: Response) => {
         const result = await pool.query('SELECT count(*)::int AS count FROM export_job');
         return res.json({ ok: true, count: result.rows[0]?.count ?? 0 });
     } catch (e: any) {
-        return res.status(500).json({ ok: false, code: e?.code, message: e?.message });
+        return res.status(500).json({ ok: false, code: e?.code, message: safeErrorMessage(e) });
     }
 });
 

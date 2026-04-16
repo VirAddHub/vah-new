@@ -9,5 +9,9 @@ export const SESSION_REFRESH_THRESHOLD_SECONDS = 15 * 60; // 15 minutes
 
 // Password hashing cost factor (bcrypt)
 // Default to 10 for good security + better throughput on small/medium CPU instances.
-export const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS ?? 10);
+// Clamped to 10–14: anything below 10 is insecure; above 14 would cause unacceptable latency.
+const _rawBcryptRounds = Number(process.env.BCRYPT_ROUNDS ?? 10);
+export const BCRYPT_ROUNDS = Number.isFinite(_rawBcryptRounds)
+  ? Math.max(10, Math.min(14, _rawBcryptRounds))
+  : 10;
 

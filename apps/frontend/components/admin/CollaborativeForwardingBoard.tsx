@@ -141,8 +141,7 @@ export default function CollaborativeForwardingBoard({
         method: 'POST',
         credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('vah_jwt') || ''}`
+          'Content-Type': 'application/json'
         }
       });
 
@@ -164,8 +163,7 @@ export default function CollaborativeForwardingBoard({
         method: 'POST',
         credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('vah_jwt') || ''}`
+          'Content-Type': 'application/json'
         }
       });
 
@@ -210,8 +208,9 @@ export default function CollaborativeForwardingBoard({
       // Use BFF route instead of direct backend call
       const response = await fetch(`/api/admin/forwarding/locks`, {
         credentials: 'include',
+        // No custom headers needed, cookies are automatically included
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('vah_jwt') || ''}`
+          'Accept': 'application/json'
         }
       });
 
@@ -406,8 +405,7 @@ export default function CollaborativeForwardingBoard({
         method: "POST",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem('vah_jwt') || ''}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({ status: canonicalStatus }),
       });
@@ -506,8 +504,7 @@ export default function CollaborativeForwardingBoard({
         method: 'DELETE',
         credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('vah_jwt') || ''}`
+          'Content-Type': 'application/json'
         }
       });
 

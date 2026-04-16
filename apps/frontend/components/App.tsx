@@ -35,18 +35,6 @@ export function App({ initialPricing = null }: AppProps) {
   const { currentPage, navigate, goBack } = useNavigation();
   const [signupData, setSignupData] = useState<any>(null);
 
-  // Layer 2: HTML Preload for Montserrat fonts
-  useEffect(() => {
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.href = 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap';
-    link.as = 'style';
-    link.onload = function () {
-      (this as any).rel = 'stylesheet';
-    };
-    document.head.appendChild(link);
-  }, []);
-
   // Redirect to actual Next.js login route when navigating to 'login'
   useEffect(() => {
     if (currentPage === 'login') {

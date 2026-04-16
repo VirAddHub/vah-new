@@ -40,25 +40,6 @@ export function IdentityComplianceCard({
     const [kycOpen, setKycOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // If fully compliant, show success card
-    if (compliance.canUseRegisteredOfficeAddress) {
-        return (
-            <Card className="border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-400">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-green-900 dark:text-green-100">
-                        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                        Identity Checks Complete
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-body-sm text-green-800 dark:text-green-200">
-                        You can now use your VirtualAddressHub registered office address.
-                    </p>
-                </CardContent>
-            </Card>
-        );
-    }
-
     // Start KYC flow
     const startKyc = useCallback(async () => {
         setStartingKyc(true);
@@ -200,6 +181,25 @@ export function IdentityComplianceCard({
             }
         };
     }, [kycOpen, kycToken, toast, router]);
+
+    // If fully compliant, show success card (after hooks)
+    if (compliance.canUseRegisteredOfficeAddress) {
+        return (
+            <Card className="border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-400">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-green-900 dark:text-green-100">
+                        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        Identity Checks Complete
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-body-sm text-green-800 dark:text-green-200">
+                        You can now use your VirtualAddressHub registered office address.
+                    </p>
+                </CardContent>
+            </Card>
+        );
+    }
 
     const kycButtonText =
         kycStatus === "pending"

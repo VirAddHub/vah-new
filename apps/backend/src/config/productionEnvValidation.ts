@@ -184,6 +184,15 @@ export function collectProductionEnvIssues(): ProductionEnvCheckResult {
     );
   }
 
+  // --- Auth config ---
+  const bcryptRounds = Number(trim('BCRYPT_ROUNDS') || 10);
+  if (Number.isFinite(bcryptRounds) && bcryptRounds < 10) {
+    fatal.push(
+      `BCRYPT_ROUNDS=${bcryptRounds} is too low. Minimum allowed value in production is 10. ` +
+      'Low values make password hashes trivially crackable. Unset the variable to use the default (10).'
+    );
+  }
+
   if (trim('CORS_DEBUG') === '1') {
     warnings.push('CORS_DEBUG=1 is set — disable in production (verbose CORS logging).');
   }

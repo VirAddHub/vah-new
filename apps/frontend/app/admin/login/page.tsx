@@ -59,8 +59,8 @@ export default function AdminLoginPage() {
             console.error("Logout API call failed:", error);
         } finally {
             clearToken();
-            localStorage.removeItem("vah_jwt");
-            localStorage.removeItem("vah_user");
+            // Removed
+            // Removed
             const isSecure = window.location.protocol === "https:";
             const sameSiteValue = isSecure ? "None" : "Lax";
             const secureFlag = isSecure ? "; Secure" : "";
