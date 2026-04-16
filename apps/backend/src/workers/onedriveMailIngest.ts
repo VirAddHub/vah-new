@@ -138,7 +138,7 @@ async function extractSenderFromPdf(
             content: [
               {
                 type: 'text',
-                text: 'Look at this letter. Reply with JSON only, no markdown: { "sender": "organisation or person name", "mailType": "letter or bill or parcel notice etc" }. If unsure, use null.',
+                text: 'Look at this letter. Reply with JSON only, no markdown: { "sender": "Full Company Name and Department (e.g., NHS Neurology Department)", "mailType": "letter or bill or parcel notice etc" }. Prioritise the primary organisation and department name over an individual staff member. If unsure, use null.',
               },
               {
                 type: 'image_url',
