@@ -2,6 +2,10 @@
 node_modules/
 dist/
 coverage/
+
+# Keep shared package compiled output so Render doesn't need to build it
+!packages/shared/dist/
+!packages/shared/dist/**
 .turbo/
 .DS_Store
 .history/
