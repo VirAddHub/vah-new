@@ -5,6 +5,7 @@ import { getErrorMessage, getErrorStack } from '../lib/errors';
 import { clientAuthManager, isApiUser, toClientUser } from '../lib/client-auth';
 import { setToken, setStoredUser } from '../lib/token-manager';
 import { tokenManager } from '../lib/token-manager';
+import { api as apiClient } from '../lib/http';
 import type { ApiUser } from '../types/user';
 import type { User as ClientUser } from '../lib/client-auth';
 
