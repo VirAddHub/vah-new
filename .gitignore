@@ -147,6 +147,7 @@ apps/frontend/out/
 *.md
 !README.md
 !**/README.md
+!docs/backend-api-inventory.md
 
 # Test scripts - keep local
 *.sh
