@@ -33,6 +33,8 @@
         "app",
         "lib/**/*.js",
         "**/*.test.ts",
+        "**/*.spec.ts",
+        "src/tests/**",
         "src/**/*.js",
         "src/**/*.mjs"
     ]
