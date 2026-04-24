@@ -216,8 +216,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 userId: apiUser.user_id
             });
 
-            console.log('User is authenticated. Redirecting to /mail');
-            window.location.href = '/mail';
+            const redirectPath = apiUser.is_admin ? '/admin/dashboard' : '/mail';
+            console.log('User is authenticated. Redirecting to', redirectPath);
+            window.location.href = redirectPath;
         } catch (error: any) {
             await logAuthEvent('user_login_failed', {
                 email: credentials.email,
@@ -281,6 +282,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 email: credentials.email,
                 adminId: apiUser.user_id
             });
+
+            window.location.href = '/admin/dashboard';
         } catch (error: any) {
             await logAuthEvent('admin_login_failed', {
                 email: credentials.email,
