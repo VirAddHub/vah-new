@@ -19,6 +19,7 @@ import {
     FileText,
     Package,
     Mail,
+    ClipboardList,
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -45,6 +46,10 @@ const MailSection = dynamic(() => import('@/components/admin/MailSection').then(
     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
+const AuditLogSection = dynamic(() => import('@/components/admin/AuditLogSection').then(mod => ({ default: mod.AuditLogSection })), {
+    loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
+});
+
 // Monitoring sections removed - using Sentry instead
 // const WebVitalsSection = dynamic(() => import('@/components/admin/WebVitalsSection').then(mod => ({ default: mod.WebVitalsSection })), {
 //     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
@@ -67,7 +72,7 @@ interface AdminDashboardProps {
     verifiedAdminUser: WhoamiUser | null;
 }
 
-type AdminSection = "users" | "mail" | "forwarding" | "plans" | "blog";
+type AdminSection = "users" | "mail" | "forwarding" | "plans" | "blog" | "audit";
 
 export function EnhancedAdminDashboard({
     onLogout,
@@ -83,7 +88,7 @@ export function EnhancedAdminDashboard({
     // Sync activeSection with URL query param
     useEffect(() => {
         const sectionParam = searchParams.get('section');
-        if (sectionParam && ['users', 'mail', 'forwarding', 'plans', 'blog'].includes(sectionParam)) {
+        if (sectionParam && ['users', 'mail', 'forwarding', 'plans', 'blog', 'audit'].includes(sectionParam)) {
             setActiveSection(sectionParam as AdminSection);
         }
     }, [searchParams]);
@@ -158,6 +163,7 @@ export function EnhancedAdminDashboard({
         { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
         { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
         { id: "blog", label: "Blog", icon: <FileText className="h-4 w-4" /> },
+        { id: "audit", label: "Audit log", icon: <ClipboardList className="h-4 w-4" /> },
     ] as const;
 
     const handleFiltersChange = useCallback((filters: {
@@ -197,6 +203,8 @@ export function EnhancedAdminDashboard({
                 return <PlansSection />;
             case "blog":
                 return <BlogSection />;
+            case "audit":
+                return <AuditLogSection />;
             default:
                 // Exhaustiveness check: TypeScript will error if a case is missing
                 const _exhaustive: never = activeSection;

@@ -921,4 +921,148 @@ router.post('/users/:id/restore', requireAdmin, async (req: Request, res: Respon
     }
 });
 
+/**
+ * POST /api/admin/users
+ * Create a new user account (admin only).
+ */
+router.post('/users', requireAdmin, async (req: Request, res: Response) => {
+    const adminId = req.user!.id;
+    const { email, first_name, last_name, company_name, plan_status, password } = req.body;
+
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+        return res.status(400).json({ ok: false, error: 'valid_email_required' });
+    }
+
+    const pool = getPool();
+    try {
+        const bcrypt = await import('bcrypt');
+        const crypto = await import('crypto');
+
+        const existing = await pool.query(
+            'SELECT id FROM "user" WHERE lower(email) = $1',
+            [email.toLowerCase().trim()]
+        );
+        if (existing.rows.length > 0) {
+            return res.status(409).json({ ok: false, error: 'email_exists', message: 'An account with that email already exists.' });
+        }
+
+        const rawPassword = (typeof password === 'string' && password.length >= 8)
+            ? password
+            : crypto.randomBytes(20).toString('hex');
+        const passwordHash = await bcrypt.hash(rawPassword, 10);
+
+        const result = await pool.query(
+            `INSERT INTO "user"
+               (email, first_name, last_name, company_name, plan_status, password_hash, status, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, 'pending', NOW(), $7)
+             RETURNING id, email, first_name, last_name, company_name, plan_status, status, created_at`,
+            [
+                email.toLowerCase().trim(),
+                first_name || null,
+                last_name || null,
+                company_name || null,
+                plan_status || 'pending_payment',
+                passwordHash,
+                nowMs(),
+            ]
+        );
+
+        const newUser = result.rows[0];
+
+        await pool.query(
+            `INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
+             VALUES ($1, 'create_user', 'user', $2, $3, NOW())`,
+            [adminId, newUser.id, JSON.stringify({ email: newUser.email })]
+        );
+
+        // Send password-reset so user can set their own password on first login
+        queueMicrotask(async () => {
+            try {
+                const resetCrypto = await import('crypto');
+                const bcryptLib = await import('bcrypt');
+                const raw = resetCrypto.randomBytes(32).toString('hex');
+                const hash = await bcryptLib.hash(raw, 10);
+                const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000);
+                await pool.query(
+                    `UPDATE "user" SET reset_token_hash=$1, reset_token_expires_at=$2, reset_token_used_at=NULL WHERE id=$3`,
+                    [hash, expiresAt.toISOString(), newUser.id]
+                );
+                const APP_BASE_URL = buildAppUrl('');
+                await sendTemplateEmail({
+                    to: newUser.email,
+                    templateAlias: Templates.PasswordReset,
+                    model: {
+                        firstName: newUser.first_name || 'there',
+                        resetLink: `${APP_BASE_URL}/reset-password/confirm?token=${encodeURIComponent(raw)}`,
+                        expiryMinutes: 72 * 60,
+                    },
+                });
+            } catch (e: any) {
+                console.warn('[admin create_user] welcome email failed (non-fatal):', e?.message);
+            }
+        });
+
+        return res.status(201).json({ ok: true, data: newUser });
+    } catch (error: any) {
+        console.error('[POST /api/admin/users] error:', error);
+        return res.status(500).json({ ok: false, error: 'database_error', message: error?.message });
+    }
+});
+
+/**
+ * POST /api/admin/users/:id/send-password-reset
+ * Send a password-reset email to any user (admin only).
+ */
+router.post('/users/:id/send-password-reset', requireAdmin, async (req: Request, res: Response) => {
+    const userId = parseInt(param(req, 'id'), 10);
+    const adminId = req.user!.id;
+
+    if (!userId) return res.status(400).json({ ok: false, error: 'invalid_id' });
+
+    const pool = getPool();
+    try {
+        const userResult = await pool.query(
+            'SELECT id, email, first_name FROM "user" WHERE id = $1 AND deleted_at IS NULL',
+            [userId]
+        );
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+        const user = userResult.rows[0];
+
+        const crypto = await import('crypto');
+        const bcrypt = await import('bcrypt');
+        const raw = crypto.randomBytes(32).toString('hex');
+        const hash = await bcrypt.hash(raw, 10);
+        const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+        await pool.query(
+            `UPDATE "user" SET reset_token_hash=$1, reset_token_expires_at=$2, reset_token_used_at=NULL WHERE id=$3`,
+            [hash, expiresAt.toISOString(), userId]
+        );
+
+        const APP_BASE_URL = buildAppUrl('');
+        await sendTemplateEmail({
+            to: user.email,
+            templateAlias: Templates.PasswordReset,
+            model: {
+                firstName: user.first_name || 'there',
+                resetLink: `${APP_BASE_URL}/reset-password/confirm?token=${encodeURIComponent(raw)}`,
+                expiryMinutes: 30,
+            },
+        });
+
+        await pool.query(
+            `INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
+             VALUES ($1, 'send_password_reset', 'user', $2, $3, NOW())`,
+            [adminId, userId, JSON.stringify({ email: user.email })]
+        );
+
+        return res.json({ ok: true, message: 'Password reset email sent.' });
+    } catch (error: any) {
+        console.error('[POST /api/admin/users/:id/send-password-reset] error:', error);
+        return res.status(500).json({ ok: false, error: 'server_error', message: error?.message });
+    }
+});
+
 export default router;

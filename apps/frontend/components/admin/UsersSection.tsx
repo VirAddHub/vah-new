@@ -113,6 +113,18 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   const [kycModal, setKycModal] = useState<null | { id: string | number; email: string; kyc_status?: string | null }>(null);
   const [kycValue, setKycValue] = useState<string>('pending');
 
+  // Create user modal state
+  const [createModal, setCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({ email: '', first_name: '', last_name: '', company_name: '', plan_status: 'pending_payment' });
+  const [createError, setCreateError] = useState('');
+
+  // Edit profile modal state
+  const [editModal, setEditModal] = useState<null | AdminUser>(null);
+  const [editForm, setEditForm] = useState({ email: '', first_name: '', last_name: '', company_name: '' });
+
+  // Password reset sending state
+  const [resetSendingId, setResetSendingId] = useState<string | number | null>(null);
+
   // Mutation state
   const [isMutating, setIsMutating] = useState(false);
 
@@ -404,6 +416,13 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         </div>
         <div className="flex gap-2">
           <Button
+            variant="primary"
+            size="sm"
+            onClick={() => { setCreateForm({ email: '', first_name: '', last_name: '', company_name: '', plan_status: 'pending_payment' }); setCreateError(''); setCreateModal(true); }}
+          >
+            + Create user
+          </Button>
+          <Button
             variant={showDeleted ? "primary" : "ghost"}
             onClick={() => {
               console.log('[UsersSection] Toggle showDeleted from', showDeleted, 'to', !showDeleted);
@@ -530,6 +549,14 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                             <Button
                               variant="outline"
                               size="sm"
+                              onClick={() => { setEditForm({ email: u.email, first_name: u.first_name ?? '', last_name: u.last_name ?? '', company_name: u.company_name ?? '' }); setEditModal(u); }}
+                              disabled={isMutating}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => setPlanStatusModal({ id: u.id, email: u.email, plan_status: u.plan_status })}
                               disabled={isMutating}
                             >
@@ -545,21 +572,39 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  disabled={isMutating}
-                                >
-                                  Delete
+                                <Button variant="outline" size="sm" disabled={isMutating}>
+                                  More
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-64">
+                                <DropdownMenuItem
+                                  onClick={async () => {
+                                    setResetSendingId(u.id);
+                                    try {
+                                      const res = await fetch(`/api/admin/users/send-password-reset?id=${u.id}`, { method: 'POST', credentials: 'include' });
+                                      const json = await res.json().catch(() => ({}));
+                                      if (!res.ok) throw new Error(json.message || 'Failed');
+                                      toast({ title: 'Password reset sent', description: `Reset email sent to ${u.email}.` });
+                                    } catch (e: any) {
+                                      toast({ title: 'Failed to send reset', description: e.message, variant: 'destructive' });
+                                    } finally {
+                                      setResetSendingId(null);
+                                    }
+                                  }}
+                                  className="cursor-pointer"
+                                  disabled={resetSendingId === u.id}
+                                >
+                                  <div className="w-full">
+                                    <div className="font-medium text-foreground">{resetSendingId === u.id ? 'Sending…' : 'Send password reset'}</div>
+                                    <div className="text-caption text-muted-foreground mt-0.5">Emails a reset link to the user</div>
+                                  </div>
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => setDeleteModal({ id: u.id, email: u.email, permanent: false })}
                                   className="cursor-pointer"
                                 >
                                   <div className="w-full">
-                                    <div className="font-medium text-foreground">Soft Delete</div>
+                                    <div className="font-medium text-foreground">Soft delete</div>
                                     <div className="text-caption text-muted-foreground mt-0.5">Can be restored later</div>
                                   </div>
                                 </DropdownMenuItem>
@@ -568,7 +613,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                                   className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
                                 >
                                   <div className="w-full">
-                                    <div className="font-bold">⚠️ Permanent Delete</div>
+                                    <div className="font-bold">⚠️ Permanent delete</div>
                                     <div className="text-caption text-destructive mt-0.5 font-semibold">Cannot be undone!</div>
                                   </div>
                                 </DropdownMenuItem>
@@ -901,6 +946,135 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 disabled={isMutating}
               >
                 {isMutating ? "Saving…" : "Save"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Create user modal */}
+      {createModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card border rounded-2xl p-6 w-full max-w-md space-y-5">
+            <div>
+              <h3 className="text-body-lg font-semibold mb-1">Create user</h3>
+              <p className="text-body-sm text-muted-foreground">A password-reset email will be sent so they can set their own password.</p>
+            </div>
+            {createError && <p className="text-body-sm text-destructive">{createError}</p>}
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="cu-email">Email *</Label>
+                <Input id="cu-email" type="email" value={createForm.email} onChange={(e) => setCreateForm(f => ({ ...f, email: e.target.value }))} placeholder="user@example.com" />
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="cu-first">First name</Label>
+                  <Input id="cu-first" value={createForm.first_name} onChange={(e) => setCreateForm(f => ({ ...f, first_name: e.target.value }))} placeholder="Jane" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="cu-last">Last name</Label>
+                  <Input id="cu-last" value={createForm.last_name} onChange={(e) => setCreateForm(f => ({ ...f, last_name: e.target.value }))} placeholder="Smith" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="cu-company">Company name</Label>
+                <Input id="cu-company" value={createForm.company_name} onChange={(e) => setCreateForm(f => ({ ...f, company_name: e.target.value }))} placeholder="Acme Ltd" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="cu-plan">Plan status</Label>
+                <select id="cu-plan" className="w-full border rounded-md px-3 py-2 bg-background text-body-sm" value={createForm.plan_status} onChange={(e) => setCreateForm(f => ({ ...f, plan_status: e.target.value }))}>
+                  {PLAN_STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setCreateModal(false)} disabled={isMutating}>Cancel</Button>
+              <Button
+                onClick={async () => {
+                  if (!createForm.email.includes('@')) { setCreateError('Enter a valid email address.'); return; }
+                  setIsMutating(true);
+                  setCreateError('');
+                  try {
+                    const res = await fetch('/api/admin/users', {
+                      method: 'POST',
+                      credentials: 'include',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(createForm),
+                    });
+                    const json = await res.json().catch(() => ({}));
+                    if (!res.ok) throw new Error(json.message || json.error || 'Failed to create user');
+                    toast({ title: 'User created', description: `${createForm.email} has been created and will receive a password-reset email.` });
+                    setCreateModal(false);
+                    if (onRefreshUsers) await onRefreshUsers();
+                  } catch (e: any) {
+                    setCreateError(e.message ?? 'Unknown error');
+                  } finally {
+                    setIsMutating(false);
+                  }
+                }}
+                disabled={isMutating}
+              >
+                {isMutating ? 'Creating…' : 'Create user'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit profile modal */}
+      {editModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card border rounded-2xl p-6 w-full max-w-md space-y-5">
+            <div>
+              <h3 className="text-body-lg font-semibold mb-1">Edit profile</h3>
+              <p className="text-body-sm text-muted-foreground">User #{editModal.id}</p>
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="ep-email">Email</Label>
+                <Input id="ep-email" type="email" value={editForm.email} onChange={(e) => setEditForm(f => ({ ...f, email: e.target.value }))} />
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="ep-first">First name</Label>
+                  <Input id="ep-first" value={editForm.first_name} onChange={(e) => setEditForm(f => ({ ...f, first_name: e.target.value }))} />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="ep-last">Last name</Label>
+                  <Input id="ep-last" value={editForm.last_name} onChange={(e) => setEditForm(f => ({ ...f, last_name: e.target.value }))} />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="ep-company">Company name</Label>
+                <Input id="ep-company" value={editForm.company_name} onChange={(e) => setEditForm(f => ({ ...f, company_name: e.target.value }))} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditModal(null)} disabled={isMutating}>Cancel</Button>
+              <Button
+                onClick={async () => {
+                  if (!editModal) return;
+                  setIsMutating(true);
+                  try {
+                    const payload: Record<string, string> = {};
+                    if (editForm.email !== editModal.email) payload.email = editForm.email;
+                    if (editForm.first_name !== (editModal.first_name ?? '')) payload.first_name = editForm.first_name;
+                    if (editForm.last_name !== (editModal.last_name ?? '')) payload.last_name = editForm.last_name;
+                    if (editForm.company_name !== (editModal.company_name ?? '')) payload.company_name = editForm.company_name;
+                    if (Object.keys(payload).length === 0) { setEditModal(null); return; }
+                    const res = await adminApi.updateUser(editModal.id, payload);
+                    if (!res.ok) throw new Error(res.error || 'update_failed');
+                    toast({ title: 'Profile updated', description: `${editForm.email} has been updated.` });
+                    setEditModal(null);
+                    if (onRefreshUsers) await onRefreshUsers();
+                  } catch (e: any) {
+                    toast({ title: 'Failed to update profile', description: e.message ?? 'Unknown error', variant: 'destructive' });
+                  } finally {
+                    setIsMutating(false);
+                  }
+                }}
+                disabled={isMutating}
+              >
+                {isMutating ? 'Saving…' : 'Save changes'}
               </Button>
             </div>
           </div>
