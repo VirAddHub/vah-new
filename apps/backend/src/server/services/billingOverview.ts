@@ -250,7 +250,7 @@ export async function getBillingOverviewData(
       : 'monthly';
   const fallbackPricePence = resolvedCadence === 'annual' ? 8999 : 999;
 
-  let accountStatus = 'active';
+  let accountStatus: 'active' | 'past_due' | 'suspended' | 'grace_period' = 'active';
   let gracePeriodInfo: { days_left: number; retry_count: number; grace_until: number } | null = null;
   if (user?.account_suspended_at) {
     accountStatus = 'suspended';
