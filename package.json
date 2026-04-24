@@ -13,7 +13,7 @@
         "db:inspect": "tsx scripts/db/inspect-tables.ts",
         "start:backend": "npm --workspace apps/backend run start",
         "start:frontend": "npm --workspace apps/frontend run dev",
-        "build": "npm run build --workspace packages/shared && npm run build --workspaces --if-present",
+        "build": "npm run build --workspace packages/shared && npm run build --workspace apps/frontend && npm run build --workspace apps/backend",
         "build:backend": "npm run -w apps/backend build",
         "dev:backend": "node apps/backend/dist/server/index.js",
         "install:all": "npm install --workspaces",
