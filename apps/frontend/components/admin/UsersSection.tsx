@@ -444,7 +444,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       </div>
 
       {/* Status row */}
-      {loading || deletedUsersLoading && (
+      {(loading || deletedUsersLoading) && (
         <div className="text-center py-2 text-body-sm text-muted-foreground">
           Loading users…
         </div>
@@ -631,7 +631,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         </div>
 
         {/* Loading overlay */}
-        {loading || deletedUsersLoading && (
+        {(loading || deletedUsersLoading) && (
           <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] flex items-center justify-center">
             <span className="text-body-sm">Loading…</span>
           </div>
