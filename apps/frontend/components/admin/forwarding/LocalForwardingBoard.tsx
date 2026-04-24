@@ -153,14 +153,14 @@ export default function LocalForwardingBoard() {
         <h1 className="text-h2 font-semibold">Forwarding Board (Manual Mode)</h1>
         <div className="flex-1" />
         <input
-          className="border rounded-lg px-3 py-2 w-64"
+          className="border rounded-md px-3 py-2 w-64"
           placeholder="Search…"
           value={filter}
           onChange={e => setFilter(e.target.value)}
         />
-        <button className="border px-3 py-2 rounded-lg" onClick={resetBoard}>Reset</button>
-        <button className="border px-3 py-2 rounded-lg" onClick={exportBoard}>Export</button>
-        <label className="border px-3 py-2 rounded-lg cursor-pointer">
+        <button className="border px-3 py-2 rounded-md" onClick={resetBoard}>Reset</button>
+        <button className="border px-3 py-2 rounded-md" onClick={exportBoard}>Export</button>
+        <label className="border px-3 py-2 rounded-md cursor-pointer">
           Import
           <input type="file" className="hidden" accept="application/json" onChange={e => e.target.files && importBoard(e.target.files[0])} />
         </label>
@@ -170,17 +170,17 @@ export default function LocalForwardingBoard() {
       <form onSubmit={addCard} className="mb-5 flex flex-wrap gap-2 items-end">
         <div className="flex flex-col">
           <label className="text-body-sm">ID</label>
-          <input className="border rounded-lg px-3 py-2 w-40" value={adding.id} onChange={e => setAdding(a => ({ ...a, id: e.target.value }))} placeholder="FR-000014" />
+          <input className="border rounded-md px-3 py-2 w-40" value={adding.id} onChange={e => setAdding(a => ({ ...a, id: e.target.value }))} placeholder="FR-000014" />
         </div>
         <div className="flex flex-col">
           <label className="text-body-sm">Name</label>
-          <input className="border rounded-lg px-3 py-2 w-56" value={adding.name} onChange={e => setAdding(a => ({ ...a, name: e.target.value }))} placeholder="John Smith" />
+          <input className="border rounded-md px-3 py-2 w-56" value={adding.name} onChange={e => setAdding(a => ({ ...a, name: e.target.value }))} placeholder="John Smith" />
         </div>
         <div className="flex flex-col flex-1 min-w-[240px]">
           <label className="text-body-sm">Address (optional)</label>
-          <input className="border rounded-lg px-3 py-2" value={adding.address} onChange={e => setAdding(a => ({ ...a, address: e.target.value }))} placeholder="123 Test Street…" />
+          <input className="border rounded-md px-3 py-2" value={adding.address} onChange={e => setAdding(a => ({ ...a, address: e.target.value }))} placeholder="123 Test Street…" />
         </div>
-        <button className="bg-black text-primary-foreground px-4 py-2 rounded-lg">Add</button>
+        <button className="bg-black text-primary-foreground px-4 py-2 rounded-md">Add</button>
       </form>
 
       {/* Columns */}

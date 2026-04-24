@@ -1,3 +1,4 @@
+// DEV/TEST ONLY — must never mount in production. See server.ts guard.
 // Safe stubs for payments integration until GoCardless is wired
 import { Router, Request, Response } from 'express';
 

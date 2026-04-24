@@ -61,6 +61,7 @@ function ensureAllowed(req: any, res: any, next: any) {
  * body: { email?: string, firstName?: string }
  * returns: { userId, email, firstName }
  */
+if (process.env.NODE_ENV !== 'production') {
 router.post("/api/dev/seed-user", ensureAllowed, async (req, res) => {
     const email = (req.body?.email || `seed+${Date.now()}@virtualaddresshub.co.uk`).toLowerCase();
     const firstName = req.body?.firstName || "Seed";
@@ -276,5 +277,6 @@ router.post("/api/dev/cleanup", ensureAllowed, async (req, res) => {
         return res.status(500).json({ ok: false, error: error.message });
     }
 });
+}
 
 export default router;

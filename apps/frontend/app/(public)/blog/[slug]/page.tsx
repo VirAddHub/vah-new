@@ -8,9 +8,6 @@ import { formatBlogDate } from '@/lib/blog-date-formatter';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import Link from 'next/link';
 
-export const revalidate = 0;
-export const dynamic = 'force-dynamic';
-
 type BlogPost = {
   slug: string;
   title: string;

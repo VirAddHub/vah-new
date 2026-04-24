@@ -47,27 +47,19 @@ export interface SignupStep3Data {
     step2Data: SignupStep2Data;
 }
 
-export type SignupStep = 1 | 2 | 3;
+export type SignupStep = 2 | 3;
 
-export function useSignup() {
-    const [currentStep, setCurrentStep] = useState<SignupStep>(1);
-    const [step1Data, setStep1Data] = useState<SignupStep1Data | null>(null);
+export function useSignup(initialBilling: 'monthly' | 'annual' = 'monthly') {
+    const [currentStep, setCurrentStep] = useState<SignupStep>(2);
+    const [step1Data, setStep1Data] = useState<SignupStep1Data>({ billing: initialBilling, price: '9.99' });
     const [step2Data, setStep2Data] = useState<SignupStep2Data | null>(null);
     const [isComplete, setIsComplete] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [emailAlreadyExists, setEmailAlreadyExists] = useState(false);
 
-    const goToStep1 = useCallback(() => {
-        setCurrentStep(1);
-        setStep1Data(null);
-        setStep2Data(null);
-        setIsComplete(false);
-    }, []);
-
-    const goToStep2 = useCallback((data: SignupStep1Data) => {
+    const updateStep1Data = useCallback((data: SignupStep1Data) => {
         setStep1Data(data);
-        setCurrentStep(2);
     }, []);
 
     const goToStep3 = useCallback((data: SignupStep2Data) => {
@@ -76,8 +68,8 @@ export function useSignup() {
     }, []);
 
     const goBack = useCallback(() => {
-        if (currentStep > 1) {
-            setCurrentStep((prev) => (prev - 1) as SignupStep);
+        if (currentStep === 3) {
+            setCurrentStep(2);
         }
     }, [currentStep]);
 
@@ -148,8 +140,8 @@ export function useSignup() {
     }, [step2Data, step1Data]);
 
     const resetSignup = useCallback(() => {
-        setCurrentStep(1);
-        setStep1Data(null);
+        setCurrentStep(2);
+        setStep1Data({ billing: initialBilling, price: '9.99' });
         setStep2Data(null);
         setIsComplete(false);
         setIsLoading(false);
@@ -165,8 +157,7 @@ export function useSignup() {
         isLoading,
         error,
         emailAlreadyExists,
-        goToStep1,
-        goToStep2,
+        updateStep1Data,
         goToStep3,
         goBack,
         completeSignup,

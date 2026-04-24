@@ -256,6 +256,7 @@ iframe {
         color: hsl(var(--foreground));
         transition: background-color .25s ease, color .25s ease, border-color .25s ease;
         font-weight: 400;
+        font-style: normal;
         line-height: 1.5;
         /* ~150% as specified */
     }

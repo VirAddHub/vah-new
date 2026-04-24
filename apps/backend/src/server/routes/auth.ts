@@ -1,10 +1,16 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
+import crypto from 'crypto';
 import { z } from "zod";
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getPool } from "../db";
 import { generateToken, verifyToken, extractTokenFromHeader } from "../../lib/jwt";
 import { BCRYPT_ROUNDS, SESSION_IDLE_TIMEOUT_SECONDS } from "../../config/auth";
 import { sendWelcomeKycEmail } from "../../lib/mailer";
+import { sendTemplateEmail } from '../../lib/mailer';
+import { Templates } from '../../lib/postmark-templates';
+import { APP_BASE_URL } from '../../config/env';
+import { withTimeout } from '../../lib/withTimeout';
 import { ENV } from "../../env";
 import { upsertSubscriptionForUser } from "../services/subscription-linking";
 import { ok, unauthorized, badRequest, serverError } from "../lib/apiResponse";
@@ -35,6 +41,96 @@ function devOnly(req: any, res: any, next: any) {
     return next();
 }
 
+const resetPasswordRequestLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
+});
+
+const ResetPasswordRequestBody = z.object({
+    email: z.string().email(),
+});
+
+router.post('/reset-password/request', resetPasswordRequestLimiter, async (req, res) => {
+    const parsed = ResetPasswordRequestBody.safeParse(req.body);
+    res.status(200).json({ ok: true, message: "If that email exists, we've sent a link." });
+    if (!parsed.success) return;
+
+    const { email } = parsed.data;
+    queueMicrotask(async () => {
+        try {
+            const user = await withTimeout(
+                (async () => {
+                    const pool = getPool();
+                    const { rows } = await pool.query(
+                        'SELECT id, name, first_name, email FROM "user" WHERE lower(email) = $1 LIMIT 1',
+                        [email.toLowerCase()]
+                    );
+                    return rows[0] || null;
+                })(),
+                1500,
+                'user lookup'
+            ).catch((e: any) => {
+                logger.warn('[password-reset-request] user_lookup_failed', { message: e?.message ?? String(e) });
+                return null;
+            });
+
+            if (!user) return;
+
+            const raw = crypto.randomBytes(32).toString('hex');
+            const hash = await bcrypt.hash(raw, BCRYPT_ROUNDS);
+            const ttlMinutes = 30;
+            const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000);
+
+            const saved = await withTimeout(
+                (async () => {
+                    const pool = getPool();
+                    await pool.query(
+                        `UPDATE "user" 
+                         SET reset_token_hash = $1, 
+                             reset_token_expires_at = $2, 
+                             reset_token_used_at = NULL 
+                         WHERE id = $3`,
+                        [hash, expiresAt.toISOString(), user.id]
+                    );
+                    return true;
+                })(),
+                1500,
+                'token save'
+            ).catch((e: any) => {
+                logger.warn('[password-reset-request] token_save_failed', { message: e?.message ?? String(e) });
+                return null;
+            });
+
+            if (!saved) return;
+
+            withTimeout(
+                sendTemplateEmail({
+                    to: user.email,
+                    templateAlias: Templates.PasswordReset,
+                    model: {
+                        firstName: user.name || user.first_name || 'there',
+                        resetLink: `${APP_BASE_URL}/reset-password/confirm?token=${encodeURIComponent(raw)}`,
+                        expiryMinutes: ttlMinutes,
+                    },
+                }),
+                2000,
+                'email send'
+            ).catch(e => {
+                logger.warn('[password-reset-request] email_send_failed_nonfatal', {
+                    message: e?.message ?? String(e),
+                    templateAlias: Templates.PasswordReset,
+                });
+            });
+        } catch (e: any) {
+            logger.error('[password-reset-request] fatal', { message: e?.message ?? String(e) });
+        }
+    });
+});
+
+if (process.env.NODE_ENV !== 'production') {
 // Test database connection endpoint (dev-only)
 router.get("/test-db", devOnly, async (req, res) => {
     try {
@@ -208,6 +304,7 @@ router.post("/test-email", devOnly, async (req, res) => {
         res.status(500).json({ ok: false, error: 'email_failed' });
     }
 });
+}
 
 /** Validation mirrors your frontend exactly */
 const SignupSchema = z.object({

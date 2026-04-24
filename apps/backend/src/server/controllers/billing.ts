@@ -1,20 +1,22 @@
 import type { Request, Response } from 'express';
 import fs from 'fs';
-import path from 'path';
 import { getPool } from '../db';
 import { gcCreateReauthoriseLink, gcCreateUpdateBankLink } from '../../lib/gocardless';
 import { TimestampUtils } from '../../lib/timestamp-utils';
 import { logger } from '../../lib/logger';
 import { getBillingProvider } from '../../config/billing';
-import { getStripe, createStripePortalSession } from '../../lib/stripe';
-
-function redactEmail(email: unknown): string {
-  const s = String(email || '');
-  if (!s.includes('@')) return 'redacted';
-  const [user, domain] = s.split('@');
-  const safeUser = user.length <= 2 ? `${user[0] ?? ''}…` : `${user.slice(0, 2)}…`;
-  return `${safeUser}@${domain}`;
-}
+import { getStripe } from '../../lib/stripe';
+import {
+  completeStripeSetupIntentForUser,
+  createStripeBillingPortalLink,
+  getOrCreateStripeCustomerForUser,
+} from '../services/billingStripe';
+import { prepareInvoicePdfForDownload } from '../services/billingInvoicePdf';
+import { getBillingOverviewData } from '../services/billingOverview';
+import {
+  getInvoiceDetailsForUser,
+  listInvoicesForUser,
+} from '../services/billingInvoicesQuery';
 
 /**
  * GET /api/billing/invoices/:id
@@ -23,68 +25,20 @@ function redactEmail(email: unknown): string {
 export async function getInvoiceById(req: Request, res: Response) {
   const userId = Number(req.user!.id);
   const invoiceId = Number(req.params.id);
-  const pool = getPool();
 
   if (!invoiceId || Number.isNaN(invoiceId)) {
     return res.status(400).json({ ok: false, error: 'invalid_invoice_id' });
   }
 
   try {
-    // Get invoice
-    const invoiceResult = await pool.query(
-      `SELECT * FROM invoices WHERE id = $1 AND user_id = $2 LIMIT 1`,
-      [invoiceId, userId]
-    );
-
-    if (invoiceResult.rows.length === 0) {
+    const data = await getInvoiceDetailsForUser(userId, invoiceId);
+    if (!data) {
       return res.status(404).json({ ok: false, error: 'not_found' });
-    }
-
-    const invoice = invoiceResult.rows[0];
-
-    // Get all charges (line items) for this invoice
-    let items: any[] = [];
-    try {
-      const itemsResult = await pool.query(
-        `
-        SELECT 
-          service_date,
-          description,
-          amount_pence,
-          currency,
-          type,
-          related_type,
-          related_id
-        FROM charge
-        WHERE invoice_id = $1
-          AND status = 'billed'
-        ORDER BY service_date ASC, created_at ASC
-        `,
-        [invoiceId]
-      );
-      items = itemsResult.rows.map((row: any) => ({
-        service_date: row.service_date,
-        description: row.description,
-        amount_pence: Number(row.amount_pence || 0),
-        currency: row.currency || 'GBP',
-        type: row.type,
-        related_type: row.related_type,
-        related_id: row.related_id ? String(row.related_id) : null,
-      }));
-    } catch (itemsError: any) {
-      // Table doesn't exist - return empty items
-      const msg = String(itemsError?.message || '');
-      if (!msg.includes('relation "charge" does not exist') && itemsError?.code !== '42P01') {
-        logger.error('[getInvoiceById] fetch_items_failed', { message: itemsError?.message ?? String(itemsError) });
-      }
     }
 
     return res.json({
       ok: true,
-      data: {
-        invoice,
-        items,
-      },
+      data,
     });
   } catch (error: any) {
     logger.error('[getInvoiceById] error', { message: error?.message ?? String(error) });
@@ -92,288 +46,12 @@ export async function getInvoiceById(req: Request, res: Response) {
   }
 }
 
-/**
- * Get sum of pending forwarding fees for a user
- * Returns 0 if charge table doesn't exist or on error
- */
-async function getPendingForwardingFees(userId: number): Promise<number> {
-  const pool = getPool();
-  try {
-    const result = await pool.query(
-      `SELECT COALESCE(SUM(amount_pence), 0) as total_pence
-       FROM charge
-       WHERE user_id = $1
-         AND status = 'pending'
-         AND type = 'forwarding_fee'`,
-      [userId]
-    );
-    return Number(result.rows[0]?.total_pence || 0);
-  } catch (error: any) {
-    // Table doesn't exist yet or query failed - return 0 gracefully
-    if (error?.code === '42P01' || error?.message?.includes('does not exist')) {
-      return 0;
-    }
-    logger.error('[getPendingForwardingFees] error', { message: error?.message ?? String(error) });
-    return 0;
-  }
-}
-
 export async function getBillingOverview(req: Request, res: Response) {
   const userId = Number(req.user!.id);
-  const pool = getPool();
 
   try {
-    // Get subscription row for user_id
-    // Try to join plans via subscription.plan_name first, then fallback to user.plan_id
-    const subResult = await pool.query(`
-      SELECT 
-        s.*,
-        COALESCE(p1.name, p2.name) as plan_name,
-        COALESCE(p1.price_pence, p2.price_pence) as price_pence,
-        COALESCE(p1.interval, p2.interval) as plan_interval
-      FROM subscription s
-      LEFT JOIN "user" u ON u.id = s.user_id
-      LEFT JOIN plans p1 ON s.plan_name = p1.name AND p1.active = true AND p1.retired_at IS NULL
-      LEFT JOIN plans p2 ON u.plan_id = p2.id AND p2.active = true AND p2.retired_at IS NULL
-      WHERE s.user_id=$1 
-      ORDER BY s.id DESC 
-      LIMIT 1
-    `, [userId]);
-
-    const sub = subResult.rows[0] || null;
-
-    // When using Stripe, fetch subscription to get accurate next billing date (current_period_end)
-    let stripeNextBillingDate: string | null = null;
-    if (getBillingProvider() === 'stripe' && sub?.stripe_subscription_id) {
-      try {
-        const stripe = getStripe();
-        if (stripe) {
-          const stripeSub = await stripe.subscriptions.retrieve(sub.stripe_subscription_id, { expand: [] });
-          if (stripeSub.current_period_end) {
-            stripeNextBillingDate = new Date(stripeSub.current_period_end * 1000).toISOString().slice(0, 10);
-          }
-        }
-      } catch (e) {
-        logger.warn('[getBillingOverview] stripe_subscription_fetch_failed', { message: (e as any)?.message ?? String(e) });
-      }
-    }
-
-    // Get latest invoice row for user_id
-    const latestInvoiceResult = await pool.query(`
-      SELECT 
-        id,
-        invoice_number,
-        amount_pence,
-        status,
-        period_start,
-        period_end,
-        created_at
-      FROM invoices
-      WHERE user_id = $1
-      ORDER BY created_at DESC
-      LIMIT 1
-    `, [userId]);
-
-    const latestInvoice = latestInvoiceResult.rows[0] || null;
-
-    // Get user plan_status (for backward compatibility)
-    const userResult = await pool.query(`
-      SELECT plan_id, plan_status, payment_failed_at, payment_retry_count, payment_grace_until, account_suspended_at,
-             gocardless_mandate_id, gocardless_redirect_flow_id,
-             stripe_customer_id
-      FROM "user" WHERE id=$1
-    `, [userId]);
-    const user = userResult.rows[0];
-
-    // Resolve plan (single source of truth for display price)
-    // Priority: 1) user.plan_id, 2) subscription JOIN price, 3) subscription cadence lookup, 4) latest invoice subscription charge
-    let resolvedPlan: { id: number; name: string; interval: string; price_pence: number } | null = null;
-    const planId = user?.plan_id ? Number(user.plan_id) : null;
-    
-    // Priority 1: Lookup by user's plan_id (most reliable)
-    if (planId) {
-      try {
-        const r = await pool.query(
-          `SELECT id, name, interval, price_pence
-             FROM plans
-            WHERE id = $1 AND active = true AND retired_at IS NULL
-            LIMIT 1`,
-          [planId]
-        );
-        resolvedPlan = r.rows[0] || null;
-      } catch (e) {
-        logger.warn('[getBillingOverview] plan_lookup_by_id_failed', { message: (e as any)?.message ?? String(e) });
-      }
-    }
-
-    // Priority 2: Use price from subscription JOIN (if the JOIN worked)
-    if (!resolvedPlan && sub?.price_pence && sub.price_pence > 0) {
-      // We have a price from the subscription JOIN, but need to get the full plan details
-      const cadence = (sub?.plan_interval || sub?.cadence || 'monthly').toString().toLowerCase();
-      const interval = cadence.includes('year') || cadence.includes('annual') ? 'year' : 'month';
-      try {
-        const r = await pool.query(
-          `SELECT id, name, interval, price_pence
-             FROM plans
-            WHERE interval = $1 AND price_pence = $2 AND active = true AND retired_at IS NULL
-            ORDER BY sort ASC
-            LIMIT 1`,
-          [interval, sub.price_pence]
-        );
-        resolvedPlan = r.rows[0] || null;
-      } catch (e) {
-        logger.warn('[getBillingOverview] plan_lookup_by_price_failed', { message: (e as any)?.message ?? String(e) });
-      }
-    }
-
-    // Priority 3: Lookup by subscription cadence/interval (fallback)
-    if (!resolvedPlan) {
-      const cadence = (sub?.plan_interval || sub?.cadence || 'monthly').toString().toLowerCase();
-      const interval = cadence.includes('year') || cadence.includes('annual') ? 'year' : 'month';
-      try {
-        const r = await pool.query(
-          `SELECT id, name, interval, price_pence
-             FROM plans
-            WHERE interval = $1 AND active = true AND retired_at IS NULL
-            ORDER BY sort ASC, price_pence ASC
-            LIMIT 1`,
-          [interval]
-        );
-        resolvedPlan = r.rows[0] || null;
-      } catch (e) {
-        logger.warn('[getBillingOverview] plan_lookup_by_interval_failed', { message: (e as any)?.message ?? String(e) });
-      }
-    }
-
-    // Priority 4: Try to extract subscription charge from latest invoice
-    if (!resolvedPlan && latestInvoice?.amount_pence) {
-      try {
-        // Get subscription charge from latest invoice (exclude forwarding fees)
-        const chargeResult = await pool.query(
-          `SELECT amount_pence, type
-             FROM invoice_charges
-            WHERE invoice_id = $1 AND type = 'subscription_fee'
-            ORDER BY id ASC
-            LIMIT 1`,
-          [latestInvoice.id]
-        );
-        if (chargeResult.rows.length > 0) {
-          const subscriptionCharge = chargeResult.rows[0].amount_pence;
-          // Find plan with matching price
-          const r = await pool.query(
-            `SELECT id, name, interval, price_pence
-               FROM plans
-              WHERE price_pence = $1 AND active = true AND retired_at IS NULL
-              ORDER BY sort ASC
-              LIMIT 1`,
-            [subscriptionCharge]
-          );
-          if (r.rows.length > 0) {
-            resolvedPlan = r.rows[0];
-          }
-        }
-      } catch (e) {
-        logger.warn('[getBillingOverview] plan_lookup_from_invoice_failed', { message: (e as any)?.message ?? String(e) });
-      }
-    }
-
-    const resolvedPlanName = resolvedPlan?.name || sub?.plan_name || 'Digital Mailbox Plan';
-    const resolvedCadence =
-      (resolvedPlan?.interval || sub?.plan_interval || sub?.cadence || 'monthly')
-        .toString()
-        .toLowerCase()
-        .includes('year')
-        ? 'annual'
-        : 'monthly';
-
-    // Fallback price if plan lookup failed (use same defaults as invoiceService)
-    // This ensures we always show a price even if plan lookup fails
-    const fallbackPricePence = resolvedCadence === 'annual' ? 8999 : 999;
-
-    // Determine account status
-    let accountStatus = 'active';
-    let gracePeriodInfo: { days_left: number; retry_count: number; grace_until: number } | null = null;
-
-    if (user?.account_suspended_at) {
-      accountStatus = 'suspended';
-    } else if (user?.payment_failed_at) {
-      const now = Date.now();
-      const graceUntil = user.payment_grace_until;
-
-      if (graceUntil && now < graceUntil) {
-        accountStatus = 'grace_period';
-        const daysLeft = Math.ceil((graceUntil - now) / (24 * 60 * 60 * 1000));
-        gracePeriodInfo = {
-          days_left: daysLeft,
-          retry_count: user.payment_retry_count || 0,
-          grace_until: graceUntil
-        };
-      } else {
-        accountStatus = 'past_due';
-      }
-    }
-
-    // Build response with subscription and latest invoice
-    res.json({
-      ok: true,
-      data: {
-        plan_status: user?.plan_status || null,
-        subscription: sub ? {
-          status: sub.status || null,
-          cadence: sub.cadence || sub.plan_interval || 'monthly',
-          next_charge_at: sub.next_charge_at || null,
-          mandate_id: sub.mandate_id || null,
-          customer_id: sub.customer_id || null,
-        } : null,
-        latest_invoice: latestInvoice ? {
-          id: latestInvoice.id,
-          invoice_number: latestInvoice.invoice_number,
-          amount_pence: latestInvoice.amount_pence,
-          status: latestInvoice.status,
-          period_start: latestInvoice.period_start,
-          period_end: latestInvoice.period_end,
-          created_at: latestInvoice.created_at,
-        } : null,
-        // Legacy fields for backward compatibility
-        plan_id: resolvedPlan?.id ?? planId ?? null,
-        plan: resolvedPlanName,
-        cadence: resolvedCadence,
-        status: sub?.status || 'active',
-        account_status: accountStatus,
-        grace_period: gracePeriodInfo,
-        next_charge_at: sub?.next_charge_at ?? null,
-        // next_billing_date: YYYY-MM-DD for display. Prefer Stripe current_period_end when using Stripe.
-        next_billing_date: (() => {
-          if (stripeNextBillingDate) return stripeNextBillingDate;
-          const nca = sub?.next_charge_at;
-          if (nca != null && nca !== '') {
-            const ms = Number(nca);
-            if (!Number.isNaN(ms) && ms > 0) {
-              const d = new Date(ms > 1e12 ? ms : ms * 1000);
-              if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
-            }
-          }
-          const periodEnd = latestInvoice?.period_end;
-          if (periodEnd && typeof periodEnd === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(periodEnd)) return periodEnd;
-          return null;
-        })(),
-        mandate_status: sub?.mandate_id ? 'active' : 'missing',
-        has_mandate: !!(user?.gocardless_mandate_id || user?.stripe_customer_id),
-        has_redirect_flow: !!user?.gocardless_redirect_flow_id,
-        redirect_flow_id: user?.gocardless_redirect_flow_id ?? null,
-        // NOTE: This should represent the plan price (not the latest invoice total, which can include forwarding fees).
-        // Priority: resolvedPlan > subscription JOIN price > fallback (only if all lookups failed)
-        current_price_pence: (resolvedPlan?.price_pence && resolvedPlan.price_pence > 0) 
-          ? resolvedPlan.price_pence 
-          : (sub?.price_pence && sub.price_pence > 0) 
-            ? sub.price_pence 
-            : fallbackPricePence, // Last resort fallback - should rarely be needed
-        // Expose invoice total separately for UIs that need it (non-plan charges, etc.)
-        latest_invoice_amount_pence: latestInvoice?.amount_pence || 0,
-        pending_forwarding_fees_pence: await getPendingForwardingFees(userId),
-        billing_provider: getBillingProvider(),
-      }
-    });
+    const data = await getBillingOverviewData(userId);
+    res.json({ ok: true, data });
   } catch (error) {
     logger.error('[getBillingOverview] error', { message: (error as any)?.message ?? String(error) });
     res.status(500).json({ ok: false, error: 'Failed to fetch billing overview' });
@@ -384,211 +62,39 @@ export async function listInvoices(req: Request, res: Response) {
   const userId = Number(req.user!.id);
   const page = Number(req.query.page ?? 1);
   const pageSize = Number(req.query.page_size ?? 12);
-  const off = (page - 1) * pageSize;
-  const pool = getPool();
-
-  const rowsResult = await pool.query(`
-    SELECT 
-      id, 
-      invoice_number,
-      created_at as date, 
-      period_start,
-      period_end,
-      amount_pence, 
-      currency,
-      status, 
-      pdf_path
-    FROM invoices 
-    WHERE user_id=$1
-    ORDER BY created_at DESC LIMIT $2 OFFSET $3
-  `, [userId, pageSize, off]);
-
-  const rows = rowsResult.rows;
-
-  const items = rows.map((r: any) => ({
-    id: r.id,
-    invoice_number: r.invoice_number,
-    date: r.date,
-    period_start: r.period_start,
-    period_end: r.period_end,
-    amount_pence: r.amount_pence,
-    currency: r.currency || 'GBP',
-    status: r.status,
-    pdf_url: r.pdf_path || null,
-  }));
-
-  res.json({ ok: true, data: { items, page, page_size: pageSize } });
+  const data = await listInvoicesForUser(userId, page, pageSize);
+  res.json({ ok: true, data });
 }
 
 export async function downloadInvoicePdf(req: Request, res: Response) {
   const callerId = BigInt(req.user!.id);
   const isAdmin = req.user!.is_admin || false;
   const invoiceId = Number(req.params.id);
-  const pool = getPool();
 
   if (!invoiceId || Number.isNaN(invoiceId)) {
     return res.status(400).json({ ok: false, error: 'invalid_invoice_id' });
   }
 
-  // Debug logging (guarded by env var)
-  if (process.env.DEBUG_BILLING === '1') {
-    logger.debug('[downloadInvoicePdf] debug', {
-      callerId: String(callerId),
-      callerEmail: redactEmail(req.user!.email),
-      isAdmin,
-      invoiceId,
-    });
-  }
-
   try {
-    // Get invoice with full details needed for PDF generation
-    if (process.env.DEBUG_BILLING === '1') {
-      logger.debug('[billing] pdf_download_fetch_invoice', { invoiceId });
-    }
-    const result = await pool.query(
-      `SELECT id, user_id, invoice_number, pdf_path, amount_pence, currency, period_start, period_end 
-       FROM invoices WHERE id=$1 LIMIT 1`,
-      [invoiceId]
-    );
-    const inv = result.rows[0];
-
-    if (!inv) {
-      logger.warn('[billing] pdf_download_invoice_not_found', { invoiceId });
-      return res.status(404).json({ ok: false, error: 'not_found' });
-    }
-
-    if (process.env.DEBUG_BILLING === '1') {
-      logger.debug('[billing] pdf_download_invoice_found', {
-        invoiceId: inv.id,
-        invoiceNumber: inv.invoice_number,
-        invoiceUserId: String(inv.user_id),
-        hasPdfPath: Boolean(inv.pdf_path),
-        amountPence: inv.amount_pence,
-      });
-    }
-
-    // Authorization: admin can access any invoice, otherwise must own it
-    // CRITICAL: Convert both to BigInt for safe comparison (Postgres BIGINT may come as string)
-    const ownerId = BigInt(inv.user_id);
-    const authorized = isAdmin || callerId === ownerId;
-
-    if (process.env.DEBUG_BILLING === '1') {
-      logger.debug('[billing] pdf_download_auth_check', {
-        invoiceId,
-        callerId: callerId.toString(),
-        ownerId: ownerId.toString(),
-        isAdmin,
-        authorized,
-      });
-    }
-
-    if (!authorized) {
-      logger.warn('[billing] pdf_download_forbidden', {
-        invoiceId,
-        callerId: callerId.toString(),
-        ownerId: ownerId.toString(),
-        isAdmin,
-      });
-      return res.status(403).json({ ok: false, error: 'forbidden' });
-    }
-
-    // Recompute invoice amount from charges before generating PDF (ensures correctness)
-    if (process.env.DEBUG_BILLING === '1') {
-      logger.debug('[billing] pdf_download_recompute_amount', { invoiceId });
-    }
-    const { recomputeInvoiceTotal } = await import('../../services/billing/invoiceService');
-    const correctAmountPence = await recomputeInvoiceTotal(pool, inv.id, inv.currency || 'GBP');
-
-    if (process.env.DEBUG_BILLING === '1') {
-      logger.debug('[billing] pdf_download_amount_recomputed', {
-        invoiceId,
-        originalAmount: inv.amount_pence,
-        recomputedAmount: correctAmountPence,
-        currency: inv.currency || 'GBP',
-      });
-    }
-
-    // Use recomputed amount for PDF generation
-    const amountPence = correctAmountPence;
-
-    const baseDir = process.env.INVOICES_DIR
-      ? path.resolve(process.env.INVOICES_DIR)
-      : path.join(process.cwd(), 'data', 'invoices');
-
-    let pdfPath = inv.pdf_path;
-    let fullPath: string | null = null;
-
-    // Check if PDF exists
-    if (pdfPath) {
-      const rel = String(pdfPath).replace(/^\/+/, ''); // strip leading slash
-      // Expected: invoices/YYYY/userId/invoice-123.pdf
-      fullPath = path.join(baseDir, rel.replace(/^invoices\//, ''));
-
-      if (fs.existsSync(fullPath)) {
-        // PDF exists - stream it
-        const filename = inv.invoice_number
-          ? `${inv.invoice_number}.pdf`
-          : `invoice-${invoiceId}.pdf`;
-
-        const disposition = req.query.disposition === 'inline' ? 'inline' : 'attachment';
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
-        fs.createReadStream(fullPath).pipe(res);
-        return;
-      }
-    }
-
-    // PDF doesn't exist - generate on-demand
-    logger.info('[billing] pdf_download_generating_on_demand', {
+    const result = await prepareInvoicePdfForDownload({
       invoiceId,
-      invoiceNumber: inv.invoice_number,
+      callerId,
+      isAdmin,
     });
-
-    try {
-      const { generateInvoicePdf } = await import('../../services/invoices');
-
-      // Generate PDF using recomputed amount
-      const generatedPath = await generateInvoicePdf({
-        invoiceId: inv.id,
-        invoiceNumber: inv.invoice_number || `INV-${inv.id}`,
-        userId: inv.user_id,
-        amountPence: amountPence, // Use recomputed amount, not inv.amount_pence
-        currency: inv.currency || 'GBP',
-        periodStart: inv.period_start,
-        periodEnd: inv.period_end,
-      });
-
-      // Update invoice with generated PDF path
-      await pool.query(
-        `UPDATE invoices SET pdf_path = $1 WHERE id = $2`,
-        [generatedPath, inv.id]
-      );
-
-      // Resolve full path for streaming
-      const rel = String(generatedPath).replace(/^\/+/, '');
-      fullPath = path.join(baseDir, rel.replace(/^invoices\//, ''));
-
-      if (!fs.existsSync(fullPath)) {
-        logger.error('[downloadInvoicePdf] generated_pdf_missing', { invoiceId, fullPath });
-        return res.status(500).json({ ok: false, error: 'invoice_pdf_failed' });
+    if (!result.ok) {
+      if (result.error === 'not_found') {
+        return res.status(404).json({ ok: false, error: result.error });
       }
-
-      // Stream the generated PDF
-      const filename = inv.invoice_number
-        ? `${inv.invoice_number}.pdf`
-        : `invoice-${invoiceId}.pdf`;
-
-      const disposition = req.query.disposition === 'inline' ? 'inline' : 'attachment';
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
-      fs.createReadStream(fullPath).pipe(res);
-    } catch (pdfError: any) {
-      logger.error('[downloadInvoicePdf] generate_pdf_failed', {
-        invoiceId,
-        message: pdfError?.message ?? String(pdfError),
-      });
-      return res.status(500).json({ ok: false, error: 'invoice_pdf_failed' });
+      if (result.error === 'forbidden') {
+        return res.status(403).json({ ok: false, error: result.error });
+      }
+      return res.status(500).json({ ok: false, error: result.error });
     }
+
+    const disposition = req.query.disposition === 'inline' ? 'inline' : 'attachment';
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `${disposition}; filename="${result.filename}"`);
+    fs.createReadStream(result.fullPath).pipe(res);
   } catch (error: any) {
     logger.error('[downloadInvoicePdf] error', { message: error?.message ?? String(error) });
     return res.status(500).json({ ok: false, error: 'download_failed' });
@@ -599,29 +105,14 @@ export async function postUpdateBank(req: Request, res: Response) {
   try {
     const userId = Number(req.user!.id);
     if (getBillingProvider() === 'stripe') {
-      const pool = getPool();
-      const userResult = await pool.query(
-        `SELECT stripe_customer_id, email FROM "user" WHERE id = $1`,
-        [userId]
-      );
-      const user = userResult.rows[0];
-      if (!user) return res.status(404).json({ ok: false, error: 'user_not_found' });
-      let customerId = user.stripe_customer_id;
-      if (!customerId) {
-        const stripe = getStripe();
-        if (!stripe) return res.status(503).json({ ok: false, error: 'stripe_not_configured' });
-        const customer = await stripe.customers.create({
-          email: user.email || undefined,
-          metadata: { userId: String(userId) },
-        });
-        customerId = customer.id;
-        await pool.query(
-          `UPDATE "user" SET stripe_customer_id = $1, updated_at = $2 WHERE id = $3`,
-          [customerId, Date.now(), userId]
-        );
+      const customerResult = await getOrCreateStripeCustomerForUser(userId);
+      if (!customerResult.ok) {
+        if (customerResult.error === 'user_not_found') {
+          return res.status(404).json({ ok: false, error: customerResult.error });
+        }
+        return res.status(503).json({ ok: false, error: customerResult.error });
       }
-      const appUrl = (process.env.APP_URL || process.env.APP_BASE_URL || 'https://virtualaddresshub.co.uk').replace(/\/+$/, '');
-      const { url } = await createStripePortalSession(customerId, `${appUrl}/account/billing`);
+      const url = await createStripeBillingPortalLink(customerResult.customerId);
       return res.json({ ok: true, data: { redirect_url: url, url } });
     }
     const link = await gcCreateUpdateBankLink(userId);
@@ -636,29 +127,14 @@ export async function postReauthorise(req: Request, res: Response) {
   try {
     const userId = Number(req.user!.id);
     if (getBillingProvider() === 'stripe') {
-      const pool = getPool();
-      const userResult = await pool.query(
-        `SELECT stripe_customer_id, email FROM "user" WHERE id = $1`,
-        [userId]
-      );
-      const user = userResult.rows[0];
-      if (!user) return res.status(404).json({ ok: false, error: 'user_not_found' });
-      let customerId = user.stripe_customer_id;
-      if (!customerId) {
-        const stripe = getStripe();
-        if (!stripe) return res.status(503).json({ ok: false, error: 'stripe_not_configured' });
-        const customer = await stripe.customers.create({
-          email: user.email || undefined,
-          metadata: { userId: String(userId) },
-        });
-        customerId = customer.id;
-        await pool.query(
-          `UPDATE "user" SET stripe_customer_id = $1, updated_at = $2 WHERE id = $3`,
-          [customerId, Date.now(), userId]
-        );
+      const customerResult = await getOrCreateStripeCustomerForUser(userId);
+      if (!customerResult.ok) {
+        if (customerResult.error === 'user_not_found') {
+          return res.status(404).json({ ok: false, error: customerResult.error });
+        }
+        return res.status(503).json({ ok: false, error: customerResult.error });
       }
-      const appUrl = (process.env.APP_URL || process.env.APP_BASE_URL || 'https://virtualaddresshub.co.uk').replace(/\/+$/, '');
-      const { url } = await createStripePortalSession(customerId, `${appUrl}/account/billing`);
+      const url = await createStripeBillingPortalLink(customerResult.customerId);
       return res.json({ ok: true, data: { redirect_url: url, url } });
     }
     const link = await gcCreateReauthoriseLink(userId);
@@ -786,35 +262,20 @@ export async function postCreateStripeSetupIntent(req: Request, res: Response) {
         .json({ ok: false, error: 'stripe_not_configured' });
     }
 
-    const pool = getPool();
-    const userResult = await pool.query(
-      `SELECT stripe_customer_id, email FROM "user" WHERE id = $1`,
-      [userId]
-    );
-    const user = userResult.rows[0];
-
-    if (!user) {
+    const customerResult = await getOrCreateStripeCustomerForUser(userId);
+    if (!customerResult.ok) {
+      if (customerResult.error === 'user_not_found') {
+        return res
+          .status(404)
+          .json({ ok: false, error: customerResult.error });
+      }
       return res
-        .status(404)
-        .json({ ok: false, error: 'user_not_found' });
-    }
-
-    let customerId: string | null = user.stripe_customer_id;
-
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: user.email || undefined,
-        metadata: { userId: String(userId) },
-      });
-      customerId = customer.id;
-      await pool.query(
-        `UPDATE "user" SET stripe_customer_id = $1, updated_at = $2 WHERE id = $3`,
-        [customerId, Date.now(), userId]
-      );
+        .status(503)
+        .json({ ok: false, error: customerResult.error });
     }
 
     const setupIntent = await stripe.setupIntents.create({
-      customer: customerId,
+      customer: customerResult.customerId,
       // Use automatic payment methods but we'll restrict to card in the client Payment Element.
       automatic_payment_methods: { enabled: true },
       usage: 'off_session',
@@ -878,80 +339,38 @@ export async function postCompleteStripeSetupIntent(req: Request, res: Response)
         .json({ ok: false, error: 'stripe_not_configured' });
     }
 
-    const pool = getPool();
-    const userResult = await pool.query(
-      `SELECT stripe_customer_id FROM "user" WHERE id = $1`,
-      [userId]
-    );
-    const user = userResult.rows[0];
-
-    if (!user) {
-      return res
-        .status(404)
-        .json({ ok: false, error: 'user_not_found' });
-    }
-
-    const customerId: string | null = user.stripe_customer_id;
-    if (!customerId) {
-      return res
-        .status(400)
-        .json({ ok: false, error: 'stripe_customer_missing' });
-    }
-
-    const setupIntent = await stripe.setupIntents.retrieve(setup_intent_id);
-
-    if (setupIntent.status !== 'succeeded') {
-      return res.status(400).json({
-        ok: false,
-        error: 'setup_intent_not_succeeded',
-        status: setupIntent.status,
-      });
-    }
-
-    const pm =
-      typeof setupIntent.payment_method === 'string'
-        ? setupIntent.payment_method
-        : setupIntent.payment_method?.id;
-
-    if (!pm) {
-      return res
-        .status(400)
-        .json({ ok: false, error: 'payment_method_missing' });
-    }
-
-    // Ensure the SetupIntent belongs to the same customer as our user
-    const siCustomer =
-      typeof setupIntent.customer === 'string'
-        ? setupIntent.customer
-        : setupIntent.customer?.id;
-
-    if (!siCustomer || siCustomer !== customerId) {
-      logger.warn('[postCompleteStripeSetupIntent] customer_mismatch', {
-        userId,
-        customerId,
-        siCustomer,
-        setupIntentId: setup_intent_id,
-      });
-      return res
-        .status(400)
-        .json({ ok: false, error: 'customer_mismatch' });
-    }
-
-    await stripe.customers.update(customerId, {
-      invoice_settings: {
-        default_payment_method: pm,
-      },
+    const result = await completeStripeSetupIntentForUser({
+      userId,
+      setupIntentId: setup_intent_id,
     });
+    if (!result.ok) {
+      if (result.error === 'customer_mismatch') {
+        logger.warn('[postCompleteStripeSetupIntent] customer_mismatch', {
+          userId,
+          customerId: result.customerId,
+          siCustomer: result.siCustomer,
+          setupIntentId: setup_intent_id,
+        });
+        return res.status(400).json({ ok: false, error: result.error });
+      }
+      if (result.error === 'setup_intent_not_succeeded') {
+        return res.status(400).json({
+          ok: false,
+          error: result.error,
+          status: result.status,
+        });
+      }
+      return res.status(400).json({ ok: false, error: result.error });
+    }
 
     logger.info('[postCompleteStripeSetupIntent] default_payment_method_updated', {
       userId,
-      customerId,
     });
 
     return res.json({
       ok: true,
       data: {
-        default_payment_method: pm,
+        default_payment_method: result.defaultPaymentMethod,
       },
     });
   } catch (error: any) {

@@ -2,15 +2,10 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { getErrorMessage, getErrorStack } from '../lib/errors';
-import { apiClient } from '../lib/apiClient';
-import { AuthAPI } from '../lib/api-client';
 import { clientAuthManager, isApiUser, toClientUser } from '../lib/client-auth';
-import { authGuard } from '../lib/auth-guard';
-import { parseJSONSafe } from '../lib/parse-json-safe';
-import { getToken, setToken, getStoredUser, setStoredUser } from '../lib/token-manager';
+import { setToken, setStoredUser } from '../lib/token-manager';
 import { tokenManager } from '../lib/token-manager';
-import { apiUrl } from '../lib/api-url';
-import type { ApiUser, WhoAmI, Role } from '../types/user';
+import type { ApiUser } from '../types/user';
 import type { User as ClientUser } from '../lib/client-auth';
 
 type AuthStatus = 'loading' | 'authed' | 'guest';
@@ -95,19 +90,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         ranOnceRef.current = true;
         (async () => {
             try {
-                const token = tokenManager.get();
-                console.log('🔍 AuthContext Init - Token exists:', !!token);
-                if (!token) {
-                    console.log('🔍 AuthContext Init - No token, setting guest status');
-                    setUser(null as any);
-                    setStatus('guest');
-                    setIsLoading(false);
-                    setAuthInitialized(true);
-                    return;
-                }
-                console.log('🔍 AuthContext Init - Token present:', token ? token.slice(0, 10) + '...' : 'none');
-                const res = await fetch(apiUrl('auth/whoami'), {
-                    headers: { Authorization: `Bearer ${token}` },
+                // With HttpOnly cookies, the BFF route forwards the cookie server-side.
+                // Always use the same-origin BFF route so HttpOnly cookies are included.
+                const res = await fetch('/api/bff/auth/whoami', {
                     credentials: 'include',
                 });
                 console.log('🔍 AuthContext Init - Whoami response status:', res.status, res.ok);
@@ -190,49 +175,48 @@ export function AuthProvider({ children }: AuthProviderProps) {
         try {
             await logAuthEvent('user_login_attempt', { email: credentials.email });
 
-            const response = await AuthAPI.login(credentials.email, credentials.password);
+            // Use same-origin BFF route so HttpOnly cookies are set correctly
+            const res = await fetch('/api/bff/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ email: credentials.email, password: credentials.password }),
+            });
+            const json = await res.json().catch(() => null);
 
-            if (response.ok) {
-                // REVISED: The response now has a nested user object
-                const rawUser = response.data.user;
-                const apiUser: ApiUser = isApiUser(rawUser)
-                    ? rawUser
-                    : {
-                        user_id: String((rawUser as any)?.user_id ?? (rawUser as any)?.id ?? ''),
-                        email: String((rawUser as any)?.email ?? ''),
-                        first_name: (rawUser as any)?.first_name,
-                        last_name: (rawUser as any)?.last_name,
-                        is_admin: !!(rawUser as any)?.is_admin,
-                        role: (rawUser as any)?.role ?? 'user',
-                        kyc_status: (rawUser as any)?.kyc_status,
-                    };
-                const clientUser = toClientUser(apiUser);
-                clientAuthManager.setUser(clientUser);
-                setUser(clientUser as any);
-
-                // Update status to 'authed' to prevent flicker
-                setStatus('authed');
-
-                // Store token and user safely
-                if (response?.data?.token) {
-                    setToken(response.data.token);
-                }
-                setStoredUser(clientUser);
-
-                await logAuthEvent('user_login_success', {
-                    email: credentials.email,
-                    userId: apiUser.user_id
-                });
-
-                // ✅ CRITICAL: Redirect to mail inbox after successful login
-                console.log('User is authenticated. Redirecting to /mail');
-                window.location.href = '/mail';
-            } else {
-                const errorMessage = ('message' in response && typeof response.message === 'string')
-                    ? response.message
-                    : 'Login failed';
-                throw new Error(errorMessage);
+            if (!res.ok || !json?.ok) {
+                const errorMessage = json?.error || json?.message || 'Login failed';
+                throw new Error(typeof errorMessage === 'string' ? errorMessage : 'Login failed');
             }
+
+            // Normalise user from response - handle both { data: { user } } and { data: { id, email } }
+            const rawUser = json?.data?.user ?? json?.data ?? {};
+            const apiUser: ApiUser = {
+                user_id: String(rawUser?.user_id ?? rawUser?.id ?? ''),
+                email: String(rawUser?.email ?? ''),
+                first_name: rawUser?.first_name,
+                last_name: rawUser?.last_name,
+                is_admin: !!(rawUser?.is_admin),
+                role: rawUser?.role ?? 'user',
+                kyc_status: rawUser?.kyc_status,
+            };
+            const clientUser = toClientUser(apiUser);
+            clientAuthManager.setUser(clientUser);
+            setUser(clientUser as any);
+            setStatus('authed');
+
+            if (json?.data?.token) {
+                setToken(json.data.token);
+            }
+            setStoredUser(clientUser);
+
+            await logAuthEvent('user_login_success', {
+                email: credentials.email,
+                userId: apiUser.user_id
+            });
+
+            console.log('User is authenticated. Redirecting to /mail');
+            window.location.href = '/mail';
         } catch (error: any) {
             await logAuthEvent('user_login_failed', {
                 email: credentials.email,
@@ -250,51 +234,52 @@ export function AuthProvider({ children }: AuthProviderProps) {
         try {
             await logAuthEvent('admin_login_attempt', { email: credentials.email });
 
-            const response = await AuthAPI.login(credentials.email, credentials.password);
+            // Use same-origin BFF route so HttpOnly cookies are set correctly
+            const res = await fetch('/api/bff/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ email: credentials.email, password: credentials.password }),
+            });
+            const json = await res.json().catch(() => null);
 
-            if (response.ok) {
-                const rawUser = response.data.user;
-                const apiUser: ApiUser = isApiUser(rawUser)
-                    ? rawUser
-                    : {
-                        user_id: String((rawUser as any)?.user_id ?? (rawUser as any)?.id ?? ''),
-                        email: String((rawUser as any)?.email ?? ''),
-                        first_name: (rawUser as any)?.first_name,
-                        last_name: (rawUser as any)?.last_name,
-                        is_admin: !!(rawUser as any)?.is_admin,
-                        role: (rawUser as any)?.role ?? 'user',
-                        kyc_status: (rawUser as any)?.kyc_status,
-                    };
-                const userData = apiUser;
-                if (userData?.is_admin) {
-                    const clientUser = toClientUser(userData);
-                    clientAuthManager.setUser(clientUser);
-                    setUser(clientUser as any);
-
-                    // Update status to 'authed' to prevent flicker
-                    setStatus('authed');
-
-                    // Store token and user safely
-                    if (response?.data?.token) {
-                        setToken(response.data.token);
-                    }
-                    setStoredUser(clientUser);
-
-                    await logAuthEvent('admin_login_success', {
-                        email: credentials.email,
-                        adminId: userData.user_id
-                    });
-
-                    await logAdminAction('admin_login', {
-                        email: credentials.email,
-                        adminId: userData.user_id
-                    });
-                } else {
-                    throw new Error('Admin access required');
-                }
-            } else {
+            if (!res.ok || !json?.ok) {
                 throw new Error('Admin access required');
             }
+
+            const rawUser = json?.data?.user ?? json?.data ?? {};
+            const apiUser: ApiUser = {
+                user_id: String(rawUser?.user_id ?? rawUser?.id ?? ''),
+                email: String(rawUser?.email ?? ''),
+                first_name: rawUser?.first_name,
+                last_name: rawUser?.last_name,
+                is_admin: !!(rawUser?.is_admin),
+                role: rawUser?.role ?? 'user',
+                kyc_status: rawUser?.kyc_status,
+            };
+
+            if (!apiUser.is_admin) {
+                throw new Error('Admin access required');
+            }
+
+            const clientUser = toClientUser(apiUser);
+            clientAuthManager.setUser(clientUser);
+            setUser(clientUser as any);
+            setStatus('authed');
+
+            if (json?.data?.token) {
+                setToken(json.data.token);
+            }
+            setStoredUser(clientUser);
+
+            await logAuthEvent('admin_login_success', {
+                email: credentials.email,
+                adminId: apiUser.user_id
+            });
+            await logAdminAction('admin_login', {
+                email: credentials.email,
+                adminId: apiUser.user_id
+            });
         } catch (error: any) {
             await logAuthEvent('admin_login_failed', {
                 email: credentials.email,
@@ -316,13 +301,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 await logAuthEvent('user_logout', { userId: user?.id });
             }
 
-            await apiClient.logout();
+            // Use same-origin BFF route so HttpOnly cookies are properly cleared
+            await fetch('/api/bff/auth/logout', {
+                method: 'POST',
+                credentials: 'include',
+            });
         } catch (error) {
             console.error('Logout API call failed:', error);
         } finally {
             clientAuthManager.clearAuth();
+            tokenManager.clear();
             setUser(null);
-            setStatus('guest'); // ✅ CRITICAL: Update status to 'guest' on logout
+            setStatus('guest');
             setIsLoading(false);
         }
     };
@@ -333,8 +323,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (isLoading || !authInitialized) return;
 
         try {
-            const userData = await authGuard.checkAuth(() => clientAuthManager.checkAuth());
-            setUser(userData);
+            // Use same-origin BFF route so HttpOnly cookies are included
+            const res = await fetch('/api/bff/auth/whoami', { credentials: 'include' });
+            if (!res.ok) {
+                clientAuthManager.clearAuth();
+                setUser(null);
+                setStatus('guest');
+                return;
+            }
+            const json = await res.json().catch(() => null);
+            const raw = json?.data?.user ?? json?.data ?? json?.user ?? null;
+            if (!raw?.id && !raw?.user_id) {
+                clientAuthManager.clearAuth();
+                setUser(null);
+                setStatus('guest');
+                return;
+            }
+            const updated = {
+                id: String(raw.user_id ?? raw.id),
+                email: raw.email || '',
+                first_name: raw.first_name,
+                last_name: raw.last_name,
+                is_admin: !!raw.is_admin,
+                role: raw.role === 'admin' ? 'admin' : 'user',
+                plan_status: raw.plan_status,
+                kyc_status: raw.kyc_status,
+            };
+            clientAuthManager.setUser(updated as any);
+            setUser(updated as any);
         } catch (error) {
             console.error('Failed to refresh user data:', error);
             clientAuthManager.clearAuth();

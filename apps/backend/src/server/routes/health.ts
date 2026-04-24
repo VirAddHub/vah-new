@@ -200,10 +200,28 @@ function healthCheckMinimal(_req: Request, res: Response) {
     });
 }
 
+function healthReady(_req: Request, res: Response) {
+    res.status(200).json({
+        status: 'ready',
+        timestamp: new Date().toISOString()
+    });
+}
+
+function healthLive(_req: Request, res: Response) {
+    res.status(200).json({
+        status: 'alive',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
+}
+
 // Mount routes
 router.get('/health', healthCheck);
 router.get('/healthz', healthCheckMinimal);
+router.get('/healthz/', healthCheckMinimal);
 router.get('/healthz/status-guard', statusGuardHealthCheck);
 router.get('/healthz/metrics', metricsHealthCheck);
+router.get('/healthz/ready', healthReady);
+router.get('/healthz/live', healthLive);
 
 export { router as health };

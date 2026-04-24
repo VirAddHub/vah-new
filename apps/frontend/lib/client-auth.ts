@@ -1,9 +1,6 @@
 'use client';
 
-import { apiClient, ApiResponse } from './apiClient';
-import { parseJSONSafe } from './parse-json-safe';
-import { apiUrl } from './api-url';
-import { tokenManager, safeStringify } from './token-manager';
+import { tokenManager } from './token-manager';
 // import { isOk, ApiErr } from './apiClient'; // TODO: implement usage
 
 // Client-side Auth Manager (no React hooks, just client-side utilities)
@@ -99,34 +96,42 @@ export class ClientAuthManager {
 
     this._inFlight = true;
     try {
-      console.log('Checking auth with API client...');
-      const response: ApiResponse<unknown> = await apiClient.get(apiUrl('auth/whoami'));
-      console.log('Auth check response:', response);
+      console.log('Checking auth via BFF whoami...');
+      // Use same-origin BFF route so HttpOnly cookies are sent correctly
+      const res = await fetch('/api/bff/auth/whoami', { credentials: 'include' });
 
-      if (response.ok && 'data' in response) {
-        // ✅ SUCCESS CASE: TypeScript now knows this is ApiOk<T> branch
-        const successResponse = response as { ok: true; data: unknown };
-        const payload = successResponse.data;
-        const userData = (payload && typeof payload === 'object' && 'user' in payload)
-          ? (payload as { user: User }).user
-          : payload as User;
-        this.setUser(userData);
-        this._initialized = true; // ✅ Mark as initialized
-        return userData;
+      if (!res.ok) {
+        this.clearAuth();
+        throw new Error(`Auth failed (${res.status})`);
       }
 
-      // ✅ ERROR CASE: TypeScript now knows this is ApiErr branch
-      const errorResponse = response as { ok: false; error: string };
-      const msg = errorResponse.error || 'Auth failed';
-      console.error('Whoami check failed:', msg);
-      this.clearAuth();
-      throw new Error(msg);
+      const json = await res.json().catch(() => null);
+      const raw = json?.data?.user ?? json?.data ?? json?.user ?? null;
+
+      if (!raw || (!raw.id && !raw.user_id)) {
+        this.clearAuth();
+        throw new Error('Auth failed: no user data');
+      }
+
+      const userData: User = {
+        id: String(raw.user_id ?? raw.id),
+        email: raw.email || '',
+        first_name: raw.first_name,
+        last_name: raw.last_name,
+        is_admin: !!raw.is_admin,
+        role: raw.role === 'admin' ? 'admin' : 'user',
+        kyc_status: raw.kyc_status,
+      };
+
+      this.setUser(userData);
+      this._initialized = true;
+      return userData;
     } catch (error) {
       console.error('Auth check failed:', error);
       this.clearAuth();
       throw error;
     } finally {
-      this._inFlight = false; // ✅ Always reset the flag
+      this._inFlight = false;
     }
   }
 

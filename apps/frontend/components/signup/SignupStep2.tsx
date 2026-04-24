@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, Building, MapPin, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, Building, MapPin, Eye, EyeOff, Loader2, CreditCard } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
@@ -9,11 +9,14 @@ import { ScrollToTopButton } from '../ScrollToTopButton';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Plus, X } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
+import { usePlans } from '@/hooks/usePlans';
 
 interface SignupStep2Props {
     onNext: (formData: SignupStep2Data) => void;
     onBack: () => void;
     initialData?: Partial<SignupStep2Data>;
+    initialBilling?: 'monthly' | 'annual';
+    onBillingChange?: (data: { billing: 'monthly' | 'annual'; price: string; plan_id?: string }) => void;
 }
 
 export interface SignupStep2Data {
@@ -88,7 +91,31 @@ function SectionCard({
     );
 }
 
-export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
+export function SignupStep2({ onNext, onBack, initialData, initialBilling = 'monthly', onBillingChange }: SignupStep2Props) {
+    const [billing, setBilling] = useState<'monthly' | 'annual'>(initialBilling);
+    const { plans } = usePlans();
+
+    const getPlanPrice = (interval: 'monthly' | 'annual') => {
+        const plan = plans?.find(p => p.interval === (interval === 'annual' ? 'year' : 'month'));
+        if (plan) return (plan.price_pence / 100).toFixed(2);
+        return interval === 'annual' ? '89.99' : '9.99';
+    };
+
+    const getMonthlyEquivalent = () => {
+        const plan = plans?.find(p => p.interval === 'year');
+        if (plan) return ((plan.price_pence / 100) / 12).toFixed(2);
+        return '7.50';
+    };
+
+    const handleBillingChange = (newBilling: 'monthly' | 'annual') => {
+        setBilling(newBilling);
+        const plan = plans?.find(p => p.interval === (newBilling === 'annual' ? 'year' : 'month'));
+        onBillingChange?.({
+            billing: newBilling,
+            price: getPlanPrice(newBilling),
+            plan_id: plan?.id ? String(plan.id) : undefined,
+        });
+    };
     const [formData, setFormData] = useState<SignupStep2Data>({
         first_name: initialData?.first_name || '',
         last_name: initialData?.last_name || '',
@@ -313,35 +340,76 @@ export function SignupStep2({ onNext, onBack, initialData }: SignupStep2Props) {
                             Back
                         </button>
 
-                        {/* Progress indicator */}
+                        {/* Progress indicator — 2 steps */}
                         <div className="flex items-center gap-2" aria-label="Step progress">
-                            <div
-                                className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-body-sm font-medium"
-                                title="Plan selected"
-                            >
-                                ✓
-                            </div>
-                            <div className="w-8 h-1 bg-primary rounded-full"></div>
                             <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-body-sm font-medium">
-                                2
+                                1
                             </div>
                             <div className="w-8 h-1 bg-muted rounded-full"></div>
                             <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-body-sm font-medium">
-                                3
+                                2
                             </div>
                         </div>
                     </div>
 
-                    <h1 className="mb-2">Company & Contact Information</h1>
+                    <h1 className="mb-2">Get Started</h1>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Tell us about yourself and your company. We use these details to set up your account and to meet our UK
-                        anti-money laundering (AML) and Companies House compliance obligations. All fields marked with{" "}
+                        Choose your plan and tell us about yourself and your company. All fields marked with{" "}
                         <span className="text-destructive">*</span> are required.
                     </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="bg-muted rounded-2xl p-4 md:p-6">
                     <div className="space-y-6 md:space-y-8">
+
+                    {/* Plan Selection */}
+                    <SectionCard title="Billing" icon={CreditCard}>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            {/* Toggle */}
+                            <div className="inline-flex rounded-xl border border-border bg-muted p-1 self-start">
+                                <button
+                                    type="button"
+                                    onClick={() => handleBillingChange('monthly')}
+                                    className={`inline-flex items-center justify-center gap-2 whitespace-nowrap text-body-sm font-medium transition-all h-8 rounded-lg px-4 ${billing === 'monthly'
+                                        ? 'bg-card text-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground'
+                                        }`}
+                                >
+                                    Monthly
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleBillingChange('annual')}
+                                    className={`inline-flex items-center justify-center gap-2 whitespace-nowrap text-body-sm font-medium transition-all h-8 rounded-lg px-4 ${billing === 'annual'
+                                        ? 'bg-card text-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground'
+                                        }`}
+                                >
+                                    Annual
+                                </button>
+                            </div>
+
+                            {/* Price summary */}
+                            <div className="text-right">
+                                <p className="text-h2 font-bold text-foreground leading-none">
+                                    {billing === 'monthly'
+                                        ? `£${getPlanPrice('monthly')}`
+                                        : `£${getPlanPrice('annual')}`
+                                    }
+                                    <span className="text-body font-normal text-muted-foreground ml-1">
+                                        {billing === 'monthly' ? '/month' : '/year'}
+                                    </span>
+                                </p>
+                                <p className="text-body-sm text-muted-foreground mt-1">
+                                    {billing === 'annual'
+                                        ? `≈ £${getMonthlyEquivalent()}/month — 2 months free`
+                                        : 'Cancel anytime'
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                    </SectionCard>
+
                     {/* Contact Information */}
                     <SectionCard title="Contact Information" icon={User} helper="We use these to set up your account and for UK AML compliance.">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

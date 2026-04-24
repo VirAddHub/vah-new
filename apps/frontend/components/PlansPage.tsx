@@ -111,9 +111,8 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     {/* CTA - full width on mobile, touch-friendly */}
                                     <Button
                                         onClick={handleSelectPlan}
-                                        disabled={loading || !!error}
                                         size="lg"
-                                        className="h-12 min-h-[48px] px-6 sm:px-8 w-full sm:w-auto rounded-lg font-medium mb-2"
+                                        className="h-12 min-h-[48px] px-6 sm:px-8 w-full sm:w-auto font-medium mb-2"
                                     >
                                         Get Started
                                     </Button>

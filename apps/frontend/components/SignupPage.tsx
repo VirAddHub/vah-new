@@ -1,7 +1,6 @@
 "use client";
 
 import { useSignup } from '../hooks/useSignup';
-import { SignupStep1 } from './signup/SignupStep1';
 import { SignupStep2 } from './signup/SignupStep2';
 import { SignupStep3 } from './signup/SignupStep3';
 import { FEATURES } from '../lib/config';
@@ -12,9 +11,6 @@ interface SignupPageProps {
 }
 
 export function SignupPage({ onNavigate, initialBilling }: SignupPageProps) {
-    // Add debugging for deployment issues
-    console.log('SignupPage component loaded', { initialBilling });
-
     const {
         currentStep,
         step1Data,
@@ -23,18 +19,12 @@ export function SignupPage({ onNavigate, initialBilling }: SignupPageProps) {
         isLoading,
         error,
         emailAlreadyExists,
-        goToStep1,
-        goToStep2,
+        updateStep1Data,
         goToStep3,
         goBack,
         completeSignup,
         resetSignup,
-    } = useSignup();
-
-    // Add error logging
-    if (error) {
-        console.error('SignupPage error:', error);
-    }
+    } = useSignup(initialBilling);
 
     // Only show Welcome when signup is complete AND payment is not required.
     // When payments are enabled, success is shown on /signup/payment-return after Stripe completes.
@@ -78,20 +68,14 @@ export function SignupPage({ onNavigate, initialBilling }: SignupPageProps) {
 
     // Render the appropriate step
     switch (currentStep) {
-        case 1:
-            return (
-                <SignupStep1
-                    onNext={goToStep2}
-                    onBack={() => onNavigate?.('home')}
-                    initialBilling={initialBilling}
-                />
-            );
         case 2:
             return (
                 <SignupStep2
                     onNext={goToStep3}
-                    onBack={goBack}
+                    onBack={() => onNavigate?.('home')}
                     initialData={step2Data || undefined}
+                    initialBilling={step1Data?.billing}
+                    onBillingChange={updateStep1Data}
                 />
             );
         case 3:

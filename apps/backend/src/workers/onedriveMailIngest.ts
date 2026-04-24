@@ -115,15 +115,58 @@ async function extractSenderFromPdf(
       return { sender: null, mailType: null };
     }
 
-    const base64Pdf = Buffer.from(pdfBytes).toString('base64');
-
-    console.log('[extractSenderFromPdf] calling OpenAI (base64 data URL, gpt-4o-mini)', {
+    // ── Step 1: Upload PDF to OpenAI Files API ──────────────────────────────
+    // The Chat Completions API does NOT support PDFs via image_url / base64.
+    // The correct approach is: upload → get file_id → reference in message → delete.
+    console.log('[extractSenderFromPdf] uploading PDF to OpenAI Files API', {
       fileName: fileName ?? fileId,
-      fileId,
       pdfBytes: pdfBytes.length,
     });
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const uploadForm = new FormData();
+    uploadForm.append(
+      'file',
+      new Blob([pdfBytes], { type: 'application/pdf' }),
+      fileName ?? 'document.pdf'
+    );
+    uploadForm.append('purpose', 'user_data');
+
+    const uploadResponse = await fetch('https://api.openai.com/v1/files', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${apiKey}` },
+      body: uploadForm,
+    });
+
+    if (!uploadResponse.ok) {
+      const uploadError = (await uploadResponse.json().catch(() => ({}))) as {
+        error?: { message?: string };
+      };
+      console.warn('[extractSenderFromPdf] PDF upload to OpenAI failed', {
+        status: uploadResponse.status,
+        error: uploadError?.error?.message,
+        fileName: fileName ?? fileId,
+      });
+      return { sender: null, mailType: null };
+    }
+
+    const uploadData = (await uploadResponse.json()) as { id: string };
+    const openAiFileId = uploadData.id;
+
+    // ── Step 2: Ask GPT to read the uploaded PDF ────────────────────────────
+    console.log('[extractSenderFromPdf] PDF uploaded — calling gpt-4o-mini', {
+      fileName: fileName ?? fileId,
+      openAiFileId,
+    });
+
+    const prompt =
+      'Look at this letter. Reply with JSON only, no markdown fences: ' +
+      '{ "sender": "Primary organisation name (e.g. HMRC, Lloyds Bank, NHS Neurology Department)", ' +
+      '"mailType": "letter | bill | statement | notice | legal | tax | parcel notice" }. ' +
+      'Use the organisation name, not an individual staff member name. ' +
+      'If the letter is in a language other than English, still extract the organisation name as written. ' +
+      'If unsure about either field, use null.';
+
+    const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -131,36 +174,41 @@ async function extractSenderFromPdf(
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
-        max_tokens: 100,
+        max_tokens: 150,
         messages: [
           {
             role: 'user',
             content: [
-              {
-                type: 'text',
-                text: 'Look at this letter. Reply with JSON only, no markdown: { "sender": "Full Company Name and Department (e.g., NHS Neurology Department)", "mailType": "letter or bill or parcel notice etc" }. Prioritise the primary organisation and department name over an individual staff member. If unsure, use null.',
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:application/pdf;base64,${base64Pdf}`,
-                },
-              },
+              { type: 'text', text: prompt },
+              { type: 'file', file: { file_id: openAiFileId } },
             ],
           },
         ],
       }),
     });
 
-    const data = (await response.json()) as {
+    // ── Step 3: Delete the uploaded file (best-effort, non-blocking) ────────
+    fetch(`https://api.openai.com/v1/files/${openAiFileId}`, {
+      method: 'DELETE',
+      headers: { authorization: `Bearer ${apiKey}` },
+    }).catch((e: unknown) => {
+      console.warn('[extractSenderFromPdf] Failed to delete OpenAI file (non-fatal)', {
+        openAiFileId,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    });
+
+    // ── Step 4: Parse the response ──────────────────────────────────────────
+    const data = (await chatResponse.json()) as {
       error?: { message?: string };
       choices?: Array<{ message?: { content?: string } }>;
     };
 
-    if (!response.ok) {
-      console.warn('[extractSenderFromPdf] OpenAI HTTP error', {
-        status: response.status,
+    if (!chatResponse.ok) {
+      console.warn('[extractSenderFromPdf] OpenAI chat HTTP error', {
+        status: chatResponse.status,
         message: data?.error?.message,
+        fileName: fileName ?? fileId,
       });
       return { sender: null, mailType: null };
     }
@@ -175,7 +223,9 @@ async function extractSenderFromPdf(
     const sender =
       parsed.sender != null && String(parsed.sender).trim() ? String(parsed.sender).trim() : null;
     const mailType =
-      parsed.mailType != null && String(parsed.mailType).trim() ? String(parsed.mailType).trim() : null;
+      parsed.mailType != null && String(parsed.mailType).trim()
+        ? String(parsed.mailType).trim()
+        : null;
     console.log('[extractSenderFromPdf] done', {
       fileName: fileName ?? fileId,
       sender: sender ?? '(null)',
@@ -573,7 +623,7 @@ async function startDaemon(): Promise<void> {
 
   console.log(`[onedriveMailIngest] Starting daemon loop (interval = ${intervalMinutes} minutes)`);
   console.log(
-    '[onedriveMailIngest] Worker AI path: PDF bytes → base64 data URL → Chat Completions (no poppler). Requires OPENAI_API_KEY on this service.'
+    '[onedriveMailIngest] Worker AI path: PDF bytes → OpenAI Files API upload → Chat Completions (file_id reference) → delete. Requires OPENAI_API_KEY on this service.'
   );
 
   // Run immediately on boot

@@ -24,6 +24,7 @@ const router = Router();
 
 // Debug route to test email functions with current environment
 // Guarded by DEBUG_EMAIL_ENABLED env var and IP allowlist
+if (process.env.NODE_ENV !== 'production') {
 router.post('/debug-email', async (req, res) => {
     // Check if debug emails are enabled
     if (process.env.DEBUG_EMAIL_ENABLED !== '1') {
@@ -292,5 +293,6 @@ router.post('/debug-email', async (req, res) => {
         });
     }
 });
+}
 
 export default router;

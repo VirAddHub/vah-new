@@ -44,28 +44,23 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
     return (
         <header className="w-full shrink-0 border-b border-border/80 bg-card">
             {/* Inner: same max-width/padding as dashboard shell; single row, justify-between */}
-            <div className="mx-auto flex h-12 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 sm:h-16">
-                {/* Left: hamburger (mobile only) + logo. Slot has fixed min width so logo never collapses. */}
-                <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
+            <div className="flex h-12 w-full items-center justify-between gap-4 px-4 sm:h-16 sm:px-6">
+                {/* Left: hamburger (mobile only) + logo */}
+                <div className="flex flex-shrink-0 items-center gap-2">
                     <button
                         ref={hamburgerRef}
                         onClick={() => setIsMobileSidebarOpen(true)}
-                        className="flex min-h-[44px] min-w-[44px] -ml-0.5 items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground touch-manipulation lg:hidden"
+                        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground touch-manipulation lg:hidden"
                         aria-label="Open dashboard menu"
                     >
                         <Menu className="h-5 w-5 shrink-0" strokeWidth={2} />
                     </button>
-                    <div
-                        className="flex h-10 max-h-10 shrink-0 items-center justify-start overflow-visible rounded-md border border-transparent bg-muted/40 px-1 sm:h-12 sm:max-h-12 sm:px-2"
-                        data-dashboard-logo-slot
-                    >
-                        <VAHLogo
-                            onNavigate={onNavigate}
-                            size="sm"
-                            className="shrink-0"
-                            imgClassName="!h-7 !max-h-7 w-auto max-w-[9.5rem] object-contain object-left sm:!h-9 sm:!max-h-9 sm:max-w-[11rem]"
-                        />
-                    </div>
+                    <VAHLogo
+                        onNavigate={onNavigate}
+                        size="sm"
+                        className="shrink-0"
+                        imgClassName="!h-7 !max-h-7 w-auto max-w-[9.5rem] object-contain object-left sm:!h-9 sm:!max-h-9 sm:max-w-[11rem]"
+                    />
                 </div>
 
                 {/* Right: Sign out only. Shrink-0 so it never moves with logo width. */}

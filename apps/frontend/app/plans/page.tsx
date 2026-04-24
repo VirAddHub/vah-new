@@ -1,7 +1,6 @@
 // apps/frontend/app/plans/page.tsx
 import { API_BASE } from "@/lib/config";
 
-export const dynamic = "force-dynamic";
 
 export default async function PlansPage() {
     const res = await fetch(`${API_BASE}/api/plans`, { cache: "no-store" });

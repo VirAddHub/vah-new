@@ -332,8 +332,7 @@ router.post('/from-onedrive', async (req, res) => {
 
     const tagTitle = tagToTitle(payload.sourceSlug);
     const dateFromName = tryParseDateFromFilename(payload.fileName);
-    // Date is stored in received_date, not included in subject
-    const subject = `${tagTitle} letter`;
+
     const aiSender =
       payload.sender != null && String(payload.sender).trim() ? String(payload.sender).trim() : null;
     const senderName = aiSender ?? tagTitle;
@@ -341,6 +340,16 @@ router.post('/from-onedrive', async (req, res) => {
       payload.mailType != null && String(payload.mailType).trim()
         ? String(payload.mailType).trim()
         : null;
+
+    // Build subject from AI data when available, so the customer dashboard shows
+    // what the letter actually is (e.g. "HMRC — Tax Return" or "Lloyds Bank — Statement")
+    // rather than a generic tag-based name like "HMRC letter".
+    // Falls back to the tag-based name if AI extraction returned nothing.
+    const subject = aiSender
+      ? mailTypeValue
+        ? `${aiSender} — ${mailTypeValue.charAt(0).toUpperCase() + mailTypeValue.slice(1)}`
+        : aiSender
+      : `${tagTitle} letter`;
     
     // Use date from filename if available, otherwise use receivedAtMs
     const finalReceivedDate = dateFromName 

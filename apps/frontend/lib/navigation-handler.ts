@@ -35,9 +35,18 @@ export function createNavigationHandler(router: { push: (path: string) => void }
                 }
                 break;
             }
-            case 'signup':
-                router.push('/signup');
+            case 'signup': {
+                const billing =
+                    data &&
+                    typeof data === 'object' &&
+                    data !== null &&
+                    'initialBilling' in data &&
+                    typeof (data as { initialBilling: unknown }).initialBilling === 'string'
+                        ? (data as { initialBilling: string }).initialBilling
+                        : 'monthly';
+                router.push(`/signup?billing=${billing}`);
                 break;
+            }
             case 'login':
                 router.push('/login');
                 break;

@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { SWRConfig } from 'swr';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { AuthGate } from '@/components/AuthGate';
+
 import { AdminHeartbeatProvider } from '@/contexts/AdminHeartbeatContext';
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -20,7 +20,7 @@ export function Providers({ children }: { children: ReactNode }) {
         >
             <AuthProvider>
                 <AdminHeartbeatProvider>
-                    <AuthGate>{children}</AuthGate>
+                    {children}
                 </AdminHeartbeatProvider>
             </AuthProvider>
         </SWRConfig>

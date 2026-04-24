@@ -85,55 +85,6 @@ router.get('/mail/scan-url', requireAuth, async (req: Request, res: Response) =>
     }
 });
 
-/**
- * Legacy path (kept for backwards compatibility):
- * GET /api/legacy/mail-items/:id/download?disposition=inline|attachment
- */
-router.get('/legacy/mail-items/:id/download', requireAuth, async (req: Request, res: Response) => {
-    try {
-        const id = Number(req.params.id);
-        const disposition = (req.query.disposition as string) === 'attachment' ? 'attachment' : 'inline';
-        if (!id || Number.isNaN(id)) return res.status(400).send('Invalid id');
-
-        const user = req.user;
-        if (!user?.id) return res.status(401).send('Unauthenticated');
-
-        const pool = getPool();
-        const { rows } = await pool.query<{
-            id: number; user_id: number; deleted: boolean; scan_file_url: string | null; subject: string | null;
-        }>(
-            `SELECT id, user_id, deleted, scan_file_url, subject
-       FROM mail_item
-       WHERE id = $1
-       LIMIT 1`,
-            [id]
-        );
-
-        if (!rows.length) return res.status(404).send('Mail item not found');
-        const item = rows[0];
-
-        const dbUserId = toNumberId(item.user_id);
-        const sessionUserId = toNumberId(user.id);
-        const isOwner = dbUserId === sessionUserId;
-        const isPrivileged = Boolean(user.is_admin);
-        if (!isOwner && !isPrivileged) {
-            logger.warn('[bff:legacy-download] forbidden', { id, dbUserId, sessionUserId, isPrivileged });
-            return res.status(403).send('Forbidden');
-        }
-        if (item.deleted) return res.status(410).send('Mail item deleted');
-        if (!item.scan_file_url) return res.status(404).send('No scan available');
-
-        const httpsUrl = await resolveToHttpsUrl(item.scan_file_url);
-        if (!httpsUrl) return res.status(502).send('Failed to resolve file URL');
-
-        const filename = (item.subject || `document-${item.id}`) + '.pdf';
-        return streamPdfFromUrl(res, httpsUrl, filename, disposition);
-    } catch (err: unknown) {
-        logger.error('[bff:legacy-download] error', { message: errorMessage(err) });
-        return res.status(500).send('Internal Server Error');
-    }
-});
-
 export default router;
 
 // --- helpers (reuse your existing OneDrive/Graph resolver if present) ---

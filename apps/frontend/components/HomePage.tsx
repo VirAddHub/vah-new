@@ -86,34 +86,17 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                 </p>
                             </div>
 
-                            <div className="mt-10 w-full flex flex-col items-center">
-                                <div className="flex justify-center">
-                                    <span className="text-display font-poppins !font-normal text-foreground tabular-nums inline-block">{formatMonthly(monthlyPrice)}</span>
-                                </div>
-                                <div className="mt-3 w-full space-y-2 flex flex-col items-center">
-                                    <div className="flex items-center justify-center gap-2 text-body-sm font-poppins font-normal text-muted-foreground">
-                                        <Check className="w-4 h-4 text-primary flex-shrink-0" strokeWidth={2.5} />
-                                        <span>One plan</span>
-                                    </div>
-                                    <div className="flex items-center justify-center gap-2 text-body-sm font-poppins font-normal text-muted-foreground">
-                                        <Check className="w-4 h-4 text-primary flex-shrink-0" strokeWidth={2.5} />
-                                        <span>Everything included</span>
-                                    </div>
-                                    <div className="flex items-center justify-center gap-2 text-body-sm font-poppins font-normal text-muted-foreground">
-                                        <Check className="w-4 h-4 text-primary flex-shrink-0" strokeWidth={2.5} />
-                                        <span>No surprises</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="mt-8 flex flex-col items-center">
+                            <div className="mt-10 flex flex-col items-center gap-4">
                                 <Button
                                     onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                     size="lg"
-                                    className="h-12 px-8 rounded-xl text-body font-poppins !font-normal bg-primary text-primary-foreground hover:bg-primary/90"
+                                    className="h-12 px-8 text-body font-poppins !font-normal bg-primary text-primary-foreground hover:bg-primary/90"
                                 >
                                     Get Started
                                 </Button>
+                                <p className="text-body-sm font-poppins font-normal text-muted-foreground tabular-nums">
+                                    From {formatMonthly(monthlyPrice)} · Cancel anytime
+                                </p>
                             </div>
                         </div>
 
@@ -175,64 +158,66 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </div>
             </section>
 
-            {/* WHAT'S INCLUDED — soft neutral band, faint green wash */}
-            <section className="relative overflow-hidden border-t border-border/70 bg-muted/80 bg-gradient-to-b from-primary/[0.04] via-muted/90 to-muted/80 py-20 lg:py-28">
-                <AmbientWhatsIncluded />
-                <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="max-w-3xl">
-                        <h2 className="text-h1 lg:text-display font-poppins !font-normal text-foreground tracking-tight">
-                            What's Included
-                        </h2>
-
-                        <ul className="mt-8 space-y-3 sm:space-y-4">
-                            {[
-                                {
-                                    title: "Registered Office And Director's Service Address",
-                                    description: "Use our address for your registered office and director's service address requirements.",
-                                },
-                                {
-                                    title: "Professional Business Address",
-                                    description: "Present a more established business image across your website, invoices, contracts, and client communications.",
-                                },
-                                {
-                                    title: "Same Day Mail Scanning And Instant Alerts",
-                                    description: "Your post is processed promptly and uploaded to your dashboard so you can review it online without delay.",
-                                },
-                                {
-                                    title: "Secure Online Dashboard",
-                                    description: "View, download, and organise your mail in one place with full control.",
-                                },
-                                {
-                                    title: "UK Based Support",
-                                    description: "Support provided during standard business hours.",
-                                },
-                                {
-                                    title: "Privacy Protection",
-                                    description: "Separate your personal address from your business presence for greater privacy and peace of mind.",
-                                },
-                            ].map((item) => (
-                                <li
-                                    key={item.title}
-                                    className="flex items-start gap-3 rounded-xl border border-border/70 bg-background/90 px-4 py-4 shadow-sm shadow-black/[0.03] sm:px-5 sm:py-4"
-                                >
-                                    <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                                    <div>
-                                        <p className="font-poppins font-normal text-foreground leading-snug">
-                                            {item.title}
-                                        </p>
-                                        <p className="mt-1 text-body-sm font-poppins font-normal text-muted-foreground leading-relaxed">
-                                            {item.description}
-                                        </p>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-            </section>
-
             {/* HOW IT WORKS */}
             <HowItWorks />
+
+            {/* WHAT'S INCLUDED */}
+            <section className="relative overflow-hidden border-t border-border/70 bg-muted/60 py-16 sm:py-20 lg:py-24">
+                <AmbientWhatsIncluded />
+                <div className="relative z-10 mx-auto max-w-5xl px-6 lg:px-8">
+                    <div className="text-center mb-10 sm:mb-14">
+                        <h2 className="text-h1 lg:text-display font-poppins !font-normal text-foreground tracking-tight">
+                            What's included
+                        </h2>
+                        <p className="mt-3 text-body font-poppins font-normal text-muted-foreground">
+                            Everything in one plan — no tiers, no add-ons, no surprises.
+                        </p>
+                    </div>
+
+                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-8">
+                        {[
+                            {
+                                title: "Registered Office address",
+                                description: "Use our London address as your official registered office with Companies House.",
+                            },
+                            {
+                                title: "Director's Service Address",
+                                description: "Keep your personal address off the public register — use ours instead.",
+                            },
+                            {
+                                title: "Professional business address",
+                                description: "A credible London address for your website, invoices, and client communications.",
+                            },
+                            {
+                                title: "Same day mail scanning",
+                                description: "Your post is scanned and available in your dashboard the same day it arrives.",
+                            },
+                            {
+                                title: "Secure online dashboard",
+                                description: "View, download, and organise your mail in one place, from anywhere.",
+                            },
+                            {
+                                title: "Privacy protection",
+                                description: "Separate your home address from your business presence for peace of mind.",
+                            },
+                        ].map((item) => (
+                            <li key={item.title} className="flex items-start gap-3">
+                                <div className="mt-1 flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <Check className="w-3 h-3 text-primary" strokeWidth={2.5} />
+                                </div>
+                                <div>
+                                    <p className="font-poppins font-medium text-foreground leading-snug">
+                                        {item.title}
+                                    </p>
+                                    <p className="mt-1 text-body-sm font-poppins font-normal text-muted-foreground leading-relaxed">
+                                        {item.description}
+                                    </p>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </section>
 
             {/* PRICING — bright band between tinted sections */}
             <section
@@ -305,14 +290,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     <Button
                                         onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
                                         variant="primary"
-                                        className="h-11 w-full rounded-full text-body-sm font-poppins !font-normal"
+                                        className="h-11 w-full text-body-sm font-poppins !font-normal"
                                     >
                                         Sign Up
                                     </Button>
                                 </div>
                             </div>
                         ) : (
-                            <div className="w-full max-w-[420px] rounded-3xl bg-card p-5 shadow-xl shadow-black/[0.06] ring-1 ring-border/60 sm:p-6 flex flex-col border border-border/90">
+                            <div className="w-full max-w-[420px] rounded-3xl border-2 border-border bg-card p-5 shadow-2xl shadow-black/[0.08] ring-1 ring-border/40 sm:p-6 flex flex-col text-foreground">
                                 <div className="flex flex-col items-start gap-2">
                                     <div className="text-h2 font-poppins !font-normal text-foreground tabular-nums sm:text-h1 lg:text-display">
                                         {formatAnnual(annualPrice)}
@@ -336,7 +321,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         ].map((t) => (
                                             <li key={t} className="flex items-center gap-2">
                                                 <Check className="h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4 text-primary" strokeWidth={3} />
-                                                <span className="text-body-sm font-poppins font-normal leading-[1.4] text-muted-foreground sm:text-body">{t}</span>
+                                                <span className="text-body-sm font-poppins font-normal leading-[1.4] text-foreground sm:text-body">{t}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -355,7 +340,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                         ].map((t) => (
                                             <li key={t} className="flex items-start gap-2">
                                                 <Check className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 sm:h-4 sm:w-4 text-primary" strokeWidth={3} />
-                                                <span className="text-body-sm font-poppins font-normal leading-[1.4] text-muted-foreground sm:text-body">{t}</span>
+                                                <span className="text-body-sm font-poppins font-normal leading-[1.4] text-foreground sm:text-body">{t}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -365,7 +350,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                                     <Button
                                         onClick={() => handleNavClick?.("signup", { initialBilling: "annual" })}
                                         variant="primary"
-                                        className="h-11 w-full rounded-full text-body-sm font-poppins !font-normal"
+                                        className="h-11 w-full text-body-sm font-poppins !font-normal"
                                     >
                                         Sign Up
                                     </Button>
@@ -377,22 +362,23 @@ export function HomePage({ onNavigate }: HomePageProps) {
             </section>
 
             {/* Final CTA */}
-            <section className="bg-primary py-16 sm:py-20 lg:py-24">
+            <section className="border-t border-border/70 bg-background py-16 sm:py-20 lg:py-24">
                 <div className="mx-auto max-w-2xl px-6 text-center">
-                    <h2 className="font-poppins !font-normal text-h2 sm:text-h1 lg:text-display text-primary-foreground tracking-tight leading-tight">
+                    <h2 className="font-poppins !font-normal text-h2 sm:text-h1 lg:text-display text-foreground tracking-tight leading-tight">
                         Get your Central London address today
                     </h2>
-                    <p className="mt-4 text-body sm:text-body-lg font-poppins font-normal text-primary-foreground/75">
+                    <p className="mt-4 text-body sm:text-body-lg font-poppins font-normal text-muted-foreground">
                         UK Companies House &amp; HMRC compliant. Everything included, no surprises.
                     </p>
                     <div className="mt-8 flex flex-col items-center gap-3">
                         <Button
                             onClick={() => handleNavClick?.("signup", { initialBilling: "monthly" })}
-                            className="h-12 px-8 rounded-xl bg-primary-foreground text-primary font-poppins !font-normal hover:bg-primary-foreground/90 text-body"
+                            size="lg"
+                            className="h-12 px-8 bg-primary text-primary-foreground font-poppins !font-normal hover:bg-primary/90 text-body"
                         >
                             Get Started
                         </Button>
-                        <p className="text-body-sm font-poppins font-normal text-primary-foreground/60 tabular-nums">
+                        <p className="text-body-sm font-poppins font-normal text-muted-foreground tabular-nums">
                             {formatMonthly(monthlyPrice)} · Cancel anytime
                         </p>
                     </div>

@@ -109,14 +109,14 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                     <div className="flex flex-wrap gap-4 justify-center">
                         <Button
                             onClick={() => onNavigate?.("home")}
-                            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 px-6"
                         >
                             Return Home
                         </Button>
                         <Button
                             variant="outline"
                             onClick={() => setIsSubmitted(false)}
-                            className="rounded-full px-6"
+                            className="px-6"
                         >
                             Send Another Message
                         </Button>
@@ -261,7 +261,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 <Button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="mt-2 w-full rounded-full"
+                                    className="mt-2 w-full"
                                 >
                                     {isSubmitting ? (
                                         <>
@@ -293,7 +293,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="rounded-full"
+                                    className=""
                                     onClick={() => window.open("https://wa.me/447000000000", "_blank")}
                                 >
                                     Chat on WhatsApp
@@ -311,7 +311,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="rounded-full"
+                                    className=""
                                     onClick={() => (window.location.href = "mailto:support@virtualaddresshub.co.uk")}
                                 >
                                     Send an email

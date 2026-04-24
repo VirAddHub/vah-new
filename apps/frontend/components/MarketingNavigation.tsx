@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
@@ -45,9 +46,9 @@ export function MarketingNavigation({ onNavigate }: MarketingNavigationProps) {
     };
 
     return (
-        <header className="sticky top-0 z-30 bg-background/90 backdrop-blur-sm border-b border-border">
+        <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-sm border-b border-border">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                <div className="flex h-16 items-center justify-between gap-3 min-w-0">
+                <div className="relative isolate flex h-16 items-center justify-between gap-3 min-w-0">
                     {/* Logo: visible on all breakpoints; tighter on phone, full height from sm */}
                     <div className="flex min-h-10 min-w-0 max-w-[min(100%,12rem)] flex-1 shrink items-center sm:min-w-[180px] sm:max-w-none sm:flex-none sm:min-h-[50px]">
                         <VAHLogo
@@ -58,8 +59,8 @@ export function MarketingNavigation({ onNavigate }: MarketingNavigationProps) {
                         />
                     </div>
 
-                    {/* Desktop Navigation */}
-                    <nav aria-label="Main navigation" className="hidden md:flex items-center gap-8">
+                    {/* Desktop Navigation — keep above page chrome for hit-testing */}
+                    <nav aria-label="Main navigation" className="relative z-10 hidden md:flex items-center gap-8">
                         {navItems.map((item) => (
                             <button
                                 key={item.label}
@@ -71,18 +72,18 @@ export function MarketingNavigation({ onNavigate }: MarketingNavigationProps) {
                         ))}
                     </nav>
 
-                    {/* Desktop Auth */}
-                    <div className="hidden md:flex items-center gap-4">
-                        <button
-                            onClick={() => handleNavClick('login')}
-                            className="text-body-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    {/* Desktop Auth — Link avoids client-router edge cases and improves click target */}
+                    <div className="relative z-10 hidden md:flex items-center gap-4">
+                        <Link
+                            href="/login"
+                            className="text-body-sm font-medium text-foreground hover:text-primary transition-colors inline-flex min-h-9 min-w-[44px] items-center justify-center rounded-sm px-2 -mx-2"
                         >
                             Log in
-                        </button>
+                        </Link>
                         <Button
                             onClick={() => handleNavClick('signup')}
                             size="sm"
-                            className="rounded-lg px-4 h-9"
+                            className="px-4 h-9"
                         >
                             Get started
                         </Button>
@@ -118,15 +119,16 @@ export function MarketingNavigation({ onNavigate }: MarketingNavigationProps) {
                         ))}
 
                         <div className="pt-4 space-y-2 border-t border-border mt-4">
-                            <button
-                                onClick={() => handleNavClick('login')}
-                                className="block w-full text-center px-3 py-2 text-body-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                            <Link
+                                href="/login"
+                                onClick={() => setIsMenuOpen(false)}
+                                className="block w-full text-center px-3 py-3 text-body-sm font-medium text-muted-foreground hover:text-foreground transition-colors min-h-11"
                             >
                                 Log in
-                            </button>
+                            </Link>
                             <Button
                                 onClick={() => handleNavClick('signup')}
-                                className="w-full rounded-lg h-10"
+                                className="w-full h-10"
                             >
                                 Get started
                             </Button>
