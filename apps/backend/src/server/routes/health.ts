@@ -66,6 +66,7 @@ async function healthCheck(req: Request, res: Response) {
         // Determine overall health
         const overallStatus = dbStatus === 'up' ? 'healthy' : 'degraded';
 
+        // TODO(security): keep deep diagnostics behind admin-authenticated endpoints only.
         res.status(200).json({
             ...serviceInfo,
             status: overallStatus,
@@ -200,11 +201,30 @@ function healthCheckMinimal(_req: Request, res: Response) {
     });
 }
 
-function healthReady(_req: Request, res: Response) {
-    res.status(200).json({
-        status: 'ready',
-        timestamp: new Date().toISOString()
-    });
+async function healthReady(_req: Request, res: Response) {
+    try {
+        const pool = getPool();
+        await pool.query('SELECT 1 as readiness_check');
+        return res.status(200).json({
+            ok: true,
+            status: 'ready',
+            checks: {
+                db: 'ok'
+            },
+            timestamp: new Date().toISOString()
+        });
+    } catch (error: any) {
+        console.warn('[HEALTH] Readiness DB check failed:', error?.message || error);
+        return res.status(503).json({
+            ok: false,
+            status: 'not_ready',
+            checks: {
+                db: 'down'
+            },
+            error: 'database_unavailable',
+            timestamp: new Date().toISOString()
+        });
+    }
 }
 
 function healthLive(_req: Request, res: Response) {

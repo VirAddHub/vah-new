@@ -1,4 +1,4 @@
-import { AZURE_CONFIG, graphCredsPresent } from '../config/azure';
+import { AZURE_CONFIG, graphCredentialEnvKeys, graphCredsPresent } from '../config/azure';
 
 export async function getGraphToken(): Promise<string> {
     if (!graphCredsPresent()) {
@@ -26,6 +26,7 @@ export async function getGraphToken(): Promise<string> {
     if (!r.ok) {
         const t = await r.text().catch(() => '');
         console.error(`[graph token] Failed to get token: ${r.status} ${t}`);
+        console.error('[graph token] Client-credentials sourced from env keys (first set wins):', graphCredentialEnvKeys());
         throw new Error(`[graph token] ${r.status} ${t}`);
     }
     const j = (await r.json()) as { access_token?: string };

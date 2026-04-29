@@ -1,8 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import request from 'supertest';
 import { createTestApp } from '../helpers/createTestApp';
+import * as db from '../../server/db';
 
 const app = createTestApp();
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('Ops/health routes', () => {
   it('GET /api/health returns 200', async () => {
@@ -25,14 +30,43 @@ describe('Ops/health routes', () => {
     expect(res.status).toBe(200);
   });
 
-  it('GET /api/healthz/ready returns 200', async () => {
+  it('GET /api/healthz/ready returns 200 when DB check succeeds', async () => {
+    vi.spyOn(db, 'getPool').mockReturnValue({
+      query: vi.fn().mockResolvedValue({ rows: [{ readiness_check: 1 }] }),
+    } as any);
+
     const res = await request(app).get('/api/healthz/ready');
     expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      ok: true,
+      status: 'ready',
+      checks: { db: 'ok' },
+    });
+  });
+
+  it('GET /api/healthz/ready returns 503 when DB check fails', async () => {
+    vi.spyOn(db, 'getPool').mockReturnValue({
+      query: vi.fn().mockRejectedValue(new Error('db down')),
+    } as any);
+
+    const res = await request(app).get('/api/healthz/ready');
+    expect(res.status).toBe(503);
+    expect(res.body).toMatchObject({
+      ok: false,
+      status: 'not_ready',
+      checks: { db: 'down' },
+      error: 'database_unavailable',
+    });
   });
 
   it('GET /api/healthz/live returns 200', async () => {
+    vi.spyOn(db, 'getPool').mockImplementation(() => {
+      throw new Error('db should not be used for live');
+    });
+
     const res = await request(app).get('/api/healthz/live');
     expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('status', 'alive');
   });
 
   it('GET /api/__version returns 200 with version info', async () => {
