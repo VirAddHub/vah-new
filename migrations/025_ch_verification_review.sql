@@ -1,5 +1,14 @@
 -- Migration: Add Companies House verification review workflow
 -- Date: 2025-11-19
+--
+-- ⚠️  DUPLICATE NUMBER WARNING — DO NOT RENAME THIS FILE
+-- This file shares sequence number 025 with 025_add_kyc_approved_timestamps.sql.
+-- Both files have been applied to production (the migration runner tracks by filename,
+-- not by sequence number, so both rows exist in the migrations table).
+-- Renaming this file would make the runner re-apply it and fail with column-already-exists errors.
+-- The correct long-term fix is: after verifying the production migrations table contains
+-- *both* filenames, add a code comment here and in 025_add_kyc_approved_timestamps.sql
+-- acknowledging the overlap, and ensure no future migration reuses number 025.
 
 ALTER TABLE "user"
     ADD COLUMN IF NOT EXISTS ch_verification_status TEXT NOT NULL DEFAULT 'not_submitted',

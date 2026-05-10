@@ -5,6 +5,9 @@ module.exports = {
     },
     testTimeout: 20000,
     moduleFileExtensions: ['ts', 'tsx', 'js', 'json'],
+    // Resolve modules through local node_modules first, then workspace root.
+    // Required because ts-jest is hoisted to ../../node_modules in npm workspaces.
+    moduleDirectories: ['node_modules', '../../node_modules'],
     testMatch: ['**/tests/**/*.spec.ts', '**/tests/**/*.spec.js', '**/src/services/**/*.test.ts'],
     collectCoverageFrom: [
         'src/**/*.{ts,js}',

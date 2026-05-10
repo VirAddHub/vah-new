@@ -86,14 +86,18 @@ router.post('/reset-password/request', resetPasswordRequestLimiter, async (req, 
 
             const saved = await withTimeout(
                 (async () => {
+                    const jwtSecret = process.env.JWT_SECRET;
+                    if (!jwtSecret) throw new Error('JWT_SECRET is not configured');
+                    const lookupHash = crypto.createHmac('sha256', jwtSecret).update(raw).digest('hex');
                     const pool = getPool();
                     await pool.query(
-                        `UPDATE "user" 
-                         SET reset_token_hash = $1, 
-                             reset_token_expires_at = $2, 
-                             reset_token_used_at = NULL 
+                        `UPDATE "user"
+                         SET reset_token_hash = $1,
+                             reset_token_expires_at = $2,
+                             reset_token_used_at = NULL,
+                             reset_token_lookup_hash = $4
                          WHERE id = $3`,
-                        [hash, expiresAt.toISOString(), user.id]
+                        [hash, expiresAt.toISOString(), user.id, lookupHash]
                     );
                     return true;
                 })(),
@@ -890,37 +894,51 @@ router.post("/reset-password/confirm", async (req, res) => {
             });
         }
 
-        if (password.length < 8) {
+        // Password complexity — mirrors signup schema
+        const pwErrors: string[] = [];
+        if (password.length < 8)      pwErrors.push("Password must be at least 8 characters long");
+        if (!/[a-z]/.test(password))  pwErrors.push("Password must contain a lowercase letter");
+        if (!/[A-Z]/.test(password))  pwErrors.push("Password must contain an uppercase letter");
+        if (!/\d/.test(password))     pwErrors.push("Password must contain a number");
+        if (pwErrors.length > 0) {
             return res.status(400).json({
                 ok: false,
-                error: "password_too_short",
-                message: "Password must be at least 8 characters long"
+                error: "password_too_weak",
+                message: pwErrors[0],
             });
         }
 
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) {
+            logger.error('[reset-confirm] JWT_SECRET not configured');
+            return res.status(500).json({ ok: false, error: 'server_error', message: 'Server misconfiguration' });
+        }
+        // O(1) lookup hash — avoids scanning every active reset token with bcrypt
+        const lookupHash = crypto.createHmac('sha256', jwtSecret).update(String(token)).digest('hex');
+
         const pool = getPool();
 
-        // Find user with valid reset token
-        const userResult = await pool.query(`
-            SELECT id, email, reset_token_hash, reset_token_expires_at, reset_token_used_at
-            FROM "user" 
-            WHERE reset_token_hash IS NOT NULL 
-            AND reset_token_expires_at > NOW() 
-            AND reset_token_used_at IS NULL
-        `);
+        // SELECT the single user whose lookup hash matches, is unexpired, and unused
+        const userResult = await pool.query<{
+            id: number;
+            email: string;
+            reset_token_hash: string;
+        }>(`
+            SELECT id, email, reset_token_hash
+            FROM "user"
+            WHERE reset_token_lookup_hash = $1
+              AND reset_token_expires_at > NOW()
+              AND reset_token_used_at IS NULL
+        `, [lookupHash]);
 
-        let validUser: { id: number; email: string; reset_token_hash: string; reset_token_expires_at: string; reset_token_used_at: string | null } | null = null;
+        const candidate = userResult.rows[0] ?? null;
 
-        // Check if any user's reset token matches (using bcrypt compare)
-        for (const user of userResult.rows) {
-            const isValidToken = await bcrypt.compare(token, user.reset_token_hash);
-            if (isValidToken) {
-                validUser = user;
-                break;
-            }
-        }
+        // bcrypt.compare exactly once — constant-time even on a cache miss
+        const isValidToken = candidate
+            ? await bcrypt.compare(String(token), candidate.reset_token_hash)
+            : false;
 
-        if (!validUser) {
+        if (!candidate || !isValidToken) {
             return res.status(400).json({
                 ok: false,
                 error: "invalid_token",
@@ -931,21 +949,22 @@ router.post("/reset-password/confirm", async (req, res) => {
         // Hash the new password
         const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
-        // Update user's password and mark token as used
+        // Clear both hashes so the token can never be replayed
         const updateResult = await pool.query(`
-            UPDATE "user" 
-            SET password = $1, 
-                reset_token_hash = NULL, 
-                reset_token_expires_at = NULL, 
+            UPDATE "user"
+            SET password = $1,
+                reset_token_hash = NULL,
+                reset_token_lookup_hash = NULL,
+                reset_token_expires_at = NULL,
                 reset_token_used_at = NOW(),
                 updated_at = $3
             WHERE id = $2
-        `, [hashedPassword, validUser.id, Date.now()]);
+        `, [hashedPassword, candidate.id, Date.now()]);
 
         // Verify the update was successful
         if (updateResult.rowCount !== 1) {
             logger.error('[reset-confirm] database update failed', {
-                userId: validUser.id,
+                userId: candidate.id,
                 rowCount: updateResult.rowCount,
                 expected: 1
             });
@@ -956,7 +975,7 @@ router.post("/reset-password/confirm", async (req, res) => {
             });
         }
 
-        logger.info('[reset-confirm] password updated', { userId: validUser.id });
+        logger.info('[reset-confirm] password updated', { userId: candidate.id });
 
         return res.status(200).json({
             ok: true,
