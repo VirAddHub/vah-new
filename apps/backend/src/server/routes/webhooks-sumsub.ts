@@ -17,6 +17,7 @@ import { deriveKycStatusFromSumsubReview, parseSumsubExternalUserId } from '../.
 import { getPool } from '../db';
 import { logVerificationEvent } from '../services/verificationEventLog';
 import { sendKycApproved, sendKycRejected } from '../../lib/mailer';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -104,7 +105,7 @@ async function insertNotification(opts: {
     );
   } catch (err) {
     // Non-fatal — notification failure should never block the webhook response
-    console.error('[SumsubWebhook] insertNotification failed (non-fatal):', err);
+    logger.error('[SumsubWebhook] insertNotification failed (non-fatal):', { error: err });
   }
 }
 
@@ -123,7 +124,7 @@ router.post('/', async (req: Request, res: Response) => {
   const raw: Buffer = req.body;
 
   if (!verifySig(secret, raw, sig)) {
-    console.warn('[SumsubWebhook] Signature verification failed');
+    logger.warn('[SumsubWebhook] Signature verification failed');
     return res.status(401).json({ ok: false, error: 'invalid_signature' });
   }
 
@@ -173,7 +174,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     if (ownerResult.rows.length === 0) {
-      console.warn('[SumsubWebhook] owner not found for webhook', { applicantId, externalUserId });
+      logger.warn('[SumsubWebhook] owner not found for webhook', { applicantId });
       return res.json({ ok: true, ignored: true });
     }
 
@@ -200,7 +201,7 @@ router.post('/', async (req: Request, res: Response) => {
       [applicantId ?? null, newStatus, ownerRow.id],
     );
 
-    console.log(`[SumsubWebhook] Updated business owner ${ownerRow.id} status to: ${newStatus}`);
+    logger.info(`[SumsubWebhook] Updated business owner status`, { ownerId: ownerRow.id, newStatus });
 
     const finalEventType =
       newStatus === 'verified' ? 'verified' : newStatus === 'rejected' ? 'rejected' : 'pending';
@@ -212,7 +213,7 @@ router.post('/', async (req: Request, res: Response) => {
       try {
         await sendKycApproved({ email: ownerRow.email, firstName });
       } catch (err) {
-        console.error('[SumsubWebhook] Failed to send owner KYC approved email:', err);
+        logger.error('[SumsubWebhook] Failed to send owner KYC approved email:', { error: err });
       }
     } else if (newStatus === 'rejected' && previousStatus !== 'rejected') {
       try {
@@ -222,7 +223,7 @@ router.post('/', async (req: Request, res: Response) => {
           reason: rejectReason ?? 'Verification was not approved. Please check your documents and try again.',
         });
       } catch (err) {
-        console.error('[SumsubWebhook] Failed to send owner KYC rejected email:', err);
+        logger.error('[SumsubWebhook] Failed to send owner KYC rejected email:', { error: err });
       }
     }
 
@@ -246,7 +247,7 @@ router.post('/', async (req: Request, res: Response) => {
   }
 
   if (userResult.rows.length === 0) {
-    console.warn('[SumsubWebhook] user not found for webhook', { applicantId, externalUserId });
+    logger.warn('[SumsubWebhook] user not found for webhook', { applicantId });
     return res.json({ ok: true, ignored: true });
   }
 
@@ -295,7 +296,7 @@ router.post('/', async (req: Request, res: Response) => {
     values,
   );
 
-  console.log(`[SumsubWebhook] Updated user ${userRow.id} KYC status to: ${kycStatus}`);
+  logger.info('[SumsubWebhook] Updated user KYC status', { userId: userRow.id, kycStatus });
 
   const userEventType =
     reviewIsGreen ? 'verified' : kycStatus === 'rejected' ? 'rejected' : 'pending';
@@ -308,7 +309,7 @@ router.post('/', async (req: Request, res: Response) => {
       email: userRow.email,
       firstName: userRow.first_name ?? 'there',
     }).catch((err: unknown) => {
-      console.error('[SumsubWebhook] Failed to send KYC approved email:', err);
+      logger.error('[SumsubWebhook] Failed to send KYC approved email:', { error: err });
     });
   }
 
@@ -319,7 +320,7 @@ router.post('/', async (req: Request, res: Response) => {
       firstName: userRow.first_name ?? 'there',
       reason: rejectReason ?? 'Verification was not approved. Please check your documents and try again.',
     }).catch((err: unknown) => {
-      console.error('[SumsubWebhook] Failed to send KYC rejected email:', err);
+      logger.error('[SumsubWebhook] Failed to send KYC rejected email:', { error: err });
     });
   }
 

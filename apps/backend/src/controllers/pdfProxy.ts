@@ -1,4 +1,5 @@
 import type { Response } from 'express';
+import { logger } from '../lib/logger';
 import {
   fetchGraphFileByUserPath,
   extractDocumentsPathFromSharePointUrl,
@@ -28,27 +29,27 @@ export async function streamPdfFromUrl(
   }
 
   try {
-    console.log(`[pdfProxy] Processing fileUrl: ${fileUrl}`);
+    logger.info(`[pdfProxy] Processing fileUrl: ${fileUrl}`);
     let finalResp: Response | globalThis.Response;
 
     if (isSharePointPersonalUrl(fileUrl)) {
-      console.log(`[pdfProxy] Detected SharePoint URL, extracting path and UPN...`);
+      logger.info(`[pdfProxy] Detected SharePoint URL, extracting path and UPN...`);
       // 🔐 Use Graph with app permissions against the correct user's drive
       const documentsPath = extractDocumentsPathFromSharePointUrl(fileUrl);
       const upn = extractUpnFromSharePointUrl(fileUrl) || AZURE_CONFIG.SHAREPOINT_USER_UPN;
 
-      console.log(`[pdfProxy] Extracted documents path: ${documentsPath}`);
-      console.log(`[pdfProxy] Extracted UPN for Graph: ${upn}`);
+      logger.info(`[pdfProxy] Extracted documents path: ${documentsPath}`);
+      logger.info(`[pdfProxy] Extracted UPN for Graph: ${upn}`);
 
       if (!documentsPath) {
-        console.error(`[pdfProxy] Failed to extract documents path from: ${fileUrl}`);
+        logger.error(`[pdfProxy] Failed to extract documents path from: ${fileUrl}`);
         res.status(502).send('Unable to resolve SharePoint path');
         return;
       }
-      console.log(`[pdfProxy] Fetching via Graph API with UPN: ${upn}`);
+      logger.info(`[pdfProxy] Fetching via Graph API with UPN: ${upn}`);
       finalResp = await fetchGraphFileByUserPath(upn, documentsPath, disposition);
     } else {
-      console.log(`[pdfProxy] Non-SharePoint URL, fetching directly...`);
+      logger.info(`[pdfProxy] Non-SharePoint URL, fetching directly...`);
       // Non-SharePoint URL: fetch directly
       finalResp = await fetch(fileUrl, { redirect: 'follow', cache: 'no-store' } as RequestInit);
     }
@@ -72,7 +73,7 @@ export async function streamPdfFromUrl(
 
     res.status(200).end(buf);
   } catch (err: any) {
-    console.error('[pdfProxy] error details:', {
+    logger.error('[pdfProxy] error details:', {
       message: err?.message,
       stack: err?.stack,
       fileUrl,

@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { logger } from './logger';
 
 // Access token / webhook secret: GC_* preferred; GOCARDLESS_* supported (see env.example + productionEnvValidation).
 // IMPORTANT: do not throw at import time; some environments intentionally run
@@ -76,7 +77,7 @@ export async function gcCreateBrfUrl(
       billing_request_id: billingRequest.billing_requests.id,
     };
   } catch (error) {
-    console.error('[GoCardless] Failed to create BRF URL:', error);
+    logger.error('[GoCardless] Failed to create BRF URL:', error);
     throw new Error('Failed to create authorization link');
   }
 }
@@ -112,7 +113,7 @@ export async function gcCompleteFlow(flowId: string): Promise<{ mandate_id: stri
       customer_id: billingRequest.billing_requests.links.customer,
     };
   } catch (error) {
-    console.error('[GoCardless] Failed to complete flow:', error);
+    logger.error('[GoCardless] Failed to complete flow:', error);
     throw new Error('Failed to complete authorization');
   }
 }

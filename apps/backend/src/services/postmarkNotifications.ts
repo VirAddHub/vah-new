@@ -12,6 +12,7 @@
  */
 
 import { sendSimpleEmail } from './mailer';
+import { logger } from '../lib/logger';
 import { ENV } from '../env';
 
 /**
@@ -68,9 +69,9 @@ export async function notifyOpsMailCreated(payload: {
       replyTo,
     });
 
-    console.log(`[postmarkNotifications] ✅ Sent mail-created notification to ${ENV.MAILROOM_EMAIL} for mailId=${payload.mailId} (user ${payload.userId})`);
+    logger.info(`[postmarkNotifications] ✅ Sent mail-created notification to ${ENV.MAILROOM_EMAIL} for mailId=${payload.mailId} (user ${payload.userId})`);
   } catch (err) {
-    console.error('[postmarkNotifications] ❌ Failed to send mail-created notification:', err);
+    logger.error('[postmarkNotifications] ❌ Failed to send mail-created notification:', err);
     // Do not throw; mail creation should not be rolled back because of email failure
   }
 }

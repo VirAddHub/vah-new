@@ -2,6 +2,7 @@
 // Admin overview endpoint - single source of truth for dashboard metrics
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 
@@ -120,7 +121,7 @@ router.get('/', requireAdmin, async (_req: Request, res: Response) => {
             generated_at: new Date().toISOString(),
         });
     } catch (e: any) {
-        console.error('[GET /api/admin/overview] error:', e);
+        logger.error('[GET /api/admin/overview] error:', e);
         res.status(500).json({ ok: false, error: String(e?.message || e) });
     }
 });

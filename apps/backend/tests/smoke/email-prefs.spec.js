@@ -10,9 +10,9 @@ describe('[smoke] email-prefs', () => {
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('POST /email-prefs', async () => {
+  test('POST /email-prefs', async () => {
+    // Safe to run: returns 400 (missing token) or 401 without a valid unsubscribe token
     const res = await request(app)[`post`](`/email-prefs`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 });

@@ -6,6 +6,7 @@
  */
 
 import express from 'express';
+import { logger } from '../lib/logger';
 
 export const legacyRouter = express.Router();
 
@@ -137,7 +138,7 @@ export function legacyAdapter(req: any, res: any, next: any) {
         res.set('X-API-Deprecation-Date', '2025-09-28');
 
         // Log deprecation warning
-        console.warn(`[DEPRECATED] ${req.method} ${path} -> ${canonicalPath}`);
+        logger.warn(`[DEPRECATED] ${req.method} ${path} -> ${canonicalPath}`);
 
         // Update the request path to the canonical endpoint
         req.url = canonicalPath;

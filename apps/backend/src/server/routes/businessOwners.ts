@@ -2,6 +2,7 @@
 // Business owners management routes
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { getPool } from '../db';
 import * as businessOwnersService from '../services/businessOwners';
 import { param } from '../../lib/express-params';
@@ -41,7 +42,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
             data: owners,
         });
     } catch (error: unknown) {
-        console.error('[GET /api/business-owners] error:', error);
+        logger.error('[GET /api/business-owners] error:', error);
         return res.status(500).json({
             ok: false,
             error: 'database_error',
@@ -114,7 +115,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
             },
         });
     } catch (error: unknown) {
-        console.error('[POST /api/business-owners] error:', error);
+        logger.error('[POST /api/business-owners] error:', error);
         return res.status(400).json({
             ok: false,
             error: 'validation_error',
@@ -186,7 +187,7 @@ router.post('/:id/resend', requireAuth, async (req: Request, res: Response) => {
             },
         });
     } catch (error: any) {
-        console.error('[POST /api/business-owners/:id/resend] error:', error);
+        logger.error('[POST /api/business-owners/:id/resend] error:', error);
         return res.status(400).json({
             ok: false,
             error: 'validation_error',
@@ -253,7 +254,7 @@ router.get('/verify', async (req: Request, res: Response) => {
             },
         });
     } catch (error: any) {
-        console.error('[GET /api/business-owners/verify] error:', error);
+        logger.error('[GET /api/business-owners/verify] error:', error);
         return res.json({
             ok: true,
             data: {
@@ -314,7 +315,7 @@ router.post('/verify/start', async (req: Request, res: Response) => {
             },
         });
     } catch (error: any) {
-        console.error('[POST /api/business-owners/verify/start] error:', error);
+        logger.error('[POST /api/business-owners/verify/start] error:', error);
         return res.status(500).json({
             ok: false,
             error: 'server_error',

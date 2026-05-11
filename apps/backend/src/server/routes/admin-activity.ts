@@ -4,6 +4,7 @@
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -144,7 +145,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                         LIMIT 10
                     `);
                 } catch (error) {
-                    console.warn('[AdminActivity] Error querying admin_log:', (error as Error).message);
+                    logger.warn('[AdminActivity] Error querying admin_log', { message: (error as Error).message });
                 }
             }
 
@@ -165,7 +166,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                         LIMIT 10
                     `);
                 } catch (error) {
-                    console.warn('[AdminActivity] Error querying activity_log:', (error as Error).message);
+                    logger.warn('[AdminActivity] Error querying activity_log', { message: (error as Error).message });
                 }
             }
 
@@ -188,12 +189,12 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                         LIMIT 10
                     `);
                 } catch (error) {
-                    console.warn('[AdminActivity] Error querying mail_event:', (error as Error).message);
+                    logger.warn('[AdminActivity] Error querying mail_event', { message: (error as Error).message });
                 }
             }
 
         } catch (tableError) {
-            console.warn('[AdminActivity] Error checking table existence:', (tableError as Error).message);
+            logger.warn('[AdminActivity] Error checking table existence', { message: (tableError as Error).message });
         }
 
         // Always get recent users and mail (these tables should exist)
@@ -206,7 +207,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                 LIMIT 10
             `);
         } catch (error) {
-            console.warn('[AdminActivity] Error querying users:', (error as Error).message);
+            logger.warn('[AdminActivity] Error querying users', { message: (error as Error).message });
         }
 
         try {
@@ -218,7 +219,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
                 LIMIT 10
             `);
         } catch (error) {
-            console.warn('[AdminActivity] Error querying mail_items:', (error as Error).message);
+            logger.warn('[AdminActivity] Error querying mail_items', { message: (error as Error).message });
         }
 
         // Format activities for display with enhanced structure
@@ -373,7 +374,7 @@ router.get('/activity', requireAdmin, async (req: Request, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error('[GET /api/admin/activity] error:', error);
+        logger.error('[GET /api/admin/activity] error:', { error });
         return res.status(500).json({
             ok: false,
             error: 'database_error',

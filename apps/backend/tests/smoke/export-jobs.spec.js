@@ -10,9 +10,9 @@ describe('[smoke] export-jobs', () => {
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('POST /export-jobs/run-once', async () => {
+  test('POST /export-jobs/run-once', async () => {
+    // Safe to run: internal job trigger returns 401/403 without a valid admin/internal key
     const res = await request(app)[`post`](`/export-jobs/run-once`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 });

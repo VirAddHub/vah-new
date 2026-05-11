@@ -14,6 +14,7 @@
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -52,7 +53,7 @@ async function getPostBySlug(slug: string) {
             authorImage: post.author_image || "/images/authors/liban.jpg"
         };
     } catch (error) {
-        console.error(`[getPostBySlug] Error reading post "${slug}":`, error);
+        logger.error('[getPostBySlug] Error reading post', { error });
         return null;
     }
 }
@@ -111,7 +112,7 @@ router.get("/blog/posts", requireAdmin, async (req: Request, res: Response) => {
             pageSize
         });
     } catch (error) {
-        console.error("Error fetching blog posts:", error);
+        logger.error('[admin-blog] Error fetching blog posts', { error });
         return res.status(500).json({ ok: false, error: "Failed to fetch posts" });
     }
 });
@@ -128,7 +129,7 @@ router.get("/blog/posts/:slug", requireAdmin, async (req: Request, res: Response
 
         return res.json({ ok: true, data: post });
     } catch (error) {
-        console.error("Error fetching blog post:", error);
+        logger.error('[admin-blog] Error fetching blog post', { error });
         return res.status(500).json({ ok: false, error: "Failed to fetch post" });
     }
 });
@@ -203,7 +204,7 @@ router.post("/blog/posts", requireAdmin, async (req: Request, res: Response) => 
 
         return res.json({ ok: true, data: postData });
     } catch (error) {
-        console.error("Error creating blog post:", error);
+        logger.error('[admin-blog] Error creating blog post', { error });
         return res.status(500).json({ ok: false, error: "Failed to create post" });
     }
 });
@@ -289,7 +290,7 @@ router.put("/blog/posts/:slug", requireAdmin, async (req: Request, res: Response
 
         return res.json({ ok: true, data: postData });
     } catch (error) {
-        console.error("Error updating blog post:", error);
+        logger.error('[admin-blog] Error updating blog post', { error });
         return res.status(500).json({ ok: false, error: "Failed to update post" });
     }
 });
@@ -316,7 +317,7 @@ router.delete("/blog/posts/:slug", requireAdmin, async (req: Request, res: Respo
             return res.status(500).json({ ok: false, error: "Failed to delete post" });
         }
     } catch (error) {
-        console.error("Error deleting blog post:", error);
+        logger.error('[admin-blog] Error deleting blog post', { error });
         return res.status(500).json({ ok: false, error: "Failed to delete post" });
     }
 });
@@ -334,7 +335,7 @@ router.get("/blog/categories", requireAdmin, async (req: Request, res: Response)
 
         return res.json({ ok: true, data: uniqueTags });
     } catch (error) {
-        console.error("Error fetching categories:", error);
+        logger.error('[admin-blog] Error fetching categories', { error });
         return res.status(500).json({ ok: false, error: "Failed to fetch categories" });
     }
 });

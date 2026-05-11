@@ -1,5 +1,6 @@
 const postmark = require("postmark");
 import { ENV } from "../env";
+import { logger } from '../lib/logger';
 import { buildAppUrl } from "../lib/mailer";
 
 const PM_TOKEN = process.env.POSTMARK_TOKEN || "";
@@ -17,7 +18,7 @@ function getClient(): any | null {
         try {
             _client = new postmark.ServerClient(PM_TOKEN);
         } catch (err) {
-            console.warn("[mailer] Failed to initialize Postmark client:", err);
+            logger.warn("[mailer] Failed to initialize Postmark client:", err);
             return null;
         }
     }
@@ -64,7 +65,7 @@ export async function sendTemplateEmail({
     const recipient = resolveRecipient(to);
     const client = getClient();
     if (!client) {
-        console.warn("[mailer] Postmark client not initialized, using fallback");
+        logger.warn("[mailer] Postmark client not initialized, using fallback");
         // Still send plain fallback even if client is missing
         const subject = `Your Business Address Compliance Score: ${model?.["score"] ?? ""}`;
         const text =
@@ -76,7 +77,7 @@ export async function sendTemplateEmail({
             `Next step: ${model?.["cta_label"] ?? "View details"} → ${model?.["cta_url"] ?? "https://virtualaddresshub.co.uk/pricing"}\n\n` +
             (model?.["has_booking"] ? `Prefer to talk? Book here: ${model?.["booking_url"]}\n\n` : "") +
             `— VirtualAddressHub\nhttps://virtualaddresshub.co.uk\n`;
-        console.info("[mailer] plain fallback (no client)", { recipient, mode: "fallback" });
+        logger.info("[mailer] plain fallback (no client)", { recipient, mode: "fallback" });
         return "fallback";
     }
 
@@ -93,10 +94,10 @@ export async function sendTemplateEmail({
                 TrackOpens: true,
                 TrackLinks: "HtmlAndText",
             });
-            console.info("[mailer] sent via template alias", { alias, recipient, mode: "template" });
+            logger.info("[mailer] sent via template alias", { alias, recipient, mode: "template" });
             return "template";
         } catch (err: any) {
-            console.warn("[mailer] alias send failed, will try TemplateId fallback", {
+            logger.warn("[mailer] alias send failed, will try TemplateId fallback", {
                 alias,
                 err: err?.message || String(err),
             });
@@ -116,10 +117,10 @@ export async function sendTemplateEmail({
                 TrackOpens: true,
                 TrackLinks: "HtmlAndText",
             });
-            console.info("[mailer] sent via template id", { templateIdFallback, recipient, mode: "templateId" });
+            logger.info("[mailer] sent via template id", { templateIdFallback, recipient, mode: "templateId" });
             return "templateId";
         } catch (err: any) {
-            console.warn("[mailer] TemplateId send failed, will use plain fallback", {
+            logger.warn("[mailer] TemplateId send failed, will use plain fallback", {
                 templateIdFallback,
                 err: err?.message || String(err),
             });
@@ -146,7 +147,7 @@ export async function sendTemplateEmail({
         from,
         replyTo,
     });
-    console.info("[mailer] sent via plain fallback", { recipient, mode: "fallback" });
+    logger.info("[mailer] sent via plain fallback", { recipient, mode: "fallback" });
     return "fallback";
 }
 
@@ -162,7 +163,7 @@ export async function sendSimpleEmail({
     const recipient = resolveRecipient(to);
     const client = getClient();
     if (!client) {
-        console.warn("[mailer] Postmark client not initialized, skipping email");
+        logger.warn("[mailer] Postmark client not initialized, skipping email");
         return;
     }
     await client.sendEmail({

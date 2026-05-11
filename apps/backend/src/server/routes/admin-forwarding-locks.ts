@@ -116,7 +116,7 @@ router.post('/admin/forwarding/requests/:id/lock', requireAdmin, async (req: Req
     });
 
   } catch (error: any) {
-    console.error('[LockManager] Lock error:', error);
+    logger.error('[LockManager] Lock error:', error);
     res.status(500).json({
       ok: false,
       error: 'internal_error',
@@ -164,7 +164,7 @@ router.post('/admin/forwarding/requests/:id/unlock', requireAdmin, async (req: R
     });
 
   } catch (error: any) {
-    console.error('[LockManager] Unlock error:', error);
+    logger.error('[LockManager] Unlock error:', error);
     res.status(500).json({
       ok: false,
       error: 'internal_error',
@@ -195,7 +195,7 @@ router.get('/admin/forwarding/requests/:id/lock-status', requireAdmin, async (re
     });
 
   } catch (error: any) {
-    console.error('[LockManager] Lock status error:', error);
+    logger.error('[LockManager] Lock status error:', error);
     res.status(500).json({
       ok: false,
       error: 'internal_error',
@@ -236,7 +236,7 @@ router.post('/admin/forwarding/requests/:id/force-unlock', requireAdmin, async (
     });
 
   } catch (error: any) {
-    console.error('[LockManager] Force unlock error:', error);
+    logger.error('[LockManager] Force unlock error:', error);
     res.status(500).json({
       ok: false,
       error: 'internal_error',
@@ -256,7 +256,7 @@ router.get('/admin/forwarding/locks', requireAdmin, async (req: Request, res: Re
     });
 
   } catch (error: any) {
-    console.error('[LockManager] Get locks error:', error);
+    logger.error('[LockManager] Get locks error:', error);
     res.status(500).json({
       ok: false,
       error: 'internal_error',

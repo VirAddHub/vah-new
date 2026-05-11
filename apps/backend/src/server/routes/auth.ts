@@ -16,8 +16,13 @@ import { upsertSubscriptionForUser } from "../services/subscription-linking";
 import { ok, unauthorized, badRequest, serverError } from "../lib/apiResponse";
 import { logger } from "../../lib/logger";
 import { isSecureEnv, sessionCookieSecurityOptions } from "../../lib/cookies";
+import { passwordSchema } from "../../lib/passwordSchema";
 
 const router = Router();
+
+// Account lockout constants
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_LOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
 // ADDED: Define a schema for login input validation
 const loginSchema = z.object({
@@ -317,10 +322,7 @@ const SignupSchema = z.object({
     last_name: z.string().min(1).max(50),
     // Normalize to avoid "Invalid email address" due to whitespace/case
     email: z.string().email().trim().toLowerCase(),
-    password: z.string().min(8).max(100)
-        .regex(/[a-z]/, "password must contain a lowercase letter")
-        .regex(/[A-Z]/, "password must contain an uppercase letter")
-        .regex(/\d/, "password must contain a number"),
+    password: passwordSchema,
     phone: z.string().nullable().optional(),
 
     // Company
@@ -622,7 +624,7 @@ router.post("/login", async (req, res) => {
         // Get user from database (exclude soft-deleted users)
         const pool = getPool();
         const user = await pool.query(
-            'SELECT id, email, password, first_name, last_name, is_admin, role, status, kyc_status FROM "user" WHERE email = $1 AND status = $2 AND deleted_at IS NULL',
+            'SELECT id, email, password, first_name, last_name, is_admin, role, status, kyc_status, login_attempts, locked_until FROM "user" WHERE email = $1 AND status = $2 AND deleted_at IS NULL',
             [email, 'active'] // Use the validated and normalized email
         );
 
@@ -635,6 +637,31 @@ router.post("/login", async (req, res) => {
         }
 
         const userData = user.rows[0];
+
+        // Account lockout: block active locks; clear expired locks before password check.
+        // Clearing first ensures the failure-increment UPDATE reads 0 from the DB,
+        // so one wrong password after expiry counts as attempt 1, not attempt 6.
+        const lockedUntil = userData.locked_until ? Number(userData.locked_until) : null;
+        if (lockedUntil && lockedUntil > Date.now()) {
+            // Active lock — reject with same generic message as wrong password (no enumeration)
+            logger.warn('[auth/login] account_locked', { userId: userData.id });
+            return res.status(401).json({
+                ok: false,
+                error: 'invalid_credentials',
+                message: 'Invalid email or password',
+            });
+        } else if (lockedUntil) {
+            // Lock has expired — awaited so the DB counter is 0 before the failure-increment fires
+            await pool.query(
+                'UPDATE "user" SET login_attempts = 0, locked_until = NULL, updated_at = $1 WHERE id = $2',
+                [Date.now(), userData.id]
+            ).catch((err: any) => {
+                logger.warn('[auth/login] failed_to_clear_expired_lock', {
+                    userId: userData.id,
+                    message: err?.message ?? String(err),
+                });
+            });
+        }
 
         const passwordHash = userData.password;
         if (passwordHash == null || typeof passwordHash !== 'string' || passwordHash.length === 0) {
@@ -663,24 +690,44 @@ router.post("/login", async (req, res) => {
         }
 
         if (!isValidPassword) {
+            // Awaited so the next request always reads the committed counter.
+            // Fire-and-forget caused a race on fast retries where the increment
+            // hadn't landed yet, letting users exceed the lockout threshold.
+            try {
+                await pool.query(
+                    `UPDATE "user"
+                     SET login_attempts = login_attempts + 1,
+                         locked_until   = CASE WHEN login_attempts + 1 >= $1
+                                              THEN $2
+                                              ELSE locked_until
+                                         END,
+                         updated_at     = $3
+                     WHERE id = $4`,
+                    [LOGIN_MAX_ATTEMPTS, Date.now() + LOGIN_LOCK_DURATION_MS, Date.now(), userData.id]
+                );
+            } catch (err: any) {
+                logger.warn('[auth/login] failed_to_increment_attempts', {
+                    userId: userData.id,
+                    message: err?.message ?? String(err),
+                });
+            }
             return res.status(401).json({
                 ok: false,
-                error: "invalid_credentials",
-                message: "Invalid email or password"
+                error: 'invalid_credentials',
+                message: 'Invalid email or password',
             });
         }
 
         // Note: KYC verification is done in the dashboard after login
         // Users can log in regardless of KYC status - KYC is enforced at the feature level (mail forwarding, certificates, etc.)
 
-        // Update last_login_at timestamp (non-blocking)
+        // Successful login — update timestamps and reset lockout state (non-blocking)
         const now = Date.now();
         pool
-            .query('UPDATE "user" SET last_login_at = $1, last_active_at = $2 WHERE id = $3', [
-                now,
-                now,
-                userData.id,
-            ])
+            .query(
+                'UPDATE "user" SET last_login_at = $1, last_active_at = $2, login_attempts = 0, locked_until = NULL, updated_at = $3 WHERE id = $4',
+                [now, now, now, userData.id]
+            )
             .catch((err: any) => {
                 logger.warn('[auth/login] failed_to_update_last_login_at', {
                     userId: userData.id,
@@ -894,17 +941,13 @@ router.post("/reset-password/confirm", async (req, res) => {
             });
         }
 
-        // Password complexity — mirrors signup schema
-        const pwErrors: string[] = [];
-        if (password.length < 8)      pwErrors.push("Password must be at least 8 characters long");
-        if (!/[a-z]/.test(password))  pwErrors.push("Password must contain a lowercase letter");
-        if (!/[A-Z]/.test(password))  pwErrors.push("Password must contain an uppercase letter");
-        if (!/\d/.test(password))     pwErrors.push("Password must contain a number");
-        if (pwErrors.length > 0) {
+        // Password complexity — uses the same shared schema as signup
+        const pwCheck = passwordSchema.safeParse(password);
+        if (!pwCheck.success) {
             return res.status(400).json({
                 ok: false,
-                error: "password_too_weak",
-                message: pwErrors[0],
+                error: 'password_too_weak',
+                message: pwCheck.error.issues[0]?.message ?? 'Password does not meet requirements',
             });
         }
 

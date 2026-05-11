@@ -1,5 +1,6 @@
 // apps/backend/src/server/routes/webhooks-postmark.ts
 import crypto from 'crypto';
+import { logger } from '../../lib/logger';
 import type { Request, Response } from 'express';
 
 /**
@@ -71,10 +72,10 @@ export function postmarkWebhook(req: Request, res: Response) {
             case 'Bounce':
             case 'SpamComplaint':
             case 'SubscriptionChange':
-                console.log('[postmark-webhook]', type, id);
+                logger.info('[postmark-webhook]', type, id);
                 break;
             default:
-                console.log('[postmark-webhook] Unhandled', type, id);
+                logger.info('[postmark-webhook] Unhandled', type, id);
         }
 
         // Postmark expects 204 with no body

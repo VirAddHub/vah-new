@@ -6,6 +6,7 @@ import { requireAuth } from '../../middleware/auth';
 import { getPool } from '../db';
 import { requestEmailChange, confirmEmailChange, resendEmailChangeConfirmation } from '../services/emailChange';
 import rateLimit from 'express-rate-limit';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -82,7 +83,7 @@ async function checkPhoneChangeRateLimit(userId: number): Promise<{ allowed: boo
 
         return { allowed: true };
     } catch (error) {
-        console.error('[checkPhoneChangeRateLimit] Error:', error);
+        logger.error('[checkPhoneChangeRateLimit] Error', { error });
         // On error, allow the change (fail open)
         return { allowed: true };
     }
@@ -225,7 +226,7 @@ router.patch('/contact', requireAuth, phoneChangeRateLimiter, async (req: Reques
                 }
                 // Other errors (e.g., Postmark failure) - still return success
                 // The request was created, user can request another email if needed
-                console.error('[profileEmailChange] Error requesting email change:', error);
+                logger.error('[profileEmailChange] Error requesting email change', { error });
             }
         }
 
@@ -258,7 +259,7 @@ router.patch('/contact', requireAuth, phoneChangeRateLimiter, async (req: Reques
                         ]
                     );
                 } catch (auditError) {
-                    console.warn('[profileEmailChange] Failed to log phone change audit entry:', auditError);
+                    logger.warn('[profileEmailChange] Failed to log phone change audit entry', { error: auditError });
                     // Don't fail the request if audit logging fails
                 }
             }
@@ -285,7 +286,7 @@ router.patch('/contact', requireAuth, phoneChangeRateLimiter, async (req: Reques
             data: responseData,
         });
     } catch (error: any) {
-        console.error('[PATCH /api/profile/contact] error:', error);
+        logger.error('[PATCH /api/profile/contact] error:', { error });
         return res.status(500).json({
             ok: false,
             error: 'update_failed',
@@ -335,7 +336,7 @@ router.get('/confirm-email-change', async (req: Request, res: Response) => {
             },
         });
     } catch (error: any) {
-        console.error('[GET /api/profile/confirm-email-change] error:', error);
+        logger.error('[GET /api/profile/confirm-email-change] error:', { error });
         // Return success even on error (no enumeration)
         return res.json({
             ok: true,
@@ -389,7 +390,7 @@ router.post('/email-change/resend', async (req: Request, res: Response) => {
             },
         });
     } catch (error: any) {
-        console.error('[POST /api/profile/email-change/resend] error:', error);
+        logger.error('[POST /api/profile/email-change/resend] error:', { error });
         // Return success even on error (no enumeration)
         return res.json({
             ok: true,

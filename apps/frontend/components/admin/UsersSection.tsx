@@ -50,6 +50,7 @@ type AdminUser = {
   plan_interval?: string;
   kyc_status?: string;
   deleted_at?: string;
+  locked_until?: string | number | null;
 };
 
 interface UsersSectionProps {
@@ -124,6 +125,9 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
   // Password reset sending state
   const [resetSendingId, setResetSendingId] = useState<string | number | null>(null);
+
+  // Account unlock state
+  const [unlockingId, setUnlockingId] = useState<string | number | null>(null);
 
   // Mutation state
   const [isMutating, setIsMutating] = useState(false);
@@ -506,9 +510,16 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                       {u.company_name || <span className="text-body-sm text-muted-foreground">—</span>}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={u.status === "active" ? "default" : u.status === "suspended" ? "destructive" : "secondary"}>
-                        {u.status || "active"}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant={u.status === "active" ? "default" : u.status === "suspended" ? "destructive" : "secondary"}>
+                          {u.status || "active"}
+                        </Badge>
+                        {u.locked_until && Number(u.locked_until) > Date.now() && (
+                          <span className="inline-flex items-center text-caption text-amber-700 font-medium">
+                            🔒 Locked until {new Date(Number(u.locked_until)).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {u.plan_name ? (
@@ -599,6 +610,30 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                                     <div className="text-caption text-muted-foreground mt-0.5">Emails a reset link to the user</div>
                                   </div>
                                 </DropdownMenuItem>
+                                {u.locked_until && Number(u.locked_until) > Date.now() && (
+                                  <DropdownMenuItem
+                                    onClick={async () => {
+                                      setUnlockingId(u.id);
+                                      try {
+                                        const res = await adminApi.unlockAccount(u.id);
+                                        if (!res.ok) throw new Error('unlock_failed');
+                                        toast({ title: 'Account unlocked', description: `${u.email} can now log in again.` });
+                                        if (onRefreshUsers) await onRefreshUsers();
+                                      } catch (e: any) {
+                                        toast({ title: 'Failed to unlock', description: e.message ?? 'Unlock failed', variant: 'destructive' });
+                                      } finally {
+                                        setUnlockingId(null);
+                                      }
+                                    }}
+                                    className="cursor-pointer"
+                                    disabled={unlockingId === u.id}
+                                  >
+                                    <div className="w-full">
+                                      <div className="font-medium text-foreground">{unlockingId === u.id ? 'Unlocking…' : '🔓 Unlock account'}</div>
+                                      <div className="text-caption text-muted-foreground mt-0.5">Clear login lockout immediately</div>
+                                    </div>
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem
                                   onClick={() => setDeleteModal({ id: u.id, email: u.email, permanent: false })}
                                   className="cursor-pointer"

@@ -165,16 +165,13 @@ router.post('/', async (req: any, res) => {
     const pool = getPool();
 
     // Debug logging
-    console.log('[OneDrive Webhook] Received payload:', {
+    logger.debug('[onedrive_webhook] received_payload', {
       userId: body.userId,
       itemId: body.itemId,
       name: body.name,
-      path: body.path,
       mimeType: body.mimeType,
       size: body.size,
-      webUrl: body.webUrl,
       event: body.event,
-      fullBody: body
     });
 
     // Extract OneDrive data (handle placeholder text from Zapier)
@@ -211,32 +208,19 @@ router.post('/', async (req: any, res) => {
     const initialSubject = subject || 'Mail received';
     const receivedDate = filenameData?.dateIso || null;
 
-    console.log('[OneDrive Webhook] Processing details:', {
-      filenameData,
+    logger.debug('[onedrive_webhook] processing_details', {
       finalUserId,
-      originalName: name,
       cleanName,
-      originalPath: path,
       cleanPath,
-      providedTagIgnored,
-      userTagColumn: tagForInsert,
       sourceSlugFromFilename,
-      initialSubject,
       receivedDate,
-      sender,
-      subject,
     });
 
     // Validation
     if (!finalUserId) {
-      console.log('[OneDrive Webhook] Validation failed: missing userId', {
-        userId,
-        filenameData,
-        originalName: name,
+      logger.warn('[onedrive_webhook] validation_failed_missing_userId', {
         cleanName,
-        originalPath: path,
         cleanPath,
-        fullPayload: body
       });
 
       // Check if Zapier is sending placeholder data
@@ -247,13 +231,13 @@ router.post('/', async (req: any, res) => {
       // TEMPORARY WORKAROUND: If Zapier is sending placeholder data, 
       // try to extract userId from webUrl or other fields
       if (isZapierPlaceholder && webUrl) {
-        console.log('[OneDrive Webhook] Attempting to extract userId from webUrl:', webUrl);
+        logger.debug('[onedrive_webhook] attempting_userid_from_weburl');
 
         // Try to extract userId from webUrl path
         const urlMatch = webUrl.match(/\/Documents\/Scanned_Mail\/user(\d+)_/);
         if (urlMatch) {
           const extractedUserId = Number(urlMatch[1]);
-          console.log('[OneDrive Webhook] Extracted userId from webUrl:', extractedUserId);
+          logger.debug('[onedrive_webhook] extracted_userid_from_weburl', { extractedUserId });
 
           // Verify user exists
           const { rows: userRows } = await pool.query('SELECT id, email, first_name, last_name FROM "user" WHERE id = $1', [extractedUserId]);
@@ -325,9 +309,9 @@ router.post('/', async (req: any, res) => {
                 subject: `New mail received`,
                 cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
               });
-              console.log('[OneDrive Webhook] Email notification sent to:', user.email);
+              logger.info('[onedrive_webhook] email_sent', { userId: user.id });
             } catch (emailError) {
-              console.error('[OneDrive Webhook] Failed to send email notification:', emailError);
+              logger.error('[onedrive_webhook] email_send_failed', { userId: user.id, message: (emailError as any)?.message });
               // Don't fail the webhook if email fails
             }
 
@@ -380,7 +364,7 @@ router.post('/', async (req: any, res) => {
       });
     }
     if (!cleanItemId) {
-      console.log('[OneDrive Webhook] Validation failed: missing itemId', { itemId, cleanItemId });
+      logger.warn('[onedrive_webhook] validation_failed_missing_itemId', { cleanItemId });
       return res.status(400).json({ ok: false, error: 'missing_itemId' });
     }
 
@@ -482,14 +466,11 @@ router.post('/', async (req: any, res) => {
 
     const mailItem = result.rows[0];
 
-    console.log('[OneDrive Webhook] Successfully inserted mail item:', {
+    logger.info('[onedrive_webhook] mail_item_inserted', {
       mailItemId: mailItem.id,
       userId: finalUserId,
-      subject: mailItem.subject,
       status: mailItem.status,
-      userTag: tagForInsert,
       sourceSlug: sourceSlugFromFilename,
-      receivedDate: new Date(receivedAtMs).toISOString().split('T')[0]
     });
 
     // Send email notification to user about new mail
@@ -505,7 +486,7 @@ router.post('/', async (req: any, res) => {
           subject: `New mail received`,
           cta_url: buildAppUrl('/pricing'),
         });
-        console.log('[OneDrive Webhook] Mail after cancellation email sent to:', user.email);
+        logger.info('[onedrive_webhook] cancellation_email_sent', { userId: user.id });
       } else {
         // Account is active - send normal "mail scanned" email
       await sendMailScanned({
@@ -514,10 +495,10 @@ router.post('/', async (req: any, res) => {
         subject: `New mail received`,
         cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
       });
-      console.log('[OneDrive Webhook] Email notification sent to:', user.email);
+      logger.info('[onedrive_webhook] email_sent', { userId: user.id });
       }
     } catch (emailError) {
-      console.error('[OneDrive Webhook] Failed to send email notification:', emailError);
+      logger.error('[onedrive_webhook] email_send_failed', { userId: user.id, message: (emailError as any)?.message });
       // Don't fail the webhook if email fails
     }
 
@@ -541,7 +522,7 @@ router.post('/', async (req: any, res) => {
     });
 
   } catch (error: any) {
-    console.error('[OneDrive Webhook] Error:', error);
+    logger.error('[onedrive_webhook] unhandled_error', { message: error?.message });
     return res.status(500).json({
       ok: false,
       error: 'internal_error',

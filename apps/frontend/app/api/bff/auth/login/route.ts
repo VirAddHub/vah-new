@@ -94,17 +94,31 @@ export async function POST(request: NextRequest) {
       'Expires': '0',
     });
 
+    // In local dev (HTTP) the staging backend issues Secure; SameSite=None cookies.
+    // SameSite=None requires Secure per spec, but Secure cookies are unreliable on
+    // plain HTTP — even though Chrome allows them on localhost, other browsers don't,
+    // and the combination causes the cookie to be silently dropped or not forwarded
+    // on subsequent same-origin requests. Rewrite to SameSite=Lax; no Secure flag for
+    // local dev so session cookies work consistently in all browsers.
+    const isLocalDev = process.env.NODE_ENV !== 'production';
+    function rewriteCookieForLocalDev(raw: string): string {
+      if (!isLocalDev) return raw;
+      return raw
+        .replace(/;\s*Secure/gi, '')
+        .replace(/;\s*SameSite=None/gi, '; SameSite=Lax');
+    }
+
     // Forward all Set-Cookie headers from backend
     const setCookieHeaders = response.headers.getSetCookie();
     if (setCookieHeaders && setCookieHeaders.length > 0) {
       setCookieHeaders.forEach(cookie => {
-        responseHeaders.append('Set-Cookie', cookie);
+        responseHeaders.append('Set-Cookie', rewriteCookieForLocalDev(cookie));
       });
     } else {
       const setCookie = response.headers.get('set-cookie');
       if (setCookie) {
-        responseHeaders.set('Set-Cookie', setCookie);
-      } else if (process.env.NODE_ENV !== 'production') {
+        responseHeaders.set('Set-Cookie', rewriteCookieForLocalDev(setCookie));
+      } else if (isLocalDev) {
         console.warn(`[BFF auth/login] No Set-Cookie headers from backend - cookies may not be set`);
       }
     }

@@ -16,6 +16,7 @@
  */
 
 import path from 'path';
+import { logger } from '../../lib/logger';
 import fs from 'fs';
 import { Router, Request, Response } from 'express';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
@@ -82,7 +83,7 @@ router.get('/export/:token', gdprExportDownloadIpLimiter, async (req: Request, r
     // Stream directly — do not buffer the whole file in memory
     const stream = fs.createReadStream(filePath);
     stream.on('error', (err) => {
-      console.error('[downloads] stream error:', err);
+      logger.error('[downloads] stream error:', err);
       // Headers already sent at this point; just destroy
       res.destroy();
     });
@@ -91,7 +92,7 @@ router.get('/export/:token', gdprExportDownloadIpLimiter, async (req: Request, r
     if (e?.code === '42P01') {
       return res.status(503).send('export_job table not available');
     }
-    console.error('[downloads] export/:token error:', e?.message ?? e);
+    logger.error('[downloads] export/:token error:', e?.message ?? e);
     return res.status(500).send('Internal error');
   }
 });

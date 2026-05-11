@@ -1,4 +1,5 @@
 import { graphBearer } from "../lib/graph";
+import { logger } from '../lib/logger';
 import { Readable } from "node:stream";
 
 const HOST = process.env.GRAPH_SITE_HOST!;
@@ -7,7 +8,7 @@ const SITE_PATH = decodeURIComponent(_SITE_PATH);
 const DEBUG = process.env.GRAPH_DEBUG === "1";
 
 function log(...args: any[]) {
-    if (DEBUG) console.log(...args);
+    if (DEBUG) logger.info(...args);
 }
 
 export function extractUPNFromSitePath(sitePath: string): string {

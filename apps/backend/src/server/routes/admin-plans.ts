@@ -8,6 +8,7 @@ import { pricingService } from '../services/pricing';
 import { TimestampUtils } from '../../lib/timestamp-utils';
 import { param } from '../../lib/express-params';
 import { safeErrorMessage } from '../../lib/safeError';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -46,7 +47,7 @@ router.get('/plans', requireAdmin, async (req: Request, res: Response) => {
             data: result.rows
         });
     } catch (error: any) {
-        console.error('[GET /api/admin/plans] error:', error);
+        logger.error('[GET /api/admin/plans] error:', { error });
         return res.status(500).json({
             ok: false,
             error: 'database_error',
@@ -78,7 +79,7 @@ router.get('/plans/:id', requireAdmin, async (req: Request, res: Response) => {
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[GET /api/admin/plans/:id] error:', error);
+        logger.error('[GET /api/admin/plans/:id] error:', { error });
         return res.status(500).json({
             ok: false,
             error: 'database_error',
@@ -162,7 +163,7 @@ router.post('/plans', requireAdmin, async (req: Request, res: Response) => {
             data: result.rows[0]
         });
     } catch (error: any) {
-        console.error('[POST /api/admin/plans] error:', error);
+        logger.error('[POST /api/admin/plans] error:', { error });
 
         // Handle unique constraint violation
         if (error.code === '23505') {
@@ -325,7 +326,7 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
                     ]
                 );
 
-                console.log(`[PlanUpdate] Price history logged: Plan ${planId} ${oldPrice} → ${newPrice} pence`);
+                logger.info('[PlanUpdate] Price history logged', { planId, oldPrice, newPrice });
             }
 
             // 2. Update subscription records for users on this plan
@@ -348,7 +349,7 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
                         [TimestampUtils.forTableField('plans', 'updated_at_ms'), planId]
                     );
 
-                    console.log(`[PlanUpdate] Updated ${affectedUsersCount} subscription records for plan ${planId}`);
+                    logger.info('[PlanUpdate] Updated subscription records', { planId, affectedUsersCount });
                 }
             }
 
@@ -418,14 +419,14 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
                             });
                         }
 
-                        console.log(`[PlanUpdate] Sent price change notifications to ${affectedUsers.length} users`);
+                        logger.info('[PlanUpdate] Sent price change notifications', { userCount: affectedUsers.length });
                     } catch (emailError) {
-                        console.error('[PlanUpdate] Failed to send notifications:', emailError);
+                        logger.error('[PlanUpdate] Failed to send notifications:', { error: emailError });
                     }
                 });
             }
 
-            console.log(`[PlanUpdate] Plan ${planId} updated successfully by admin ${adminId}`);
+            logger.info('[PlanUpdate] Plan updated successfully', { planId, adminId });
 
             return res.json({
                 ok: true,
@@ -443,7 +444,7 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
         }
 
     } catch (error: any) {
-        console.error('[PATCH /api/admin/plans/:id] error:', error);
+        logger.error('[PATCH /api/admin/plans/:id] error:', { error });
 
         if (error.code === '23505') {
             return res.status(400).json({
@@ -494,7 +495,7 @@ router.delete('/plans/:id', requireAdmin, async (req: Request, res: Response) =>
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[DELETE /api/admin/plans/:id] error:', error);
+        logger.error('[DELETE /api/admin/plans/:id] error:', { error });
         return res.status(500).json({
             ok: false,
             error: 'database_error',

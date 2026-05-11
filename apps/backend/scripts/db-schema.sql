@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS user (
   email_verified_at INTEGER,
   status        TEXT DEFAULT 'active',
   login_attempts INTEGER DEFAULT 0,
-  locked_until  INTEGER,
+  locked_until  BIGINT,
   created_at    INTEGER NOT NULL,
   updated_at    INTEGER NOT NULL
 );

@@ -2,6 +2,7 @@
 // Service monitoring endpoints for GoCardless, Sumsub, Postmark, OneDrive
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 
@@ -57,7 +58,7 @@ router.get('/gocardless', requireAdmin, async (req: Request, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error('[Service Status] GoCardless check failed:', error);
+        logger.error('[Service Status] GoCardless check failed:', error);
         res.status(500).json({
             ok: false,
             error: 'service_check_failed',
@@ -115,7 +116,7 @@ router.get('/sumsub', requireAdmin, async (req: Request, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error('[Service Status] Sumsub check failed:', error);
+        logger.error('[Service Status] Sumsub check failed:', error);
         res.status(500).json({
             ok: false,
             error: 'service_check_failed',
@@ -184,7 +185,7 @@ router.get('/postmark', requireAdmin, async (req: Request, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error('[Service Status] Postmark check failed:', error);
+        logger.error('[Service Status] Postmark check failed:', error);
         res.status(500).json({
             ok: false,
             error: 'service_check_failed',
@@ -252,7 +253,7 @@ router.get('/onedrive', requireAdmin, async (req: Request, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error('[Service Status] OneDrive check failed:', error);
+        logger.error('[Service Status] OneDrive check failed:', error);
         res.status(500).json({
             ok: false,
             error: 'service_check_failed',

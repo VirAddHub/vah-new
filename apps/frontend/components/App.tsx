@@ -3,20 +3,36 @@
 import { useState, useEffect } from 'react';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { HomePage } from './HomePage';
-import { BlogPage } from './BlogPage';
-import { BlogPostPage } from './BlogPostPage';
-import { PlansPage } from './PlansPage';
-import { TermsPage } from './TermsPage';
-import { PrivacyPolicyPage } from './PrivacyPolicyPage';
-import { KYCPolicyPage } from './KYCPolicyPage';
-import { HelpPage } from './HelpPage';
-import ContactPage from './ContactPage';
-import { SignupPage } from './SignupPage';
-import { BillingDashboard } from './BillingDashboard';
-import { KYCDashboard } from './KYCDashboard';
-import { ProfilePage } from './ProfilePage';
 import dynamic from 'next/dynamic';
 import { FontLoader } from './FontLoader';
+
+/** Hash-router pages: load client-only so `/` SSR and dev compile stay small (Turbopack). */
+const BlogPage = dynamic(() => import('./BlogPage').then((m) => ({ default: m.BlogPage })), { ssr: false });
+const BlogPostPage = dynamic(() => import('./BlogPostPage').then((m) => ({ default: m.BlogPostPage })), {
+  ssr: false,
+});
+const PlansPage = dynamic(() => import('./PlansPage').then((m) => ({ default: m.PlansPage })), { ssr: false });
+const TermsPage = dynamic(() => import('./TermsPage').then((m) => ({ default: m.TermsPage })), { ssr: false });
+const PrivacyPolicyPage = dynamic(() =>
+  import('./PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })),
+  { ssr: false }
+);
+const KYCPolicyPage = dynamic(() => import('./KYCPolicyPage').then((m) => ({ default: m.KYCPolicyPage })), {
+  ssr: false,
+});
+const HelpPage = dynamic(() => import('./HelpPage').then((m) => ({ default: m.HelpPage })), { ssr: false });
+const ContactPage = dynamic(() => import('./ContactPage'), { ssr: false });
+const SignupPage = dynamic(() => import('./SignupPage').then((m) => ({ default: m.SignupPage })), { ssr: false });
+const BillingDashboard = dynamic(() =>
+  import('./BillingDashboard').then((m) => ({ default: m.BillingDashboard })),
+  { ssr: false }
+);
+const KYCDashboard = dynamic(() => import('./KYCDashboard').then((m) => ({ default: m.KYCDashboard })), {
+  ssr: false,
+});
+const ProfilePage = dynamic(() => import('./ProfilePage').then((m) => ({ default: m.ProfilePage })), {
+  ssr: false,
+});
 
 // Lazy load AccountPage to avoid circular dependencies
 const AccountPage = dynamic(() => import('../app/(dashboard)/account/page'), { ssr: false });

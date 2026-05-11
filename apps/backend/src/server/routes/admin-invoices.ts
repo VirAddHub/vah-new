@@ -2,6 +2,7 @@
 // Admin invoice search + download endpoints
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
@@ -155,7 +156,7 @@ router.get('/invoices', requireAdmin, adminInvoicesLimiter, async (req: Request,
       },
     });
   } catch (error: any) {
-    console.error('[admin-invoices] list error:', error);
+    logger.error('[admin-invoices] list error:', error);
     return res.status(500).json({ ok: false, error: 'server_error' });
   }
 });
@@ -227,13 +228,13 @@ router.get('/invoices/:id', requireAdmin, adminInvoicesLimiter, async (req: Requ
     } catch (itemsError: any) {
       const msg = String(itemsError?.message || '');
       if (!msg.includes('relation "charge" does not exist') && itemsError?.code !== '42P01') {
-        console.error('[admin-invoices] get invoice items error:', itemsError);
+        logger.error('[admin-invoices] get invoice items error:', itemsError);
       }
     }
 
     return res.json({ ok: true, data: { invoice, items } });
   } catch (error: any) {
-    console.error('[admin-invoices] get invoice error:', error);
+    logger.error('[admin-invoices] get invoice error:', error);
     return res.status(500).json({ ok: false, error: 'server_error' });
   }
 });

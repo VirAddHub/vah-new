@@ -10,6 +10,7 @@ import { param } from '../../lib/express-params';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { sendTemplateEmail, buildAppUrl } from '../../lib/mailer';
 import { Templates } from '../../lib/postmark-templates';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -75,6 +76,8 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
                 u.updated_at,
                 u.last_active_at,
                 u.last_login_at,
+                u.login_attempts,
+                u.locked_until,
                 COALESCE(p_sub.name, p.name, p_cadence.name, s.plan_name) as plan_name,
                 COALESCE(
                     p_sub.interval,
@@ -241,7 +244,7 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
             }
         });
     } catch (error: any) {
-        console.error('[GET /api/admin/users] error:', error);
+        logger.error('[GET /api/admin/users] error:', { error });
         return res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
@@ -286,7 +289,7 @@ router.get('/users/search', adminUsersLimiter, requireAdmin, async (req: Request
 
         return res.json({ ok: true, data: result.rows });
     } catch (error: any) {
-        console.error('[GET /api/admin/users/search] error:', error);
+        logger.error('[GET /api/admin/users/search] error:', { error });
         return res.status(500).json({
             ok: false,
             error: 'database_error',
@@ -334,7 +337,7 @@ router.get('/users/stats', requireAdmin, async (req: Request, res: Response) => 
             }
         });
     } catch (error: any) {
-        console.error('[GET /api/admin/users/stats] error:', error);
+        logger.error('[GET /api/admin/users/stats] error:', { error });
         return res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
@@ -458,7 +461,7 @@ router.get('/users/deleted', adminUsersLimiter, requireAdmin, async (req: Reques
             }
         });
     } catch (error: any) {
-        console.error('[GET /api/admin/users/deleted] error:', error);
+        logger.error('[GET /api/admin/users/deleted] error:', { error });
         return res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
@@ -486,7 +489,8 @@ router.get('/users/:id', requireAdmin, async (req: Request, res: Response) => {
                 u.subscription_status, u.stripe_customer_id,
                 u.gocardless_customer_id, u.gocardless_mandate_id,
                 u.phone, u.forwarding_address, u.created_at, u.updated_at,
-                u.last_active_at, u.last_login_at, u.deleted_at, u.expires_at
+                u.last_active_at, u.last_login_at, u.deleted_at, u.expires_at,
+                u.login_attempts, u.locked_until
             FROM "user" u
             WHERE u.id = $1
         `, [userId]);
@@ -497,7 +501,7 @@ router.get('/users/:id', requireAdmin, async (req: Request, res: Response) => {
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[GET /api/admin/users/:id] error:', error);
+        logger.error('[GET /api/admin/users/:id] error:', { error });
         return res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
@@ -587,10 +591,10 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
                             [userId, plan.name, cadence]
                         );
 
-                        console.log(`[Admin] User ${userId} plan changed to: ${plan.name} (${plan.interval})`);
+                        logger.info(`[Admin] User ${userId} plan changed to: ${plan.name} (${plan.interval})`);
                     }
                 } catch (planError) {
-                    console.error('[Admin] Failed to update subscription for plan change:', planError);
+                    logger.error('[Admin] Failed to update subscription for plan change:', { planError });
                     // Don't fail the entire update, just log the error
                 }
             }
@@ -671,10 +675,10 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
                         email: updatedUser.email,
                         firstName: updatedUser.first_name || "there",
                     }).catch((err) => {
-                        console.error('[Admin] Failed to send KYC approved email:', err);
+                        logger.error('[Admin] Failed to send KYC approved email:', { err });
                     });
                 }).catch((err) => {
-                    console.error('[Admin] Failed to import mailer:', err);
+                    logger.error('[Admin] Failed to import mailer:', { err });
                 });
             }
         }
@@ -689,17 +693,17 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
                         firstName: updatedUser.first_name || "there",
                         reason: updatedUser.kyc_rejection_reason || undefined,
                     }).catch((err) => {
-                        console.error('[Admin] Failed to send KYC rejected email:', err);
+                        logger.error('[Admin] Failed to send KYC rejected email:', { err });
                     });
                 }).catch((err) => {
-                    console.error('[Admin] Failed to import mailer:', err);
+                    logger.error('[Admin] Failed to import mailer:', { err });
                 });
             }
         }
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[PATCH /api/admin/users/:id] error:', error);
+        logger.error('[PATCH /api/admin/users/:id] error:', { error });
         // FIND-05: Do not leak raw DB error messages to clients
         return res.status(500).json({ ok: false, error: 'database_error' });
     }
@@ -811,13 +815,13 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
                 });
             } catch (emailError: any) {
                 // Log email error but don't fail the deletion
-                console.error('[DELETE /api/admin/users/:id] Failed to send account closed email:', emailError);
+                logger.error('[DELETE /api/admin/users/:id] Failed to send account closed email:', { emailError });
             }
 
             return res.json({ ok: true, permanent: false });
         }
     } catch (error: any) {
-        console.error('[DELETE /api/admin/users/:id] error:', error);
+        logger.error('[DELETE /api/admin/users/:id] error:', { error });
         return res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
@@ -916,7 +920,7 @@ router.post('/users/:id/restore', requireAdmin, async (req: Request, res: Respon
             }
         });
     } catch (error: any) {
-        console.error('[POST /api/admin/users/:id/restore] error:', error);
+        logger.error('[POST /api/admin/users/:id/restore] error:', { error });
         return res.status(500).json({ ok: false, error: 'database_error' });
     }
 });
@@ -998,13 +1002,13 @@ router.post('/users', requireAdmin, async (req: Request, res: Response) => {
                     },
                 });
             } catch (e: any) {
-                console.warn('[admin create_user] welcome email failed (non-fatal):', e?.message);
+                logger.warn('[admin create_user] welcome email failed (non-fatal):', { message: e?.message });
             }
         });
 
         return res.status(201).json({ ok: true, data: newUser });
     } catch (error: any) {
-        console.error('[POST /api/admin/users] error:', error);
+        logger.error('[POST /api/admin/users] error:', { error });
         return res.status(500).json({ ok: false, error: 'database_error', message: error?.message });
     }
 });
@@ -1060,8 +1064,47 @@ router.post('/users/:id/send-password-reset', requireAdmin, async (req: Request,
 
         return res.json({ ok: true, message: 'Password reset email sent.' });
     } catch (error: any) {
-        console.error('[POST /api/admin/users/:id/send-password-reset] error:', error);
+        logger.error('[POST /api/admin/users/:id/send-password-reset] error:', { error });
         return res.status(500).json({ ok: false, error: 'server_error', message: error?.message });
+    }
+});
+
+/**
+ * POST /api/admin/users/:id/unlock-account
+ * Manually unlock a locked-out user account (admin only).
+ * Sets login_attempts = 0 and locked_until = NULL.
+ */
+router.post('/users/:id/unlock-account', requireAdmin, async (req: Request, res: Response) => {
+    const userId = parseInt(param(req, 'id'), 10);
+    const adminId = req.user!.id;
+
+    if (!userId) return res.status(400).json({ ok: false, error: 'invalid_id' });
+
+    const pool = getPool();
+    try {
+        const userResult = await pool.query(
+            'SELECT id FROM "user" WHERE id = $1 AND deleted_at IS NULL',
+            [userId]
+        );
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+
+        await pool.query(
+            'UPDATE "user" SET login_attempts = 0, locked_until = NULL, updated_at = $1 WHERE id = $2',
+            [Date.now(), userId]
+        );
+
+        await pool.query(
+            `INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
+             VALUES ($1, 'unlock_account', 'user', $2, $3, NOW())`,
+            [adminId, userId, JSON.stringify({ reason: 'manual_admin_unlock' })]
+        );
+
+        return res.json({ ok: true, message: 'Account unlocked' });
+    } catch (error: any) {
+        logger.error('[POST /api/admin/users/:id/unlock-account] error:', { error });
+        return res.status(500).json({ ok: false, error: 'server_error' });
     }
 });
 

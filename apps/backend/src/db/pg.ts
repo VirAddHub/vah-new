@@ -1,4 +1,5 @@
 import { Pool, PoolClient } from 'pg';
+import { logger } from '../lib/logger';
 import { BOOTSTRAP_SQL } from './schema';
 import { getPgSslOption } from '../lib/pgSslConfig';
 
@@ -25,8 +26,8 @@ async function withClient<T>(fn: (c: PoolClient) => Promise<T>) {
 export async function ensureSchema() {
   await withClient(async c => {
     await c.query('BEGIN');
-    try { await c.query(BOOTSTRAP_SQL); await c.query('COMMIT'); console.log('✅ PG schema ensured'); }
-    catch (e) { await c.query('ROLLBACK'); console.error('❌ PG bootstrap failed', e); throw e; }
+    try { await c.query(BOOTSTRAP_SQL); await c.query('COMMIT'); logger.info('✅ PG schema ensured'); }
+    catch (e) { await c.query('ROLLBACK'); logger.error('❌ PG bootstrap failed', e); throw e; }
   });
 }
 

@@ -28,6 +28,7 @@
  */
 
 import { Router } from 'express';
+import { logger } from '../../lib/logger';
 import { z } from 'zod';
 import { getPool } from '../db';
 import { nowMs } from '../../lib/time';
@@ -128,7 +129,7 @@ router.post('/from-onedrive', async (req, res) => {
     const expectedSecret = process.env.MAIL_IMPORT_WEBHOOK_SECRET;
 
     if (!expectedSecret) {
-      console.error('[internalMailImport] MAIL_IMPORT_WEBHOOK_SECRET not configured');
+      logger.error('[internalMailImport] MAIL_IMPORT_WEBHOOK_SECRET not configured');
       return res.status(500).json({
         ok: false,
         error: 'server_configuration_error',
@@ -137,7 +138,7 @@ router.post('/from-onedrive', async (req, res) => {
     }
 
     if (!secret || !timingSafeStringEqual(String(secret), expectedSecret)) {
-      console.warn('[internalMailImport] Invalid or missing secret header');
+      logger.warn('[internalMailImport] Invalid or missing secret header');
       return res.status(401).json({
         ok: false,
         error: 'unauthorized',
@@ -170,7 +171,7 @@ router.post('/from-onedrive', async (req, res) => {
     const pool = getPool();
 
     // Log the incoming payload for audit trail
-    console.log('[internalMailImport] Processing mail import:', {
+    logger.info('[internalMailImport] Processing mail import:', {
       fileName: payload.fileName,
       parsedUserId: payload.userId,
       sourceSlug: payload.sourceSlug,
@@ -184,7 +185,7 @@ router.post('/from-onedrive', async (req, res) => {
     );
 
     if (userRows.length === 0) {
-      console.error('[internalMailImport] ❌ User not found:', {
+      logger.error('[internalMailImport] ❌ User not found:', {
         fileName: payload.fileName,
         requestedUserId: payload.userId,
       });
@@ -206,7 +207,7 @@ router.post('/from-onedrive', async (req, res) => {
     };
 
     // Log user details for verification
-    console.log('[internalMailImport] User verified:', {
+    logger.info('[internalMailImport] User verified:', {
       userId: user.id,
       email: user.email,
       name: `${user.first_name} ${user.last_name}`,
@@ -235,7 +236,7 @@ router.post('/from-onedrive', async (req, res) => {
     if (locked) {
       if (!entitlement.entitled) {
         lockedReason = 'plan_inactive'; // Subscription not active (source of truth)
-        console.warn('[internalMailImport] user_not_entitled - creating locked mail item', {
+        logger.warn('[internalMailImport] user_not_entitled - creating locked mail item', {
           fileName: payload.fileName,
           parsedUserId: payload.userId,
           subscriptionStatus: entitlement.subscriptionStatus,
@@ -244,7 +245,7 @@ router.post('/from-onedrive', async (req, res) => {
         });
       } else if (!isUserActive) {
         lockedReason = 'user_inactive';
-        console.warn('[internalMailImport] user_status_not_active - creating locked mail item', {
+        logger.warn('[internalMailImport] user_status_not_active - creating locked mail item', {
           fileName: payload.fileName,
           parsedUserId: payload.userId,
           userStatus: user.status,
@@ -252,7 +253,7 @@ router.post('/from-onedrive', async (req, res) => {
         });
       } else if (!isPlanActive) {
         lockedReason = 'plan_pending_payment';
-        console.warn('[internalMailImport] plan_status_not_active - creating locked mail item', {
+        logger.warn('[internalMailImport] plan_status_not_active - creating locked mail item', {
           fileName: payload.fileName,
           parsedUserId: payload.userId,
           planStatus: user.plan_status,
@@ -260,7 +261,7 @@ router.post('/from-onedrive', async (req, res) => {
         });
       } else if (!isKycApproved) {
         lockedReason = 'kyc_not_approved';
-        console.warn('[internalMailImport] user_kyc_not_approved - creating locked mail item', {
+        logger.warn('[internalMailImport] user_kyc_not_approved - creating locked mail item', {
           fileName: payload.fileName,
           parsedUserId: payload.userId,
           userSnapshot,
@@ -307,7 +308,7 @@ router.post('/from-onedrive', async (req, res) => {
 
     // If duplicate found, skip creation and emails
     if (existingMailItem) {
-      console.log('[internalMailImport] Duplicate detected, no-op', {
+      logger.info('[internalMailImport] Duplicate detected, no-op', {
         userId: payload.userId,
         fileName: payload.fileName,
         existingMailId: existingMailItem.id,
@@ -424,7 +425,7 @@ router.post('/from-onedrive', async (req, res) => {
       );
     } else {
       // Migration 042 has NOT run - create mail item without locked columns
-      console.warn('[internalMailImport] locked columns not available - migration 042 not run', {
+      logger.warn('[internalMailImport] locked columns not available - migration 042 not run', {
         fileName: payload.fileName,
         userId: payload.userId,
         locked: locked,
@@ -482,7 +483,7 @@ router.post('/from-onedrive', async (req, res) => {
     const mailItem = result.rows[0];
 
     // Explicit log immediately after mail_item insert (after COMMIT)
-    console.log('[mailImport] ✅ mail_item created successfully', {
+    logger.info('[mailImport] ✅ mail_item created successfully', {
       mail_item_id: mailItem.id,
       user_id: payload.userId,
       subject: mailItem.subject,
@@ -495,7 +496,7 @@ router.post('/from-onedrive', async (req, res) => {
     });
 
     const isLocked = hasLockedColumns ? (mailItem.locked === true) : false;
-    console.log('[mailImport] Successfully created NEW mail item:', {
+    logger.info('[mailImport] Successfully created NEW mail item:', {
       mailId: mailItem.id,
       userId: payload.userId,
       subject: mailItem.subject,
@@ -521,7 +522,7 @@ router.post('/from-onedrive', async (req, res) => {
     );
 
     if (verifyResult.rows.length === 0) {
-      console.error('[internalMailImport] CRITICAL: Mail item not found in DB after insert! MailId:', mailItem.id);
+      logger.error('[internalMailImport] CRITICAL: Mail item not found in DB after insert! MailId:', mailItem.id);
       return res.status(500).json({
         ok: false,
         error: 'verification_failed',
@@ -534,7 +535,7 @@ router.post('/from-onedrive', async (req, res) => {
 
     // CRITICAL VERIFICATION: Ensure the userId in the database matches what we intended
     if (Number.isNaN(verifiedUserId) || verifiedUserId !== payload.userId) {
-      console.error('[internalMailImport] ❌ CRITICAL: userId mismatch!', {
+      logger.error('[internalMailImport] ❌ CRITICAL: userId mismatch!', {
         fileName: payload.fileName,
         intendedUserId: payload.userId,
         actualUserIdInDB: verifiedMailItem.user_id,
@@ -557,7 +558,7 @@ router.post('/from-onedrive', async (req, res) => {
     );
 
     if (userVerifyRows.length === 0) {
-      console.error('[internalMailImport] ❌ CRITICAL: User not found for email!', {
+      logger.error('[internalMailImport] ❌ CRITICAL: User not found for email!', {
         fileName: payload.fileName,
         mailId: verifiedMailItem.id,
         userId: verifiedUserId,
@@ -573,7 +574,7 @@ router.post('/from-onedrive', async (req, res) => {
     const userForEmail = userVerifyRows[0];
 
     if (userForEmail.email !== user.email) {
-      console.error('[internalMailImport] ❌ CRITICAL: Email mismatch!', {
+      logger.error('[internalMailImport] ❌ CRITICAL: Email mismatch!', {
         fileName: payload.fileName,
         mailId: verifiedMailItem.id,
         userId: verifiedUserId,
@@ -587,7 +588,7 @@ router.post('/from-onedrive', async (req, res) => {
       });
     }
 
-    console.log('[internalMailImport] ✅ Verified mail item exists in DB with correct user:', {
+    logger.info('[internalMailImport] ✅ Verified mail item exists in DB with correct user:', {
       mailId: verifiedMailItem.id,
       userId: verifiedUserId,
       userEmail: userForEmail.email,
@@ -605,7 +606,7 @@ router.post('/from-onedrive', async (req, res) => {
     // This ensures 100% confidence that email = correct user = correct dashboard
     if (!isLocked) {
       try {
-        console.log('[mailImport] 📧 Attempting to send Postmark email notification:', {
+        logger.info('[mailImport] 📧 Attempting to send Postmark email notification:', {
           email: userForEmail.email,
           userId: verifiedMailItem.user_id,
           mailId: verifiedMailItem.id,
@@ -621,7 +622,7 @@ router.post('/from-onedrive', async (req, res) => {
           cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
         });
         
-        console.log('[mailImport] ✅ Postmark email notification sent successfully:', {
+        logger.info('[mailImport] ✅ Postmark email notification sent successfully:', {
           email: userForEmail.email,
           userId: verifiedMailItem.user_id,
           mailId: verifiedMailItem.id,
@@ -630,12 +631,12 @@ router.post('/from-onedrive', async (req, res) => {
           confirmation: 'Mail item is confirmed in database for this user',
         });
       } catch (emailError) {
-        console.error('[mailImport] new-mail email failed', {
+        logger.error('[mailImport] new-mail email failed', {
           to: userForEmail.email,
           mail_item_id: verifiedMailItem.id,
           error: emailError instanceof Error ? emailError.message : String(emailError),
         });
-        console.error('[mailImport] ❌ Failed to send email notification to user:', {
+        logger.error('[mailImport] ❌ Failed to send email notification to user:', {
           email: userForEmail.email,
           userId: verifiedMailItem.user_id,
           mailId: verifiedMailItem.id,
@@ -645,12 +646,12 @@ router.post('/from-onedrive', async (req, res) => {
         // Don't fail the webhook if email fails, but log it clearly
       }
     } else {
-      console.log('[mailImport] new-mail email skipped - mail item is locked', {
+      logger.info('[mailImport] new-mail email skipped - mail item is locked', {
         mail_item_id: verifiedMailItem.id,
         userId: verifiedMailItem.user_id,
         lockedReason: hasLockedColumns ? (mailItem.locked_reason || null) : 'locked columns not available',
       });
-      console.log('[internalMailImport] ⚠️ Skipping email notification - mail item is locked', {
+      logger.info('[internalMailImport] ⚠️ Skipping email notification - mail item is locked', {
         mailId: verifiedMailItem.id,
         userId: verifiedMailItem.user_id,
         lockedReason: hasLockedColumns ? (mailItem.locked_reason || null) : 'locked columns not available',
@@ -670,14 +671,14 @@ router.post('/from-onedrive', async (req, res) => {
         fileName: payload.fileName, // Include filename for ops to verify
         userEmail: userForEmail.email, // Include user email for ops verification
       });
-      console.log('[internalMailImport] ✅ Ops notification sent:', {
+      logger.info('[internalMailImport] ✅ Ops notification sent:', {
         mailId: verifiedMailItem.id,
         userId: verifiedMailItem.user_id,
         userEmail: userForEmail.email,
         fileName: payload.fileName,
       });
     } catch (opsEmailError) {
-      console.error('[internalMailImport] ❌ Failed to send ops notification:', {
+      logger.error('[internalMailImport] ❌ Failed to send ops notification:', {
         mailId: verifiedMailItem.id,
         userId: verifiedMailItem.user_id,
         error: opsEmailError,
@@ -696,12 +697,12 @@ router.post('/from-onedrive', async (req, res) => {
       lockedReason: mailItem.locked_reason || null,
     });
   } catch (error: any) {
-    console.error('[mailImport] mail insert failed — email skipped', {
+    logger.error('[mailImport] mail insert failed — email skipped', {
       error: error.message || String(error),
       fileName: payload?.fileName || 'unknown',
       userId: payload?.userId || 'unknown',
     });
-    console.error('[internalMailImport] Error:', error);
+    logger.error('[internalMailImport] Error:', error);
     return res.status(500).json({
       ok: false,
       error: 'internal_error',
@@ -721,7 +722,7 @@ router.patch('/from-onedrive/:mailId/scan-url', async (req, res) => {
     const expectedSecret = process.env.MAIL_IMPORT_WEBHOOK_SECRET;
 
     if (!expectedSecret) {
-      console.error('[internalMailImport] MAIL_IMPORT_WEBHOOK_SECRET not configured');
+      logger.error('[internalMailImport] MAIL_IMPORT_WEBHOOK_SECRET not configured');
       return res.status(500).json({
         ok: false,
         error: 'server_configuration_error',
@@ -730,7 +731,7 @@ router.patch('/from-onedrive/:mailId/scan-url', async (req, res) => {
     }
 
     if (!secret || !timingSafeStringEqual(String(secret), expectedSecret)) {
-      console.warn('[internalMailImport] Invalid or missing secret header');
+      logger.warn('[internalMailImport] Invalid or missing secret header');
       return res.status(401).json({
         ok: false,
         error: 'unauthorized',
@@ -772,7 +773,7 @@ router.patch('/from-onedrive/:mailId/scan-url', async (req, res) => {
       });
     }
 
-    console.log('[internalMailImport] Updated scan_file_url for mail item', {
+    logger.info('[internalMailImport] Updated scan_file_url for mail item', {
       mailId,
       scanFileUrl,
     });
@@ -785,7 +786,7 @@ router.patch('/from-onedrive/:mailId/scan-url', async (req, res) => {
       },
     });
   } catch (error: any) {
-    console.error('[internalMailImport] Error updating scan_file_url:', error);
+    logger.error('[internalMailImport] Error updating scan_file_url:', error);
     return res.status(500).json({
       ok: false,
       error: 'internal_error',

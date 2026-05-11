@@ -1,4 +1,5 @@
 import { getPool } from '../db';
+import { logger } from '../../lib/logger';
 
 export interface AdminLock {
     resourceType: string;
@@ -67,7 +68,7 @@ export class ConcurrencyService {
             
             return acquired;
         } catch (error) {
-            console.error('Error acquiring lock:', error);
+            logger.error('Error acquiring lock:', error);
             return false;
         }
     }
@@ -99,7 +100,7 @@ export class ConcurrencyService {
             
             return released;
         } catch (error) {
-            console.error('Error releasing lock:', error);
+            logger.error('Error releasing lock:', error);
             return false;
         }
     }
@@ -133,7 +134,7 @@ export class ConcurrencyService {
                 expiresAt: row.expires_at
             };
         } catch (error) {
-            console.error('Error checking lock status:', error);
+            logger.error('Error checking lock status:', error);
             return null;
         }
     }
@@ -164,7 +165,7 @@ export class ConcurrencyService {
                 errorMessage: row.error_message
             };
         } catch (error) {
-            console.error('Error updating forwarding request:', error);
+            logger.error('Error updating forwarding request:', error);
             return {
                 success: false,
                 errorMessage: 'Database error occurred'
@@ -198,7 +199,7 @@ export class ConcurrencyService {
                 errorMessage: row.error_message
             };
         } catch (error) {
-            console.error('Error updating mail item:', error);
+            logger.error('Error updating mail item:', error);
             return {
                 success: false,
                 errorMessage: 'Database error occurred'
@@ -224,7 +225,7 @@ export class ConcurrencyService {
             
             return result.rows[0].valid;
         } catch (error) {
-            console.error('Error validating status transition:', error);
+            logger.error('Error validating status transition:', error);
             return false;
         }
     }
@@ -261,7 +262,7 @@ export class ConcurrencyService {
             
             return result.rows[0]?.version || null;
         } catch (error) {
-            console.error('Error getting resource version:', error);
+            logger.error('Error getting resource version:', error);
             return null;
         }
     }
@@ -290,7 +291,7 @@ export class ConcurrencyService {
                 [adminId, resourceType, resourceId, action, oldStatus, newStatus, JSON.stringify(metadata), ipAddress, userAgent]
             );
         } catch (error) {
-            console.error('Error logging admin activity:', error);
+            logger.error('Error logging admin activity:', error);
         }
     }
 
@@ -304,7 +305,7 @@ export class ConcurrencyService {
             const result = await pool.query('SELECT cleanup_expired_locks() as deleted_count');
             return result.rows[0].deleted_count;
         } catch (error) {
-            console.error('Error cleaning up expired locks:', error);
+            logger.error('Error cleaning up expired locks:', error);
             return 0;
         }
     }
@@ -332,7 +333,7 @@ export class ConcurrencyService {
             
             return result.rows;
         } catch (error) {
-            console.error('Error getting resource activity:', error);
+            logger.error('Error getting resource activity:', error);
             return [];
         }
     }
@@ -360,7 +361,7 @@ export class ConcurrencyService {
                 expiresAt: row.expires_at
             }));
         } catch (error) {
-            console.error('Error getting admin locks:', error);
+            logger.error('Error getting admin locks:', error);
             return [];
         }
     }
@@ -379,7 +380,7 @@ export class ConcurrencyService {
             
             return result.rowCount || 0;
         } catch (error) {
-            console.error('Error force releasing admin locks:', error);
+            logger.error('Error force releasing admin locks:', error);
             return 0;
         }
     }

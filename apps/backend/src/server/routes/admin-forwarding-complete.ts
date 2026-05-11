@@ -2,6 +2,7 @@
 // Admin endpoint to mark forwarding requests as completed
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/require-admin';
 
@@ -64,7 +65,7 @@ router.post('/:id/complete', async (req: Request, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error('[POST /api/admin/forwarding/requests/:id/complete] error:', error);
+        logger.error('[POST /api/admin/forwarding/requests/:id/complete] error:', error);
         return res.status(500).json({
             ok: false,
             error: 'database_error',

@@ -15,6 +15,7 @@
  */
 
 import { getGraphToken } from '../lib/msGraph';
+import { logger } from '../lib/logger';
 
 export type OneDriveFile = {
   id: string;
@@ -78,9 +79,9 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
 
   const url = `${baseUrl}/items/${encodeURIComponent(inboxFolderId)}/children?$select=id,name,createdDateTime,lastModifiedDateTime,size,@microsoft.graph.downloadUrl,webUrl,file`;
 
-  console.log(`[onedriveClient] Attempting to list files from folder ID: ${inboxFolderId}`);
-  console.log(`[onedriveClient] Using base URL: ${baseUrl}`);
-  console.log(`[onedriveClient] Fetching inbox children via URL: ${url}`);
+  logger.info(`[onedriveClient] Attempting to list files from folder ID: ${inboxFolderId}`);
+  logger.info(`[onedriveClient] Using base URL: ${baseUrl}`);
+  logger.info(`[onedriveClient] Fetching inbox children via URL: ${url}`);
 
   const response = await fetch(url, {
     headers: {
@@ -91,9 +92,15 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => 'Unknown error');
-    console.error(`[onedriveClient] Failed to list OneDrive files: ${response.status}`);
-    console.error(`[onedriveClient] URL attempted: ${url}`);
-    console.error(`[onedriveClient] Error details: ${errorText}`);
+    logger.error(`[onedriveClient] Failed to list OneDrive files: ${response.status}`);
+    logger.error(`[onedriveClient] URL attempted: ${url}`);
+    logger.error(`[onedriveClient] Error details: ${errorText}`);
+
+    // Clear the cached token on auth failures so the next attempt re-fetches a fresh one
+    // rather than retrying with the same rejected token for up to 55 minutes.
+    if (response.status === 401 || response.status === 403) {
+      cachedToken = null;
+    }
 
     if (response.status === 404) {
       throw new Error(`OneDrive folder not found (404). Check ONEDRIVE_MAIL_INBOX_FOLDER_ID="${inboxFolderId}". The folder ID may be incorrect or the folder doesn't exist. Use Microsoft Graph Explorer to find the correct folder ID.`);
@@ -105,7 +112,7 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
   const data = await response.json() as { value?: Array<any> };
 
   if (!Array.isArray(data.value)) {
-    console.error('[onedriveClient] Unexpected Graph response format:', data);
+    logger.error('[onedriveClient] Unexpected Graph response format:', data);
     return [];
   }
 
@@ -123,7 +130,7 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
     return extMatch || mimeMatch;
   });
 
-  console.log(`[onedriveClient] Received ${data.value.length} items, ${pdfCandidates.length} PDF(s) after filtering`);
+  logger.info(`[onedriveClient] Received ${data.value.length} items, ${pdfCandidates.length} PDF(s) after filtering`);
 
   for (const item of pdfCandidates) {
     if (!item.file) continue;
@@ -158,7 +165,7 @@ export async function downloadDriveItemPdfBytes(fileId: string): Promise<Buffer 
   } else if (userUpn) {
     baseUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userUpn)}/drive`;
   } else {
-    console.error('[onedriveClient] downloadDriveItemPdfBytes: set ONEDRIVE_DRIVE_ID or ONEDRIVE_USER_UPN');
+    logger.error('[onedriveClient] downloadDriveItemPdfBytes: set ONEDRIVE_DRIVE_ID or ONEDRIVE_USER_UPN');
     return null;
   }
 
@@ -172,7 +179,10 @@ export async function downloadDriveItemPdfBytes(fileId: string): Promise<Buffer 
 
   if (!response.ok) {
     const t = await response.text().catch(() => '');
-    console.error(`[onedriveClient] downloadDriveItemPdfBytes failed: ${response.status}`, t.slice(0, 200));
+    logger.error(`[onedriveClient] downloadDriveItemPdfBytes failed: ${response.status}`, t.slice(0, 200));
+    if (response.status === 401 || response.status === 403) {
+      cachedToken = null;
+    }
     return null;
   }
 
@@ -183,7 +193,7 @@ export async function downloadDriveItemPdfBytes(fileId: string): Promise<Buffer 
       return buf;
     }
   }
-  console.warn('[onedriveClient] downloadDriveItemPdfBytes: response was not a PDF');
+  logger.warn('[onedriveClient] downloadDriveItemPdfBytes: response was not a PDF');
   return null;
 }
 
@@ -231,6 +241,9 @@ export async function moveFileToProcessed(fileId: string): Promise<OneDriveFile>
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => 'Unknown error');
+    if (response.status === 401 || response.status === 403) {
+      cachedToken = null;
+    }
     throw new Error(`Failed to move file to processed folder: ${response.status} ${errorText}`);
   }
 
@@ -257,13 +270,13 @@ export async function moveFileToProcessed(fileId: string): Promise<OneDriveFile>
   let finalItem = movedItem;
   if (getResponse.ok) {
     finalItem = await getResponse.json() as typeof movedItem;
-    console.log(`[onedriveClient] Fetched moved file to verify URL`, {
+    logger.info(`[onedriveClient] Fetched moved file to verify URL`, {
       fileId: finalItem.id,
       hasWebUrl: !!finalItem.webUrl,
       webUrlContainsProcessed: finalItem.webUrl ? finalItem.webUrl.toLowerCase().includes('processed_mail') : false,
     });
   } else {
-    console.warn(`[onedriveClient] Failed to fetch moved file for URL verification, using PATCH response`, {
+    logger.warn(`[onedriveClient] Failed to fetch moved file for URL verification, using PATCH response`, {
       status: getResponse.status,
     });
   }

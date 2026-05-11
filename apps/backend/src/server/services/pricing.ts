@@ -2,6 +2,7 @@
 // Server-side pricing service for centralized plan and pricing logic
 
 import { getPool } from '../db';
+import { logger } from '../../lib/logger';
 
 export interface ServerPlan {
     id: string;
@@ -100,7 +101,7 @@ export class PricingService {
 
             return plans;
         } catch (error: any) {
-            console.error('[PricingService] Error fetching plans:', error);
+            logger.error('[PricingService] Error fetching plans:', error);
             throw new Error('Failed to fetch pricing plans');
         }
     }

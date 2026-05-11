@@ -10,6 +10,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { getPool } from '../db';
 import { safeErrorMessage } from '../../lib/safeError';
 
@@ -65,7 +66,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     return res.json({ ok: true, total, unread, items });
   } catch (error: any) {
-    console.error('[GET /api/notifications] error:', error);
+    logger.error('[GET /api/notifications] error:', error);
     return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
   }
 });
@@ -102,7 +103,7 @@ router.post('/mark-read', async (req: Request, res: Response) => {
 
     return res.json({ ok: true, updated });
   } catch (error: any) {
-    console.error('[POST /api/notifications/mark-read] error:', error);
+    logger.error('[POST /api/notifications/mark-read] error:', error);
     return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
   }
 });

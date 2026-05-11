@@ -2,6 +2,7 @@
 // Admin billing management endpoints
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { z } from 'zod';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { requireAdmin } from '../../middleware/auth';
@@ -92,7 +93,7 @@ router.post('/generate-invoice', adminBillingLimiter, async (req: Request, res: 
       },
     });
   } catch (error: any) {
-    console.error('[admin-billing] Error generating invoice:', error);
+    logger.error('[admin-billing] Error generating invoice:', error);
     return res.status(500).json({
       ok: false,
       error: 'server_error',
@@ -119,7 +120,7 @@ router.post('/repair-orphan-charges', adminBillingLimiter, async (req: Request, 
       },
     });
   } catch (error: any) {
-    console.error('[admin-billing] Error repairing orphan charges:', error);
+    logger.error('[admin-billing] Error repairing orphan charges:', error);
     return res.status(500).json({
       ok: false,
       error: 'server_error',
@@ -211,7 +212,7 @@ router.post('/recalculate-invoice', adminBillingLimiter, async (req: Request, re
         });
         pdfGenerated = true;
       } catch (pdfError: any) {
-        console.error(`[admin-billing] Failed to regenerate PDF for invoice ${invoice_id}:`, pdfError);
+        logger.error(`[admin-billing] Failed to regenerate PDF for invoice ${invoice_id}:`, pdfError);
         // Continue - amount is updated even if PDF fails
       }
     }
@@ -225,7 +226,7 @@ router.post('/recalculate-invoice', adminBillingLimiter, async (req: Request, re
       },
     });
   } catch (error: any) {
-    console.error('[admin-billing] Error recalculating invoice:', error);
+    logger.error('[admin-billing] Error recalculating invoice:', error);
     return res.status(500).json({
       ok: false,
       error: 'server_error',

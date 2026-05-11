@@ -2,6 +2,7 @@
 // Contact form API endpoint
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import rateLimit from 'express-rate-limit';
 import { sendSimpleEmail } from '../../services/mailer';
 import { ENV } from '../../env';
@@ -109,10 +110,10 @@ This message was sent via the VirtualAddressHub contact form.
                 replyTo: email, // User's email so support can reply directly
             });
 
-            console.log('[POST /api/contact] Email sent successfully via centralized mailer');
+            logger.info('[POST /api/contact] Email sent successfully via centralized mailer');
             return res.json({ ok: true, data: { message: 'Contact form submitted successfully' } });
         } catch (emailError: any) {
-            console.error('[POST /api/contact] Failed to send email:', emailError);
+            logger.error('[POST /api/contact] Failed to send email:', emailError);
             return res.status(500).json({ 
                 ok: false, 
                 error: 'Failed to send email' 
@@ -120,7 +121,7 @@ This message was sent via the VirtualAddressHub contact form.
         }
 
     } catch (error: any) {
-        console.error('[POST /api/contact] error:', error);
+        logger.error('[POST /api/contact] error:', error);
         return res.status(500).json({ 
             ok: false, 
             error: 'Internal server error',

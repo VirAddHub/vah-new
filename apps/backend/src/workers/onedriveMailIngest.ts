@@ -30,6 +30,7 @@
  *   - Examples: 120000 (2 min), 300000 (5 min), 600000 (10 min)
  */
 
+import { logger } from '../lib/logger';
 import {
   listInboxFiles,
   moveFileToProcessed,
@@ -68,16 +69,16 @@ async function loadPdfBytesForAi(
         if (isPdfMagic(buf)) {
           return buf;
         }
-        console.warn('[onedriveMailIngest] downloadUrl did not return PDF bytes (likely HTML page)', {
+        logger.warn('[onedriveMailIngest] downloadUrl did not return PDF bytes (likely HTML page)', {
           fileId,
           contentType: r.headers.get('content-type'),
         });
       } else {
-        console.warn('[onedriveMailIngest] downloadUrl fetch not ok', { fileId, status: r.status });
+        logger.warn('[onedriveMailIngest] downloadUrl fetch not ok', { fileId, status: r.status });
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.warn('[onedriveMailIngest] downloadUrl fetch error', { fileId, message: msg });
+      logger.warn('[onedriveMailIngest] downloadUrl fetch error', { fileId, message: msg });
     }
   }
 
@@ -88,7 +89,7 @@ async function loadPdfBytesForAi(
       return u8;
     }
   }
-  console.warn('[onedriveMailIngest] Could not load PDF bytes for AI', { fileId });
+  logger.warn('[onedriveMailIngest] Could not load PDF bytes for AI', { fileId });
   return null;
 }
 
@@ -101,7 +102,7 @@ async function extractSenderFromPdf(
   if (!apiKey) {
     if (!loggedOpenAiKeyMissing) {
       loggedOpenAiKeyMissing = true;
-      console.warn(
+      logger.warn(
         '[extractSenderFromPdf] OPENAI_API_KEY not set — AI classification skipped for all files (set on the worker service, not only the API)'
       );
     }
@@ -111,14 +112,14 @@ async function extractSenderFromPdf(
   try {
     const pdfBytes = await loadPdfBytesForAi(downloadUrl, fileId);
     if (!pdfBytes || pdfBytes.length === 0) {
-      console.warn('[extractSenderFromPdf] No PDF bytes for AI', { fileId, fileName });
+      logger.warn('[extractSenderFromPdf] No PDF bytes for AI', { fileId, fileName });
       return { sender: null, mailType: null };
     }
 
     // ── Step 1: Upload PDF to OpenAI Files API ──────────────────────────────
     // The Chat Completions API does NOT support PDFs via image_url / base64.
     // The correct approach is: upload → get file_id → reference in message → delete.
-    console.log('[extractSenderFromPdf] uploading PDF to OpenAI Files API', {
+    logger.info('[extractSenderFromPdf] uploading PDF to OpenAI Files API', {
       fileName: fileName ?? fileId,
       pdfBytes: pdfBytes.length,
     });
@@ -141,7 +142,7 @@ async function extractSenderFromPdf(
       const uploadError = (await uploadResponse.json().catch(() => ({}))) as {
         error?: { message?: string };
       };
-      console.warn('[extractSenderFromPdf] PDF upload to OpenAI failed', {
+      logger.warn('[extractSenderFromPdf] PDF upload to OpenAI failed', {
         status: uploadResponse.status,
         error: uploadError?.error?.message,
         fileName: fileName ?? fileId,
@@ -153,7 +154,7 @@ async function extractSenderFromPdf(
     const openAiFileId = uploadData.id;
 
     // ── Step 2: Ask GPT to read the uploaded PDF ────────────────────────────
-    console.log('[extractSenderFromPdf] PDF uploaded — calling gpt-4o-mini', {
+    logger.info('[extractSenderFromPdf] PDF uploaded — calling gpt-4o-mini', {
       fileName: fileName ?? fileId,
       openAiFileId,
     });
@@ -192,7 +193,7 @@ async function extractSenderFromPdf(
       method: 'DELETE',
       headers: { authorization: `Bearer ${apiKey}` },
     }).catch((e: unknown) => {
-      console.warn('[extractSenderFromPdf] Failed to delete OpenAI file (non-fatal)', {
+      logger.warn('[extractSenderFromPdf] Failed to delete OpenAI file (non-fatal)', {
         openAiFileId,
         error: e instanceof Error ? e.message : String(e),
       });
@@ -205,7 +206,7 @@ async function extractSenderFromPdf(
     };
 
     if (!chatResponse.ok) {
-      console.warn('[extractSenderFromPdf] OpenAI chat HTTP error', {
+      logger.warn('[extractSenderFromPdf] OpenAI chat HTTP error', {
         status: chatResponse.status,
         message: data?.error?.message,
         fileName: fileName ?? fileId,
@@ -226,7 +227,7 @@ async function extractSenderFromPdf(
       parsed.mailType != null && String(parsed.mailType).trim()
         ? String(parsed.mailType).trim()
         : null;
-    console.log('[extractSenderFromPdf] done', {
+    logger.info('[extractSenderFromPdf] done', {
       fileName: fileName ?? fileId,
       sender: sender ?? '(null)',
       mailType: mailType ?? '(null)',
@@ -234,7 +235,7 @@ async function extractSenderFromPdf(
     return { sender, mailType };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.warn('[extractSenderFromPdf] Failed:', msg);
+    logger.warn('[extractSenderFromPdf] Failed:', msg);
     return { sender: null, mailType: null };
   }
 }
@@ -267,7 +268,7 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
   const parsed = parseMailFilename(file.name);
 
   if (!parsed) {
-    console.warn(`[onedriveMailIngest] Skipping file "${file.name}" (filename pattern did not match)`);
+    logger.warn(`[onedriveMailIngest] Skipping file "${file.name}" (filename pattern did not match)`);
     return 'failed';
   }
 
@@ -293,7 +294,7 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
   let responseData: any = null;
 
   try {
-    console.log(`[onedriveMailIngest] Calling webhook for file "${file.name}"`, {
+    logger.info(`[onedriveMailIngest] Calling webhook for file "${file.name}"`, {
       webhookUrl: WEBHOOK_URL_STRING,
       userId: parsed.userId,
     });
@@ -322,7 +323,7 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
     } catch (parseError) {
       // If JSON parse fails, try to get text for debugging
       const text = await response.text().catch(() => 'Unable to read response');
-      console.error(`[onedriveMailIngest] Failed to parse JSON response for "${file.name}"`, {
+      logger.error(`[onedriveMailIngest] Failed to parse JSON response for "${file.name}"`, {
         status: response.status,
         statusText: response.statusText,
         responseText: text.substring(0, 500),
@@ -332,12 +333,12 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
   } catch (err: any) {
     // Handle fetch errors (network, timeout, etc.)
     if (err.name === 'AbortError' || err.name === 'TimeoutError') {
-      console.error(`[onedriveMailIngest] Webhook call timed out for file "${file.name}"`, {
+      logger.error(`[onedriveMailIngest] Webhook call timed out for file "${file.name}"`, {
         webhookUrl: WEBHOOK_URL_STRING,
         error: err.message,
       });
     } else {
-      console.error(`[onedriveMailIngest] Failed to call webhook for file "${file.name}"`, {
+      logger.error(`[onedriveMailIngest] Failed to call webhook for file "${file.name}"`, {
         webhookUrl: WEBHOOK_URL_STRING,
         error: err.message,
         errorName: err.name,
@@ -349,7 +350,7 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
   // Check response
   if (!response.ok || !responseData?.ok) {
     const errorMsg = responseData?.error || `HTTP ${response.status}`;
-    console.error(`[onedriveMailIngest] Failed to import file "${file.name}"`, {
+    logger.error(`[onedriveMailIngest] Failed to import file "${file.name}"`, {
       status: response.status,
       error: errorMsg,
       body: responseData,
@@ -362,7 +363,7 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
 
   // Check if this was a duplicate (skipped)
   if (responseData.skipped) {
-    console.log(`[onedriveMailIngest] Skipped duplicate file`, {
+    logger.info(`[onedriveMailIngest] Skipped duplicate file`, {
       fileName: file.name,
       userId: parsed.userId,
       mailId: mailId,
@@ -372,7 +373,7 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
   }
 
   // New file was created
-  console.log(`[onedriveMailIngest] Imported new file`, {
+  logger.info(`[onedriveMailIngest] Imported new file`, {
     fileName: file.name,
     userId: parsed.userId,
     mailId: mailId,
@@ -390,7 +391,7 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
       const movedFile = await moveFileToProcessed(file.id);
       finalScanUrl = movedFile.downloadUrl || null;
 
-      console.log(`[onedriveMailIngest] Moved file to processed folder`, {
+      logger.info(`[onedriveMailIngest] Moved file to processed folder`, {
         fileName: file.name,
         fileId: file.id,
         processedFolderId,
@@ -420,7 +421,7 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
 
           if (!updateResponse.ok) {
             const updateError = await updateResponse.json().catch(() => ({}));
-            console.error(`[onedriveMailIngest] Failed to update scan_file_url (file was moved but URL not updated)`, {
+            logger.error(`[onedriveMailIngest] Failed to update scan_file_url (file was moved but URL not updated)`, {
               fileName: file.name,
               mailId,
               status: updateResponse.status,
@@ -428,7 +429,7 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
             });
           } else {
             const updateData = await updateResponse.json().catch(() => ({}));
-            console.log(`[onedriveMailIngest] Updated scan_file_url for mail item`, {
+            logger.info(`[onedriveMailIngest] Updated scan_file_url for mail item`, {
               fileName: file.name,
               mailId,
               scanFileUrl: finalScanUrl ? finalScanUrl.substring(0, 100) + '...' : null, // Log first 100 chars
@@ -436,14 +437,14 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
             });
           }
         } catch (updateError: any) {
-          console.error(`[onedriveMailIngest] Failed to call update endpoint for scan_file_url`, {
+          logger.error(`[onedriveMailIngest] Failed to call update endpoint for scan_file_url`, {
             fileName: file.name,
             mailId,
             error: updateError.message,
           });
         }
       } else {
-        console.warn(`[onedriveMailIngest] Moved file but no download URL in response`, {
+        logger.warn(`[onedriveMailIngest] Moved file but no download URL in response`, {
           fileName: file.name,
           fileId: file.id,
           movedFileId: movedFile.id,
@@ -451,7 +452,7 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
       }
     } catch (moveError: any) {
       // Don't fail the import if move fails - log it and continue
-      console.error(`[onedriveMailIngest] Failed to move file to processed folder (import still succeeded)`, {
+      logger.error(`[onedriveMailIngest] Failed to move file to processed folder (import still succeeded)`, {
         fileName: file.name,
         fileId: file.id,
         error: moveError.message,
@@ -477,14 +478,14 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
         });
 
         if (!updateResponse.ok) {
-          console.error(`[onedriveMailIngest] Failed to update scan_file_url with original URL`, {
+          logger.error(`[onedriveMailIngest] Failed to update scan_file_url with original URL`, {
             fileName: file.name,
             mailId,
             status: updateResponse.status,
           });
         }
       } catch (updateError: any) {
-        console.error(`[onedriveMailIngest] Failed to call update endpoint for scan_file_url`, {
+        logger.error(`[onedriveMailIngest] Failed to call update endpoint for scan_file_url`, {
           fileName: file.name,
           mailId,
           error: updateError.message,
@@ -500,16 +501,16 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
  * Run the ingestion process once
  */
 async function runOnce(): Promise<void> {
-  console.log('[onedriveMailIngest] Starting mail ingestion...');
+  logger.info('[onedriveMailIngest] Starting mail ingestion...');
 
   try {
     // List all PDF files in inbox
     const files = await listInboxFiles();
-    console.log(`[onedriveMailIngest] 📦 Found ${files.length} PDF file(s) in inbox`);
-    console.log(`[onedriveMailIngest] 📊 In-memory dedupe cache: ${processedInboxSnapshots.size} snapshot(s) already processed`);
+    logger.info(`[onedriveMailIngest] 📦 Found ${files.length} PDF file(s) in inbox`);
+    logger.info(`[onedriveMailIngest] 📊 In-memory dedupe cache: ${processedInboxSnapshots.size} snapshot(s) already processed`);
 
     if (files.length === 0) {
-      console.log('[onedriveMailIngest] No files to process');
+      logger.info('[onedriveMailIngest] No files to process');
       return;
     }
 
@@ -522,7 +523,7 @@ async function runOnce(): Promise<void> {
       const oneDriveFileId = file.id;
 
       if (!oneDriveFileId) {
-        console.warn(`[onedriveMailIngest] Skipping file "${file.name}" (no file ID)`);
+        logger.warn(`[onedriveMailIngest] Skipping file "${file.name}" (no file ID)`);
         failedCount++;
         continue;
       }
@@ -531,7 +532,7 @@ async function runOnce(): Promise<void> {
 
       // Skip if we've already processed this exact inbox snapshot in this worker process
       if (processedInboxSnapshots.has(snapshotKey)) {
-        console.log('[onedriveMailIngest] ⏭️  SKIPPING already-processed file (in-memory dedupe)', {
+        logger.info('[onedriveMailIngest] ⏭️  SKIPPING already-processed file (in-memory dedupe)', {
           oneDriveFileId,
           fileName: file.name,
           lastModifiedDateTime: file.lastModifiedDateTime,
@@ -550,7 +551,7 @@ async function runOnce(): Promise<void> {
         // Only mark as processed after a successful call (created or skipped by backend)
         if (result === 'created' || result === 'skipped') {
           processedInboxSnapshots.add(snapshotKey);
-          console.log('[onedriveMailIngest] ✅ Marked file as processed (in-memory)', {
+          logger.info('[onedriveMailIngest] ✅ Marked file as processed (in-memory)', {
             oneDriveFileId,
             fileName: file.name,
             lastModifiedDateTime: file.lastModifiedDateTime,
@@ -568,13 +569,13 @@ async function runOnce(): Promise<void> {
           failedCount++;
         }
       } catch (err: any) {
-        console.error(`[onedriveMailIngest] Error processing file "${file.name}":`, err.message);
+        logger.error(`[onedriveMailIngest] Error processing file "${file.name}":`, err.message);
         failedCount++;
         // Continue with next file
       }
     }
 
-    console.log(`[onedriveMailIngest] ✅ Mail ingestion completed:`, {
+    logger.info(`[onedriveMailIngest] ✅ Mail ingestion completed:`, {
       created: createdCount,
       skipped: skippedCount,
       failed: failedCount,
@@ -585,7 +586,7 @@ async function runOnce(): Promise<void> {
     // Give a small delay to ensure all async operations (like fetch) complete
     await new Promise(resolve => setTimeout(resolve, 100));
   } catch (err: any) {
-    console.error('[onedriveMailIngest] Fatal error during ingestion:', err.message);
+    logger.error('[onedriveMailIngest] Fatal error during ingestion:', err.message);
     throw err;
   }
 }
@@ -601,7 +602,7 @@ let isRunning = false;
 
 async function runOnceSafely(): Promise<void> {
   if (isRunning) {
-    console.warn('[onedriveMailIngest] Previous run still in progress — skipping');
+    logger.warn('[onedriveMailIngest] Previous run still in progress — skipping');
     return;
   }
 
@@ -609,7 +610,7 @@ async function runOnceSafely(): Promise<void> {
   try {
     await runOnce();
   } catch (err: any) {
-    console.error('[onedriveMailIngest] Error during runOnce:', err);
+    logger.error('[onedriveMailIngest] Error during runOnce:', err);
     // Do NOT exit. Log error and continue.
   } finally {
     isRunning = false;
@@ -621,8 +622,8 @@ async function startDaemon(): Promise<void> {
   const intervalMs = Number(process.env.ONEDRIVE_MAIL_POLL_INTERVAL_MS ?? '300000');
   const intervalMinutes = intervalMs / (60 * 1000);
 
-  console.log(`[onedriveMailIngest] Starting daemon loop (interval = ${intervalMinutes} minutes)`);
-  console.log(
+  logger.info(`[onedriveMailIngest] Starting daemon loop (interval = ${intervalMinutes} minutes)`);
+  logger.info(
     '[onedriveMailIngest] Worker AI path: PDF bytes → OpenAI Files API upload → Chat Completions (file_id reference) → delete. Requires OPENAI_API_KEY on this service.'
   );
 
@@ -640,12 +641,12 @@ async function startDaemon(): Promise<void> {
 if (require.main === module) {
   // Handle unhandled promise rejections
   process.on('unhandledRejection', (reason, promise) => {
-    console.error('[onedriveMailIngest] Unhandled promise rejection:', reason);
+    logger.error('[onedriveMailIngest] Unhandled promise rejection:', reason);
     // Don't exit - log and continue
   });
 
   startDaemon().catch(err => {
-    console.error('[onedriveMailIngest] Fatal error:', err);
+    logger.error('[onedriveMailIngest] Fatal error:', err);
     // Only exit on *real* fatal errors
     process.exit(1);
   });

@@ -7,6 +7,7 @@ import { param } from '../../lib/express-params';
 import { safeErrorMessage } from '../../lib/safeError';
 import { sendSupportRequestReceived, sendSupportRequestClosed } from '../../lib/mailer';
 import { buildAppUrl } from '../../lib/mailer';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -38,7 +39,7 @@ router.get('/', async (_req: Request, res: Response) => {
     try {
         return sendSupportInfo(res);
     } catch (error: any) {
-        console.error('[GET /api/support] error:', error);
+        logger.error('[GET /api/support] error:', { error });
         return res.status(500).json({ ok: false, error: 'server_error', message: safeErrorMessage(error) });
     }
 });
@@ -51,7 +52,7 @@ router.get('/info', async (_req: Request, res: Response) => {
     try {
         return sendSupportInfo(res);
     } catch (error: any) {
-        console.error('[GET /api/support/info] error:', error);
+        logger.error('[GET /api/support/info] error:', { error });
         return res.status(500).json({ ok: false, error: 'server_error', message: safeErrorMessage(error) });
     }
 });
@@ -74,7 +75,7 @@ router.get('/tickets', requireAuth, async (req: Request, res: Response) => {
 
         return res.json({ ok: true, data: result.rows });
     } catch (error: any) {
-        console.error('[GET /api/support/tickets] error:', error);
+        logger.error('[GET /api/support/tickets] error:', { error });
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
@@ -113,17 +114,17 @@ router.post('/tickets', requireAuth, async (req: Request, res: Response) => {
                     ticket_id: String(ticket.id),
                     cta_url: buildAppUrl('/account/support'),
                 }).catch((err) => {
-                    console.error('[POST /api/support/tickets] email_send_failed_nonfatal', err);
+                    logger.error('[POST /api/support/tickets] email_send_failed_nonfatal', { error: err });
                 });
             }
         } catch (emailError) {
             // Don't fail ticket creation if email fails
-            console.error('[POST /api/support/tickets] email_error', emailError);
+            logger.error('[POST /api/support/tickets] email_error', { error: emailError });
         }
 
         return res.json({ ok: true, data: ticket });
     } catch (error: any) {
-        console.error('[POST /api/support/tickets] error:', error);
+        logger.error('[POST /api/support/tickets] error:', { error });
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
@@ -169,17 +170,17 @@ router.post('/tickets/:id/close', requireAuth, async (req: Request, res: Respons
                     ticket_id: String(ticketId),
                     cta_url: buildAppUrl('/account/support'),
                 }).catch((err) => {
-                    console.error('[POST /api/support/tickets/:id/close] email_send_failed_nonfatal', err);
+                    logger.error('[POST /api/support/tickets/:id/close] email_send_failed_nonfatal', { error: err });
                 });
             }
         } catch (emailError) {
             // Don't fail ticket closure if email fails
-            console.error('[POST /api/support/tickets/:id/close] email_error', emailError);
+            logger.error('[POST /api/support/tickets/:id/close] email_error', { error: emailError });
         }
 
         return res.json({ ok: true });
     } catch (error: any) {
-        console.error('[POST /api/support/tickets/:id/close] error:', error);
+        logger.error('[POST /api/support/tickets/:id/close] error:', { error });
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });

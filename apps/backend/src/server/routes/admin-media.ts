@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { logger } from '../../lib/logger';
 import multer from "multer";
 import * as path from "path";
 import * as fs from "fs";
@@ -102,7 +103,7 @@ router.post("/blog/upload", requireAdmin, upload.single('image'), async (req: Re
         // SECURITY: Validate file using magic bytes (prevents Content-Type spoofing)
         const validation = await validateImageMagicBytes(req.file.buffer, req.file.originalname);
         if (!validation.valid) {
-            console.warn('[POST /blog/upload] File validation failed:', {
+            logger.warn('[POST /blog/upload] File validation failed:', {
                 filename: req.file.originalname,
                 mimetype: req.file.mimetype,
                 error: validation.error
@@ -137,7 +138,7 @@ router.post("/blog/upload", requireAdmin, upload.single('image'), async (req: Re
             }
         });
     } catch (error) {
-        console.error("Error uploading image:", error);
+        logger.error("Error uploading image:", error);
         res.status(500).json({ ok: false, error: "Failed to upload image" });
     }
 });
@@ -186,7 +187,7 @@ router.get("/media/blog/:filename", (req: Request, res: Response) => {
         // Send the file using the resolved (canonical) path
         res.sendFile(resolvedPath);
     } catch (error) {
-        console.error("Error serving image:", safeErrorMessage(error));
+        logger.error("Error serving image:", safeErrorMessage(error));
         res.status(500).json({ ok: false, error: "Failed to serve image" });
     }
 });

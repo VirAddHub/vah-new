@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { logger } from './logger';
 import { SESSION_IDLE_TIMEOUT_SECONDS } from '../config/auth';
 
 // Helper function to initialize keys safely
@@ -30,7 +31,7 @@ try {
   signKey = keys.signKey;
   verifyKey = keys.verifyKey;
 } catch (error) {
-  console.error("FATAL: JWT key initialization failed.", error);
+  logger.error("FATAL: JWT key initialization failed.", error);
   throw error;
 }
 
@@ -78,7 +79,7 @@ export function verifyToken(token: string): JWTPayload | null {
     return jwt.verify(token, verifyKey, options) as JWTPayload;
   } catch (error) {
     if (!(error instanceof jwt.TokenExpiredError || error instanceof jwt.JsonWebTokenError)) {
-      console.error('JWT verification encountered an unexpected error:', error);
+      logger.error('JWT verification encountered an unexpected error:', error);
     }
     return null;
   }

@@ -4,15 +4,15 @@ const app = require('../../dist/server/index.js');
 
 describe('[smoke] mail-items', () => {
 
-  test.skip('PATCH /mail-items/{param}', async () => {
+  test('PATCH /mail-items/{param}', async () => {
+    // Safe to run: requireAuth middleware returns 401 when no session cookie is present
     const res = await request(app)[`patch`](`/mail-items/test-id`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('POST /mail-items/bulk', async () => {
+  test('POST /mail-items/bulk', async () => {
+    // Safe to run: requireAuth middleware returns 401 when no session cookie is present
     const res = await request(app)[`post`](`/mail-items/bulk`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 });

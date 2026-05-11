@@ -9,6 +9,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { getPool } from '../db';
 import { safeErrorMessage } from '../../lib/safeError';
 
@@ -57,7 +58,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     return res.json({ ok: true, total, items: itemsResult.rows });
   } catch (error: any) {
-    console.error('[GET /api/admin-audit] error:', error);
+    logger.error('[GET /api/admin-audit] error:', error);
     return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
   }
 });
@@ -121,7 +122,7 @@ router.get('/mail-audit', async (req: Request, res: Response) => {
     if (error?.code === '42P01') {
       return res.status(503).json({ ok: false, error: 'mail_audit_table_not_available' });
     }
-    console.error('[GET /api/admin-audit/mail-audit] error:', error);
+    logger.error('[GET /api/admin-audit/mail-audit] error:', error);
     return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
   }
 });

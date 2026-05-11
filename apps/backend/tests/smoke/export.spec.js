@@ -10,9 +10,9 @@ describe('[smoke] export', () => {
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('POST /export/request', async () => {
+  test('POST /export/request', async () => {
+    // Safe to run: requireAuth middleware returns 401 when no session cookie is present
     const res = await request(app)[`post`](`/export/request`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 

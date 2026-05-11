@@ -1,5 +1,6 @@
 // apps/backend/src/lib/postmark.ts
 import { sendTemplateEmail } from './mailer';
+import { logger } from './logger';
 
 export interface PostmarkEmailOptions {
     to: string;
@@ -16,7 +17,7 @@ export async function sendPostmarkEmail(options: PostmarkEmailOptions): Promise<
         });
         return { success: true };
     } catch (error: any) {
-        console.error('[postmark] Email send failed:', error);
+        logger.error('[postmark] Email send failed:', error);
         return { success: false, error: error.message };
     }
 }

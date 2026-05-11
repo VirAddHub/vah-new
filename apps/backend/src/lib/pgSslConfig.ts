@@ -1,4 +1,5 @@
 import fs from "fs";
+import { logger } from './logger';
 import type { ConnectionOptions } from "node:tls";
 
 /**
@@ -44,7 +45,7 @@ export function getPgSslOption(): PgSslOption {
     if (isDatabaseSslInsecureEnvRequested()) {
         if (!warnedInsecureIgnoredInProd) {
             warnedInsecureIgnoredInProd = true;
-            console.error(
+            logger.error(
                 "[pgSsl] DATABASE_SSL_INSECURE is set but is not allowed in production; TLS verification remains enabled. Remove DATABASE_SSL_INSECURE from the environment."
             );
         }
@@ -70,7 +71,7 @@ export function getPgSslOption(): PgSslOption {
 
     if (!rejectUnauthorized && !warnedRejectUnauthorizedFalse) {
         warnedRejectUnauthorizedFalse = true;
-        console.warn(
+        logger.warn(
             "[pgSsl] DATABASE_SSL_REJECT_UNAUTHORIZED=false — PostgreSQL TLS certificate verification is disabled. Prefer DATABASE_SSL_CA with your provider's CA bundle in production."
         );
     }

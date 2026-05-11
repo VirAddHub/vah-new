@@ -2,6 +2,7 @@
 // Admin export endpoints (CSV downloads for compliance/audit)
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { stringify } from 'csv-stringify/sync';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
@@ -186,7 +187,7 @@ router.get('/destruction-log', requireAdmin, adminExportsLimiter, async (req: Re
         // Send with explicit UTF-8 encoding
         return res.send(Buffer.from(csv, 'utf8'));
     } catch (error: any) {
-        console.error('[GET /api/admin/exports/destruction-log] error:', error);
+        logger.error('[GET /api/admin/exports/destruction-log] error:', error);
         return res.status(500).json({
             ok: false,
             error: 'export_failed',

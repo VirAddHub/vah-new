@@ -10,6 +10,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { getPool } from '../db';
 
 const router = Router();
@@ -58,7 +59,7 @@ async function auditLink(opts: {
       [opts.userId, opts.fileId, opts.cached, opts.ok, opts.err, opts.ip, Date.now()],
     );
   } catch (err) {
-    console.error('[files] auditLink error (non-fatal):', err);
+    logger.error('[files] auditLink error (non-fatal):', err);
   }
 }
 
@@ -107,7 +108,7 @@ router.get('/', async (req: Request, res: Response) => {
     );
     return res.json({ ok: true, items: result.rows, limit, offset });
   } catch (err) {
-    console.error('[files] GET / error:', err);
+    logger.error('[files] GET / error:', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
   }
 });
@@ -206,7 +207,7 @@ router.post('/:id/signed-url', async (req: Request, res: Response) => {
     await auditLink({ userId, fileId, cached: 0, ok: 1, err: null, ip });
     return res.json({ ok: true, url: j.url, expires_at: expires, cached: false });
   } catch (err) {
-    console.error('[files] POST /:id/signed-url error:', err);
+    logger.error('[files] POST /:id/signed-url error:', err);
     await auditLink({ userId, fileId, cached: 0, ok: 0, err: 'sign_error', ip }).catch(() => {});
     return res.status(502).json({ ok: false, error: 'sign_error' });
   }

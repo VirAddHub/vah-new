@@ -1,5 +1,6 @@
 // src/server/routes/mail-forward.ts
 import express, { Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { getPool } from '../db';
 import fetch from 'node-fetch';
 import { GDPR_FORWARDING_WINDOW_MS } from '../../config/gdpr';
@@ -31,7 +32,7 @@ async function auditForward(userId: number, mailId: number, result: string, reas
             [mailId, userId, result, reason]
         );
     } catch (err) {
-        console.error('[auditForward] error:', err);
+        logger.error('[auditForward] error:', err);
     }
 }
 
@@ -163,13 +164,13 @@ router.post('/forward', physicalMailForwardUserLimiter, async (req: Request, res
                     })
                 });
             } catch (err) {
-                console.error('[mail-forward] webhook error:', err);
+                logger.error('[mail-forward] webhook error:', err);
             }
         }
 
         return res.json({ ok: true });
     } catch (error) {
-        console.error('[mail-forward] error:', error);
+        logger.error('[mail-forward] error:', error);
         return res.status(500).json({ ok: false, error: 'internal_error' });
     }
 });

@@ -1,8 +1,9 @@
 "use client";
 
 import useSWR, { type SWRConfiguration, type Key, type BareFetcher } from "swr";
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 function resolveToken(ctx: ReturnType<typeof useAuth>): string | null {
   if (!ctx) return null;
@@ -43,7 +44,6 @@ function makeFetcher(token?: string | null) {
     // Use relative paths to go through BFF routes instead of direct backend calls
     // This ensures proper cookie forwarding, CSRF handling, and CORS compliance
     const fullUrl = url.startsWith('/') ? url : `/${url}`;
-    console.log('[useAuthedSWR] Fetching:', fullUrl);
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
@@ -90,9 +90,16 @@ function makeFetcher(token?: string | null) {
     }
 
     if (!res.ok) {
-      console.error('[useAuthedSWR] Error:', res.status, res.statusText);
+      // 401 is expected when the session expires or is cleared in another tab — not an app error
+      if (res.status === 401) {
+        console.warn('[useAuthedSWR] Session expired (401) — user will be redirected to login');
+      } else {
+        console.error('[useAuthedSWR] Error:', res.status, res.statusText);
+      }
       const data = rawData as Record<string, unknown> | null | undefined;
       const error = new Error(String(data?.error ?? data?.message ?? `${res.status} ${res.statusText}`));
+      // @ts-ignore
+      error.status = res.status;
       // @ts-ignore
       error.response = res;
       // @ts-ignore
@@ -100,10 +107,8 @@ function makeFetcher(token?: string | null) {
       throw error;
     }
 
-    const raw = rawData as Record<string, unknown> | null | undefined;
-    console.log('[useAuthedSWR] Raw response:', raw);
-
     // Handle wrapped response format: { ok, items, total } or { ok, data }
+    const raw = rawData as Record<string, unknown> | null | undefined;
     let data: unknown = rawData;
     if (raw?.ok === true) {
       // If response has { ok: true, items, total } - use items/total directly
@@ -121,7 +126,6 @@ function makeFetcher(token?: string | null) {
       }
     }
 
-    console.log('[useAuthedSWR] Normalized response:', data);
     return data;
   };
 }
@@ -132,6 +136,8 @@ export function useAuthedSWR<T = unknown>(
   config?: SWRConfiguration
 ) {
   const auth = useAuth();
+  const router = useRouter();
+  const redirectingRef = useRef(false);
   const token = resolveToken(auth);
   const fetcher = useMemo(() => {
     const f = makeFetcher(token);
@@ -142,9 +148,25 @@ export function useAuthedSWR<T = unknown>(
   // Allow requests even without token (cookie-based auth)
   const gatedKey = key as Key;
 
-  return useSWR<T>(gatedKey, fetcher, {
+  const result = useSWR<T>(gatedKey, fetcher, {
     revalidateOnFocus: true,
-    shouldRetryOnError: (err: unknown) => !String((err as Error)?.message || "").startsWith("401"),
+    shouldRetryOnError: (err: unknown) => {
+      // @ts-ignore
+      return (err as any)?.status !== 401;
+    },
     ...config,
   });
+
+  // Redirect to login on session expiry — deduplicated so only one redirect fires
+  // even if multiple SWR hooks receive a 401 simultaneously (e.g. after logout in another tab).
+  useEffect(() => {
+    // @ts-ignore
+    const status = (result.error as any)?.status;
+    if (status === 401 && !redirectingRef.current) {
+      redirectingRef.current = true;
+      router.replace('/login');
+    }
+  }, [result.error, router]);
+
+  return result;
 }

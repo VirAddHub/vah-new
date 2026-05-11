@@ -1,5 +1,6 @@
 // Optimized forwarding update controller with better performance
 import { Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { getPool } from '../../server/db';
 import { sendMailForwarded } from '../../lib/mailer';
 
@@ -195,14 +196,14 @@ export async function adminUpdateForwardingOptimized(req: Request, res: Response
                             forwarded_date: new Date().toLocaleDateString('en-GB')
                         });
 
-                        console.log(`[AdminForwarding] Sent ${nextStatus.toLowerCase()} notification to ${current.email} for request ${id}`);
+                        logger.info(`[AdminForwarding] Sent ${nextStatus.toLowerCase()} notification to ${current.email} for request ${id}`);
                     } catch (emailError) {
-                        console.error(`[AdminForwarding] Failed to send ${nextStatus.toLowerCase()} email for request ${id}:`, emailError);
+                        logger.error(`[AdminForwarding] Failed to send ${nextStatus.toLowerCase()} email for request ${id}:`, emailError);
                     }
                 });
             }
 
-            console.log(`[AdminForwarding] Updated request ${id} to ${nextStatus} by admin ${admin.id}`);
+            logger.info(`[AdminForwarding] Updated request ${id} to ${nextStatus} by admin ${admin.id}`);
             return res.json({ ok: true, data: updateResult.rows[0] });
 
         } catch (transactionError) {
@@ -211,7 +212,7 @@ export async function adminUpdateForwardingOptimized(req: Request, res: Response
         }
 
     } catch (error) {
-        console.error('[AdminForwarding] Update error:', error);
+        logger.error('[AdminForwarding] Update error:', error);
         return res.status(500).json({ ok: false, error: 'internal_error' });
     }
 }

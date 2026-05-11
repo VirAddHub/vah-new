@@ -24,13 +24,14 @@
         "format:check": "prettier -c ."
     },
     "devDependencies": {
-        "minimatch": "3.1.2",
-        "@types/pg": "^8.10.0",
-        "tsx": "^4.7.0",
+        "postcss": "8.4.31",
         "@types/connect-pg-simple": "^7.0.3",
         "@types/cors": "^2.8.19",
         "@types/express-session": "^1.18.2",
+        "@types/pg": "^8.10.0",
         "jest-util": "^30.2.0",
+        "minimatch": "3.1.2",
+        "tsx": "^4.7.0",
         "turbo": "^1.10.0"
     },
     "resolutions": {
@@ -38,6 +39,7 @@
         "@types/react-dom": "18.3.0"
     },
     "overrides": {
+        "postcss": "8.4.31",
         "minimatch": "3.1.2",
         "dompurify": "^3.3.2",
         "marked": "^16.4.0",
@@ -50,18 +52,18 @@
         "braces": "^3.0.3",
         "serialize-javascript": "^6.0.1",
         "prismjs": "^1.30.0",
-        "webpack": "^5.93.0",
         "tar": "^7.5.10",
         "axios": "^1.13.5",
         "@tootallnate/once": "^3.0.1",
         "esbuild": "^0.25.0"
     },
     "dependencies": {
-        "pg": "^8.11.0",
         "@microsoft/microsoft-graph-client": "^3.0.7",
+        "caniuse-lite": "^1.0.30001792",
         "dompurify": "^3.3.2",
         "drizzle-kit": "^0.31.5",
         "isomorphic-fetch": "^3.0.0",
-        "marked": "^16.4.0"
+        "marked": "^16.4.0",
+        "pg": "^8.11.0"
     }
 }

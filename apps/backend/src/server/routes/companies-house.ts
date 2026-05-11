@@ -5,6 +5,7 @@ import { Router, Request, Response } from 'express';
 import fetch from 'node-fetch';
 import { performance } from 'node:perf_hooks';
 import { param } from '../../lib/express-params';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -51,18 +52,18 @@ router.get('/search', async (req: Request, res: Response) => {
     const cached = cache.get(cacheKey);
     if (cached && Date.now() - cached.at < CACHE_TTL) {
         const latency = Math.round(performance.now() - t0);
-        console.log(`[Companies House] Cache hit for "${query}" ${latency}ms`);
+        logger.debug(`[Companies House] Cache hit`, { latencyMs: latency });
         return res.json(cached.data);
     }
 
     // Check if request is already in progress (deduplication)
     const existingRequest = pendingRequests.get(cacheKey);
     if (existingRequest) {
-        console.log(`[Companies House] Deduplicating request for "${query}"`);
+        logger.debug('[Companies House] Deduplicating request');
         try {
             const result = await existingRequest;
             const latency = Math.round(performance.now() - t0);
-            console.log(`[Companies House] Deduplicated response for "${query}" ${latency}ms`);
+            logger.debug('[Companies House] Deduplicated response', { latencyMs: latency });
             return res.json(result);
         } catch (error) {
             // If the existing request failed, we'll make a new one
@@ -73,7 +74,7 @@ router.get('/search', async (req: Request, res: Response) => {
     // Create new request promise
     const requestPromise = (async () => {
         try {
-            console.log(`[Companies House] Searching for: "${query}"`);
+            logger.debug('[Companies House] Searching');
             
             // Create AbortController for timeout
             const controller = new AbortController();
@@ -93,7 +94,7 @@ router.get('/search', async (req: Request, res: Response) => {
             clearTimeout(timeoutId);
 
             if (!response.ok) {
-                console.error(`[Companies House] Search failed for "${query}":`, response.status);
+                logger.error('[Companies House] Search failed', { status: response.status });
                 throw new Error(`Companies House API error: ${response.status}`);
             }
 
@@ -119,7 +120,7 @@ router.get('/search', async (req: Request, res: Response) => {
 
             return result;
         } catch (error: any) {
-            console.error(`[Companies House] Search error for "${query}":`, error.message);
+            logger.error('[Companies House] Search error', { message: error.message });
             throw error;
         } finally {
             // Clean up pending request
@@ -133,11 +134,11 @@ router.get('/search', async (req: Request, res: Response) => {
     try {
         const result = await requestPromise;
         const latency = Math.round(performance.now() - t0);
-        console.log(`[Companies House] Search completed for "${query}" ${latency}ms`);
+        logger.info('[Companies House] Search completed', { latencyMs: latency });
         return res.json(result);
     } catch (error: any) {
         const latency = Math.round(performance.now() - t0);
-        console.error(`[Companies House] Search failed for "${query}" ${latency}ms:`, error.message);
+        logger.error('[Companies House] Search failed', { latencyMs: latency, message: error.message });
         
         return res.status(500).json({
             ok: false,
@@ -189,7 +190,7 @@ router.get('/company/:number', async (req: Request, res: Response) => {
         }
 
         if (!response.ok) {
-            console.error('[Companies House] Lookup failed:', response.status);
+            logger.error('[Companies House] Lookup failed', { status: response.status });
             return res.status(response.status).json({
                 ok: false,
                 error: 'companies_house_error',
@@ -212,7 +213,7 @@ router.get('/company/:number', async (req: Request, res: Response) => {
             }
         });
     } catch (error: any) {
-        console.error('[Companies House] Lookup error:', error);
+        logger.error('[Companies House] Lookup error', { error });
         return res.status(500).json({
             ok: false,
             error: 'lookup_failed',

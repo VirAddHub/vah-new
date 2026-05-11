@@ -6,7 +6,7 @@ import { sendMailForwarded } from '../../lib/mailer';
 import { MAIL_STATUS, toCanonical, isTransitionAllowed, getNextStatuses, type MailStatus } from './mailStatus';
 import { metrics } from '../../lib/metrics';
 import { clearAdminForwardingCache } from '../../server/routes/admin-forwarding';
-// import logger from '../../lib/logger'; // Using console for now
+import { logger } from '../../lib/logger';
 
 const ACTION_TO_STATUS = {
     mark_reviewed: MAIL_STATUS.Requested, // Map to Requested since Reviewed is not in our canonical statuses
@@ -46,10 +46,10 @@ function canMove(from: string, to: string): boolean {
         const fromStatus = toCanonical(from) as MailStatus;
         const toStatus = toCanonical(to) as MailStatus;
         const allowed = isTransitionAllowed(fromStatus, toStatus);
-        console.log(`[canMove] ${from} → ${to} (${fromStatus} → ${toStatus}): ${allowed}`);
+        logger.debug('[forwarding_admin] can_move', { from, to, fromStatus, toStatus, allowed });
         return allowed;
     } catch (error) {
-        console.error(`[canMove] Error validating transition ${from} → ${to}:`, error);
+        logger.error('[forwarding_admin] can_move_error', { from, to, message: (error as any)?.message });
         return false;
     }
 }
@@ -132,11 +132,9 @@ export async function adminListForwarding(req: Request, res: Response) {
 
         // Debug: Log the first row to see the data structure
         if (rows.length > 0) {
-            console.log('[adminListForwarding] First row sample:', {
+            logger.debug('[forwarding_admin] list_first_row_sample', {
                 id: rows[0].id,
-                created_at: rows[0].created_at,
                 created_at_type: typeof rows[0].created_at,
-                created_at_value: rows[0].created_at
             });
         }
 
@@ -154,7 +152,7 @@ export async function adminListForwarding(req: Request, res: Response) {
 
         return res.json({ ok: true, data: processedRows });
     } catch (e: any) {
-        console.error('[AdminForwarding] list error', e);
+        logger.error('[forwarding_admin] list_error', { message: e?.message });
         return res.status(500).json({ ok: false, error: 'internal_error' });
     }
 }
@@ -228,8 +226,7 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
             }
 
             const current = cur.rows[0].status;
-            console.log(`[AdminForwarding] Request ${id} current status: "${current}", attempting to move to: "${nextStatus}"`);
-            console.log(`[AdminForwarding] STRICT_STATUS_GUARD enabled: ${process.env.STRICT_STATUS_GUARD === "1"}`);
+            logger.debug('[forwarding_admin] status_transition_attempt', { id, current, nextStatus, strictGuard: process.env.STRICT_STATUS_GUARD === '1' });
 
             // Strict status guard - enforce allowed transitions when enabled
             if (process.env.STRICT_STATUS_GUARD === "1") {
@@ -240,7 +237,7 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
 
                     if (!allowed.includes(nextStatusCanonical)) {
                         await pool.query('ROLLBACK');
-                        console.warn(`[STRICT_STATUS_GUARD] Illegal transition ${currentStatus} → ${nextStatusCanonical} for request ${id}`);
+                        logger.warn('[forwarding_admin] illegal_transition', { id, currentStatus, nextStatusCanonical });
 
                         // Record illegal transition attempt
                         metrics.recordIllegalTransition(currentStatus, nextStatusCanonical, id);
@@ -257,7 +254,7 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
                     }
                 } catch (error) {
                     await pool.query('ROLLBACK');
-                    console.error(`[STRICT_STATUS_GUARD] Invalid status: ${error}`);
+                    logger.error('[forwarding_admin] invalid_status', { message: (error as any)?.message });
                     return res.status(400).json({
                         ok: false,
                         error: 'invalid_status',
@@ -268,7 +265,7 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
 
             if (!canMove(current, nextStatus)) {
                 await pool.query('ROLLBACK');
-                console.warn(`[AdminForwarding] canMove() rejected transition ${current} → ${nextStatus} for request ${id}`);
+                logger.warn('[forwarding_admin] can_move_rejected', { id, current, nextStatus });
                 return res.status(400).json({
                     ok: false,
                     error: 'illegal_transition',
@@ -363,7 +360,7 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
                 const nextStatusCanonical = toCanonical(nextStatus) as MailStatus;
                 metrics.recordStatusTransition(currentStatus, nextStatusCanonical);
             } catch (error) {
-                console.warn(`[METRICS] Failed to record transition: ${error}`);
+                logger.warn('[forwarding_admin] metrics_record_failed', { message: (error as any)?.message });
             }
 
             // Send email notification when status is changed to "Dispatched" or "Delivered" (async, non-blocking)
@@ -391,14 +388,14 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
                             forwarding_address: forwarding_address,
                             forwarded_date: new Date().toLocaleDateString('en-GB')
                         });
-                        console.log(`[AdminForwarding] Sent ${nextStatus.toLowerCase()} notification to ${userData.email} for request ${id}`);
+                        logger.info('[forwarding_admin] notification_sent', { id, nextStatus, userId: userData.id });
                     } catch (emailError) {
-                        console.error(`[AdminForwarding] Failed to send ${nextStatus.toLowerCase()} email for request ${id}:`, emailError);
+                        logger.error('[forwarding_admin] notification_send_failed', { id, nextStatus, message: (emailError as any)?.message });
                     }
                 });
             }
 
-            console.log(`[AdminForwarding] Updated request ${id} to ${nextStatus} by admin ${admin.id}`);
+            logger.info('[forwarding_admin] request_updated', { id, nextStatus, adminId: admin.id });
 
             // Clear cache to ensure fresh data on next GET request
             clearAdminForwardingCache(adminId);
@@ -411,7 +408,7 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
         }
 
     } catch (e: any) {
-        console.error('[AdminForwarding] update error', e);
+        logger.error('[forwarding_admin] update_error', { message: e?.message });
         return res.status(500).json({ ok: false, error: 'internal_error' });
     }
 }

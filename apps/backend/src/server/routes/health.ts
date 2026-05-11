@@ -2,6 +2,7 @@
 // Health check endpoint for monitoring and load balancers
 
 import { Request, Response, Router } from 'express';
+import { logger } from '../../lib/logger';
 import { getPool } from '../db';
 import { MAIL_STATUS, ALLOWED } from '../../modules/forwarding/mailStatus';
 import { metrics } from '../../lib/metrics';
@@ -58,7 +59,7 @@ async function healthCheck(req: Request, res: Response) {
             dbStatus = 'up';
         } catch (dbError: any) {
             dbStatus = 'down';
-            console.warn('[Health Check] Database check failed:', dbError.message);
+            logger.warn('[Health Check] Database check failed:', dbError.message);
         }
 
         const responseTime = Date.now() - startTime;
@@ -80,7 +81,7 @@ async function healthCheck(req: Request, res: Response) {
         });
 
     } catch (error: any) {
-        console.error('[Health Check] Error:', error);
+        logger.error('[Health Check] Error:', error);
         res.status(500).json({
             ok: false,
             service: 'vah-backend',
@@ -137,7 +138,7 @@ async function statusGuardHealthCheck(req: Request, res: Response) {
 
         res.json(health);
     } catch (error: any) {
-        console.error('[HEALTH] Status guard health check failed:', error);
+        logger.error('[HEALTH] Status guard health check failed:', error);
         res.status(500).json({
             status: 'unhealthy',
             error: 'Health check failed',
@@ -179,7 +180,7 @@ async function metricsHealthCheck(req: Request, res: Response) {
 
         res.json(health);
     } catch (error: any) {
-        console.error('[HEALTH] Metrics health check failed:', error);
+        logger.error('[HEALTH] Metrics health check failed:', error);
         res.status(500).json({
             status: 'unhealthy',
             error: 'Metrics health check failed',
@@ -214,7 +215,7 @@ async function healthReady(_req: Request, res: Response) {
             timestamp: new Date().toISOString()
         });
     } catch (error: any) {
-        console.warn('[HEALTH] Readiness DB check failed:', error?.message || error);
+        logger.warn('[HEALTH] Readiness DB check failed:', error?.message || error);
         return res.status(503).json({
             ok: false,
             status: 'not_ready',

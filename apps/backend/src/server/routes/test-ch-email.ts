@@ -1,5 +1,6 @@
 // Test endpoint for CH verification emails (for testing only)
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { sendChVerificationNudge, sendChVerificationReminder } from '../../lib/mailer';
 
 const router = Router();
@@ -45,7 +46,7 @@ router.post('/ch-verification-email', async (req: Request, res: Response) => {
             message: `CH verification ${emailType} email sent to ${email}`,
         });
     } catch (error: any) {
-        console.error('[test-ch-email] error:', error);
+        logger.error('[test-ch-email] error:', error);
         return res.status(500).json({
             ok: false,
             error: 'email_failed',

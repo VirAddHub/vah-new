@@ -1,3 +1,4 @@
+import { logger } from './logger';
 // apps/backend/src/lib/timestamp-utils.ts
 // Comprehensive timestamp utilities to prevent Date.now() misuse
 
@@ -222,13 +223,13 @@ export const TIMESTAMP_FIELD_MAPPINGS = {
 export function getTimestampForTableField(tableName: string, fieldName: string): string | number {
     const tableMapping = TIMESTAMP_FIELD_MAPPINGS[tableName as keyof typeof TIMESTAMP_FIELD_MAPPINGS];
     if (!tableMapping) {
-        console.warn(`No timestamp mapping found for table: ${tableName}`);
+        logger.warn(`No timestamp mapping found for table: ${tableName}`);
         return Date.now(); // Default to bigint for safety
     }
 
     const fieldType = tableMapping[fieldName as keyof typeof tableMapping];
     if (!fieldType) {
-        console.warn(`No timestamp mapping found for table ${tableName}, field ${fieldName}`);
+        logger.warn(`No timestamp mapping found for table ${tableName}, field ${fieldName}`);
         return Date.now(); // Default to bigint for safety
     }
 

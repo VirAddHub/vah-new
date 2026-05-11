@@ -149,12 +149,12 @@ export function LoginPageClient() {
         });
         if (!res.ok) return;
         const data = await res.json();
-        const authenticated =
-          data?.authenticated === true ||
-          data?.data?.authenticated === true;
+        // whoami returns { ok: true, data: { user: { id, is_admin, role, ... } } }
+        const authenticated = data?.ok === true && data?.data?.user != null;
         if (!cancelled && authenticated) {
-          // Mail is the primary dashboard view (middleware also redirects /dashboard -> /mail)
-          router.replace('/mail');
+          const user = data.data.user;
+          const isAdmin = user?.is_admin === true || user?.role === 'admin';
+          router.replace(isAdmin ? '/admin/dashboard' : '/mail');
         }
       } catch {
         // Ignore errors - server-side guard is the source of truth
@@ -194,6 +194,16 @@ export function LoginPageClient() {
       return;
     }
 
+    // Client-side email format validation — avoids a round-trip and prevents
+    // an HTML error-page response from the BFF crashing the JSON parse below.
+    const emailTrimmed = email.trim();
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailTrimmed);
+    if (!emailValid) {
+      setError('Please enter a valid email address.');
+      setShowResetHint(false);
+      return;
+    }
+
     isSubmittingRef.current = true;
     setError('');
     setShowResetHint(false);
@@ -207,10 +217,13 @@ export function LoginPageClient() {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: emailTrimmed, password }),
       });
 
-      const data = await response.json();
+      // Safe parse — BFF may return an HTML error page on unexpected failures
+      const responseText = await response.text();
+      let data: any = {};
+      try { data = responseText ? JSON.parse(responseText) : {}; } catch { data = {}; }
 
       if (!response.ok || !data.ok) {
         const errorInfo = getLoginErrorMessage(data.error || data.message);

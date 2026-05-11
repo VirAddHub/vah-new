@@ -168,6 +168,9 @@ const adminApi = {
     ) => post<{ restored: number }>(`/api/admin/users/${id}/restore`, body),
 
     updateUser: (id: string | number, payload: any) => patch(`/api/admin/users/${id}`, payload),
+
+    unlockAccount: (id: string | number) =>
+        post<{ message: string }>(`/api/admin/users/${id}/unlock-account`, {}),
     suspendUser: (id: string) => put(`/api/admin/users/${id}/suspend`, {}),
     activateUser: (id: string) => put(`/api/admin/users/${id}/activate`, {}),
     updateKyc: (id: string, status: string) => put(`/api/admin/users/${id}/kyc-status`, { status }),

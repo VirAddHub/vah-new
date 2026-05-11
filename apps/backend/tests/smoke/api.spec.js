@@ -10,21 +10,21 @@ describe('[smoke] api', () => {
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('POST /api/admin/mail-bulk', async () => {
+  test('POST /api/admin/mail-bulk', async () => {
+    // Safe to run: requireAdmin middleware returns 401 when no session cookie is present
     const res = await request(app)[`post`](`/api/admin/mail-bulk`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('DELETE /api/admin/mail-items/{param}', async () => {
+  test('DELETE /api/admin/mail-items/{param}', async () => {
+    // Safe to run: requireAdmin middleware returns 401 when no session cookie is present
     const res = await request(app)[`delete`](`/api/admin/mail-items/test-id`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('PATCH /api/admin/mail-items/{param}', async () => {
+  test('PATCH /api/admin/mail-items/{param}', async () => {
+    // Safe to run: requireAdmin middleware returns 401 when no session cookie is present
     const res = await request(app)[`patch`](`/api/admin/mail-items/test-id`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
@@ -34,9 +34,9 @@ describe('[smoke] api', () => {
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('PATCH /api/admin/plans/{param}', async () => {
+  test('PATCH /api/admin/plans/{param}', async () => {
+    // Safe to run: requireAdmin middleware returns 401 when no session cookie is present
     const res = await request(app)[`patch`](`/api/admin/plans/test-id`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
@@ -46,9 +46,9 @@ describe('[smoke] api', () => {
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('PATCH /api/admin/support/{param}', async () => {
+  test('PATCH /api/admin/support/{param}', async () => {
+    // Safe to run: requireAdmin middleware returns 401 when no session cookie is present
     const res = await request(app)[`patch`](`/api/admin/support/test-id`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
@@ -58,15 +58,15 @@ describe('[smoke] api', () => {
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('PUT /api/admin/users/{param}/kyc-status', async () => {
+  test('PUT /api/admin/users/{param}/kyc-status', async () => {
+    // Safe to run: requireAdmin middleware returns 401 when no session cookie is present
     const res = await request(app)[`put`](`/api/admin/users/test-id/kyc-status`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('PATCH /api/admin/users/{param}', async () => {
+  test('PATCH /api/admin/users/{param}', async () => {
+    // Safe to run: requireAdmin middleware returns 401 when no session cookie is present
     const res = await request(app)[`patch`](`/api/admin/users/test-id`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
@@ -76,9 +76,9 @@ describe('[smoke] api', () => {
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('POST /api/auth/logout', async () => {
+  test('POST /api/auth/logout', async () => {
+    // Safe to run: clears the session cookie — no side effects without a valid session
     const res = await request(app)[`post`](`/api/auth/logout`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
@@ -136,9 +136,9 @@ describe('[smoke] api', () => {
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('POST /api/gdpr-export', async () => {
+  test('POST /api/gdpr-export', async () => {
+    // Safe to run: requireAuth middleware returns 401 when no session cookie is present
     const res = await request(app)[`post`](`/api/gdpr-export`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
@@ -184,15 +184,15 @@ describe('[smoke] api', () => {
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('POST /api/mail/forward', async () => {
+  test('POST /api/mail/forward', async () => {
+    // Safe to run: requireAuth middleware returns 401 when no session cookie is present
     const res = await request(app)[`post`](`/api/mail/forward`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('POST /api/me/address/assign', async () => {
+  test('POST /api/me/address/assign', async () => {
+    // Safe to run: requireAuth middleware returns 401 when no session cookie is present
     const res = await request(app)[`post`](`/api/me/address/assign`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
@@ -214,9 +214,9 @@ describe('[smoke] api', () => {
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('POST /api/payments/redirect-flows', async () => {
+  test('POST /api/payments/redirect-flows', async () => {
+    // Safe to run: requireAuth middleware returns 401 when no session cookie is present
     const res = await request(app)[`post`](`/api/payments/redirect-flows`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
@@ -238,9 +238,9 @@ describe('[smoke] api', () => {
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('PUT /api/profile/address', async () => {
+  test('PUT /api/profile/address', async () => {
+    // Safe to run: requireAuth middleware returns 401 when no session cookie is present
     const res = await request(app)[`put`](`/api/profile/address`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
@@ -256,21 +256,26 @@ describe('[smoke] api', () => {
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  test.skip('POST /api/support', async () => {
+  test('POST /api/support', async () => {
+    // Safe to run: returns 400 (missing required fields) or 401 without auth
     const res = await request(app)[`post`](`/api/support`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
+  // TODO: Unskip once we can provide a valid HMAC signature in tests.
+  // GoCardless webhook verifies webhook-signature header; without it the handler
+  // returns 400 (bad_signature) which is safe, but the rawBody parsing middleware
+  // may behave differently in the supertest environment and produce a 500.
   test.skip('POST /api/webhooks-gc', async () => {
     const res = await request(app)[`post`](`/api/webhooks-gc`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
+  // TODO: Unskip once we can provide a valid Postmark signature in tests.
+  // Postmark webhook verifies X-Postmark-Signature header; without it the handler
+  // returns 401/400, but rawBody parsing middleware behaviour in supertest is unverified.
   test.skip('POST /api/webhooks-postmark', async () => {
     const res = await request(app)[`post`](`/api/webhooks-postmark`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
@@ -280,9 +285,12 @@ describe('[smoke] api', () => {
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
+  // TODO: Unskip once we can provide a valid Sumsub HMAC digest in tests.
+  // Sumsub webhook verifies x-payload-digest header; without a valid signature
+  // the handler returns 401, but rawBody parsing middleware behaviour in supertest
+  // is unverified and could produce a 500 if the body stream is not properly buffered.
   test.skip('POST /api/webhooks/sumsub', async () => {
     const res = await request(app)[`post`](`/api/webhooks/sumsub`);
-    // Allow 200-405; many endpoints require auth/body; this is just reachability
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 });

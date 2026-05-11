@@ -2,6 +2,7 @@
 // Metrics endpoint for observability
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { exportMetrics, metrics } from '../../lib/metrics';
 
 const router = Router();
@@ -53,7 +54,7 @@ router.get('/', (_req: Request, res: Response) => {
     res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
     res.end(exportMetrics());
   } catch (error) {
-    console.error('[METRICS] Failed to export metrics:', error);
+    logger.error('[METRICS] Failed to export metrics:', error);
     res.status(500).json({ error: 'Failed to export metrics' });
   }
 });
@@ -64,7 +65,7 @@ router.get('/json', (_req: Request, res: Response) => {
     const summary = metrics.getSummary();
     res.json(summary);
   } catch (error) {
-    console.error('[METRICS] Failed to get metrics summary:', error);
+    logger.error('[METRICS] Failed to get metrics summary:', error);
     res.status(500).json({ error: 'Failed to get metrics summary' });
   }
 });

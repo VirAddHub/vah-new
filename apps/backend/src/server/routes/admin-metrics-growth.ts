@@ -2,6 +2,7 @@
 // Admin growth metrics endpoints
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 
@@ -100,7 +101,7 @@ router.get('/metrics/growth', requireAdmin, async (req: Request, res: Response) 
             }
         });
     } catch (err: any) {
-        console.error("[metrics_growth]", err);
+        logger.error("[metrics_growth]", err);
         return res.status(500).json({ ok: false, error: "metrics_growth_failed" });
     }
 });

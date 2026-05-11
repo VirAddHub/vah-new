@@ -8,6 +8,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { getPool } from '../db';
 import { safeErrorMessage } from '../../lib/safeError';
 
@@ -72,7 +73,7 @@ router.get('/blog/posts', async (_req: Request, res: Response) => {
 
         return res.json({ ok: true, data: posts });
     } catch (error) {
-        console.error("[blog] Error fetching posts:", error);
+        logger.error("[blog] Error fetching posts:", error);
         return res.status(500).json({
             ok: false,
             error: "server_error",
@@ -137,7 +138,7 @@ router.get('/blog/posts/:slug', async (req: Request, res: Response) => {
 
         return res.json({ ok: true, data: responseData });
     } catch (error: any) {
-        console.error("[GET /api/blog/posts/:slug] error:", error);
+        logger.error("[GET /api/blog/posts/:slug] error:", error);
         return res.status(500).json({
             ok: false,
             error: "server_error",

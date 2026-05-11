@@ -9,7 +9,7 @@ export async function handleGcWebhook(req: Request, res: Response) {
   const sig = req.headers['webhook-signature'] as string | null;
 
   if (!gcVerifyWebhookSignature(typeof raw === 'string' ? raw : JSON.stringify(raw), sig)) {
-    console.error('[GoCardless Webhook] Invalid signature');
+    logger.warn('[gocardless_webhook] invalid_signature');
     return res.status(400).json({ ok: false, error: 'bad_signature' });
   }
 
@@ -45,7 +45,7 @@ export async function handleGcWebhook(req: Request, res: Response) {
             WHERE id = $2
           `, [now, userId]);
 
-          console.log(`[GoCardless Webhook] Created invoice and cleared payment failure state for user ${userId}`);
+          logger.info('[gocardless_webhook] invoice_created', { userId });
         }
         break;
 
@@ -79,7 +79,7 @@ export async function handleGcWebhook(req: Request, res: Response) {
                 WHERE id = $4
               `, [now, graceUntil, now, failedUserId]);
 
-              console.log(`[GoCardless Webhook] First payment failure for user ${failedUserId}, grace period until ${new Date(graceUntil).toISOString()}`);
+              logger.info('[gocardless_webhook] first_payment_failure', { userId: failedUserId, graceUntil: new Date(graceUntil).toISOString() });
             } else {
               // Subsequent failure - increment retry count
               await pool.query(`
@@ -89,7 +89,7 @@ export async function handleGcWebhook(req: Request, res: Response) {
                 WHERE id = $3
               `, [retryCount + 1, now, failedUserId]);
 
-              console.log(`[GoCardless Webhook] Payment retry ${retryCount + 1} failed for user ${failedUserId}`);
+              logger.info('[gocardless_webhook] payment_retry_failed', { userId: failedUserId, retryCount: retryCount + 1 });
             }
 
             // UPSERT pattern: ensure subscription exists, update status
@@ -118,7 +118,7 @@ export async function handleGcWebhook(req: Request, res: Response) {
                   next_charge_at = COALESCE(EXCLUDED.next_charge_at, subscription.next_charge_at),
                   updated_at = NOW()
             `, [subUserId, event.details?.cadence ?? null, event.details?.status ?? null, event.details?.next_charge_at ?? null]);
-          console.log(`[GoCardless Webhook] Updated subscription for user ${subUserId}`);
+          logger.info('[gocardless_webhook] subscription_updated', { userId: subUserId });
         }
         break;
 
@@ -171,7 +171,7 @@ export async function handleGcWebhook(req: Request, res: Response) {
               });
           }
           
-          console.log(`[GoCardless Webhook] Activated mandate and account for user ${mandateUserId}`);
+          logger.info('[gocardless_webhook] mandate_activated', { userId: mandateUserId });
         }
         break;
 
@@ -188,18 +188,18 @@ export async function handleGcWebhook(req: Request, res: Response) {
                   status = 'past_due',
                   updated_at = NOW()
             `, [revokedUserId]);
-          console.log(`[GoCardless Webhook] Revoked mandate for user ${revokedUserId}`);
+          logger.info('[gocardless_webhook] mandate_revoked', { userId: revokedUserId });
         }
         break;
 
       default:
-        console.log(`[GoCardless Webhook] Unhandled event type: ${type}`);
+        logger.debug('[gocardless_webhook] unhandled_event_type', { type });
         break;
     }
 
     res.json({ ok: true });
   } catch (error) {
-    console.error('[GoCardless Webhook] Processing error:', error);
+    logger.error('[gocardless_webhook] processing_error', { message: (error as any)?.message });
     res.status(500).json({ ok: false, error: 'webhook_processing_failed' });
   }
 }

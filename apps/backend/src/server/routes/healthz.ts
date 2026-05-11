@@ -2,6 +2,7 @@
 // Health check endpoints for monitoring
 
 import { Router } from 'express';
+import { logger } from '../../lib/logger';
 import { MAIL_STATUS, ALLOWED } from '../../modules/forwarding/mailStatus';
 import { metrics } from '../../lib/metrics';
 
@@ -59,7 +60,7 @@ router.get('/status-guard', (req, res) => {
     
     res.json(health);
   } catch (error) {
-    console.error('[HEALTH] Status guard health check failed:', error);
+    logger.error('[HEALTH] Status guard health check failed:', error);
     res.status(500).json({
       status: 'unhealthy',
       error: 'Health check failed',
@@ -98,7 +99,7 @@ router.get('/metrics', (req, res) => {
     
     res.json(health);
   } catch (error) {
-    console.error('[HEALTH] Metrics health check failed:', error);
+    logger.error('[HEALTH] Metrics health check failed:', error);
     res.status(500).json({
       status: 'unhealthy',
       error: 'Metrics health check failed',

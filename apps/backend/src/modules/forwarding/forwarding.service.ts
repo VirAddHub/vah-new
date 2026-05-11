@@ -1,5 +1,6 @@
 // apps/backend/src/modules/forwarding/forwarding.service.ts
 import crypto from 'node:crypto';
+import { logger } from '../../lib/logger';
 import { getPool } from '../../server/db';
 import { LegalTransitions } from './state';
 import { GDPR_FORWARDING_WINDOW_MS } from '../../config/gdpr';
@@ -85,7 +86,7 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
             if (existing.rows.length > 0) {
                 await pool.query('COMMIT');
                 const existingRequest = existing.rows[0];
-                console.log('[forwarding] duplicate_request', {
+                logger.info('[forwarding] duplicate_request', {
                     userId,
                     mailItemId,
                     requestId: existingRequest.id,
@@ -138,14 +139,14 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
                     );
 
                     if (chargeResult.rows.length > 0) {
-                        console.log(`[forwarding] charge_created`, {
+                        logger.info(`[forwarding] charge_created`, {
                             requestId: forwardingRequest.id,
                             chargeId: chargeResult.rows[0].id,
                             chargeAmount,
                             userId
                         });
                     } else {
-                        console.log(`[forwarding] charge_exists`, {
+                        logger.info(`[forwarding] charge_exists`, {
                             requestId: forwardingRequest.id,
                             chargeAmount,
                             userId
@@ -155,14 +156,14 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
                     // Only swallow "table missing". Everything else should throw.
                     const msg = String(chargeError?.message || '');
                     if (msg.includes('relation "charge" does not exist') || chargeError?.code === '42P01') {
-                        console.warn('[forwarding] charge table missing, skipping charge creation');
+                        logger.warn('[forwarding] charge table missing, skipping charge creation');
                     } else {
                         // Re-throw other errors - they're real problems
                         throw chargeError;
                     }
                 }
             } else {
-                console.log(`[forwarding] ℹ️ Official mail (tag="${mailData.tag}", source_slug="${mailData.source_slug}"), no charge created (free forwarding)`);
+                logger.info(`[forwarding] ℹ️ Official mail (tag="${mailData.tag}", source_slug="${mailData.source_slug}"), no charge created (free forwarding)`);
             }
 
             // Create outbox event
@@ -189,7 +190,7 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
 
             await pool.query('COMMIT');
 
-            console.log('[forwarding] request_created', {
+            logger.info('[forwarding] request_created', {
                 userId,
                 mailItemId,
                 requestId: forwardingRequest.id,
@@ -200,7 +201,7 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
             // NOTE: Email notification is NOT sent here when request is created
             // Email is only sent when admin marks the request as "Dispatched" or "Delivered"
             // This prevents duplicate emails (request created + dispatched)
-            console.log(`[Forwarding] ✅ Forwarding request ${forwardingRequest.id} created for user ${userId}. Email will be sent when dispatched.`);
+            logger.info(`[Forwarding] ✅ Forwarding request ${forwardingRequest.id} created for user ${userId}. Email will be sent when dispatched.`);
 
             return {
                 forwarding_request: forwardingRequest,

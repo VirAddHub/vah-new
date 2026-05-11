@@ -1,3 +1,4 @@
+import { logger } from './logger';
 // apps/backend/src/lib/metrics.ts
 // Observability metrics for status transitions
 
@@ -20,7 +21,7 @@ class MetricsCollector {
     const current = this.data.forwardingStatusTransitions.get(key) || 0;
     this.data.forwardingStatusTransitions.set(key, current + 1);
     
-    console.log(`[METRICS] Status transition: ${key} (total: ${current + 1})`);
+    logger.info(`[METRICS] Status transition: ${key} (total: ${current + 1})`);
   }
 
   // Record illegal transition attempt
@@ -29,7 +30,7 @@ class MetricsCollector {
     const current = this.data.illegalTransitions.get(key) || 0;
     this.data.illegalTransitions.set(key, current + 1);
     
-    console.warn(`[METRICS] Illegal transition attempt: ${key} (total: ${current + 1})${requestId ? ` [Request: ${requestId}]` : ''}`);
+    logger.warn(`[METRICS] Illegal transition attempt: ${key} (total: ${current + 1})${requestId ? ` [Request: ${requestId}]` : ''}`);
   }
 
   // Record API error
@@ -38,7 +39,7 @@ class MetricsCollector {
     const current = this.data.apiErrors.get(key) || 0;
     this.data.apiErrors.set(key, current + 1);
     
-    console.error(`[METRICS] API error: ${key} (total: ${current + 1})`);
+    logger.error(`[METRICS] API error: ${key} (total: ${current + 1})`);
   }
 
   // Get metrics summary

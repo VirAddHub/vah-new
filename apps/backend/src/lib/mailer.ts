@@ -1,5 +1,6 @@
 // apps/backend/src/lib/mailer.ts
 import { ENV, emailGuard } from '../env';
+import { logger } from './logger';
 import { Templates } from './postmark-templates';
 import { modelBuilders, BuildArgs } from './template-models';
 
@@ -119,14 +120,14 @@ export async function sendTemplateEmail(opts: {
 
         // Log Reply-To for debugging
         if (opts.templateAlias === 'email-change-notification-old-address') {
-            console.log(`[mailer] Sending email-change-notification-old-address with ReplyTo: ${emailOptions.ReplyTo}`);
+            logger.info(`[mailer] Sending email-change-notification-old-address with ReplyTo: ${emailOptions.ReplyTo}`);
         }
 
         await client.sendEmailWithTemplate(emailOptions);
     } catch (error: any) {
-        console.error(`Failed to send template email ${opts.templateAlias}:`, error);
-        console.error(`Template model sent:`, JSON.stringify(TemplateModel, null, 2));
-        console.error(`Postmark error details:`, error?.response?.body || error?.message || error);
+        logger.error(`Failed to send template email ${opts.templateAlias}:`, error);
+        logger.error('[mailer] template_model_keys', { alias: opts.templateAlias, keys: Object.keys(TemplateModel) }); // redacted: full model omitted
+        logger.error(`Postmark error details:`, error?.response?.body || error?.message || error);
         // Graceful fallback - send simple email
         // TemplateModel already has first_name resolved by model builder
         const first_name = TemplateModel.first_name || TemplateModel.name || 'there';
@@ -205,9 +206,9 @@ export async function sendWelcomeKycEmail({ email, firstName }: { email: string;
                 ctaUrl,
             },
         });
-        console.log("[postmark] sent template welcome-email to", email);
+        logger.info("[postmark] sent template welcome-email to", email);
     } catch (err: any) {
-        console.error("[postmark] failed template welcome-email", err);
+        logger.error("[postmark] failed template welcome-email", err);
         // Don't re-throw - sendTemplateEmail already handles errors gracefully
         // This preserves non-fatal behavior (signup route won't fail if email fails)
     }
@@ -350,10 +351,10 @@ export async function sendSupportRequestClosed({ email, firstName, name, ticket_
 // Mail events
 export async function sendMailScanned({ email, firstName, name, subject, cta_url }: { email: string; firstName?: string | null; name?: string | null; subject?: string; cta_url?: string }): Promise<void> {
     if (!emailGuard(ENV.EMAIL_MAIL)) {
-        console.warn('[mailer] sendMailScanned skipped: EMAIL_MAIL guard is disabled');
+        logger.warn('[mailer] sendMailScanned skipped: EMAIL_MAIL guard is disabled');
         return;
     }
-    console.log('[mailer] Sending mail-scanned email to:', email, 'subject:', subject);
+    logger.info('[mailer] Sending mail-scanned email to:', email, 'subject:', subject);
     await sendTemplateEmail({
         to: email,
         templateAlias: Templates.MailScanned,
@@ -364,7 +365,7 @@ export async function sendMailScanned({ email, firstName, name, subject, cta_url
             ctaUrl: cta_url || buildAppUrl('/mail'),
         },
     });
-    console.log('[mailer] ✅ Mail-scanned email sent successfully to:', email);
+    logger.info('[mailer] ✅ Mail-scanned email sent successfully to:', email);
 }
 
 export async function sendMailForwarded({ email, firstName, name, forwarding_address, forwarded_date }: { email: string; firstName?: string | null; name?: string | null; forwarding_address?: string; forwarded_date?: string }): Promise<void> {
@@ -390,7 +391,7 @@ export async function sendMailForwarded({ email, firstName, name, forwarding_add
             },
         });
     } catch (error) {
-        console.error('ForwardingCompleted template failed, sending fallback email:', error);
+        logger.error('ForwardingCompleted template failed, sending fallback email:', error);
 
         // Send a proper fallback email instead of generic notification
         await client.sendEmail({
@@ -451,7 +452,7 @@ export async function sendChVerificationNudge({ email, first_name }: { email: st
             ReplyTo: ENV.EMAIL_REPLY_TO,
         });
     } catch (error) {
-        console.error('[mailer] Failed to send CH verification nudge:', error);
+        logger.error('[mailer] Failed to send CH verification nudge:', error);
     }
 }
 
@@ -480,6 +481,6 @@ export async function sendChVerificationReminder({ email, first_name }: { email:
             ReplyTo: ENV.EMAIL_REPLY_TO,
         });
     } catch (error) {
-        console.error('[mailer] Failed to send CH verification reminder:', error);
+        logger.error('[mailer] Failed to send CH verification reminder:', error);
     }
 }

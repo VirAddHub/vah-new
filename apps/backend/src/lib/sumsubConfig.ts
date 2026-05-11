@@ -1,3 +1,4 @@
+import { logger } from './logger';
 /**
  * Central Sumsub environment resolution (live vs sandbox matched pairs).
  *
@@ -179,12 +180,12 @@ export function logSumsubConfigAtStartup(): void {
   const ownerLevel = api ? resolveSumsubLevelName(api.mode, 'basic-kyc') : null;
 
   if (!api) {
-    console.info('[SUMSUB] api: not configured (set SUMSUB_APP_TOKEN or SUMSUB_APP_TOKEN_SANDBOX + matching secret)');
-    console.info('[SUMSUB] webhook:', wh.source !== '(none)' ? `configured (${wh.source})` : 'not configured');
+    logger.info('[SUMSUB] api: not configured (set SUMSUB_APP_TOKEN or SUMSUB_APP_TOKEN_SANDBOX + matching secret)');
+    logger.info('[SUMSUB] webhook:', wh.source !== '(none)' ? `configured (${wh.source})` : 'not configured');
     return;
   }
 
-  console.info('[SUMSUB] api:', {
+  logger.info('[SUMSUB] api:', {
     mode: api.mode,
     tokenEnv: api.sources.token,
     secretEnv: api.sources.secret,
@@ -195,5 +196,5 @@ export function logSumsubConfigAtStartup(): void {
     ownerLevel: ownerLevel?.levelName,
     ownerLevelEnv: ownerLevel?.source,
   });
-  console.info('[SUMSUB] webhook:', wh.source !== '(none)' ? `configured (${wh.source})` : 'not configured');
+  logger.info('[SUMSUB] webhook:', wh.source !== '(none)' ? `configured (${wh.source})` : 'not configured');
 }

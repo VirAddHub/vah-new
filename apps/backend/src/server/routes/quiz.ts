@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import { getPool } from "../db";
 import { ENV } from "../../env";
 import { sendTemplateEmail, Templates } from "../../services/mailer";
+import { logger } from '../../lib/logger';
 
 export const quizRouter = Router();
 
@@ -41,7 +42,7 @@ quizRouter.post("/submit", async (req: Request, res: Response) => {
             [name, email, score, JSON.stringify(answers), segment, source, quizId]
         );
 
-        console.log(`[quiz] Lead captured: ${email}, score: ${score}, segment: ${segment}`);
+        logger.info('[quiz] Lead captured', { score, segment });
 
         // Determine CTA based on segment
         const ctaUrl = `${ENV.APP_BASE_URL || 'https://virtualaddresshub.co.uk'}/pricing`;
@@ -75,16 +76,16 @@ quizRouter.post("/submit", async (req: Request, res: Response) => {
                     booking_url: bookingUrl,
                 },
             });
-            console.log(`[quiz] Email sent to ${email} (mode: ${result})`);
+            logger.info('[quiz] email_sent', { email, mode: result });
         } catch (emailError: any) {
-            console.error('[quiz] Failed to send email:', emailError);
+            logger.error('[quiz] email_send_failed', { message: (emailError as any)?.message });
             // Don't fail the request if email fails - lead is already saved
             // The sendTemplateEmail function has built-in fallback to simple email
         }
 
         return res.json({ ok: true, message: "Quiz submission recorded" });
     } catch (err: any) {
-        console.error("[quiz] Submit error:", err);
+        logger.error('[quiz] submit_error', { message: (err as any)?.message });
         return res.status(500).json({
             ok: false,
             error: "server_error",
@@ -118,7 +119,7 @@ quizRouter.get("/stats", async (req: Request, res: Response) => {
             },
         });
     } catch (err: any) {
-        console.error("[quiz] Stats error:", err);
+        logger.error('[quiz] stats_error', { message: (err as any)?.message });
         return res.status(500).json({ ok: false, error: "server_error" });
     }
 });

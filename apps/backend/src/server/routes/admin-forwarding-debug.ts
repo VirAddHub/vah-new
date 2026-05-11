@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { requireAdmin } from '../../middleware/auth';
 import { toCanonical, getNextStatuses } from '../../modules/forwarding/mailStatus';
 import { getPool } from '../../server/db';
@@ -50,7 +51,7 @@ router.get('/admin/forwarding/requests/:id/debug-status', requireAdmin, async (r
         });
 
     } catch (error: any) {
-        console.error('[Debug Status] Error:', error);
+        logger.error('[Debug Status] Error:', error);
         res.status(500).json({
             ok: false,
             error: 'internal_error',

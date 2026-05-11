@@ -45,7 +45,7 @@ export function sessionCookieOptions(): CookieOptions {
           }
         : {
               ...sessionCookieSecurityOptions(),
-              maxAge: 60 * 60 * 24 * 30, // 30 days
+              maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days in ms
           };
 }
 

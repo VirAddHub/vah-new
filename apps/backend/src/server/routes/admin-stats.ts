@@ -2,6 +2,7 @@
 // Admin statistics endpoints
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { cachedAdminQuery } from '../../lib/query-cache';
@@ -74,7 +75,7 @@ router.get('/stats', requireAdmin, async (req: Request, res: Response) => {
             }
         });
     } catch (error: any) {
-        console.error('[GET /api/admin/stats] error:', error);
+        logger.error('[GET /api/admin/stats] error:', error);
         return res.status(500).json({
             ok: false,
             error: 'database_error',

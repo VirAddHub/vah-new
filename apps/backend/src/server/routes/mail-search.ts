@@ -14,6 +14,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { getPool } from '../db';
 import { safeAccessPath } from '../../lib/accessLog';
 
@@ -107,7 +108,7 @@ router.get('/search', async (req: Request, res: Response) => {
         return res.json({ ok: true, total, items: itemsResult.rows });
 
     } catch (e: any) {
-        console.error('[GET /api/mail-search/search] error:', e);
+        logger.error('[GET /api/mail-search/search] error:', e);
         return res.status(500).json({ ok: false, error: 'database_error', message: e.message });
     }
 });

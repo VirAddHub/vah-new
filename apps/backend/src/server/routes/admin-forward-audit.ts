@@ -13,6 +13,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { getPool } from '../db';
 import { safeErrorMessage } from '../../lib/safeError';
 
@@ -60,7 +61,7 @@ router.get('/', async (req: Request, res: Response) => {
       // forward_audit table may not exist yet — non-fatal
       return res.json({ ok: true, items: [] });
     }
-    console.error('[GET /api/admin-forward-audit] error:', error);
+    logger.error('[GET /api/admin-forward-audit] error:', error);
     return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
   }
 });

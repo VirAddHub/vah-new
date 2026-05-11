@@ -10,6 +10,7 @@ import { getPool } from '../db';
 import { sendMailForwarded } from '../../lib/mailer';
 import { parseForwardingStatus, FWD_LABEL } from '@vah/shared';
 import { safeErrorMessage } from '../../lib/safeError';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -26,7 +27,7 @@ export function clearAdminForwardingCache(adminId: number) {
         }
     }
     keysToDelete.forEach(key => requestCache.delete(key));
-    console.log(`[admin-forwarding] Cleared ${keysToDelete.length} cached responses for admin ${adminId}`);
+    logger.info(`[admin-forwarding] Cleared ${keysToDelete.length} cached responses for admin ${adminId}`);
 }
 
 // Rate limiting by admin user ID, not IP - admin-friendly limits
@@ -111,7 +112,7 @@ router.get('/forwarding/stats', adminForwardingLimiter, async (req: Request, res
             recent,
         });
     } catch (error: any) {
-        console.error('[GET /api/admin/forwarding/stats] error:', error);
+        logger.error('[GET /api/admin/forwarding/stats] error:', { error });
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
@@ -120,8 +121,8 @@ router.get('/forwarding/stats', adminForwardingLimiter, async (req: Request, res
 router.get('/forwarding/requests',
     adminForwardingLimiter,
     (req, res, next) => {
-        console.log('[admin-forwarding] GET /forwarding/requests called');
-        console.log('[admin-forwarding] User:', req.user);
+        logger.debug('[admin-forwarding] GET /forwarding/requests called');
+        logger.debug('[admin-forwarding] User:', { userId: req.user?.id });
 
         // Request deduplication - check if we have a recent identical request
         const cacheKey = `${req.user?.id}-${req.url}`;
@@ -129,7 +130,7 @@ router.get('/forwarding/requests',
         const cached = requestCache.get(cacheKey);
 
         if (cached && (now - cached.timestamp) < CACHE_TTL) {
-            console.log('[admin-forwarding] Returning cached response for deduplication');
+            logger.debug('[admin-forwarding] Returning cached response for deduplication');
             return res.json(cached.response);
         }
 
@@ -275,7 +276,7 @@ router.post('/forwarding/complete', async (req: Request, res: Response) => {
                 forwarded_date: new Date().toLocaleDateString('en-GB')
             });
         } catch (emailError) {
-            console.error('[admin-forwarding-complete] Email failed:', emailError);
+            logger.error('[admin-forwarding-complete] Email failed:', { error: emailError });
             // Don't rollback - the forwarding is complete, just email failed
         }
 
@@ -308,7 +309,7 @@ router.post('/forwarding/complete', async (req: Request, res: Response) => {
 
     } catch (error: any) {
         await pool.query('ROLLBACK');
-        console.error('[admin-forwarding-complete] error:', error);
+        logger.error('[admin-forwarding-complete] error:', { error });
         return res.status(500).json({
             ok: false,
             error: 'database_error',
@@ -354,17 +355,17 @@ router.post('/forwarding/requests/:id/status', adminForwardingLimiter, async (re
                         forwarded_date: new Date().toLocaleDateString('en-GB')
                     });
 
-                    console.log(`[admin-forwarding-status] Email sent for dispatched request ${id} to ${user.email}`);
+                    logger.info(`[admin-forwarding-status] Email sent for dispatched request ${id}`, { requestId: id });
                 }
             } catch (emailError) {
-                console.error('[admin-forwarding-status] Email failed:', emailError);
+                logger.error('[admin-forwarding-status] Email failed:', { error: emailError });
                 // Don't fail the request - email is secondary
             }
         }
 
         return res.json({ ok: true, data: { id, status, label: FWD_LABEL[status] } });
     } catch (e: any) {
-        console.error('[admin-forwarding] Status update error:', e);
+        logger.error('[admin-forwarding] Status update error:', { error: e });
         return res.status(400).json({ ok: false, error: e.message || 'invalid_status' });
     }
 });
@@ -430,7 +431,7 @@ router.delete('/forwarding/requests/:id', requireAdmin, adminForwardingLimiter, 
             message: 'Forwarding request deleted successfully'
         });
     } catch (error: any) {
-        console.error('[DELETE /api/admin/forwarding/requests/:id] error:', error);
+        logger.error('[DELETE /api/admin/forwarding/requests/:id] error:', { error });
         return res.status(500).json({
             ok: false,
             error: 'database_error',

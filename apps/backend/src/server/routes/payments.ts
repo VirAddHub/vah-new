@@ -100,7 +100,7 @@ router.get('/subscriptions/status', requireAuth, async (req: Request, res: Respo
             }
         });
     } catch (error: any) {
-        console.error('[GET /api/payments/subscriptions/status] error:', error);
+        logger.error('[payments] get_subscription_status_error', { message: (error as any)?.message });
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
@@ -151,12 +151,12 @@ router.post('/subscriptions', requireAuth, paymentsSubscriptionWriteLimiter, asy
                         end_date: endDate,
                         cta_url: buildAppUrl('/billing'),
                     }).catch((err) => {
-                        console.error('[POST /api/payments/subscriptions] plan_cancelled_email_failed_nonfatal', err);
+                        logger.warn('[payments] plan_cancelled_email_failed_nonfatal', { message: (err as any)?.message });
                     });
                 }
             } catch (emailError) {
                 // Don't fail cancellation if email fails
-                console.error('[POST /api/payments/subscriptions] plan_cancelled_email_error', emailError);
+                logger.error('[payments] plan_cancelled_email_error', { message: (emailError as any)?.message });
             }
         }
 
@@ -164,7 +164,7 @@ router.post('/subscriptions', requireAuth, paymentsSubscriptionWriteLimiter, asy
 
         return res.json({ ok: true, status: newStatus });
     } catch (error: any) {
-        console.error('[POST /api/payments/subscriptions] error:', error);
+        logger.error('[payments] post_subscription_error', { message: (error as any)?.message });
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
@@ -210,7 +210,7 @@ router.post('/redirect-flows', requireAuth, stripeCheckoutCreateLimiter, async (
             return res.status(500).json({ ok: false, error: 'checkout_failed' });
         }
     } catch (err: any) {
-        console.error('[Stripe] redirect-flows failed', {
+        logger.error('[payments] stripe_redirect_flows_failed', {
             message: safeErrorMessage(err),
             name: err?.name,
         });

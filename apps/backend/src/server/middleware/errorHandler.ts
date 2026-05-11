@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { logger } from '../../lib/logger';
 import { fail } from '../lib/apiResponse';
 import { safeAccessPath } from '../../lib/accessLog';
 
@@ -22,7 +23,7 @@ export function errorHandler(
     const isProduction = process.env.NODE_ENV === 'production';
 
     // Log error details (server-side only)
-    console.error('[ErrorHandler]', {
+    logger.error('[ErrorHandler]', {
         message: err?.message,
         stack: isProduction ? undefined : err?.stack,
         path: safeAccessPath(req),

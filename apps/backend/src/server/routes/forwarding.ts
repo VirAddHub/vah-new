@@ -9,6 +9,7 @@ import { extractUKPostcode, hasUKPostcode, normalizeUKPostcode, UK_POSTCODE_REGE
 import { param } from '../../lib/express-params';
 import { forwardingMutationUserLimiter } from '../../lib/routeGroupRateLimits';
 import { safeErrorMessage } from '../../lib/safeError';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 const pool = getPool();
@@ -71,7 +72,7 @@ router.get('/forwarding/requests', requireAuth, async (req: Request, res: Respon
 
         return res.json({ ok: true, ...result });
     } catch (error: any) {
-        console.error('[GET /api/forwarding/requests] error:', error);
+        logger.error('[GET /api/forwarding/requests] error:', { error });
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
@@ -106,7 +107,7 @@ router.get('/forwarding/requests/:id', requireAuth, async (req: Request, res: Re
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[GET /api/forwarding/requests/:id] error:', error);
+        logger.error('[GET /api/forwarding/requests/:id] error:', { error });
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
@@ -123,7 +124,7 @@ router.post(
     forwardingMutationUserLimiter,
     async (req: Request, res: Response) => {
     // First-line logging at the top
-    console.log('[forwarding] incoming', {
+    logger.debug('[forwarding] incoming', {
         user_id: (req as any).user?.id,
         body_keys: Object.keys(req.body || {}),
         ids: req.body?.mail_item_ids,
@@ -132,10 +133,8 @@ router.post(
 
     // DEBUG flag for troubleshooting
     if (process.env.DEBUG_FORWARDING === '1') {
-        console.log('[forwarding] debug', {
+        logger.debug('[forwarding] debug', {
             user: req.user?.id,
-            payload: req.body,
-            headers: req.headers
         });
     }
 
@@ -151,7 +150,7 @@ router.post(
 
     // Validate payload with clear error codes
     if (mailItemIds.length === 0) {
-        console.warn('[forwarding] 400 bad payload', { mail_item_ids: req.body?.mail_item_ids, mail_item_id: req.body?.mail_item_id });
+        logger.warn('[forwarding] 400 bad payload', { mail_item_ids: req.body?.mail_item_ids, mail_item_id: req.body?.mail_item_id });
         return res.status(400).json({
             ok: false,
             error: 'bad_payload',
@@ -172,7 +171,7 @@ router.post(
         `, [userId]);
 
         if (userResult.rows.length === 0) {
-            console.warn('[forwarding] 404 user not found', { userId });
+            logger.warn('[forwarding] 404 user not found', { userId });
             return res.status(404).json({
                 ok: false,
                 error: 'user_not_found',
@@ -192,16 +191,15 @@ router.post(
         const userFull = userFullResult.rows[0];
         const addressLinesCount = userFull.forwarding_address ? userFull.forwarding_address.split('\n').length : 0;
         const hasPostcodeInAddress = userFull.forwarding_address ? hasUKPostcode(userFull.forwarding_address) : false;
-        console.log("[forwarding] user forwarding snapshot", {
+        logger.debug("[forwarding] user forwarding snapshot", {
             userId: userFull.id,
-            email: userFull.email,
             address_lines_count: addressLinesCount,
             has_postcode_detected: hasPostcodeInAddress,
-            // Don't log full address for privacy
+            // email and address omitted for privacy
         });
 
         if (!user.forwarding_address) {
-            console.warn('[forwarding] 400 no forwarding address', { userId });
+            logger.warn('[forwarding] 400 no forwarding address', { userId });
             return res.status(400).json({
                 ok: false,
                 error: 'no_forwarding_address',
@@ -217,9 +215,8 @@ router.post(
         // Format 3 (3 lines): Address1\nCity\nPostcode
         // Format 4 (5+ lines): Building\nAddress1\nAddress2\nCity\nPostcode
         const addressLines = user.forwarding_address.split('\n').filter((line: string) => line.trim() !== '');
-        console.log("[forwarding] parsed address lines", {
+        logger.debug("[forwarding] parsed address lines", {
             totalLines: addressLines.length,
-            // Don't log full address lines for privacy
         });
         
         let name: string;
@@ -316,7 +313,7 @@ router.post(
             }
         } else {
             // No postcode found - fallback to old logic (but this should rarely happen)
-            console.warn('[forwarding] No UK postcode detected in address, using fallback parsing', {
+            logger.warn('[forwarding] No UK postcode detected in address, using fallback parsing', {
                 userId,
                 addressLinesCount: addressLines.length,
             });
@@ -353,7 +350,7 @@ router.post(
             }
         }
 
-        console.log("[forwarding] extracted fields before validation", {
+        logger.debug("[forwarding] extracted fields before validation", {
             hasName: !!name && name.trim() !== '',
             hasAddress1: !!address1 && address1.trim() !== '',
             hasAddress2: !!address2,
@@ -392,7 +389,7 @@ router.post(
         // Don't require it
 
         if (missingFields.length > 0) {
-            console.warn('[forwarding] Rejecting forwarding request - incomplete address', {
+            logger.warn('[forwarding] Rejecting forwarding request - incomplete address', {
             userId,
                 missingFields,
             hasName: !!name,
@@ -464,7 +461,7 @@ router.post(
             },
         });
     } catch (e: any) {
-        console.error('[POST /api/forwarding/requests] error:', e);
+        logger.error('[POST /api/forwarding/requests] error:', { error: e });
 
         // Handle GDPR expiration specifically
         if (e.message && e.message.includes('30 days')) {
@@ -543,7 +540,7 @@ router.post('/requests/bulk', requireAuth, forwardingMutationUserLimiter, async 
 
         return res.json({ ok: true, forwarded, errors });
     } catch (error: any) {
-        console.error('[POST /api/forwarding/requests/bulk] error:', error);
+        logger.error('[POST /api/forwarding/requests/bulk] error:', { error });
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });

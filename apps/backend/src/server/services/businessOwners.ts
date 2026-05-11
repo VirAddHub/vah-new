@@ -2,6 +2,7 @@
 // Business owner management and verification service
 
 import { getPool } from '../db';
+import { logger } from '../../lib/logger';
 import { generateEmailChangeToken, hashToken } from '../security/tokens';
 import { getAppUrl } from '../../config/appUrl';
 import { sendTemplateEmail } from '../../lib/mailer';
@@ -98,7 +99,7 @@ export async function createBusinessOwner(
             templateId: 43428305, // Postmark Template ID
         });
     } catch (error) {
-        console.error('[businessOwners] Failed to send verification email:', error);
+        logger.error('[businessOwners] Failed to send verification email:', error);
         // Don't throw - owner is created, can resend later
     }
 
@@ -179,7 +180,7 @@ export async function resendBusinessOwnerInvite(ownerId: number): Promise<string
             templateId: 43428305, // Postmark Template ID
         });
     } catch (error) {
-        console.error('[businessOwners] Failed to resend verification email:', error);
+        logger.error('[businessOwners] Failed to resend verification email:', error);
         // Still return token - email might have been sent
     }
     

@@ -2,6 +2,7 @@
 // Database query caching for performance optimization
 
 import { getPool } from './db';
+import { logger } from './logger';
 
 interface CacheEntry<T> {
     data: T;
@@ -60,12 +61,12 @@ class QueryCache {
         // Check cache first
         const cached = this.get<T[]>(key);
         if (cached) {
-            console.log(`[QueryCache] Cache hit for: ${key.substring(0, 50)}...`);
+            logger.info(`[QueryCache] Cache hit for: ${key.substring(0, 50)}...`);
             return cached;
         }
 
         // Execute query
-        console.log(`[QueryCache] Cache miss, executing: ${query.substring(0, 50)}...`);
+        logger.info(`[QueryCache] Cache miss, executing: ${query.substring(0, 50)}...`);
         const pool = getPool();
         const result = await pool.query(query, params);
 

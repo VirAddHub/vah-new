@@ -2,6 +2,7 @@
 // Admin endpoint for Companies House verification reminders
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { param } from '../../lib/express-params';
@@ -65,7 +66,7 @@ router.get('/ch-verification/submissions', requireAdmin, async (req: Request, re
             }
         });
     } catch (error: any) {
-        console.error('[GET /api/admin/ch-verification/submissions] error:', error);
+        logger.error('[GET /api/admin/ch-verification/submissions] error:', error);
         return res.status(500).json({
             ok: false,
             error: 'database_error',
@@ -108,7 +109,7 @@ router.post('/ch-verification/:userId/approve', requireAdmin, async (req: Reques
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[POST /api/admin/ch-verification/:userId/approve] error:', error);
+        logger.error('[POST /api/admin/ch-verification/:userId/approve] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
@@ -151,7 +152,7 @@ router.post('/ch-verification/:userId/reject', requireAdmin, async (req: Request
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[POST /api/admin/ch-verification/:userId/reject] error:', error);
+        logger.error('[POST /api/admin/ch-verification/:userId/reject] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });

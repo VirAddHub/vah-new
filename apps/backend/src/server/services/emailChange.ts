@@ -2,6 +2,7 @@
 // Email change verification service
 
 import { getPool } from '../db';
+import { logger } from '../../lib/logger';
 import { generateEmailChangeToken, hashToken } from '../security/tokens';
 import { sendTemplateEmail } from '../../lib/mailer';
 import { Templates } from '../../lib/postmark-templates';
@@ -123,7 +124,7 @@ export async function requestEmailChange(
             templateId: 42716349, // Postmark Template ID
         });
     } catch (error) {
-        console.error('[emailChange] Failed to send verification email:', error);
+        logger.error('[emailChange] Failed to send verification email:', error);
         // Don't throw - request is created, user can request another email if needed
     }
     
@@ -143,7 +144,7 @@ export async function requestEmailChange(
             ]
         );
     } catch (auditError) {
-        console.warn('[emailChange] Failed to log audit entry:', auditError);
+        logger.warn('[emailChange] Failed to log audit entry:', auditError);
         // Don't fail the request if audit logging fails
     }
 }
@@ -237,9 +238,9 @@ export async function confirmEmailChange(token: string): Promise<{ changed: bool
             replyTo: 'support@virtualaddresshub.co.uk',
             templateId: 42718936, // Postmark Template ID
         });
-        console.log(`[emailChange] Security notification sent to old email: ${maskEmail(oldEmail)}`);
+        logger.info(`[emailChange] Security notification sent to old email: ${maskEmail(oldEmail)}`);
     } catch (emailError) {
-        console.error('[emailChange] Failed to send security notification to old email:', emailError);
+        logger.error('[emailChange] Failed to send security notification to old email:', emailError);
         // Don't fail the confirmation if notification email fails - email change is already complete
     }
     
@@ -259,7 +260,7 @@ export async function confirmEmailChange(token: string): Promise<{ changed: bool
             ]
         );
     } catch (auditError) {
-        console.warn('[emailChange] Failed to log audit entry:', auditError);
+        logger.warn('[emailChange] Failed to log audit entry:', auditError);
         // Don't fail the confirmation if audit logging fails
     }
     
@@ -370,7 +371,7 @@ export async function resendEmailChangeConfirmation(token: string): Promise<{ se
             templateId: 42716349,
         });
     } catch (error) {
-        console.error('[emailChange] Failed to resend verification email:', error);
+        logger.error('[emailChange] Failed to resend verification email:', error);
         // Still return success - email might have been sent
     }
     
@@ -400,7 +401,7 @@ export async function cleanupExpiredEmailChangeRequests(): Promise<number> {
     );
     
     const deletedCount = result.rowCount || 0;
-    console.log(`[emailChange] Cleaned up ${deletedCount} expired email change requests`);
+    logger.info(`[emailChange] Cleaned up ${deletedCount} expired email change requests`);
     
     return deletedCount;
 }

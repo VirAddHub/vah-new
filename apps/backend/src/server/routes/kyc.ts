@@ -10,6 +10,7 @@ import { deriveKycStatusFromSumsubReview } from '../../lib/sumsubKycReview';
 import { resolveSumsubApiConfig, resolveSumsubLevelName } from '../../lib/sumsubConfig';
 import { kycWriteUserLimiter } from '../../lib/routeGroupRateLimits';
 import { safeErrorMessage } from '../../lib/safeError';
+import { logger } from '../../lib/logger';
 
 const router = Router();
 
@@ -56,7 +57,7 @@ router.get('/status', requireAuth, async (req: Request, res: Response) => {
             }
         });
     } catch (error: any) {
-        console.error('[GET /api/kyc/status] error:', error);
+        logger.error('[GET /api/kyc/status] error:', { error });
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
@@ -89,7 +90,7 @@ router.post('/start', requireAuth, kycWriteUserLimiter, async (req: Request, res
 
         const apiCfg = resolveSumsubApiConfig();
         if (!apiCfg) {
-            console.error('[kyc/start] Sumsub not configured');
+            logger.error('[kyc/start] Sumsub not configured');
             return res.status(501).json({
                 ok: false,
                 status: 501,
@@ -129,10 +130,10 @@ router.post('/start', requireAuth, kycWriteUserLimiter, async (req: Request, res
                     name: user.last_name ? [user.first_name, user.last_name].filter(Boolean).join(' ') : user.first_name || undefined,
                     cta_url: buildAppUrl('/profile'),
                 }).catch((err: any) => {
-                    console.error('[kyc/start] kyc_submitted_email_failed_nonfatal', err);
+                    logger.error('[kyc/start] kyc_submitted_email_failed_nonfatal', { error: err });
                 });
             } catch (emailError) {
-                console.error('[kyc/start] kyc_submitted_email_error', emailError);
+                logger.error('[kyc/start] kyc_submitted_email_error', { error: emailError });
             }
         }
 
@@ -154,7 +155,7 @@ router.post('/start', requireAuth, kycWriteUserLimiter, async (req: Request, res
 
         return res.json({ ok: true, token: tokenResp.token, applicantId });
     } catch (e) {
-        console.error("[kyc/start]", e);
+        logger.error('[kyc/start] error', { error: e });
         const raw = e instanceof Error ? e.message : String(e);
         /** Short, user-facing hint (Sumsub errors often include JSON in the message). */
         let message = raw;
@@ -283,7 +284,7 @@ router.post('/sync-from-sumsub', requireAuth, kycWriteUserLimiter, async (req: R
             },
         });
     } catch (e) {
-        console.error('[POST /api/kyc/sync-from-sumsub]', e);
+        logger.error('[POST /api/kyc/sync-from-sumsub] error', { error: e });
         const message = safeErrorMessage(e);
         return res.status(502).json({
             ok: false,

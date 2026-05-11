@@ -1,4 +1,5 @@
 import cors from 'cors';
+import { logger } from './lib/logger';
 import { isCorsOriginAllowed } from './lib/corsAllowlist';
 import { safeAccessPath } from './lib/accessLog';
 
@@ -44,7 +45,7 @@ export const corsDebugMiddleware = (req: any, res: any, next: any) => {
   const originalJson = res.json;
 
   // Log request details (path only — never originalUrl query strings / tokens)
-  console.log('[CORS_DEBUG] Request:', {
+  logger.info('[CORS_DEBUG] Request:', {
     method: req.method,
     path: safeAccessPath(req),
     hasQuery: Boolean(
@@ -56,7 +57,7 @@ export const corsDebugMiddleware = (req: any, res: any, next: any) => {
 
   // Override response methods to log headers after response
   res.send = function (data: any) {
-    console.log('[CORS_DEBUG] Response headers:', {
+    logger.info('[CORS_DEBUG] Response headers:', {
       'Access-Control-Allow-Origin': res.get('Access-Control-Allow-Origin'),
       'Access-Control-Allow-Credentials': res.get('Access-Control-Allow-Credentials'),
       'Set-Cookie': res.get('Set-Cookie') ? 'Present' : 'Not set',
@@ -65,7 +66,7 @@ export const corsDebugMiddleware = (req: any, res: any, next: any) => {
   };
 
   res.json = function (data: any) {
-    console.log('[CORS_DEBUG] Response headers:', {
+    logger.info('[CORS_DEBUG] Response headers:', {
       'Access-Control-Allow-Origin': res.get('Access-Control-Allow-Origin'),
       'Access-Control-Allow-Credentials': res.get('Access-Control-Allow-Credentials'),
       'Set-Cookie': res.get('Set-Cookie') ? 'Present' : 'Not set',

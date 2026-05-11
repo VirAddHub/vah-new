@@ -2,6 +2,7 @@
 // Admin mail items management endpoints
 
 import { Router, Request, Response } from 'express';
+import { logger } from '../../lib/logger';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
@@ -49,7 +50,7 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
 
     const key = keyFrom(req);
     if (inflight.has(key)) {
-        console.log(`[admin-mail-items] Coalescing request for key: ${key}`);
+        logger.info(`[admin-mail-items] Coalescing request for key: ${key}`);
         try {
             const result = await inflight.get(key)!;
             return res.json(result);
@@ -174,7 +175,7 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
                 }
             };
         } catch (error: any) {
-            console.error('[GET /api/admin/mail-items] error:', error);
+            logger.error('[GET /api/admin/mail-items] error:', error);
             throw error;
         }
     })();
@@ -252,7 +253,7 @@ router.get('/mail-items/:id', requireAdmin, async (req: Request, res: Response) 
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[GET /api/admin/mail-items/:id] error:', error);
+        logger.error('[GET /api/admin/mail-items/:id] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
@@ -346,7 +347,7 @@ router.put('/mail-items/:id', requireAdmin, async (req: Request, res: Response) 
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[PUT /api/admin/mail-items/:id] error:', error);
+        logger.error('[PUT /api/admin/mail-items/:id] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
@@ -410,7 +411,7 @@ router.post('/mail-items/:id/log-physical-dispatch', requireAdmin, async (req: R
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
-        console.error('[POST /api/admin/mail-items/:id/log-physical-dispatch] error:', error);
+        logger.error('[POST /api/admin/mail-items/:id/log-physical-dispatch] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });
@@ -437,7 +438,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
 
     // HARD REQUIREMENT: Admin authentication is mandatory - no fallbacks allowed
     if (!adminUser || !adminUser.id) {
-        console.error('[MARK DESTROYED] Rejected: No admin user in request context');
+        logger.error('[MARK DESTROYED] Rejected: No admin user in request context');
         return res.status(403).json({ 
             ok: false, 
             error: 'admin_authentication_required',
@@ -450,7 +451,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
     const RETENTION_DAYS = 30; // GDPR retention period
 
     try {
-        console.log('[MARK DESTROYED] Starting destruction request', { mailItemId, adminUserId: req.user?.id });
+        logger.info('[MARK DESTROYED] Starting destruction request', { mailItemId, adminUserId: req.user?.id });
         
         // Step 1: Fetch mail item with all required data
         const fetchResult = await pool.query(
@@ -478,7 +479,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         );
 
         if (fetchResult.rows.length === 0) {
-            console.error('[MARK DESTROYED] Mail item not found', { mailItemId });
+            logger.error('[MARK DESTROYED] Mail item not found', { mailItemId });
             return res.status(404).json({ ok: false, error: 'mail_item_not_found' });
         }
 
@@ -486,7 +487,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
 
         // Prevent destroying mail for internal staff accounts
         if (mailItem.user_is_admin) {
-            console.error('[MARK DESTROYED] Rejected: Cannot destroy mail for internal staff', { mailItemId, userId: mailItem.user_id });
+            logger.error('[MARK DESTROYED] Rejected: Cannot destroy mail for internal staff', { mailItemId, userId: mailItem.user_id });
             return res.status(400).json({ 
                 ok: false, 
                 error: 'invalid_destruction_target',
@@ -515,7 +516,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         }
 
         if (!receiptDate || isNaN(receiptDate.getTime())) {
-            console.error('[MARK DESTROYED] Rejected: Missing receipt date', { 
+            logger.error('[MARK DESTROYED] Rejected: Missing receipt date', { 
                 mailItemId, 
                 received_at_ms: mailItem.received_at_ms,
                 received_at_ms_type: typeof mailItem.received_at_ms,
@@ -538,7 +539,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         const now = new Date();
         if (eligibilityDate > now) {
             const daysRemaining = Math.ceil((eligibilityDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-            console.error('[MARK DESTROYED] Rejected: Not eligible yet', { 
+            logger.error('[MARK DESTROYED] Rejected: Not eligible yet', { 
                 mailItemId,
                 receiptDate: receiptDate.toISOString().split('T')[0],
                 eligibilityDate: eligibilityDate.toISOString().split('T')[0],
@@ -558,7 +559,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         );
 
         if (existingDestruction.rows.length > 0) {
-            console.error('[MARK DESTROYED] Rejected: Already destroyed', { mailItemId, existingId: existingDestruction.rows[0].id });
+            logger.error('[MARK DESTROYED] Rejected: Already destroyed', { mailItemId, existingId: existingDestruction.rows[0].id });
             return res.status(400).json({ 
                 ok: false, 
                 error: 'already_destroyed',
@@ -582,7 +583,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         );
 
         if (adminResult.rows.length === 0) {
-            console.error('[MARK DESTROYED] Rejected: Admin user not found or not authorized', { adminId });
+            logger.error('[MARK DESTROYED] Rejected: Admin user not found or not authorized', { adminId });
             return res.status(403).json({ 
                 ok: false, 
                 error: 'admin_authentication_required',
@@ -594,7 +595,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
 
         // VALIDATION: Admin must have identifiable name - NO FALLBACKS TO "Unknown"
         if (!admin.first_name && !admin.last_name && !admin.email) {
-            console.error('[MARK DESTROYED] Rejected: Admin user has no identifiable name', { adminId, admin });
+            logger.error('[MARK DESTROYED] Rejected: Admin user has no identifiable name', { adminId, admin });
             return res.status(500).json({ 
                 ok: false, 
                 error: 'admin_identity_incomplete',
@@ -637,7 +638,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
 
         // GUARD: Ensure we never write "Unknown" or "UN"
         if (staffName.toLowerCase().includes('unknown') || staffInitials === 'UN') {
-            console.error('[MARK DESTROYED] Rejected: Staff attribution would be "Unknown"', { adminId, staffName, staffInitials });
+            logger.error('[MARK DESTROYED] Rejected: Staff attribution would be "Unknown"', { adminId, staffName, staffInitials });
             return res.status(500).json({ 
                 ok: false, 
                 error: 'staff_attribution_invalid',
@@ -731,7 +732,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
             // Commit transaction
             await client.query('COMMIT');
 
-            console.log('[MARK DESTROYED] Successfully logged destruction', {
+            logger.info('[MARK DESTROYED] Successfully logged destruction', {
                 mailItemId,
                 adminId,
                 staffName,
@@ -740,18 +741,18 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
 
             return res.json({ ok: true });
         } catch (txError: any) {
-            console.error('[MARK DESTROYED] Transaction error, rolling back:', txError);
+            logger.error('[MARK DESTROYED] Transaction error, rolling back:', txError);
             try {
                 await client.query('ROLLBACK');
             } catch (rollbackError: any) {
-                console.error('[MARK DESTROYED] Rollback failed:', rollbackError);
+                logger.error('[MARK DESTROYED] Rollback failed:', rollbackError);
             }
             throw txError;
         } finally {
             client.release();
         }
     } catch (error: any) {
-        console.error('[MARK DESTROYED FAILED]', error);
+        logger.error('[MARK DESTROYED FAILED]', error);
         
         // Handle unique constraint violation (duplicate)
         if (error.code === '23505' && error.constraint === 'unique_mail_item_destruction') {
@@ -801,7 +802,7 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
         }
 
         // Return 500 for unexpected errors
-        console.error('[MARK DESTROYED FAILED] Full error details:', {
+        logger.error('[MARK DESTROYED FAILED] Full error details:', {
             message: error.message,
             stack: error.stack,
             code: error.code,
@@ -842,7 +843,7 @@ router.post('/mail-items/test-excel-write', requireAdmin, async (_req: Request, 
             result
         });
     } catch (error: any) {
-        console.error('[POST /api/admin/mail-items/test-excel-write] error:', error);
+        logger.error('[POST /api/admin/mail-items/test-excel-write] error:', error);
         return res.status(500).json({
             ok: false,
             error: 'test_failed',
@@ -919,12 +920,12 @@ router.post('/mail-items/bulk', requireAdmin, async (req: Request, res: Response
             [ids, adminId, afterJson, now],
         ).catch((err) => {
             // mail_audit may not exist in all environments — non-fatal, log and continue
-            console.warn('[admin-mail-bulk] mail_audit insert failed (non-fatal):', err?.message ?? err);
+            logger.warn('[admin-mail-bulk] mail_audit insert failed (non-fatal):', err?.message ?? err);
         });
 
         return res.json({ ok: true, updated: updateResult.rowCount ?? 0, ids });
     } catch (error: any) {
-        console.error('[POST /api/admin/mail-items/bulk] error:', error);
+        logger.error('[POST /api/admin/mail-items/bulk] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
     }
 });

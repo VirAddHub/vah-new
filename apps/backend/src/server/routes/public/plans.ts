@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { logger } from '../../../lib/logger';
 import { selectMany } from '../../db-helpers';
 import { getPool } from '../../db';
 import { ok } from '../../lib/apiResponse';
@@ -75,7 +76,7 @@ router.get('/plans', async (req: Request, res: Response) => {
         // Return as array (static list, no pagination needed)
         return ok(res, formattedPlans);
     } catch (e) {
-        console.error('[Public Plans] Database error:', e);
+        logger.error('[Public Plans] Database error:', e);
         // Safe stub if DB not reachable
         const stubPlans = [
             {

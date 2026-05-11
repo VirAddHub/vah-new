@@ -1,4 +1,5 @@
 import { getPool } from '../../lib/db';
+import { logger } from '../../lib/logger';
 
 /**
  * Upsert a gc_billing_request_flow row to map BRQ/BRF IDs to VAH users.
@@ -38,11 +39,11 @@ export async function upsertGcBillingRequestFlow(opts: {
     // If table doesn't exist yet (migration not run), log but don't throw
     const msg = String(e?.message || '');
     if (msg.toLowerCase().includes('does not exist') || e?.code === '42P01') {
-      console.warn('[gcBillingRequestFlow] Table gc_billing_request_flow does not exist yet (migration 120 not run)');
+      logger.warn('[gcBillingRequestFlow] Table gc_billing_request_flow does not exist yet (migration 120 not run)');
       return;
     }
     // For other errors (constraint violations, etc.), log and rethrow
-    console.error('[gcBillingRequestFlow] Insert failed:', {
+    logger.error('[gcBillingRequestFlow] Insert failed:', {
       error: msg,
       code: e?.code,
       userId: opts.userId,

@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 /** First match wins — same order as `pickFrom` (used by `onedriveMailIngest` → `getGraphToken`). */
 const GRAPH_TENANT_KEYS = ['MS_TENANT_ID', 'GRAPH_TENANT_ID', 'AZURE_TENANT_ID'] as const;
 const GRAPH_CLIENT_KEYS = ['MS_CLIENT_ID', 'GRAPH_CLIENT_ID', 'AZURE_CLIENT_ID'] as const;
@@ -58,7 +59,7 @@ export function graphCredsPresent(): boolean {
 
 export function logGraphConfigAtStartup() {
     const keys = graphCredentialEnvKeys();
-    console.info('[GRAPH CONFIG] tenant:', !!AZURE_CONFIG.TENANT_ID,
+    logger.info('[GRAPH CONFIG] tenant:', !!AZURE_CONFIG.TENANT_ID,
         'clientId:', !!AZURE_CONFIG.CLIENT_ID,
         'secret:', !!AZURE_CONFIG.CLIENT_SECRET,
         'upn:', AZURE_CONFIG.SHAREPOINT_USER_UPN,

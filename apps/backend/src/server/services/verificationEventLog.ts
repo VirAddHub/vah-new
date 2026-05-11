@@ -6,6 +6,7 @@
  * token_expired, webhook_received
  */
 import { getPool } from '../db';
+import { logger } from '../../lib/logger';
 
 export type VerificationSubjectType = 'user' | 'business_owner';
 export type VerificationEventType =
@@ -32,6 +33,6 @@ export async function logVerificationEvent(
       [subjectType, subjectId, eventType, payload ? JSON.stringify(payload) : null]
     );
   } catch (err) {
-    console.error('[verification_event] log failed (non-fatal):', err);
+    logger.error('[verification_event] log failed (non-fatal):', err);
   }
 }

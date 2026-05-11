@@ -16,6 +16,7 @@ import crypto from 'crypto';
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { gdprExportHttpUserLimiter } from '../../lib/routeGroupRateLimits';
+import { logger } from '../../lib/logger';
 
 // Dynamically import archiver and fs-extra at call time to avoid top-level import errors
 // if those deps are missing from some environments. Both are already in package.json.
@@ -82,7 +83,7 @@ async function notifyUser(opts: {
       [opts.userId, opts.type, opts.title, opts.body, JSON.stringify(opts.meta), Date.now()],
     );
   } catch (err) {
-    console.error('[gdpr-export] notifyUser failed (non-fatal):', err);
+    logger.error('[gdpr-export] notifyUser failed (non-fatal):', { error: err });
   }
 }
 
@@ -109,7 +110,7 @@ async function runGdprExport(jobId: number): Promise<void> {
     );
   } catch (e: any) {
     if (e?.code === '42P01') {
-      console.warn('[gdpr-export] export_job table missing; skipping job', jobId);
+      logger.warn('[gdpr-export] export_job table missing; skipping job', { jobId });
       return;
     }
     throw e;
@@ -211,9 +212,9 @@ async function runGdprExport(jobId: number): Promise<void> {
       );
     } catch (updateErr: any) {
       if (updateErr?.code === '42P01') {
-        console.warn('[gdpr-export] export_job table missing; cannot update error status for job', jobId);
+        logger.warn('[gdpr-export] export_job table missing; cannot update error status for job', { jobId });
       } else {
-        console.error('[gdpr-export] failed to update error status:', updateErr?.message ?? updateErr);
+        logger.error('[gdpr-export] failed to update error status:', { message: updateErr?.message ?? updateErr });
       }
     }
   }
@@ -263,7 +264,7 @@ router.post('/export/request', async (req: Request, res: Response) => {
     // Kick off async export without blocking the HTTP response
     setImmediate(() => {
       runGdprExport(newJob.id).catch((err) => {
-        console.error('[gdpr-export] runGdprExport error:', err?.message ?? err);
+        logger.error('[gdpr-export] runGdprExport error:', { message: err?.message ?? err });
       });
     });
 
@@ -272,7 +273,7 @@ router.post('/export/request', async (req: Request, res: Response) => {
     if (e?.code === '42P01') {
       return res.status(503).json({ ok: false, error: 'export_job table not available' });
     }
-    console.error('[gdpr-export] POST /export/request error:', e?.message ?? e);
+    logger.error('[gdpr-export] POST /export/request error:', { message: e?.message ?? e });
     return res.status(500).json({ ok: false, error: 'internal error' });
   }
 });
@@ -299,7 +300,7 @@ router.get('/export/status', async (req: Request, res: Response) => {
     if (e?.code === '42P01') {
       return res.status(503).json({ ok: false, error: 'export_job table not available' });
     }
-    console.error('[gdpr-export] GET /export/status error:', e?.message ?? e);
+    logger.error('[gdpr-export] GET /export/status error:', { message: e?.message ?? e });
     return res.status(500).json({ ok: false, error: 'internal error' });
   }
 });

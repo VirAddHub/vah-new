@@ -1,4 +1,5 @@
 import { AZURE_CONFIG, graphCredentialEnvKeys, graphCredsPresent } from '../config/azure';
+import { logger } from './logger';
 
 export async function getGraphToken(): Promise<string> {
     if (!graphCredsPresent()) {
@@ -9,7 +10,7 @@ export async function getGraphToken(): Promise<string> {
     const clientId = AZURE_CONFIG.CLIENT_ID!;
     const clientSecret = AZURE_CONFIG.CLIENT_SECRET!;
 
-    console.log(`[msGraph] Getting token for tenant: ${tenant}, clientId: ${clientId}`);
+    logger.info(`[msGraph] Getting token for tenant: ${tenant}, clientId: ${clientId}`);
 
     const form = new URLSearchParams();
     form.set('client_id', clientId);
@@ -25,13 +26,13 @@ export async function getGraphToken(): Promise<string> {
 
     if (!r.ok) {
         const t = await r.text().catch(() => '');
-        console.error(`[graph token] Failed to get token: ${r.status} ${t}`);
-        console.error('[graph token] Client-credentials sourced from env keys (first set wins):', graphCredentialEnvKeys());
+        logger.error(`[graph token] Failed to get token: ${r.status} ${t}`);
+        logger.error('[graph token] Client-credentials sourced from env keys (first set wins):', graphCredentialEnvKeys());
         throw new Error(`[graph token] ${r.status} ${t}`);
     }
     const j = (await r.json()) as { access_token?: string };
     if (!j.access_token) throw new Error('[graph token] missing access_token');
-    console.log(`[msGraph] Successfully obtained token`);
+    logger.info(`[msGraph] Successfully obtained token`);
     return j.access_token;
 }
 
@@ -40,7 +41,7 @@ export async function fetchGraphFileByUserPath(
     docPath: string, // e.g. "Scanned_Mail/user4_122_HMRC.pdf" (already normalized)
     disposition: 'inline' | 'attachment' = 'inline'
 ): Promise<Response> {
-    console.log(`[msGraph] Fetching file for UPN: ${upn}, path: ${docPath}`);
+    logger.info(`[msGraph] Fetching file for UPN: ${upn}, path: ${docPath}`);
     const token = await getGraphToken();
 
     const safePath = docPath
@@ -52,8 +53,8 @@ export async function fetchGraphFileByUserPath(
         upn
     )}/drive/root:/${safePath}:/content`;
 
-    console.log(`[msGraph] Trying user path: users/${upn}/drive/root:/${docPath}:/content`);
-    console.log(`[msGraph] Graph API URL: ${url}`);
+    logger.info(`[msGraph] Trying user path: users/${upn}/drive/root:/${docPath}:/content`);
+    logger.info(`[msGraph] Graph API URL: ${url}`);
 
     // We follow redirects so we end at the CDN response
     const r = await fetch(url, {
@@ -63,7 +64,7 @@ export async function fetchGraphFileByUserPath(
         cache: 'no-store',
     } as RequestInit);
 
-    console.log(`[msGraph] Graph API response: ${r.status} ${r.statusText}`);
+    logger.info(`[msGraph] Graph API response: ${r.status} ${r.statusText}`);
 
     // If 404 and path is in Scanned_Mail, try Processed_Mail as fallback
     // This handles cases where file was moved but URL wasn't updated in DB
@@ -76,7 +77,7 @@ export async function fetchGraphFileByUserPath(
             .join('/');
         const processedUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/drive/root:/${processedSafePath}:/content`;
 
-        console.log(`[msGraph] File not found in Scanned_Mail, trying Processed_Mail: ${processedPath}`);
+        logger.info(`[msGraph] File not found in Scanned_Mail, trying Processed_Mail: ${processedPath}`);
         const processedR = await fetch(processedUrl, {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
@@ -85,16 +86,16 @@ export async function fetchGraphFileByUserPath(
         } as RequestInit);
 
         if (processedR.ok) {
-            console.log(`[msGraph] Found file in Processed_Mail (fallback succeeded)`);
+            logger.info(`[msGraph] Found file in Processed_Mail (fallback succeeded)`);
             return processedR;
         } else {
-            console.log(`[msGraph] File also not found in Processed_Mail: ${processedR.status}`);
+            logger.info(`[msGraph] File also not found in Processed_Mail: ${processedR.status}`);
         }
     }
 
     // If still 404, try to list the drive root to see what's available
     if (r.status === 404) {
-        console.log(`[msGraph] 404 error - attempting to list drive contents for debugging`);
+        logger.info(`[msGraph] 404 error - attempting to list drive contents for debugging`);
         try {
             const listUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/drive/root/children`;
             const listResp = await fetch(listUrl, {
@@ -105,12 +106,12 @@ export async function fetchGraphFileByUserPath(
 
             if (listResp.ok) {
                 const listData = await listResp.json() as { value?: Array<{ name: string }> };
-                console.log(`[msGraph] Drive root contents:`, listData.value?.map((item: any) => item.name) || 'No items found');
+                logger.info(`[msGraph] Drive root contents:`, listData.value?.map((item: any) => item.name) || 'No items found');
             } else {
-                console.log(`[msGraph] Failed to list drive contents: ${listResp.status}`);
+                logger.info(`[msGraph] Failed to list drive contents: ${listResp.status}`);
             }
         } catch (listErr) {
-            console.log(`[msGraph] Error listing drive contents:`, listErr);
+            logger.info(`[msGraph] Error listing drive contents:`, listErr);
         }
     }
 
@@ -135,10 +136,10 @@ export function extractDocumentsPathFromSharePointUrl(u: string): string | null 
             path = path.replace(/^documents\//i, '');   // -> "Scanned_Mail/…" or "Processed_Mail/…"
         }
 
-        console.log(`[msGraph] Extracted and normalized path: ${path}`);
+        logger.info(`[msGraph] Extracted and normalized path: ${path}`);
         return path || null;
     } catch (err) {
-        console.error(`[msGraph] Error parsing SharePoint URL: ${err}`);
+        logger.error(`[msGraph] Error parsing SharePoint URL: ${err}`);
         return null;
     }
 }
@@ -172,22 +173,22 @@ export function extractUpnFromSharePointUrl(u: string): string | null {
             url.searchParams.get('email') ||
             url.searchParams.get('user');
         if (loginHint) {
-            console.log(`[msGraph] Using login_hint: ${loginHint}`);
+            logger.info(`[msGraph] Using login_hint: ${loginHint}`);
             return decodeURIComponent(loginHint);
         }
 
         // 2) Fallback: derive from /personal/<seg>/...
         const m = url.pathname.match(/\/personal\/([^/]+)/i);
         if (!m) {
-            console.log(`[msGraph] No /personal/ segment found in URL`);
+            logger.info(`[msGraph] No /personal/ segment found in URL`);
             return null;
         }
 
         const upn = upnFromPersonalSegment(m[1]);
-        console.log(`[msGraph] Converted personal segment '${m[1]}' to UPN: ${upn}`);
+        logger.info(`[msGraph] Converted personal segment '${m[1]}' to UPN: ${upn}`);
         return upn;
     } catch (err) {
-        console.error(`[msGraph] Error extracting UPN from SharePoint URL: ${err}`);
+        logger.error(`[msGraph] Error extracting UPN from SharePoint URL: ${err}`);
         return null;
     }
 }
