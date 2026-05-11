@@ -7,8 +7,8 @@ const _SITE_PATH = (process.env.GRAPH_SITE_PATH || "").replace(/\/+$/, "");
 const SITE_PATH = decodeURIComponent(_SITE_PATH);
 const DEBUG = process.env.GRAPH_DEBUG === "1";
 
-function log(...args: any[]) {
-    if (DEBUG) logger.info(...args);
+function log(msg: string, ...rest: unknown[]) {
+    if (DEBUG) logger.info(msg, ...rest);
 }
 
 export function extractUPNFromSitePath(sitePath: string): string {
