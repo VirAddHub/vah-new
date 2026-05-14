@@ -1,5 +1,8 @@
 import { api, auth } from './client';
 
+// Intentionally conditional: these tests hit a live server and require a real auth token.
+// To run: AUTH_TOKEN=<valid_jwt> npx vitest run tests/e2e/profile-patch.test.ts
+// They are skipped in CI unless AUTH_TOKEN is provided in the environment.
 const maybe = (process.env.AUTH_TOKEN ? describe : describe.skip);
 
 maybe('PATCH /api/profile - Safety Guarantees', () => {
