@@ -28,12 +28,22 @@ export function getOptionalJwtAuthorizationHeader(): Record<string, string> {
   return {};
 }
 
+/**
+ * Single source of truth for which role strings grant admin access.
+ * Import this wherever you need to check whether a role is admin-level —
+ * so adding a new privileged role never requires hunting down scattered string comparisons.
+ */
+export function isAdminRole(role?: string | null): boolean {
+  if (typeof role !== "string") return false;
+  const r = role.toLowerCase();
+  return r === "admin" || r === "owner";
+}
+
 /** Aligns with backend DB fields returned by GET /api/auth/whoami (via BFF). */
 export function isServerVerifiedAdmin(user: WhoamiUser | null | undefined): boolean {
   if (!user || typeof user !== "object") return false;
   const adminFlag = user.is_admin === true || user.is_admin === 1;
-  const role = typeof user.role === "string" ? user.role.toLowerCase() : "";
-  return adminFlag || role === "admin";
+  return adminFlag || isAdminRole(user.role as string | null | undefined);
 }
 
 function extractUserFromWhoamiJson(json: unknown): WhoamiUser | null {

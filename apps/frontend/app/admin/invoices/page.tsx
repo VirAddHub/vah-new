@@ -54,7 +54,7 @@ export default function AdminInvoicesPage() {
 
   useEffect(() => {
     if (adminStatus === "unauthenticated") router.replace("/admin/login");
-    else if (adminStatus === "forbidden") router.replace("/dashboard");
+    else if (adminStatus === "forbidden") router.replace("/admin/login");
   }, [adminStatus, router]);
 
   const loadingAuth = adminStatus === "loading";

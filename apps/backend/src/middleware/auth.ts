@@ -5,6 +5,7 @@ import { SESSION_IDLE_TIMEOUT_SECONDS, SESSION_REFRESH_THRESHOLD_SECONDS } from 
 import { logger } from '../lib/logger';
 import { sessionCookieSecurityOptions } from '../lib/cookies';
 import { safeAccessPath } from '../lib/accessLog';
+import { isAdminRole } from '../lib/isAdminRole';
 
 function errorMessage(e: unknown): string {
     if (e && typeof e === 'object' && 'message' in e) {
@@ -87,6 +88,8 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
         id: userId,
         email: payload.email || '',
         is_admin: payload.is_admin,
+        // Include role from JWT so requireAdmin can check it without a DB round-trip
+        role: typeof (payload as any).role === 'string' ? (payload as any).role : undefined,
     };
     req.user = user;
     if (process.env.NODE_ENV !== 'production') {
@@ -170,12 +173,13 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 /**
  * Require admin middleware
  * Returns 401 if not authenticated, 403 if not admin
+ * Accepts is_admin flag OR an admin-level role string (see isAdminRole)
  */
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
     if (!req.user?.id) {
         return res.status(401).json({ ok: false, error: 'unauthenticated' });
     }
-    if (!req.user?.is_admin) {
+    if (!Boolean(req.user?.is_admin) && !isAdminRole(req.user?.role)) {
         return res.status(403).json({ ok: false, error: 'forbidden' });
     }
     next();

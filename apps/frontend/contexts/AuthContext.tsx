@@ -8,6 +8,7 @@ import { tokenManager } from '../lib/token-manager';
 import { api as apiClient } from '../lib/http';
 import type { ApiUser } from '../types/user';
 import type { User as ClientUser } from '../lib/client-auth';
+import { isAdminRole } from '../lib/verifiedAdminSession';
 
 type AuthStatus = 'loading' | 'authed' | 'guest';
 
@@ -81,9 +82,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const ranOnceRef = useRef(false);
 
     const hasUser = !!user;
-    const isAdmin =
-        Boolean(user?.is_admin) ||
-        (typeof user?.role === "string" && user.role.toLowerCase() === "admin");
+    const isAdmin = Boolean(user?.is_admin) || isAdminRole(user?.role as string | null | undefined);
 
     // Initialize auth state on mount - ONLY ONCE
     useEffect(() => {
@@ -145,7 +144,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     first_name: userData.first_name,
                     last_name: userData.last_name,
                     is_admin: !!userData.is_admin,
-                    role: userData.role === 'admin' ? 'admin' : 'user',
+                    role: isAdminRole(userData.role) ? 'admin' : 'user',
                     plan_status: userData.plan_status,
                     kyc_status: userData.kyc_status,
                 };
@@ -349,7 +348,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 first_name: raw.first_name,
                 last_name: raw.last_name,
                 is_admin: !!raw.is_admin,
-                role: raw.role === 'admin' ? 'admin' : 'user',
+                role: isAdminRole(raw.role) ? 'admin' : 'user',
                 plan_status: raw.plan_status,
                 kyc_status: raw.kyc_status,
             };

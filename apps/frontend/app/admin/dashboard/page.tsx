@@ -16,7 +16,7 @@ export default function AdminDashboardPage() {
             return;
         }
         if (status === "forbidden") {
-            router.replace("/dashboard");
+            router.replace("/admin/login");
         }
     }, [status, router]);
 

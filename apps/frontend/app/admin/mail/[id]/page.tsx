@@ -39,7 +39,10 @@ export default function AdminMailDetailPage() {
 
   useEffect(() => {
     if (adminStatus === "unauthenticated") router.replace("/admin/login");
-    else if (adminStatus === "forbidden") router.replace("/dashboard");
+    // Redirect to admin login (not /dashboard) so the admin layout — not the customer
+    // dashboard — is shown. /dashboard is middleware-redirected to /mail which loads the
+    // customer inbox layout, which is exactly the bug we are fixing.
+    else if (adminStatus === "forbidden") router.replace("/admin/login");
   }, [adminStatus, router]);
 
   const loadingAuth = adminStatus === "loading";

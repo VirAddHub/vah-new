@@ -11,7 +11,7 @@ export default function AdminForwardingPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/admin/login");
-    else if (status === "forbidden") router.replace("/dashboard");
+    else if (status === "forbidden") router.replace("/admin/login");
   }, [status, router]);
 
   if (status === "loading") {

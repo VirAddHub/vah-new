@@ -1,5 +1,6 @@
 // src/lib/authz.ts
 import type { RequestHandler } from "express";
+import { isAdminRole } from './isAdminRole';
 
 // Public-aware wrapper so any router using requireAuth won't guard public endpoints.
 // IMPORTANT: use originalUrl (full mount path), not req.path (router-relative).
@@ -26,6 +27,7 @@ export const requireAuth: RequestHandler = (req: any, res, next) => {
 
 export const requireAdmin: RequestHandler = (req: any, res, next) => {
     if (!req.session?.user) return res.status(401).json({ ok: false, error: "unauthorized" });
-    if (!req.session.user.is_admin) return res.status(403).json({ ok: false, error: "forbidden" });
+    const u = req.session.user;
+    if (!u.is_admin && !isAdminRole(u.role)) return res.status(403).json({ ok: false, error: "forbidden" });
     next();
 };

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendOrigin } from './backendOrigin';
 import { isBackendOriginConfigError } from './isBackendOriginError';
+import { isAdminRole } from '@/lib/verifiedAdminSession';
 
 function isDbBackedAdmin(user: { is_admin?: unknown; role?: unknown } | undefined): boolean {
   if (!user || typeof user !== 'object') return false;
   const adminFlag = user.is_admin === true || user.is_admin === 1;
-  const role = typeof user.role === 'string' ? user.role.toLowerCase() : '';
-  return adminFlag || role === 'admin';
+  return adminFlag || isAdminRole(typeof user.role === 'string' ? user.role : null);
 }
 
 /**

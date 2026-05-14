@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getSessionFromCookies } from '@/lib/server/session';
 import { LoginPageClient } from './LoginPageClient';
+import { isAdminRole } from '@/lib/verifiedAdminSession';
 
 export const metadata: Metadata = {
   title: 'Login | VirtualAddressHub',
@@ -31,7 +32,7 @@ export default async function LoginPage() {
 
   if (session.authenticated && session.token) {
     const payload = decodeJwtPayload(session.token);
-    const isAdmin = payload?.is_admin === true || payload?.role === 'admin';
+    const isAdmin = payload?.is_admin === true || isAdminRole(payload?.role as string | null | undefined);
     redirect(isAdmin ? '/admin/dashboard' : '/mail');
   }
 

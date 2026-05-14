@@ -59,7 +59,7 @@ export default function FilenameGeneratorPage() {
 
   useEffect(() => {
     if (adminStatus === "unauthenticated") router.replace("/admin/login");
-    else if (adminStatus === "forbidden") router.replace("/dashboard");
+    else if (adminStatus === "forbidden") router.replace("/admin/login");
   }, [adminStatus, router]);
 
   const [query, setQuery] = useState("");

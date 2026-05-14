@@ -30,6 +30,7 @@ import { setToken, clearToken, getToken, setStoredUser } from './token-manager';
 import { addCSRFHeader } from './csrf-protection';
 import type { ApiResponse as HttpApiResponse } from './http';
 import type { ApiResponse } from '../types/api';
+import { isAdminRole } from './verifiedAdminSession';
 import { isOk } from '../types/api';
 
 // User interface is now imported from ../types/user
@@ -166,7 +167,7 @@ function normalizeUserPayload(input: unknown): User | null {
         id: id,
         email,
         name: u.name || null,
-        is_admin: u.is_admin === true || u.role === 'admin',
+        is_admin: u.is_admin === true || isAdminRole(u.role),
         role: u.role || (u.is_admin ? 'admin' : 'user'),
         kyc_status: u.kyc_status || null,
     };
@@ -434,7 +435,7 @@ async function parseResponseSafe(res: Response): Promise<any> {
 // Normalize backend payload to our strict User type
 function normalizeUser(input: any): User {
     const rawRole = typeof input?.role === 'string' ? input.role.toLowerCase() : undefined;
-    const role: Role = rawRole === 'admin' ? 'admin' : 'user';
+    const role: Role = isAdminRole(rawRole) ? 'admin' : 'user';
 
     return {
         id: String(input?.user_id ?? input?.id ?? ''),

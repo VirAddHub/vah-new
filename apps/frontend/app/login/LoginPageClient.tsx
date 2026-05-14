@@ -11,6 +11,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { mutate } from 'swr';
 import { DASHBOARD_BOOTSTRAP_KEY } from '@/lib/swrKeys';
+import { isAdminRole } from '@/lib/verifiedAdminSession';
 
 type LoginBrandVariant = 'default' | 'onDark';
 
@@ -153,7 +154,7 @@ export function LoginPageClient() {
         const authenticated = data?.ok === true && data?.data?.user != null;
         if (!cancelled && authenticated) {
           const user = data.data.user;
-          const isAdmin = user?.is_admin === true || user?.role === 'admin';
+          const isAdmin = user?.is_admin === true || isAdminRole(user?.role);
           router.replace(isAdmin ? '/admin/dashboard' : '/mail');
         }
       } catch {
@@ -315,7 +316,7 @@ export function LoginPageClient() {
       }
       const safeNext = isSafeNextUrl(rawNext) ? rawNext : null;
 
-      const isAdmin = user?.is_admin || user?.role === 'admin';
+      const isAdmin = user?.is_admin || isAdminRole(user?.role);
       if (safeNext) {
         router.replace(safeNext);
       } else if (isAdmin) {

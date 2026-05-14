@@ -1,6 +1,7 @@
 'use client';
 
 import { tokenManager } from './token-manager';
+import { isAdminRole } from './verifiedAdminSession';
 // import { isOk, ApiErr } from './apiClient'; // TODO: implement usage
 
 // Client-side Auth Manager (no React hooks, just client-side utilities)
@@ -37,7 +38,7 @@ export function isApiUser(obj: any): obj is ApiUser {
 
 // Map API user -> Client user (storage)
 export function toClientUser(u: ApiUser): User {
-  const role = (u.role === 'admin' || u.role === 'user') ? (u.role as 'admin' | 'user') : undefined;
+  const role: 'admin' | 'user' | undefined = isAdminRole(u.role) ? 'admin' : u.role === 'user' ? 'user' : undefined;
   return {
     id: u.user_id,
     email: u.email,
@@ -71,7 +72,7 @@ export class ClientAuthManager {
   }
 
   isAdmin(): boolean {
-    return this.user?.is_admin || this.user?.role === 'admin' || false;
+    return Boolean(this.user?.is_admin) || isAdminRole(this.user?.role) || false;
   }
 
   setUser(user: User) {
@@ -119,7 +120,7 @@ export class ClientAuthManager {
         first_name: raw.first_name,
         last_name: raw.last_name,
         is_admin: !!raw.is_admin,
-        role: raw.role === 'admin' ? 'admin' : 'user',
+        role: isAdminRole(raw.role) ? 'admin' : 'user',
         kyc_status: raw.kyc_status,
       };
 
