@@ -13,6 +13,8 @@ interface CreatableTagSelectProps {
   onValueChange: (value: string | null) => void;
   getTagLabel: (tag: string | null) => string;
   className?: string;
+  /** Override classes applied directly to the trigger Button (merged with defaults). */
+  triggerClassName?: string;
   /** Small corner-style trigger for narrow layouts (e.g. mobile mail rows). */
   compact?: boolean;
 }
@@ -39,6 +41,7 @@ export function CreatableTagSelect({
   onValueChange,
   getTagLabel,
   className,
+  triggerClassName,
   compact = false,
 }: CreatableTagSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -145,7 +148,8 @@ export function CreatableTagSelect({
           'focus-visible:ring-1 focus-visible:ring-primary',
           compact
             ? 'h-8 w-auto shrink-0 px-2 gap-1 rounded-md bg-muted/30 hover:bg-muted/50 text-caption font-medium text-muted-foreground hover:text-foreground border-border/80'
-            : 'h-9 w-full min-w-0 sm:w-[140px] max-w-full text-body-sm bg-card hover:bg-muted/50'
+            : 'h-9 w-full min-w-0 sm:w-[140px] max-w-full text-body-sm bg-card hover:bg-muted/50',
+          triggerClassName
         )}
       >
         <div

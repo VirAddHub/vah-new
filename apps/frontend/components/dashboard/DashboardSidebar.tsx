@@ -126,7 +126,7 @@ export function DashboardSidebar() {
     const isMailActive = pathname === '/mail' || pathname === '/mail/';
 
     const SidebarContent = () => (
-        <aside className="hidden h-full min-h-0 w-[240px] shrink-0 flex-col border-r border-border bg-card lg:flex">
+        <aside className="hidden h-full min-h-0 w-[240px] min-w-[240px] shrink-0 flex-col border-r border-border bg-card lg:flex">
             <div className="flex h-full min-h-0 w-full flex-col">
                 {/* Nav area - scrollable if needed */}
                 <nav className="flex-1 overflow-y-auto px-4 py-4">
@@ -137,13 +137,13 @@ export function DashboardSidebar() {
                         <button
                                 onClick={handleMailClick}
                             className={cn(
-                                "flex items-center gap-3 px-3 py-2 rounded-lg text-body-sm font-medium transition-colors text-left w-full",
+                                "flex items-center gap-3 px-4 py-2.5 text-sm font-normal transition-colors text-left w-full border-l-2",
                                 isMailActive
-                                    ? "bg-primary/10 text-primary"
-                                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                                    ? "border-l-[#1a6b3c] text-foreground bg-muted/50 [&_svg]:opacity-100"
+                                    : "border-l-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                             )}
                         >
-                            <Mail className="w-5 h-5" strokeWidth={2} />
+                            <Mail className="w-5 h-5 opacity-60" strokeWidth={1.5} />
                             Mail Inbox
                         </button>
                     </div>
@@ -151,8 +151,8 @@ export function DashboardSidebar() {
 
                                     {/* Account Section */}
                                 <div className="mt-4 pt-4 border-t border-border">
-                                        <div className="px-3 mb-2">
-                                            <h3 className="text-caption font-medium text-muted-foreground uppercase tracking-wider">
+                                        <div className="px-4 pt-4 pb-1.5">
+                                            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-[0.07em]">
                                                 Account
                                             </h3>
                                         </div>
@@ -167,13 +167,13 @@ export function DashboardSidebar() {
                                                         href={item.href}
                                                         onClick={() => setIsMobileSidebarOpen(false)}
                                                         className={cn(
-                                                            "flex items-center gap-3 px-3 py-2 rounded-lg text-body-sm font-medium transition-colors",
+                                                            "flex items-center gap-3 px-4 py-2.5 text-sm font-normal transition-colors border-l-2",
                                                             active
-                                                                ? "bg-primary/10 text-primary"
-                                                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                                                                ? "border-l-[#1a6b3c] text-foreground bg-muted/40"
+                                                                : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                                                         )}
                                                     >
-                                                        <Icon className="w-5 h-5 shrink-0" strokeWidth={2} />
+                                                        <Icon className="w-5 h-5 shrink-0 opacity-60" strokeWidth={1.5} />
                                                         <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                                                             <span className="truncate">{item.label}</span>
                                                             {item.href === '/account/verification' && verificationNavRequired && (
@@ -190,8 +190,8 @@ export function DashboardSidebar() {
 
                                     {/* Settings Section */}
                                     <div className="mt-4 pt-4 border-t border-border">
-                                        <div className="px-3 mb-2">
-                                            <h3 className="text-caption font-medium text-muted-foreground uppercase tracking-wider">
+                                        <div className="px-4 pt-4 pb-1.5">
+                                            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                                 Settings
                                             </h3>
                                         </div>
@@ -206,13 +206,13 @@ export function DashboardSidebar() {
                                                         href={item.href}
                                                         onClick={() => setIsMobileSidebarOpen(false)}
                                                         className={cn(
-                                                            "flex items-center gap-3 px-3 py-2 rounded-lg text-body-sm font-medium transition-colors",
+                                                            "flex items-center gap-3 px-4 py-2.5 text-sm font-normal transition-colors border-l-2",
                                                             active
-                                                                ? "bg-primary/10 text-primary"
-                                                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                                                                ? "border-l-[#1a6b3c] text-foreground bg-muted/40"
+                                                                : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                                                         )}
                                                     >
-                                                        <Icon className="w-5 h-5" strokeWidth={2} />
+                                                        <Icon className="w-5 h-5 shrink-0 opacity-60" strokeWidth={1.5} />
                                                         {item.label}
                                                     </Link>
                                                 );
@@ -322,7 +322,7 @@ export function DashboardSidebar() {
                         />
                     <div
                         id="mobile-sidebar-drawer"
-                        className="fixed left-0 top-0 h-[100dvh] z-50 lg:hidden w-[280px] max-w-[85vw]"
+                        className="fixed left-0 top-0 h-[100dvh] z-50 lg:hidden w-[240px] max-w-[85vw]"
                         role="dialog"
                         aria-modal="true"
                         aria-label="Navigation Menu"
@@ -352,13 +352,13 @@ export function DashboardSidebar() {
                                                     setIsMobileSidebarOpen(false);
                                                 }}
                                                 className={cn(
-                                                    "flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-body-sm font-medium transition-colors text-left w-full touch-manipulation",
+                                                    "flex items-center gap-3 px-3 py-3 min-h-[44px] text-[12.5px] font-normal transition-colors text-left w-full touch-manipulation border-l-2",
                                                     isMailActive
-                                                        ? "bg-primary/10 text-primary"
-                                                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                                                        ? "border-l-[#1a6b3c] text-foreground bg-muted/40"
+                                                        : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                                                 )}
                                             >
-                                                <Mail className="w-5 h-5 shrink-0" strokeWidth={2} />
+                                                <Mail className="w-4 h-4 shrink-0 opacity-60" strokeWidth={1.5} />
                                                 Mail Inbox
                                             </button>
                                         </div>
@@ -366,8 +366,8 @@ export function DashboardSidebar() {
 
                                     {/* Account Section */}
                                     <div className="mt-2 pt-4 border-t border-border">
-                                        <div className="px-3 mb-2">
-                                            <h3 className="text-caption font-medium text-muted-foreground uppercase tracking-wider">
+                                        <div className="px-4 pt-4 pb-1.5">
+                                            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                                 Account
                                             </h3>
                                         </div>
@@ -381,13 +381,13 @@ export function DashboardSidebar() {
                                                         href={item.href}
                                                         onClick={() => setIsMobileSidebarOpen(false)}
                                                         className={cn(
-                                                            "flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-body-sm font-medium transition-colors touch-manipulation",
+                                                            "flex items-center gap-3 px-3 py-3 min-h-[44px] text-[12.5px] font-normal transition-colors touch-manipulation border-l-2",
                                                             active
-                                                                ? "bg-primary/10 text-primary"
-                                                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                                                                ? "border-l-[#1a6b3c] text-foreground bg-muted/40"
+                                                                : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                                                         )}
                                                     >
-                                                        <Icon className="w-5 h-5 shrink-0" strokeWidth={2} />
+                                                        <Icon className="w-4 h-4 shrink-0 opacity-60" strokeWidth={1.5} />
                                                         <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                                                             <span className="truncate">{item.label}</span>
                                                             {item.href === '/account/verification' && verificationNavRequired && (
@@ -404,8 +404,8 @@ export function DashboardSidebar() {
 
                                     {/* Settings Section */}
                                     <div className="mt-2 pt-4 border-t border-border">
-                                        <div className="px-3 mb-2">
-                                            <h3 className="text-caption font-medium text-muted-foreground uppercase tracking-wider">
+                                        <div className="px-4 pt-4 pb-1.5">
+                                            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                                 Settings
                                             </h3>
                                         </div>
@@ -419,13 +419,13 @@ export function DashboardSidebar() {
                                                         href={item.href}
                                                         onClick={() => setIsMobileSidebarOpen(false)}
                                                         className={cn(
-                                                            "flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-body-sm font-medium transition-colors touch-manipulation",
+                                                            "flex items-center gap-3 px-3 py-3 min-h-[44px] text-[12.5px] font-normal transition-colors touch-manipulation border-l-2",
                                                             active
-                                                                ? "bg-primary/10 text-primary"
-                                                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                                                                ? "border-l-[#1a6b3c] text-foreground bg-muted/40"
+                                                                : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                                                         )}
                                                     >
-                                                        <Icon className="w-5 h-5 shrink-0" strokeWidth={2} />
+                                                        <Icon className="w-4 h-4 shrink-0 opacity-60" strokeWidth={1.5} />
                                                         {item.label}
                                                     </Link>
                                                 );
@@ -454,7 +454,7 @@ export function DashboardSidebar() {
                                 >
                                     <button
                                         onClick={handleLogout}
-                                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-body-sm font-medium transition-colors text-left w-full text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-normal transition-colors text-left w-full text-muted-foreground hover:text-foreground hover:bg-muted/40"
                                     >
                                         <LogOut className="w-5 h-5" strokeWidth={2} />
                                         Sign out

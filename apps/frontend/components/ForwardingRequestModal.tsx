@@ -15,7 +15,7 @@ const formatSubjectForDisplay = (subject: string): string => {
   if (!subject) return "No subject";
 
   // Remove technical prefixes and clean up the display
-  let cleanSubject = subject
+  const cleanSubject = subject
     .replace(/^user\d+_\d+_/, '') // Remove user4_222222222_ prefix
     .replace(/\.pdf$/i, '') // Remove .pdf extension
     .replace(/_/g, ' ') // Replace underscores with spaces

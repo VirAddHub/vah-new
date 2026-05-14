@@ -59,16 +59,62 @@ function applySecurityHeaders(response: NextResponse, _request: NextRequest) {
     );
   }
 
-  // L-2: Content Security Policy
+  // M-3: Content Security Policy
+  //
+  // Key decisions:
+  //   - 'unsafe-inline' in script-src is kept intentionally: Next.js 15 App Router injects
+  //     inline <script> tags for hydration data (e.g. __NEXT_DATA__). Removing it requires
+  //     per-request nonce generation via generateBuildId + middleware nonce injection, which
+  //     is a separate refactor.
+  //     TODO(M-3-nonce): replace 'unsafe-inline' with 'nonce-{nonce}' once nonce plumbing
+  //     is wired through next/headers and all inline event handlers are removed.
+  //
+  //   - 'unsafe-eval' is restricted to development only. Next.js HMR / fast-refresh needs it
+  //     in dev; production builds do not. This removes the eval-based XSS vector in prod.
+  //
+  //   - Stripe domains are added to fix a pre-existing defect: the prior CSP omitted
+  //     js.stripe.com entirely, silently blocking the payment flow on every browser.
+  //
+  //   - worker-src 'self' blob: is required by Stripe.js, which spawns web workers from
+  //     blob: URLs for fraud detection and 3D Secure processing.
+  //
+  //   - object-src 'none' explicitly blocks all plugin content (Flash, Java applets, etc.).
+  //
+  //   - font-src is omitted because next/font/google self-hosts fonts under /_next/static/
+  //     (covered by 'self'). The fonts.googleapis.com preconnect hints in SEO.tsx are just
+  //     hints; they do not load external fonts at runtime.
+
+  const isDev = process.env.NODE_ENV !== 'production';
+
   response.headers.set(
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://in.sumsub.com https://static.sumsub.com",
+
+      // script-src: 'unsafe-eval' only in dev (Next.js HMR); never in production.
+      // Stripe.js must be loaded from js.stripe.com — bundling it breaks PCI DSS scope.
+      isDev
+        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://in.sumsub.com https://static.sumsub.com"
+        : "script-src 'self' 'unsafe-inline' https://js.stripe.com https://in.sumsub.com https://static.sumsub.com",
+
+      // style-src: googleapis.com for any direct CSS fetches; 'unsafe-inline' for CSS-in-JS / Tailwind.
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "img-src 'self' data: https://res.cloudinary.com https://images.unsplash.com",
-      "connect-src 'self' https://api.sumsub.com https://api.virtualaddresshub.co.uk",
-      "frame-src https://in.sumsub.com",
+
+      // img-src: Stripe card-brand icons and payment UI images come from *.stripe.com.
+      "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://*.stripe.com",
+
+      // connect-src: Stripe API + telemetry endpoints required by Stripe.js for 3DS, fraud, error reporting.
+      "connect-src 'self' https://api.stripe.com https://errors.stripe.com https://m.stripe.network https://m.stripe.com https://api.sumsub.com https://api.virtualaddresshub.co.uk",
+
+      // frame-src: Stripe Embedded Checkout and payment iframes; Sumsub liveness iframes.
+      "frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://in.sumsub.com",
+
+      // worker-src: Stripe.js spawns blob: web workers for fraud detection and 3DS.
+      "worker-src 'self' blob:",
+
+      // object-src: block all plugin content (Flash, Java, ActiveX).
+      "object-src 'none'",
+
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

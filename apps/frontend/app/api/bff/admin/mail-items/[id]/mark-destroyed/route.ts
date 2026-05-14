@@ -24,7 +24,7 @@ export async function POST(
     const url = `${backend}/api/admin/mail-items/${encodeURIComponent(id)}/mark-destroyed`;
 
     let cookieHeader = req.headers.get("cookie") || req.headers.get("Cookie") || "";
-    let authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
 
     const sessionCookie = req.cookies.get("vah_session");
     const roleCookie = req.cookies.get("vah_role");

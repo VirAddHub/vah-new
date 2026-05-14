@@ -15,28 +15,28 @@ export interface ButtonProps
 }
 
 const base =
-    "inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none select-none ring-offset-background"
+    "inline-flex items-center justify-center whitespace-nowrap rounded-[3px] font-normal transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none select-none ring-offset-background"
 
 const sizes: Record<Size, string> = {
-    sm: "h-9 px-3 text-sm",
-    md: "h-11 px-4 text-sm",
-    lg: "h-14 px-7 text-base", // ~56px tall for premium CTA presence
-    icon: "h-11 w-11",
+    sm: "h-7 px-2.5 text-[12px]",
+    md: "h-8 px-3 text-[13px]",
+    lg: "h-10 px-5 text-[13px]",
+    icon: "h-8 w-8",
 }
 
 const variants: Record<Variant, string> = {
     primary:
-        "bg-primary !text-white hover:bg-primary/90 hover:!text-white focus-visible:ring-primary [&_svg]:!text-white",
+        "bg-[#1a6b3c] !text-white hover:bg-[#155a32] hover:!text-white focus-visible:ring-[#1a6b3c] [&_svg]:!text-white",
     secondary:
         "bg-neutral-900 text-white hover:bg-neutral-800 focus-visible:ring-neutral-900",
     ghost:
-        "bg-transparent text-neutral-900 hover:bg-neutral-100 focus-visible:ring-neutral-400",
+        "bg-transparent text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:ring-neutral-300",
     outline:
-        "bg-transparent text-neutral-900 border border-neutral-200 hover:bg-neutral-50 focus-visible:ring-neutral-400",
+        "bg-transparent text-neutral-700 border border-[0.5px] border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 focus-visible:ring-neutral-300",
     destructive:
         "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600",
     link:
-        "bg-transparent text-primary underline-offset-4 hover:underline focus-visible:ring-primary",
+        "bg-transparent text-[#1a6b3c] underline-offset-4 hover:underline focus-visible:ring-[#1a6b3c]",
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
