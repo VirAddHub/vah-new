@@ -25,6 +25,10 @@ module.exports = {
                 sans: ['var(--font-poppins)', 'system-ui', 'sans-serif'],
                 playfair: ['var(--font-playfair)', 'Georgia', 'serif'],
                 poppins: ['var(--font-poppins)', 'system-ui', 'sans-serif'],
+                // MIX homepage editorial fonts
+                newsreader: ['var(--font-newsreader)', 'Georgia', 'serif'],
+                dmsans: ['var(--font-dmsans)', 'system-ui', 'sans-serif'],
+                plex: ['var(--font-plex)', 'ui-monospace', 'monospace'],
             },
             screens: {
                 xs: "360px",
@@ -93,6 +97,20 @@ module.exports = {
                 brand: {
                     DEFAULT: "hsl(var(--primary))",
                     fg: "hsl(var(--primary-foreground))",
+                },
+                // ── MIX homepage editorial palette ──
+                mix: {
+                    paper: '#F2EBDD',
+                    'paper-deep': '#E8E0CE',
+                    'paper-light': '#FBF6E9',
+                    ink: '#1F1A14',
+                    ink2: '#3D362C',
+                    muted: '#7A6F5E',
+                    rule: '#D7CDB6',
+                    green: '#1F4934',
+                    'green-deep': '#173628',
+                    stamp: '#B9352A',
+                    warn: '#A88438',
                 },
                 success: {
                     DEFAULT: "hsl(var(--success))",

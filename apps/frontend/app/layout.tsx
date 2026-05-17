@@ -1,7 +1,7 @@
 // app/layout.tsx
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import { playfair, poppins } from '@/lib/fonts';
+import { playfair, poppins, newsreader, dmsans, plex } from '@/lib/fonts';
 import { ToastRoot } from '@/components/ToastRoot';
 import { SWRProvider } from '@/components/SWRProvider';
 import { Providers } from '@/components/Providers';
@@ -89,7 +89,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="en" className={`${playfair.variable} ${poppins.variable}`} suppressHydrationWarning>
+        <html lang="en" className={`${playfair.variable} ${poppins.variable} ${newsreader.variable} ${dmsans.variable} ${plex.variable}`} suppressHydrationWarning>
             <head>
                 <meta name="format-detection" content="telephone=no" />
                 <link rel="icon" href="/favicon.ico" sizes="any" />

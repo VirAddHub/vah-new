@@ -1,141 +1,181 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
-import { VAHLogo } from "./VAHLogo";
+import { VAHLogo } from './VAHLogo';
 
 interface MarketingNavigationProps {
-    onNavigate?: (page: string) => void;
+  onNavigate?: (page: string) => void;
 }
 
-/**
- * Marketing Navigation Header
- * 
- * Design principles:
- * - Minimal, clean, precise
- * - Subtle backdrop blur for depth
- * - Consistent spacing (16px/24px)
- * - Restrained hover states
- * - No visual noise
- */
 export function MarketingNavigation({ onNavigate }: MarketingNavigationProps) {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const router = useRouter();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const router = useRouter();
 
-    const navItems = [
-        { label: 'Pricing', page: 'pricing' },
-        { label: 'Blog', page: 'blog' },
-        { label: 'Help Centre', page: 'help' },
-    ];
+  // Prevent body scroll when overlay is open
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isMenuOpen]);
 
-    /** Real Next.js routes so links work from the homepage SPA and from marketing layouts. */
-    const handleNavClick = (page: string) => {
-        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-        setIsMenuOpen(false);
+  // Desktop nav — all links
+  const desktopLinks = [
+    { label: 'Pricing',      anchor: '#pricing' },
+    { label: 'How it works', anchor: '#how'     },
+    { label: 'Your mail',    anchor: '#mail'    },
+    { label: 'FAQ',          anchor: '#faq'     },
+    { label: 'Help',         page:   'help'     },
+  ];
 
-        const path =
-            page === 'home'
-                ? '/'
-                : page === 'kyc' || page === 'kyc-policy'
-                  ? '/kyc'
-                  : `/${page}`;
-        router.push(path);
-    };
+  // Mobile overlay — only essential links, no anchor-only scroll items
+  const mobileLinks = [
+    { label: 'Pricing',  anchor: '#pricing' },
+    { label: 'Help',     page:   'help'     },
+    { label: 'Blog',     page:   'blog'     },
+    { label: 'Contact',  page:   'contact'  },
+  ];
 
-    return (
-        <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-sm border-b border-border">
-            <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                <div className="relative isolate flex h-16 items-center justify-between gap-3 min-w-0">
-                    {/* Logo: visible on all breakpoints; tighter on phone, full height from sm */}
-                    <div className="flex min-h-10 min-w-0 max-w-[min(100%,12rem)] flex-1 shrink items-center sm:min-w-[180px] sm:max-w-none sm:flex-none sm:min-h-[50px]">
-                        <VAHLogo
-                            onNavigate={onNavigate}
-                            size="lg"
-                            className="min-w-0 max-w-full"
-                            imgClassName="!h-9 !max-h-9 w-auto max-w-full object-contain object-left sm:!h-[50px] sm:!max-h-[50px] sm:max-w-[200px]"
-                        />
-                    </div>
+  const handleNavClick = (item: { anchor?: string; page?: string }) => {
+    setIsMenuOpen(false);
+    if (item.anchor) {
+      const el = document.querySelector(item.anchor);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        router.push(`/${item.anchor}`);
+      }
+      return;
+    }
+    if (item.page) {
+      router.push(`/${item.page}`);
+    }
+  };
 
-                    {/* Desktop Navigation — keep above page chrome for hit-testing */}
-                    <nav aria-label="Main navigation" className="relative z-10 hidden md:flex items-center gap-8">
-                        {navItems.map((item) => (
-                            <button
-                                key={item.label}
-                                onClick={() => handleNavClick(item.page)}
-                                className="text-body-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                                {item.label}
-                            </button>
-                        ))}
-                    </nav>
+  return (
+    <>
+      <header className="sticky top-0 z-50 bg-mix-paper border-b border-mix-rule">
+        <div className="flex items-center justify-between px-5 sm:px-10 lg:px-14 h-16 sm:h-20">
 
-                    {/* Desktop Auth — Link avoids client-router edge cases and improves click target */}
-                    <div className="relative z-10 hidden md:flex items-center gap-4">
-                        <Link
-                            href="/login"
-                            className="text-body-sm font-medium text-foreground hover:text-primary transition-colors inline-flex min-h-9 min-w-[44px] items-center justify-center rounded-sm px-2 -mx-2"
-                        >
-                            Log in
-                        </Link>
-                        <Button
-                            onClick={() => handleNavClick('signup')}
-                            size="sm"
-                            className="px-4 h-9"
-                        >
-                            Get started
-                        </Button>
-                    </div>
+          {/* Logo */}
+          <VAHLogo onNavigate={onNavigate} size="lg" />
 
-                    {/* Mobile Menu Button */}
-                    <button
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="md:hidden p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-                    >
-                        {isMenuOpen ? (
-                            <X className="h-5 w-5" strokeWidth={2} />
-                        ) : (
-                            <Menu className="h-5 w-5" strokeWidth={2} />
-                        )}
-                    </button>
-                </div>
-            </div>
-
-            {/* Mobile Menu */}
-            {isMenuOpen && (
-                <div className="md:hidden border-t border-border bg-card">
-                    <div className="px-6 py-6 space-y-1">
-                        {navItems.map((item) => (
-                            <button
-                                key={item.label}
-                                onClick={() => handleNavClick(item.page)}
-                                className="block w-full text-left px-3 py-2 text-body-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-colors"
-                            >
-                                {item.label}
-                            </button>
-                        ))}
-
-                        <div className="pt-4 space-y-2 border-t border-border mt-4">
-                            <Link
-                                href="/login"
-                                onClick={() => setIsMenuOpen(false)}
-                                className="block w-full text-center px-3 py-3 text-body-sm font-medium text-muted-foreground hover:text-foreground transition-colors min-h-11"
-                            >
-                                Log in
-                            </Link>
-                            <Button
-                                onClick={() => handleNavClick('signup')}
-                                className="w-full h-10"
-                            >
-                                Get started
-                            </Button>
-                        </div>
-                    </div>
-                </div>
+          {/* Desktop nav */}
+          <nav aria-label="Main navigation" className="hidden md:flex items-center gap-8">
+            {desktopLinks.map((item) =>
+              item.anchor ? (
+                <a
+                  key={item.label}
+                  href={item.anchor}
+                  className="font-dmsans text-[15px] font-medium text-mix-ink2 hover:opacity-70 transition-opacity no-underline"
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <button
+                  key={item.label}
+                  onClick={() => handleNavClick(item)}
+                  className="font-dmsans text-[15px] font-medium text-mix-ink2 hover:opacity-70 transition-opacity"
+                >
+                  {item.label}
+                </button>
+              )
             )}
-        </header>
-    );
+          </nav>
+
+          {/* Desktop auth */}
+          <div className="hidden md:flex items-center gap-5">
+            <Link
+              href="/login"
+              className="font-dmsans text-[15px] font-medium text-mix-ink2 hover:opacity-70 transition-opacity no-underline"
+            >
+              Log in
+            </Link>
+            <button
+              onClick={() => router.push('/signup')}
+              className="bg-mix-green text-mix-paper-light px-5 py-2.5 rounded font-dmsans text-[15px] font-medium hover:bg-mix-green-deep transition-colors"
+            >
+              Get started →
+            </button>
+          </div>
+
+          {/* Mobile — Log in + hamburger */}
+          <div className="flex md:hidden items-center gap-3">
+            <Link
+              href="/login"
+              className="font-dmsans text-[13px] font-medium text-mix-ink2 hover:opacity-70 transition-opacity no-underline"
+            >
+              Log in
+            </Link>
+            <button
+              onClick={() => setIsMenuOpen(true)}
+              className="p-2 -mr-1 text-mix-ink2"
+              aria-label="Open menu"
+            >
+              <Menu className="h-5 w-5" strokeWidth={2} />
+            </button>
+          </div>
+
+        </div>
+      </header>
+
+      {/* Mobile overlay — sits above everything, doesn't push content */}
+      {isMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-[60] flex flex-col bg-mix-paper">
+
+          {/* Overlay header — matches nav bar height */}
+          <div className="flex items-center justify-between px-5 h-16 border-b border-mix-rule shrink-0">
+            <VAHLogo onNavigate={() => { setIsMenuOpen(false); onNavigate?.('home'); }} size="lg" />
+            <button
+              onClick={() => setIsMenuOpen(false)}
+              className="p-2 -mr-1 text-mix-ink2"
+              aria-label="Close menu"
+            >
+              <X className="h-5 w-5" strokeWidth={2} />
+            </button>
+          </div>
+
+          {/* Links */}
+          <nav className="flex-1 flex flex-col px-6 pt-6 gap-1 overflow-y-auto">
+            {mobileLinks.map((item) =>
+              item.anchor ? (
+                <a
+                  key={item.label}
+                  href={item.anchor}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="py-4 font-newsreader text-[22px] text-mix-ink border-b border-mix-rule no-underline hover:text-mix-green transition-colors"
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <button
+                  key={item.label}
+                  onClick={() => handleNavClick(item)}
+                  className="py-4 text-left font-newsreader text-[22px] text-mix-ink border-b border-mix-rule hover:text-mix-green transition-colors"
+                >
+                  {item.label}
+                </button>
+              )
+            )}
+          </nav>
+
+          {/* Bottom CTA */}
+          <div className="px-6 pb-10 pt-6 shrink-0">
+            <button
+              onClick={() => { setIsMenuOpen(false); router.push('/signup'); }}
+              className="w-full bg-mix-green text-mix-paper-light py-4 rounded font-dmsans text-[15px] font-medium hover:bg-mix-green-deep transition-colors"
+            >
+              Get started →
+            </button>
+          </div>
+
+        </div>
+      )}
+    </>
+  );
 }

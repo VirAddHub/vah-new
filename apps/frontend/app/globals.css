@@ -15,6 +15,13 @@
 }
 
 /* Playfair + Poppins loaded via next/font in layout (lib/fonts.ts); default UI is Poppins */
+/* MIX homepage editorial fonts also loaded via next/font (Newsreader, DM Sans, IBM Plex Mono) */
+
+/* MIX editorial selection colour */
+::selection {
+  background: #1F4934;
+  color: #F2EBDD;
+}
 
 /* ========================================
    RESPONSIVE FOUNDATION - NO OVERLAP SETUP

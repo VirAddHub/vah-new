@@ -3,189 +3,112 @@
 import React from "react";
 import Link from "next/link";
 import { VAHLogo } from "./VAHLogo";
-import { AmbientFooter } from "@/components/homepage/HomepageAtmosphere";
 
 interface FooterProps {
-    onNavigate?: (page: string) => void;
+  onNavigate?: (page: string) => void;
 }
 
-type NavItem = {
-    label: string;
-    page?: string;
-    href?: string;
-    external?: boolean;
-};
+const ALL_LINKS = [
+  { label: 'Pricing',         href: '/pricing'  },
+  { label: 'How it works',    href: '/#how'     },
+  { label: 'Help',            href: '/help'     },
+  { label: 'Blog',            href: '/blog'     },
+  { label: 'Privacy',         href: '/privacy'  },
+  { label: 'Terms',           href: '/terms'    },
+  { label: 'KYC policy',      href: '/kyc'      },
+  { label: 'Contact',         href: '/contact'  },
+] as const;
 
-/** Marketing routes — single source of truth so Navigation always matches product. */
-const PRIMARY_NAV_LINKS: { href: string; label: string }[] = [
-    { href: "/pricing", label: "Pricing" },
-    { href: "/about", label: "About us" },
-    { href: "/blog", label: "Blog" },
-    { href: "/help", label: "Help Centre" },
-    { href: "/contact", label: "Contact us" },
-];
+const DESKTOP_COLUMNS = [
+  {
+    title: 'Explore',
+    items: [
+      { label: 'Pricing',      href: '/pricing' },
+      { label: 'How it works', href: '/#how'    },
+      { label: 'Help centre',  href: '/help'    },
+      { label: 'Blog',         href: '/blog'    },
+    ],
+  },
+  {
+    title: 'Legal',
+    items: [
+      { label: 'Privacy policy',   href: '/privacy' },
+      { label: 'Terms of service', href: '/terms'   },
+      { label: 'KYC policy',       href: '/kyc'     },
+    ],
+  },
+  {
+    title: 'Contact',
+    items: [
+      { label: 'hello@virtualaddresshub.co.uk', href: 'mailto:hello@virtualaddresshub.co.uk' },
+      { label: 'Contact support',               href: '/contact' },
+    ],
+  },
+] as const;
 
 export function Footer({ onNavigate }: FooterProps) {
-    const linkBtnClass =
-        "block w-full text-left text-body-sm leading-tight font-medium text-foreground hover:text-foreground transition-colors";
-    /** Inline row on small screens (wrap); avoid `w-full` so links sit on one line where space allows */
-    const linkInlineClass =
-        "text-body-sm font-medium text-foreground hover:text-foreground transition-colors";
+  return (
+    <footer className="bg-mix-paper-deep text-mix-ink border-t border-mix-rule px-6 sm:px-10 lg:px-14 pt-8 pb-6 lg:pt-14 lg:pb-9">
 
-    function hrefForPage(page: string): string {
-        if (page === "home") return "/";
-        if (page === "kyc") return "/kyc";
-        return `/${page}`;
-    }
+      {/* ── Mobile (< lg) — compact single block ── */}
+      <div className="lg:hidden flex flex-col items-center gap-5 text-center">
+        <VAHLogo onNavigate={onNavigate} size="md" />
 
-    const legal: NavItem[] = [
-        { label: "Privacy Policy", page: "privacy" },
-        { label: "Terms of Service", page: "terms" },
-        { label: "KYC Policy", page: "kyc" },
-    ];
-
-    const LegalLink = ({ item }: { item: NavItem }) => {
-        if (item.page) {
-            return (
-                <Link href={hrefForPage(item.page)} className={linkBtnClass}>
-                    {item.label}
-                </Link>
-            );
-        }
-        if (item.href) {
-            return (
-                <button
-                    type="button"
-                    onClick={() => {
-                        if (item.external) {
-                            window.open(
-                                item.href!,
-                                "_blank",
-                                "noopener,noreferrer",
-                            );
-                        } else {
-                            window.location.href = item.href!;
-                        }
-                    }}
-                    className={linkBtnClass}
-                >
-                    {item.label}
-                </button>
-            );
-        }
-        return (
-            <span
-                className={linkBtnClass.replace(
-                    "hover:text-primary-foreground",
-                    "",
-                )}
+        {/* Flat wrap of all links */}
+        <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+          {ALL_LINKS.map(({ label, href }) => (
+            <Link
+              key={label}
+              href={href}
+              className="font-dmsans text-[13px] font-medium text-mix-ink hover:opacity-70 transition-opacity no-underline"
             >
-                {item.label}
-            </span>
-        );
-    };
+              {label}
+            </Link>
+          ))}
+        </div>
 
-    return (
-        <footer className="relative overflow-hidden border-t border-border/80 bg-muted/90 pt-8 pb-8 text-foreground lg:pt-16 lg:pb-10">
-            <AmbientFooter />
-            <div className="relative z-10 mx-auto max-w-7xl px-8">
-                {/* Mobile/Tablet Footer (< 1024px) */}
-                <div className="flex flex-col items-center text-center lg:hidden">
-                    <div className="mb-4">
-                        <VAHLogo
-                            onNavigate={onNavigate}
-                            size="lg"
-                        />
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-body-sm">
-                        {PRIMARY_NAV_LINKS.map(({ href, label }) => (
-                            <Link key={href} href={href} className={linkInlineClass}>
-                                {label}
-                            </Link>
-                        ))}
-                        {legal.map((item) =>
-                            item.page ? (
-                                <Link
-                                    key={item.label}
-                                    href={hrefForPage(item.page)}
-                                    className={linkInlineClass}
-                                >
-                                    {item.label}
-                                </Link>
-                            ) : (
-                                <LegalLink key={item.label} item={item} />
-                            ),
-                        )}
-                    </div>
-                    <p className="mt-2 text-body-sm text-muted-foreground">
-                        © 2026 VirtualAddressHub. All rights reserved.
-                    </p>
-                </div>
+        {/* Compliance + copyright */}
+        <div className="pt-4 border-t border-mix-rule w-full font-plex text-[11px] text-mix-ink2 tracking-[0.05em] flex flex-col items-center gap-1.5">
+          <div>HMRC AML XRML00000123456 · ICO ZA123456</div>
+          <div>© 2026 VirtualAddressHub Ltd.</div>
+        </div>
+      </div>
 
-                {/* Desktop Footer (≥ 1024px) */}
-                <div className="hidden lg:block">
-                    <div className="grid grid-cols-4 gap-6">
-                        <div>
-                            <div className="mb-3">
-                                <VAHLogo
-                                    onNavigate={onNavigate}
-                                    size="lg"
-                                />
-                            </div>
-                            <p className="mb-1 text-body-sm leading-tight text-foreground">
-                                Professional virtual address for UK businesses.
-                            </p>
-                            <p className="text-body-sm leading-tight text-foreground">
-                                Central London, UK
-                            </p>
-                        </div>
+      {/* ── Desktop (≥ lg) — full 4-col grid ── */}
+      <div className="hidden lg:grid lg:grid-cols-[1.4fr_1fr_1fr_1fr] gap-12">
+        {/* Brand col */}
+        <div>
+          <VAHLogo onNavigate={onNavigate} size="lg" />
+          <p className="font-newsreader text-[16px] text-mix-ink2 leading-[1.6] mt-4 max-w-[280px]">
+            Professional virtual address for UK businesses. Central London.
+          </p>
+        </div>
 
-                        <div>
-                            <h3 className="mb-1.5 text-body-sm font-semibold text-primary">Navigation</h3>
-                            <nav aria-label="Site pages" className="space-y-0.5">
-                                {PRIMARY_NAV_LINKS.map(({ href, label }) => (
-                                    <Link key={href} href={href} className={linkBtnClass}>
-                                        {label}
-                                    </Link>
-                                ))}
-                            </nav>
-                        </div>
-
-                        <div>
-                            <h3 className="mb-1.5 text-body-sm font-semibold text-primary">Legal & Compliance</h3>
-                            <div className="space-y-0.5">
-                                {legal.map((item) => (
-                                    <LegalLink key={item.label} item={item} />
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="space-y-3">
-                            <p className="text-body-sm font-semibold text-primary">Contact us</p>
-                            <p className="text-body-sm text-muted-foreground">
-                                Need help or have a question? We&apos;re here.
-                            </p>
-                            <Link
-                                href="/contact"
-                                className="inline-flex w-fit items-center justify-center rounded-xl bg-primary px-4 py-2 text-body-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            >
-                                Contact support
-                            </Link>
-                        </div>
-                    </div>
-
-                    <div className="mt-5 pt-3 border-t border-border">
-                        <div className="text-caption text-muted-foreground leading-tight">
-                            <span className="font-medium">HMRC AML:</span> XRML00000123456 • 
-                            <span className="font-medium"> ICO:</span> ZA123456
-                        </div>
-                    </div>
-
-                    <div className="mt-3 pt-2 border-t border-border text-center text-body-sm text-muted-foreground">
-                        © 2026 VirtualAddressHub. All rights reserved.
-                    </div>
-                </div>
+        {DESKTOP_COLUMNS.map(({ title, items }) => (
+          <div key={title}>
+            <div className="font-plex text-[11px] text-mix-muted tracking-[0.15em] uppercase mb-4">
+              {title}
             </div>
-        </footer>
-    );
+            <div className="flex flex-col">
+              {items.map(({ label, href }) => (
+                <Link
+                  key={label}
+                  href={href}
+                  className="font-newsreader text-[16px] text-mix-ink2 py-1.5 hover:opacity-70 transition-opacity no-underline"
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop compliance strip */}
+      <div className="hidden lg:flex mt-12 pt-6 border-t border-mix-rule justify-between gap-2 font-plex text-[12px] text-mix-ink2 tracking-[0.05em]">
+        <div>HMRC AML XRML00000123456 · ICO ZA123456</div>
+        <div>© 2026 VirtualAddressHub Ltd.</div>
+      </div>
+    </footer>
+  );
 }

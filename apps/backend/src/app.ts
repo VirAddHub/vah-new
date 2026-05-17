@@ -59,6 +59,7 @@ import companiesHouseRouter from './server/routes/companies-house';
 import opsSelfTestRouter from './server/routes/ops-selftest';
 import idealPostcodesRouter from './server/routes/ideal-postcodes';
 import internalBillingRouter from './server/routes/internal-billing';
+import internalDailySummaryRouter from './server/routes/internal-daily-summary';
 import { errorHandler } from './server/middleware/errorHandler';
 
 import paymentsStubRouter from './server/routes/payments-stub';
@@ -368,6 +369,7 @@ export function createApp() {
     logger.info('[mount] /api/billing mounted');
 
     app.use('/api/internal', internalBillingRouter);
+    app.use('/api/internal', internalDailySummaryRouter);
     logger.info('[mount] /api/internal mounted');
     app.use('/api/payments', paymentsRouter);
     app.use('/api/payments/stripe', stripeCheckoutRouter);

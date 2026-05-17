@@ -150,3 +150,23 @@ services:
       # - AZURE_CLIENT_SECRET
       # - AZURE_TENANT_ID
       # - ONEDRIVE_DESTRUCTION_LOG_PATH (e.g., "/Scanned_Mail/Destruction_Log.xlsx")
+
+  - type: cron
+    name: daily-signup-summary
+    rootDir: .
+    env: node
+    # Runs daily at 7 AM UTC (8 AM UK time in winter, 8 AM BST in summer)
+    schedule: "0 7 * * *"
+    buildCommand: |
+      npm ci
+      npm run build
+    runCommand: >
+      curl -s -X GET https://api.virtualaddresshub.co.uk/api/internal/daily-summary
+      -H "x-cron-secret: $DAILY_SUMMARY_SECRET"
+    envVars:
+      - key: NODE_VERSION
+        value: "20.19.0"
+      - key: NODE_ENV
+        value: production
+      - key: DAILY_SUMMARY_SECRET
+        sync: false
