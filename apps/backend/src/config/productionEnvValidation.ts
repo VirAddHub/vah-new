@@ -225,7 +225,7 @@ export function collectProductionEnvIssues(): ProductionEnvCheckResult {
 
   // --- Outbound email ---
   if (!trim('POSTMARK_TOKEN')) {
-    warnings.push('POSTMARK_TOKEN is unset — transactional email will not send.');
+    fatal.push('POSTMARK_TOKEN must be set in production — transactional email (welcome, cancellation, KYC) will not send without it.');
   }
 
   // --- Ops self-test: optional secret gate ---

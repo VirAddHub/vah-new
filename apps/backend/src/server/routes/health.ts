@@ -4,6 +4,7 @@
 import { Request, Response, Router } from 'express';
 import { logger } from '../../lib/logger';
 import { getPool } from '../db';
+import { requireAdmin } from '../../middleware/auth';
 import { MAIL_STATUS, ALLOWED } from '../../modules/forwarding/mailStatus';
 import { metrics } from '../../lib/metrics';
 import os from 'os';
@@ -237,7 +238,7 @@ function healthLive(_req: Request, res: Response) {
 }
 
 // Mount routes
-router.get('/health', healthCheck);
+router.get('/health', requireAdmin, healthCheck);
 router.get('/healthz', healthCheckMinimal);
 router.get('/healthz/', healthCheckMinimal);
 router.get('/healthz/status-guard', statusGuardHealthCheck);

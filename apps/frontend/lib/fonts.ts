@@ -1,4 +1,12 @@
-import { Playfair_Display, Poppins, Newsreader, DM_Sans, IBM_Plex_Mono } from 'next/font/google';
+import { Inter, Playfair_Display, Poppins, Newsreader, DM_Sans, IBM_Plex_Mono } from 'next/font/google';
+
+/** Monochrome marketing refresh; scoped until the remaining screens are redesigned. */
+export const inter = Inter({
+    subsets: ['latin'],
+    weight: ['400', '500', '600', '700'],
+    variable: '--font-inter',
+    display: 'swap',
+});
 
 /**
  * Single module for next/font so server + client share one class name / @font-face set.

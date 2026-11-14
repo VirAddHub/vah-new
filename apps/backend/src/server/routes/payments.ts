@@ -12,6 +12,7 @@ import { sendPlanCancelled, buildAppUrl, sendWelcomeKycEmail } from '../../lib/m
 import { logger } from '../../lib/logger';
 import { safeErrorMessage } from '../../lib/safeError';
 import { getBillingProvider } from '../../config/billing';
+import { getStripe } from '../../lib/stripe';
 import { stripeCheckoutCreateLimiter } from '../../lib/sensitiveRouteRateLimits';
 import { createStripeCheckoutSession } from './stripe-checkout';
 
@@ -120,6 +121,26 @@ router.post('/subscriptions', requireAuth, paymentsSubscriptionWriteLimiter, asy
 
     try {
         const newStatus = action === 'cancel' ? 'cancelled' : 'active';
+
+        // --- Stripe cancellation (must happen BEFORE any DB write) ---
+        if (action === 'cancel') {
+            const subRow = await pool.query(
+                `SELECT stripe_subscription_id FROM subscription WHERE user_id = $1 LIMIT 1`,
+                [userId]
+            );
+            const stripeSubscriptionId = subRow.rows[0]?.stripe_subscription_id as string | undefined;
+
+            if (!stripeSubscriptionId) {
+                return res.status(400).json({ ok: false, error: 'no_stripe_subscription' });
+            }
+
+            const stripe = getStripe();
+            if (!stripe) {
+                return res.status(503).json({ ok: false, error: 'stripe_not_configured' });
+            }
+
+            await stripe.subscriptions.update(stripeSubscriptionId, { cancel_at_period_end: true });
+        }
 
         // NOTE: plan_status is only updated via GoCardless webhooks when subscription.status transitions to 'active'
         // Do not update plan_status here - it will be updated by webhook handlers

@@ -48,13 +48,11 @@ services:
       - key: ALLOWED_ORIGINS
         value: "https://vah-new-frontend-75d6.vercel.app,https://vah-frontend-final.vercel.app,http://localhost:3000"
       # Set these in Render Dashboard (leave unsynced here if you prefer):
-      - key: POSTMARK_API_TOKEN
+      - key: POSTMARK_TOKEN
         sync: false
       - key: POSTMARK_FROM
         sync: false
       - key: COOKIE_SECRET
-        sync: false
-      - key: GO_CARDLESS_SECRET
         sync: false
       - key: SUMSUB_SECRET
         sync: false

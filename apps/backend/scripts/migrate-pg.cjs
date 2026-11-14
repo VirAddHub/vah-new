@@ -25,7 +25,7 @@ function collectMigrationFiles() {
 
     const filesMap = new Map();
     for (const dirPath of dirs) {
-        const entries = fs.readdirSync(dirPath).filter(f => /^\d+_.*\.sql$/.test(f));
+        const entries = fs.readdirSync(dirPath).filter(f => /^\d+_.*\.sql$/.test(f) || /^\d{8}_.*\.sql$/.test(f));
         for (const filename of entries) {
             if (!filesMap.has(filename)) {
                 filesMap.set(filename, path.join(dirPath, filename));

@@ -521,6 +521,55 @@ iframe {
    PROSE UTILITIES (for long-form content only)
    ======================================== */
 
+/* ========================================
+   GLOBAL BUTTON & INTERACTIVE FEEDBACK
+   Covers shadcn <Button>, raw <button>, and
+   styled <a> links used across all pages.
+   ======================================== */
+
+/* All clickable elements get a cursor */
+button,
+[role="button"],
+a[href] {
+    cursor: pointer;
+}
+
+/* Raw buttons (not shadcn) — instant visual press */
+button:not([class*="transition"]),
+button:not([class]) {
+    transition: opacity 0.1s ease, transform 0.1s ease, background-color 0.1s ease;
+}
+
+/* Universal active/press feedback — scale + darken */
+button:active:not(:disabled),
+[role="button"]:active:not([aria-disabled="true"]) {
+    transform: scale(0.97);
+    filter: brightness(0.88);
+}
+
+/* Anchor links styled as buttons — keep nav links from scaling */
+a:not([class*="font-"]):not([class*="text-"]):not(nav a):active {
+    opacity: 0.75;
+}
+
+/* Nav links — subtle opacity on press only */
+nav a:active,
+nav button:active {
+    opacity: 0.6;
+    transform: none;
+    filter: none;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    button:active,
+    [role="button"]:active,
+    a:active {
+        transform: none !important;
+        filter: none !important;
+    }
+}
+
 /* Touch target + spacing helpers */
 .tt-min {
     min-height: 44px;

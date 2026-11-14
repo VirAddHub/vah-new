@@ -176,7 +176,7 @@ export function App({ initialPricing = null }: AppProps) {
 
         <div className="min-h-screen flex flex-col">
           <MarketingNavigation onNavigate={navigate} />
-          <main className="flex-1">
+          <main id="main-content" className="flex-1">
             {renderPage()}
           </main>
           {!isDashboardPage && <Footer onNavigate={navigate} />}

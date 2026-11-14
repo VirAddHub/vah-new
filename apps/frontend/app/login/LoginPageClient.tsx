@@ -333,159 +333,275 @@ export function LoginPageClient() {
     }
   };
 
+  // ── Design tokens (handoff) ──────────────────────────────────
+  const T = {
+    paper:      '#F2EBDD',
+    paperDeep:  '#E8E0CE',
+    paperLight: '#FBF6E9',
+    ink:        '#1F1A14',
+    ink2:       '#3D362C',
+    muted:      '#7A6F5E',
+    rule:       '#D7CDB6',
+    green:      '#1F4934',
+    stamp:      '#B9352A',
+    font:       "'Poppins', system-ui, sans-serif",
+  } as const;
+
   return (
-    <div className="flex min-h-screen flex-col bg-[hsl(210_10%_97%)] lg:flex-row">
-      {/* Left — branding (wide screens only) */}
-      <div className="hidden flex-col justify-between bg-[#1a3a2a] p-10 text-white lg:flex lg:w-[45%] xl:w-[40%]">
-        <LoginBrandMark variant="onDark" />
-        <div>
-          <h2 className="text-3xl font-semibold leading-snug text-white/95">
-            Everything you need to manage your account,
-            <br />
-            in one dashboard.
-          </h2>
-        </div>
-        <p className="text-xs text-white/30">© 2026 VirtualAddressHub</p>
-      </div>
+    <div style={{
+      background: T.paper,
+      minHeight: '100vh',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+      fontFamily: T.font,
+    }}>
 
-      {/* Right — form */}
-      <div className="flex flex-1 flex-col bg-gradient-to-b from-[hsl(210_10%_97%)] via-[hsl(210_8%_95%)] to-[hsl(215_12%_92%)]">
-        <div className="flex items-center px-5 pb-2 pt-5 lg:hidden">
-          <LoginBrandMark />
-        </div>
+      {/* ── Left column: logo + form + compliance ── */}
+      <div style={{
+        padding: 'clamp(28px, 4vw, 40px) clamp(24px, 5vw, 56px)',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+      }}>
 
-        <div className="flex flex-1 flex-col items-center justify-center px-5 py-10 sm:px-10">
-          <div className="w-full max-w-[420px]">
-            <div className="mb-6 text-left">
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                Welcome back
-              </h1>
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                Sign in to your account
-              </p>
+        {/* Logo */}
+        <LoginBrandMark />
+
+        {/* Form — centred vertically */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0' }}>
+          <form
+            onSubmit={handleSubmit}
+            style={{ width: '100%', maxWidth: 420 }}
+          >
+            {/* Heading */}
+            <h1 style={{
+              fontFamily: T.font, fontSize: 'clamp(2.75rem, 6vw, 3.5rem)', color: T.ink,
+              margin: '0 0 12px', letterSpacing: '-0.03em', fontWeight: 300, lineHeight: 1,
+            }}>
+              Log{' '}
+              <span style={{ fontStyle: 'italic', color: T.green, fontWeight: 400 }}>in.</span>
+            </h1>
+
+            <p style={{
+              fontFamily: T.font, fontSize: 16, color: T.ink2, fontWeight: 300,
+              margin: '0 0 36px', lineHeight: 1.5,
+            }}>
+              Pick up where you left off in your mailbox.
+            </p>
+
+            {/* Email changed success */}
+            {emailChanged && (
+              <div style={{
+                background: '#f0fdf4', border: '1px solid #86efac',
+                borderRadius: 4, padding: '12px 16px', marginBottom: 20,
+                fontFamily: T.font, fontSize: 13, color: '#166534', fontWeight: 400,
+              }}>
+                Your email address has been updated. Please log in with your new address.
+              </div>
+            )}
+
+            {/* Error */}
+            {error && (
+              <div style={{
+                background: '#fef2f2', border: '1px solid #fca5a5',
+                borderRadius: 4, padding: '12px 16px', marginBottom: 20,
+                fontFamily: T.font, fontSize: 13, color: '#991b1b', fontWeight: 400,
+              }}>
+                <div style={{ fontWeight: 500 }}>{error}</div>
+                {showResetHint && (
+                  <div style={{ marginTop: 6, color: T.muted }}>
+                    Use <span style={{ fontWeight: 500, color: T.ink2 }}>Forgot it?</span> to reset your password.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Email field */}
+            <div>
+              <label style={{
+                fontFamily: T.font, fontSize: 11, color: T.muted, fontWeight: 500,
+                letterSpacing: '0.12em', textTransform: 'uppercase',
+                marginBottom: 8, display: 'block',
+              }}>Email</label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="username"
+                placeholder="you@yourbusiness.co.uk"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading}
+                style={{
+                  width: '100%', padding: '14px 16px',
+                  border: `1px solid ${T.rule}`, background: T.paperLight,
+                  fontFamily: T.font, fontSize: 15, fontWeight: 300, color: T.ink,
+                  outline: 'none', borderRadius: 0,
+                  opacity: loading ? 0.6 : 1,
+                }}
+                onFocus={e => { e.currentTarget.style.borderColor = T.green; }}
+                onBlur={e => { e.currentTarget.style.borderColor = T.rule; }}
+              />
             </div>
 
-            <div className="rounded-xl border border-border/80 bg-card p-6 shadow-[0_4px_24px_-6px_rgba(15,23,42,0.08),0_2px_8px_-4px_rgba(15,23,42,0.04)] sm:p-8">
-              {/* Success Alert - Email Changed */}
-              {emailChanged && (
-                <Alert className="mb-6 border-green-500/50 bg-green-50 dark:bg-green-900/20">
-                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  <AlertDescription className="text-green-800 dark:text-green-200">
-                    Your email address has been updated successfully. Please log
-                    in with your new email address.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {/* Error Alert */}
-              {error && (
-                <Alert className="mb-6 border-destructive/50 text-destructive">
-                  <AlertDescription className="space-y-2">
-                    <div className="font-medium">{error}</div>
-                    {showResetHint && (
-                      <div className="mt-2 text-body-sm text-muted-foreground">
-                        Use <span className="font-medium text-foreground">Forgot password?</span> next to Password to reset it.
-                      </div>
-                    )}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {/* Login Form */}
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-foreground">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={loading}
-                    className="h-10 w-full rounded-md border-border bg-background px-3 text-body-sm shadow-sm"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor="password" className="text-foreground">
-                      Password
-                    </Label>
-                    <Link
-                      href="/reset-password"
-                      className="shrink-0 text-body-sm font-medium text-primary transition-colors hover:text-primary/90"
-                    >
-                      Forgot password?
-                    </Link>
-                  </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={loading}
-                    className="h-10 w-full rounded-md border-border bg-background px-3 text-body-sm shadow-sm"
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  size="sm"
-                  className="h-10 w-full rounded-md text-body-sm font-semibold bg-primary text-primary-foreground transition-[filter,background] hover:bg-primary/90 hover:brightness-95"
-                >
-                  {loading ? 'Signing in...' : 'Sign In'}
-                </Button>
-              </form>
-
-              <div className="mt-6 space-y-3 border-t border-border pt-4 text-left">
-                <div>
-                  <span className="text-body-sm text-muted-foreground">
-                    Don&apos;t have an account?{' '}
-                  </span>
-                  <Link
-                    href="/signup"
-                    className="text-body-sm font-medium text-primary hover:underline"
-                  >
-                    Sign up
-                  </Link>
-                </div>
-                <div>
-                  <Link
-                    href="/contact"
-                    className="text-body-sm font-medium text-primary transition-colors hover:text-primary/90 hover:underline"
-                  >
-                    Can&apos;t log in?
-                  </Link>
-                </div>
+            {/* Password field */}
+            <div style={{ marginTop: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                <label style={{
+                  fontFamily: T.font, fontSize: 11, color: T.muted, fontWeight: 500,
+                  letterSpacing: '0.12em', textTransform: 'uppercase',
+                }}>Password</label>
+                <Link href="/reset-password" style={{
+                  fontFamily: T.font, fontSize: 13, color: T.green,
+                  fontStyle: 'italic', textDecoration: 'none', fontWeight: 400,
+                }}>Forgot it?</Link>
               </div>
+              <input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                placeholder="••••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+                style={{
+                  width: '100%', padding: '14px 16px',
+                  border: `1px solid ${T.rule}`, background: T.paperLight,
+                  fontFamily: T.font, fontSize: 15, fontWeight: 300, color: T.ink,
+                  outline: 'none', borderRadius: 0,
+                  opacity: loading ? 0.6 : 1,
+                }}
+                onFocus={e => { e.currentTarget.style.borderColor = T.green; }}
+                onBlur={e => { e.currentTarget.style.borderColor = T.rule; }}
+              />
+            </div>
+
+            {/* CTA */}
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                marginTop: 32, width: '100%',
+                background: T.green, color: T.paper, padding: '16px',
+                fontFamily: T.font, fontSize: 15, fontWeight: 500,
+                border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+                borderRadius: 4, minHeight: 48,
+                opacity: loading ? 0.7 : 1,
+                transition: 'opacity 0.15s',
+              }}
+            >
+              {loading ? 'Signing in…' : 'Log in →'}
+            </button>
+
+            {/* Sign-up link */}
+            <div style={{ marginTop: 28, textAlign: 'center' }}>
+              <span style={{ fontFamily: T.font, fontSize: 14, color: T.ink2, fontWeight: 300 }}>
+                Don&apos;t have an account yet?{' '}
+                <Link href="/signup" style={{
+                  color: T.green, fontStyle: 'italic', textDecoration: 'none', fontWeight: 400,
+                }}>Start one →</Link>
+              </span>
+            </div>
+          </form>
+        </div>
+
+        {/* Compliance footer */}
+        <div style={{
+          fontFamily: T.font, fontSize: 11, color: T.muted, fontWeight: 400,
+          letterSpacing: '0.05em', display: 'flex', justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: 8,
+        }}>
+          <span>HMRC AML · XRML00000123456</span>
+          <span>ICO · ZA123456</span>
+          <span>© 2026 VirtualAddressHub Ltd</span>
+        </div>
+      </div>
+
+      {/* ── Right column: airmail envelope ── */}
+      <div style={{
+        background: T.paperDeep,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 56,
+        minHeight: '100vh',
+      }}>
+        <div style={{
+          width: '85%', maxWidth: 500, aspectRatio: '3/2',
+          background: T.paperLight, position: 'relative',
+          boxShadow: '0 30px 60px -20px rgba(60,40,10,0.3), 0 8px 16px -8px rgba(60,40,10,0.15)',
+          transform: 'rotate(-1.5deg)',
+          border: `1px solid ${T.rule}`,
+        }}>
+          {/* Airmail border */}
+          <div style={{
+            position: 'absolute', inset: 0, padding: 6,
+            backgroundImage: `repeating-linear-gradient(45deg, ${T.stamp} 0 8px, transparent 8px 16px, ${T.green} 16px 24px, transparent 24px 32px)`,
+            WebkitMask: 'linear-gradient(#000,#000) content-box, linear-gradient(#000,#000)',
+            WebkitMaskComposite: 'xor',
+            maskComposite: 'exclude',
+          } as React.CSSProperties} />
+
+          {/* Stamp */}
+          <div style={{
+            position: 'absolute', top: 22, right: 26,
+            width: 76, height: 92,
+            background: T.paper, padding: 5,
+            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+          }}>
+            <div style={{
+              width: '100%', height: '100%', background: T.stamp,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              color: T.paper, fontFamily: T.font, lineHeight: 1.1, textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 9, letterSpacing: '0.1em', fontWeight: 500 }}>UK</div>
+              <div style={{ fontSize: 20, fontStyle: 'italic', marginTop: 4, fontWeight: 300 }}>1st</div>
+              <div style={{ fontSize: 7, marginTop: 4, fontWeight: 500, letterSpacing: '0.05em' }}>FIRST CLASS</div>
+            </div>
+          </div>
+
+          {/* Postmark */}
+          <div style={{
+            position: 'absolute', top: 32, right: 120,
+            width: 100, height: 100,
+            border: `1.5px solid ${T.stamp}`, borderRadius: '50%',
+            opacity: 0.45, transform: 'rotate(-12deg)',
+            display: 'grid', placeItems: 'center', textAlign: 'center',
+            color: T.stamp, fontFamily: T.font, fontSize: 8,
+            letterSpacing: '0.08em', fontWeight: 500,
+          }}>
+            <div>
+              <div>LONDON</div>
+              <div style={{ fontSize: 13, margin: '2px 0', fontStyle: 'italic', fontWeight: 300 }}>WELCOME</div>
+              <div>BACK</div>
+            </div>
+          </div>
+
+          {/* Address — redacted, no real postal address before signup */}
+          <div style={{
+            position: 'absolute', left: 48, bottom: 48,
+            fontFamily: T.font, color: T.ink, lineHeight: 1.4,
+          }}>
+            <div style={{ fontSize: 11, color: T.muted, marginBottom: 6, fontWeight: 500, letterSpacing: '0.08em' }}>To:</div>
+            <div style={{ fontSize: 18, fontWeight: 500 }}>Your Business, Ltd.</div>
+            <div style={{ fontSize: 14, color: T.ink2, marginTop: 4, fontStyle: 'italic', fontWeight: 300 }}>
+              Central London<br />
+              business address
             </div>
           </div>
         </div>
-
-        <footer className="flex flex-wrap justify-center gap-x-3 gap-y-1 py-4 text-xs text-muted-foreground">
-          <Link
-            href="/terms"
-            className="transition-colors hover:text-foreground hover:underline"
-          >
-            Terms of Service
-          </Link>
-          <span aria-hidden className="text-muted-foreground/50">
-            ·
-          </span>
-          <Link
-            href="/privacy"
-            className="transition-colors hover:text-foreground hover:underline"
-          >
-            Privacy Policy
-          </Link>
-        </footer>
       </div>
+
+      {/* Responsive: stack on mobile, side-by-side on lg */}
+      <style>{`
+        @media (max-width: 900px) {
+          [style*="minHeight: '100vh'"][style*="background: '#E8E0CE'"],
+          [style*='minHeight: "100vh"'][style*='background: "#E8E0CE"'] {
+            display: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }
