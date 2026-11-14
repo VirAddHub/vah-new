@@ -192,7 +192,7 @@ Traced from the scan landing in OneDrive, through the import worker, to the cust
 | Filename generator | `/admin/filename-generator` | Render, search | Verified | Produces the file name the worker expects |
 | Customer sees new mail | `/mail` · `GET /api/mail-items` · `mail.ts` | List after import, unread count | Verified | Item appears with sender and tag, inbox count updates |
 | Mail detail and mark as read | `GET/PATCH /api/mail-items/:id` | Open, mark read | Verified | Works |
-| Scan viewing | `GET /api/mail-items/:id/scan-url` and the PDF proxy | Request before and after verification | Incomplete | Correctly withheld before verification. Afterwards returns "no file" because the imported test item has no stored scan link; the admin edit ignores a scan link too. A real file from OneDrive is needed to finish this check |
+| Scan viewing | `GET /api/mail-items/:id/scan-url` and the PDF proxy | Request before and after verification | Incomplete | Correctly withheld before verification. Afterwards returns "no file" because my test never made the worker's second call, which sets the scan link after the file is moved (correction, 14 Nov: a gap in the test, not an app fault). Still unverified until that call and a served test PDF are simulated in Phase 1 |
 | Search | Search box on `/mail` | Search by sender | Verified | Client-side filter works. A separate `/api/mail-search` route is unreachable (404) |
 | Tags | `POST /api/mail-items/:id/tag`, `GET /api/tags`, rename | Tag, list, rename | Verified | Works |
 | Archive and restore | `PATCH /api/mail-items/:id` | Archive, list archived, restore | Verified | Works |

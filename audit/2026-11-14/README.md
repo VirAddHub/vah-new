@@ -103,3 +103,9 @@ the profile-save secret leak, and every "Broken" result that describes behaviour
 2. Start the backend with `env/backend.sandbox-env.txt` (add `-r scripts/tools/heal.cjs` only when reproducing the audit as it was).
 3. Start the site with `env/frontend.sandbox-env.txt`.
 4. `python3 scripts/journeys/t1.py` … `t7.py`; `node scripts/tools/shot.cjs <prefix> 1440x900 [--login email pw] <urls>`.
+
+## Corrections after publication
+
+- The report first said the journey scripts "exercised 212 backend routes". The server log shows 117 of 213 backend routes and 48 of 122 proxy routes were called; the rest are marked "not called" in CHECKLIST.md.
+- Scan viewing was listed as incomplete because the test item had no scan link. That was a gap in the test (the worker sets the link in a second call that was not simulated), not an app fault.
+- Phase 0 report and the Phase 1 change proposal: https://claude.ai/artifact/LQus3pSBsER9ZBMy6VGXjM
