@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VirtualAddressHub — Pricing</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600&display=swap" />
+
+<style>
+  html, body { margin: 0; padding: 0; background: #F2EBDD; }
+  body { font-family: 'Poppins', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  * { box-sizing: border-box; }
+  a { transition: opacity .15s; }
+  a:hover { opacity: .8; }
+  ::selection { background: #1F4934; color: #F2EBDD; }
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+// =====================================================================
+// VirtualAddressHub — Pricing
+// =====================================================================
+
+const T = {
+  paper:      '#F2EBDD',
+  paperDeep:  '#E8E0CE',
+  paperLight: '#FBF6E9',
+  ink:        '#1F1A14',
+  ink2:       '#3D362C',
+  muted:      '#7A6F5E',
+  rule:       '#D7CDB6',
+  green:      '#1F4934',
+  stamp:      '#B9352A',
+  font:       "'Poppins', system-ui, sans-serif",
+};
+
+// ============================================================
+// Logo
+// ============================================================
+function Logo() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{
+        width: 28, height: 28, borderRadius: '50%',
+        background: T.green, color: T.paper,
+        display: 'grid', placeItems: 'center',
+        fontFamily: T.font, fontSize: 15, fontStyle: 'italic', fontWeight: 600,
+      }}>V</div>
+      <div style={{ fontFamily: T.font, fontSize: 18, color: T.ink, letterSpacing: '-0.01em', fontWeight: 500 }}>
+        VirtualAddress<span style={{ color: T.stamp, fontStyle: 'italic' }}>Hub</span>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Nav
+// ============================================================
+function Nav() {
+  const link = { color: T.ink2, textDecoration: 'none', fontFamily: T.font, fontSize: 14, fontWeight: 500 };
+  return (
+    <header style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      padding: '22px 56px', borderBottom: `1px solid ${T.rule}`,
+      background: T.paper, position: 'sticky', top: 0, zIndex: 10,
+      backdropFilter: 'blur(8px)',
+    }}>
+      <Logo />
+      <nav style={{ display: 'flex', gap: 32 }}>
+        <a href="#" style={link}>Pricing</a>
+        <a href="#" style={link}>How it works</a>
+        <a href="#" style={link}>Your mail</a>
+        <a href="#" style={link}>FAQ</a>
+        <a href="#" style={link}>Help</a>
+      </nav>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+        <a href="#" style={link}>Log in</a>
+        <a href="#" style={{
+          background: T.green, color: T.paper, padding: '9px 18px',
+          borderRadius: 4, fontFamily: T.font, fontSize: 14, fontWeight: 500,
+          textDecoration: 'none',
+        }}>Get started →</a>
+      </div>
+    </header>
+  );
+}
+
+// ============================================================
+// Page header
+// ============================================================
+function PricingHeader() {
+  return (
+    <div style={{ padding: '64px 56px 32px', background: T.paper }}>
+      <div style={{ maxWidth: 1080, margin: '0 auto' }}>
+        <h1 style={{
+          fontFamily: T.font, fontSize: 64, color: T.ink,
+          margin: 0, letterSpacing: '-0.03em', fontWeight: 300, lineHeight: 1.05,
+        }}>
+          One plan.{' '}
+          <span style={{ fontStyle: 'italic', color: T.green, fontWeight: 400 }}>
+            Everything in it.
+          </span>
+        </h1>
+        <p style={{
+          fontFamily: T.font, fontSize: 18, color: T.ink2, fontWeight: 300,
+          margin: '20px 0 0', maxWidth: 580, lineHeight: 1.6,
+        }}>
+          No tiers, no unnecessary add-ons, no surprise charges. The whole service is the whole service.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Pricing card — split layout
+// ============================================================
+function PricingCard() {
+  const [annual, setAnnual] = React.useState(false);
+  const price    = annual ? '£99' : '£9.99';
+  const cadence  = annual ? 'per year, billed once' : 'per month, billed monthly';
+
+  const includedItems = [
+    'Unlimited same-day digital mail scanning',
+    'HMRC & Companies House forwarding free (UK)',
+    'Other UK mail forwarded at £2 per item',
+    'International forwarding available on request',
+  ];
+  const trustItems = [
+    'Central London address (never a PO Box)',
+    'Companies House compliant',
+    'ICO registered · HMRC AML supervised',
+    'Digital delivery same business day',
+  ];
+
+  return (
+    <section style={{ background: T.paper, padding: '40px 56px 110px' }}>
+      <div style={{
+        maxWidth: 1080, margin: '0 auto',
+        background: T.paperLight,
+        border: `1px solid ${T.rule}`,
+        padding: '48px 56px',
+      }}>
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1px 1.3fr',
+          gap: 56, alignItems: 'start',
+        }}>
+
+          {/* ── Left: price ── */}
+          <div>
+            <div style={{
+              fontFamily: T.font, fontSize: 11, color: T.muted, fontWeight: 500,
+              letterSpacing: '0.12em', textTransform: 'uppercase',
+            }}>
+              Virtual mailbox · London
+            </div>
+
+            <h2 style={{
+              fontFamily: T.font, fontSize: 30, color: T.ink,
+              margin: '12px 0 28px', fontWeight: 300, letterSpacing: '-0.02em', lineHeight: 1.2,
+            }}>
+              Everything you need,<br />
+              <span style={{ fontStyle: 'italic', color: T.green, fontWeight: 400 }}>
+                one honest price.
+              </span>
+            </h2>
+
+            {/* Toggle */}
+            <div style={{
+              display: 'inline-flex', background: T.paper, border: `1px solid ${T.rule}`,
+              padding: 4,
+            }}>
+              {[['Monthly', false], ['Annual · save 17%', true]].map(([l, v]) => (
+                <button key={l} onClick={() => setAnnual(v)} style={{
+                  padding: '10px 18px', border: 'none', cursor: 'pointer',
+                  background: annual === v ? T.green : 'transparent',
+                  color: annual === v ? T.paper : T.ink2,
+                  fontFamily: T.font, fontSize: 13, fontWeight: 500,
+                  transition: 'all 0.2s',
+                }}>{l}</button>
+              ))}
+            </div>
+
+            {/* Price display */}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, margin: '32px 0 8px' }}>
+              <span style={{
+                fontFamily: T.font, fontSize: 80, color: T.ink,
+                lineHeight: 1, letterSpacing: '-0.04em', fontWeight: 300,
+              }}>{price}</span>
+            </div>
+            <div style={{
+              fontFamily: T.font, fontSize: 12, color: T.muted, fontWeight: 400,
+              letterSpacing: '0.05em', marginBottom: 28,
+            }}>
+              {cadence}
+            </div>
+
+            <a href="#" style={{
+              display: 'block', textAlign: 'center',
+              background: T.green, color: T.paper, padding: '15px 28px',
+              fontFamily: T.font, fontSize: 15, fontWeight: 500,
+              textDecoration: 'none', borderRadius: 4,
+            }}>Get started →</a>
+            <div style={{
+              fontFamily: T.font, fontSize: 11, color: T.muted, fontWeight: 400,
+              marginTop: 12, textAlign: 'center', letterSpacing: '0.05em',
+            }}>
+              Switch to annual anytime · save two months
+            </div>
+          </div>
+
+          {/* ── Divider ── */}
+          <div style={{ background: T.rule, height: '100%', minHeight: 400 }} />
+
+          {/* ── Right: included + trust ── */}
+          <div>
+            <div style={{
+              fontFamily: T.font, fontSize: 11, color: T.muted, fontWeight: 500,
+              letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 18,
+            }}>What's included</div>
+
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {includedItems.map((t) => (
+                <li key={t} style={{ display: 'grid', gridTemplateColumns: '20px 1fr', gap: 12 }}>
+                  <span style={{ color: T.green, fontFamily: T.font, fontStyle: 'italic', fontSize: 18, lineHeight: 1.1, fontWeight: 500 }}>✓</span>
+                  <span style={{ fontFamily: T.font, fontSize: 15, color: T.ink2, lineHeight: 1.5, fontWeight: 300 }}>{t}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div style={{
+              fontFamily: T.font, fontStyle: 'italic', fontSize: 13, color: T.muted, fontWeight: 300,
+              margin: '14px 0 0', paddingLeft: 32, maxWidth: 380,
+            }}>
+              You only pay for physical forwarding when you actually need it.
+            </div>
+
+            <div style={{
+              fontFamily: T.font, fontSize: 11, color: T.muted, fontWeight: 500,
+              letterSpacing: '0.12em', textTransform: 'uppercase', margin: '32px 0 18px',
+            }}>Compliance & trust</div>
+
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {trustItems.map((t) => (
+                <li key={t} style={{ display: 'grid', gridTemplateColumns: '20px 1fr', gap: 12 }}>
+                  <span style={{ color: T.green, fontFamily: T.font, fontStyle: 'italic', fontSize: 18, lineHeight: 1.1, fontWeight: 500 }}>✓</span>
+                  <span style={{ fontFamily: T.font, fontSize: 15, color: T.ink2, lineHeight: 1.5, fontWeight: 300 }}>{t}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============================================================
+// Footer
+// ============================================================
+function Footer() {
+  return (
+    <footer style={{ background: T.paperDeep, color: T.ink, padding: '60px 56px 36px', borderTop: `1px solid ${T.rule}` }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr', gap: 48 }}>
+        <div>
+          <Logo />
+          <p style={{ fontFamily: T.font, fontSize: 14, lineHeight: 1.6, color: T.ink2, fontWeight: 300, marginTop: 16, maxWidth: 280 }}>
+            Professional virtual address for UK businesses. Central London.
+          </p>
+        </div>
+        {[
+          ['Service', ['Pricing','How it works','Help centre','Blog']],
+          ['Legal',   ['Privacy policy','Terms of service','KYC policy','AML policy']],
+          ['Contact', ['hello@virtualaddresshub.co.uk','+44 20 3868 0000','Mon–Fri 9am–6pm']],
+        ].map(([title, items]) => (
+          <div key={title}>
+            <div style={{
+              fontFamily: T.font, fontSize: 11, color: T.muted, fontWeight: 500,
+              letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 16,
+            }}>{title}</div>
+            {items.map((it) => (
+              <div key={it} style={{ fontFamily: T.font, fontSize: 14, fontWeight: 300, padding: '6px 0', color: T.ink2 }}>{it}</div>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div style={{
+        marginTop: 60, paddingTop: 24, borderTop: `1px solid ${T.rule}`,
+        display: 'flex', justifyContent: 'space-between',
+        fontFamily: T.font, fontSize: 11, fontWeight: 400, color: T.muted, letterSpacing: '0.05em',
+      }}>
+        <div>HMRC AML XRML00000123456 · ICO ZA123456</div>
+        <div>© 2026 VirtualAddressHub Ltd.</div>
+      </div>
+    </footer>
+  );
+}
+
+// ============================================================
+// Compose
+// ============================================================
+function PricingPage() {
+  return (
+    <div style={{ background: T.paper, color: T.ink, fontFamily: T.font }}>
+      <Nav />
+      <PricingHeader />
+      <PricingCard />
+      <Footer />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<PricingPage />);
+</script>
+</body>
+</html>
