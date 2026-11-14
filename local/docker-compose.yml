@@ -1,0 +1,20 @@
+# Local-only Postgres for development. Dummy credentials; never expose this port publicly.
+services:
+  db:
+    image: postgres:16
+    container_name: vah-local-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: vah_local
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - vah_local_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d vah_local"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+volumes:
+  vah_local_pg:

@@ -23,7 +23,10 @@
         "typecheck": "npm -w apps/frontend run type-check && npm -w apps/backend run typecheck:backend",
         "lint": "npm -w apps/frontend run lint",
         "format": "prettier -w .",
-        "format:check": "prettier -c ."
+        "format:check": "prettier -c .",
+        "local:db": "docker compose -f local/docker-compose.yml up -d --wait",
+        "local:setup": "bash local/setup.sh",
+        "local:start": "bash local/start.sh"
     },
     "devDependencies": {
         "postcss": "8.4.31",
