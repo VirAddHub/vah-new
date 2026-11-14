@@ -1,4 +1,5 @@
 import type { Response, CookieOptions } from 'express';
+import { SESSION_IDLE_TIMEOUT_SECONDS } from '../config/auth';
 
 /**
  * Session / CSRF cookie security toggles.
@@ -33,20 +34,15 @@ export function sessionCookieSecurityOptions(): Pick<
 
 /**
  * Returns the correct cookie options for the session/auth cookie.
+ * maxAge is aligned with SESSION_IDLE_TIMEOUT_SECONDS (JWT TTL = 60 min) across all environments.
  *  - Production: SameSite=None, Secure=true (required for cross-site Next.js ↔ API)
  *  - Dev/local:  SameSite=Lax,  Secure=false (HTTP-friendly)
  */
 export function sessionCookieOptions(): CookieOptions {
-    const secure = isSecureEnv();
-    return secure
-        ? {
-              ...sessionCookieSecurityOptions(),
-              maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-          }
-        : {
-              ...sessionCookieSecurityOptions(),
-              maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days in ms
-          };
+    return {
+        ...sessionCookieSecurityOptions(),
+        maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000, // matches JWT TTL
+    };
 }
 
 export function setAuthCookies(res: Response, token: string): void {

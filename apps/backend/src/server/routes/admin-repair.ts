@@ -19,8 +19,12 @@ import { logger } from '../../lib/logger';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getPool } from '../db';
 import { safeErrorMessage } from '../../lib/safeError';
+import { requireAdmin } from '../../middleware/auth';
 
 const router = Router();
+
+// All routes in this file require admin privileges
+router.use(requireAdmin);
 
 /** Data repair — rare; tight cap per admin to limit blast radius if creds leak. */
 const adminRepairMutationLimiter = rateLimit({
@@ -67,10 +71,6 @@ router.post('/fts/rebuild', (_req: Request, res: Response) => {
  * Uses STORAGE_RETENTION_DAYS env var (default 14 days).
  */
 router.post('/backfill-expiry', adminRepairMutationLimiter, async (req: Request, res: Response) => {
-  if (!req.user?.is_admin) {
-    return res.status(403).json({ ok: false, error: 'forbidden' });
-  }
-
   const days  = Number(process.env.STORAGE_RETENTION_DAYS ?? 14) || 14;
   const delta = days * 24 * 60 * 60 * 1000; // ms
   const now   = Date.now();

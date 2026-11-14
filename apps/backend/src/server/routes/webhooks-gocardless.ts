@@ -1,3 +1,5 @@
+// GoCardless: legacy disabled — project now uses Stripe
+// This file is retained for reference but is NOT mounted in app.ts.
 import { Router, Request, Response } from 'express';
 import { getPool } from '../../lib/db';
 import { gcVerifyWebhookSignature, gcCompleteFlow, gcGetPayment, gcGetMandate } from '../../lib/gocardless';
@@ -46,6 +48,24 @@ router.post('/gocardless', async (req: Request, res: Response) => {
             bodyLen: typeof rawBody === 'string' ? rawBody.length : undefined,
         });
 
+        // Verify webhook signature FIRST — before any DB writes (H-3)
+        const isProd = process.env.NODE_ENV === 'production';
+        const secret =
+          process.env.GC_WEBHOOK_SECRET || process.env.GOCARDLESS_WEBHOOK_SECRET || '';
+
+        if (isProd && !secret) {
+            logger.error('[gocardless] missing GC_WEBHOOK_SECRET');
+            return res.status(500).json({ ok: false, error: 'missing_gc_webhook_secret' });
+        }
+
+        if (!gcVerifyWebhookSignature(rawBody, signature)) {
+            if (isProd) {
+                logger.warn('[gocardless] invalid signature');
+                return res.status(401).json({ error: 'Invalid signature' });
+            }
+            logger.warn('[gocardless] signature verification skipped (non-production or secret not set)');
+        }
+
         // Parse body (best-effort). We still store rawBody for debugging.
         let webhook: any = null;
         try {
@@ -54,7 +74,7 @@ router.post('/gocardless', async (req: Request, res: Response) => {
             logger.warn('[gocardless] webhook JSON parse failed');
         }
 
-        // Persist webhook receipt immediately (so we can confirm delivery even if signature fails)
+        // Persist webhook receipt after signature is verified
         try {
             const pool = getPool();
             const firstEvent = Array.isArray(webhook?.events) ? webhook.events[0] : null;
@@ -90,24 +110,6 @@ router.post('/gocardless', async (req: Request, res: Response) => {
             );
         } catch (e) {
             logger.error('[gocardless] failed to insert webhook_log', { message: (e as any)?.message ?? String(e) });
-        }
-
-        // Verify webhook signature (always required in production)
-        const isProd = process.env.NODE_ENV === 'production';
-        const secret =
-          process.env.GC_WEBHOOK_SECRET || process.env.GOCARDLESS_WEBHOOK_SECRET || '';
-
-        if (isProd && !secret) {
-            logger.error('[gocardless] missing GC_WEBHOOK_SECRET');
-            return res.status(500).json({ ok: false, error: 'missing_gc_webhook_secret' });
-        }
-
-        if (!gcVerifyWebhookSignature(rawBody, signature)) {
-            if (isProd) {
-                logger.warn('[gocardless] invalid signature');
-                return res.status(401).json({ error: 'Invalid signature' });
-            }
-            logger.warn('[gocardless] signature verification skipped (non-production or secret not set)');
         }
 
         if (!webhook) {

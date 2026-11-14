@@ -548,6 +548,17 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         let paramIndex = 1;
 
         if (typeof email === 'string') {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return res.status(400).json({ ok: false, error: 'invalid_email' });
+            }
+            const dupCheck = await pool.query(
+                'SELECT 1 FROM "user" WHERE lower(email) = lower($1) AND id != $2',
+                [email, userId]
+            );
+            if (dupCheck.rows.length > 0) {
+                return res.status(409).json({ ok: false, error: 'email_taken' });
+            }
             updates.push(`email = $${paramIndex++}`);
             values.push(email);
         }

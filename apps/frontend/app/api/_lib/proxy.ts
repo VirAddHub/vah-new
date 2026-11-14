@@ -74,7 +74,7 @@ export async function proxy(req: NextRequest, targetPath: string) {
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : 'Unknown error';
     console.error('[proxy:fetch-throw]', { target, error: errorMessage });
-    return NextResponse.json({ message: 'Upstream fetch failed', target }, { status: 502, headers: { 'x-proxy-target': target } });
+    return NextResponse.json({ message: 'Upstream fetch failed' }, { status: 502 });
   }
 
   if (!r.ok) {
@@ -84,7 +84,6 @@ export async function proxy(req: NextRequest, targetPath: string) {
   }
 
   const resp = new NextResponse(r.body, { status: r.status, statusText: r.statusText });
-  resp.headers.set('x-proxy-target', target); // shows up in response headers
 
   // pass headers & multiple Set-Cookie
   const setCookies: string[] = [];

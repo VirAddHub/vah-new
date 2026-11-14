@@ -126,7 +126,12 @@ router.post("/blog/upload", requireAdmin, upload.single('image'), async (req: Re
         fs.writeFileSync(filePath, req.file.buffer as any);
 
         // Generate public URL
-        const publicUrl = `${process.env.API_BASE_URL || 'https://vah-api-staging.onrender.com'}/api/media/blog/${filename}`;
+        const apiBase = process.env.API_BASE_URL || (process.env.NODE_ENV !== 'production' ? 'http://localhost:3001' : '');
+        if (!apiBase) {
+            logger.error('[admin-media] API_BASE_URL is not set in production');
+            return res.status(500).json({ ok: false, error: 'server_misconfiguration' });
+        }
+        const publicUrl = `${apiBase}/api/media/blog/${filename}`;
 
         res.json({
             ok: true,

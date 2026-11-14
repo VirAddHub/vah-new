@@ -585,7 +585,6 @@ router.post("/signup", async (req, res) => {
                 is_admin: false,
                 role: 'user',
             },
-            token
         }, 201);
     } catch (err: any) {
         const m = String(err?.message || '');
@@ -787,7 +786,6 @@ router.post("/login", async (req, res) => {
             ok: true,
             data: {
                 user: userPayload,
-                token,
             },
         });
 

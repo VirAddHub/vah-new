@@ -47,6 +47,17 @@ router.post('/', contactLimiter, async (req: Request, res: Response) => {
             });
         }
 
+        // Max length validation
+        if (name.length > 200) {
+            return res.status(400).json({ ok: false, error: 'name must be 200 characters or fewer' });
+        }
+        if (subject.length > 200) {
+            return res.status(400).json({ ok: false, error: 'subject must be 200 characters or fewer' });
+        }
+        if (message.length > 5000) {
+            return res.status(400).json({ ok: false, error: 'message must be 5000 characters or fewer' });
+        }
+
         // Email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {

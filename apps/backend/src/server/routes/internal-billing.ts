@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import crypto from 'crypto';
 import { getPool } from '../db';
 import { gcCreatePayment } from '../../lib/gocardless';
 import { generateInvoiceForPeriod } from '../../services/billing/invoiceService';
@@ -21,7 +22,9 @@ function requireCronSecret(req: Request, res: Response): string | null {
   const bearer = String(req.headers.authorization || '');
   const token = header || (bearer.startsWith('Bearer ') ? bearer.slice('Bearer '.length).trim() : '');
 
-  if (!token || token !== secret) {
+  const tokenBuf = Buffer.from(token);
+  const secretBuf = Buffer.from(secret);
+  if (tokenBuf.length !== secretBuf.length || !crypto.timingSafeEqual(tokenBuf, secretBuf)) {
     return 'unauthorized';
   }
   return null;

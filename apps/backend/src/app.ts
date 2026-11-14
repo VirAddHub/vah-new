@@ -21,7 +21,8 @@ import { health } from './server/routes/health';
 // --- routes that need raw body (webhooks)
 import { postmarkWebhook } from './server/routes/webhooks-postmark';
 import onedriveWebhook from './server/routes/webhooks-onedrive';
-import gocardlessWebhook from './server/routes/webhooks-gocardless';
+// GoCardless: legacy disabled — project now uses Stripe
+// import gocardlessWebhook from './server/routes/webhooks-gocardless';
 import stripeWebhook from './server/routes/webhooks-stripe';
 import sumsubWebhook from './server/routes/webhooks-sumsub';
 import { Router } from 'express';
@@ -144,9 +145,10 @@ export function createApp() {
     app.post('/api/webhooks/postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
     app.post('/api/webhooks-postmark', (_req, res) => res.redirect(308, '/api/webhooks/postmark'));
 
-    // Webhooks: GoCardless + Stripe (raw body required for signature verification)
+    // Webhooks: Stripe (raw body required for signature verification)
+    // GoCardless: legacy disabled — project now uses Stripe
     const webhooksRouter = Router();
-    webhooksRouter.use(gocardlessWebhook);
+    // webhooksRouter.use(gocardlessWebhook);
     webhooksRouter.use(stripeWebhook);
 
     // Sumsub webhook — raw Buffer for signature verification
@@ -156,7 +158,9 @@ export function createApp() {
         '/api/webhooks',
         express.raw({ type: 'application/json' }),
         ((req: Request & { rawBody?: string }, _res: Response, next: NextFunction) => {
-            if (req.path === '/gocardless' || req.path === '/stripe') {
+            if (req.path === '/stripe') {
+                // GoCardless: legacy disabled — project now uses Stripe
+                // req.path === '/gocardless' removed
                 req.rawBody = req.body?.toString?.('utf8') ?? '';
             }
             next();
@@ -189,6 +193,9 @@ export function createApp() {
         origin: (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
             const isProd = process.env.NODE_ENV === 'production';
             if (!origin) {
+                // No Origin header = server-to-server request (curl, cron, BFF SSR).
+                // CORS is not an authentication mechanism — real protection is via
+                // JWT auth, webhook signatures, CSRF tokens, and internal secrets.
                 return cb(null, true);
             }
             if (isCorsOriginAllowed(origin, isProd)) {
@@ -254,6 +261,19 @@ export function createApp() {
         keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
     });
 
+    // Per-user rate limiter for authenticated routes — keyed by user ID when available, falls back to IP
+    const authenticatedUserLimiter = rateLimit({
+        windowMs: 15 * 60 * 1000,
+        max: 200,
+        message: 'Too many requests for this user, please try again later.',
+        standardHeaders: true,
+        legacyHeaders: false,
+        keyGenerator: (req) => {
+            const userId = (req as Request & { user?: { id?: string } }).user?.id;
+            return userId ? `user:${userId}` : ipKeyGenerator(req.ip ?? '');
+        },
+    });
+
     const disableLimiterRaw = String(process.env.DISABLE_RATE_LIMIT ?? '').trim();
     const disableLimiterRequested =
         disableLimiterRaw === '1' || disableLimiterRaw.toLowerCase() === 'true';
@@ -310,6 +330,10 @@ export function createApp() {
     // JWT authentication middleware
     app.use('/api', authenticateJWT);
     logger.info('[middleware] JWT authentication middleware mounted');
+
+    // Per-user rate limiter — applied after auth so user ID is available; never disabled
+    app.use('/api', authenticatedUserLimiter);
+    logger.info('[middleware] Per-user rate limiter mounted');
 
     // CSRF protection for state-changing requests (after auth, before routes)
     app.use('/api', requireCsrfToken);

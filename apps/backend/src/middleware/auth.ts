@@ -40,7 +40,7 @@ function isPublicAuthRoute(path: string): boolean {
  * Verifies JWT token if present (from header or cookie) and attaches user to req.user
  * Does NOT require authentication - just sets req.user if valid token exists
  */
-export function authenticateJWT(req: Request, res: Response, next: NextFunction) {
+export async function authenticateJWT(req: Request, res: Response, next: NextFunction) {
     const authHeader = req.headers.authorization;
     const headerToken = extractTokenFromHeader(authHeader);
 
@@ -91,6 +91,30 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
         // Include role from JWT so requireAdmin can check it without a DB round-trip
         role: typeof (payload as any).role === 'string' ? (payload as any).role : undefined,
     };
+
+    // DB check: ensure user is still active (not suspended, deleted, or inactive)
+    // This prevents suspended/deleted users from retaining API access via a valid JWT.
+    let statusResult;
+    try {
+        statusResult = await getPool().query(
+            `SELECT id FROM "user"
+             WHERE id = $1
+               AND deleted_at IS NULL
+               AND (suspended_at IS NULL OR suspended_at > NOW())
+             LIMIT 1`,
+            [userId]
+        );
+    } catch (err) {
+        logger.error('[jwt] user_status_check_failed', { message: errorMessage(err) });
+        return res.status(500).json({ ok: false, error: 'internal_error' });
+    }
+
+    if (statusResult.rows.length === 0) {
+        // User is suspended, deleted, or does not exist — revoke session
+        res.clearCookie('vah_session', sessionCookieSecurityOptions());
+        return res.status(401).json({ ok: false, error: 'unauthorized' });
+    }
+
     req.user = user;
     if (process.env.NODE_ENV !== 'production') {
         logger.debug('[jwt] authenticated', { userId: user.id, is_admin: Boolean(user.is_admin) });
@@ -173,16 +197,37 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 /**
  * Require admin middleware
  * Returns 401 if not authenticated, 403 if not admin
- * Accepts is_admin flag OR an admin-level role string (see isAdminRole)
+ * Verifies against DB that the user still exists, is not deleted/suspended,
+ * and still holds is_admin=true — so a revoked admin cannot reuse a valid JWT.
  */
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
     if (!req.user?.id) {
         return res.status(401).json({ ok: false, error: 'unauthenticated' });
     }
+
+    // Fast JWT pre-check: reject obviously non-admin tokens before hitting the DB
     if (!Boolean(req.user?.is_admin) && !isAdminRole(req.user?.role)) {
         return res.status(403).json({ ok: false, error: 'forbidden' });
     }
-    next();
+
+    // DB verification: confirm the user still exists, is active, and is still an admin
+    const userId = req.user.id;
+    getPool().query(
+        `SELECT is_admin FROM "user"
+         WHERE id = $1
+           AND deleted_at IS NULL
+           AND (suspended_at IS NULL OR suspended_at > NOW())
+         LIMIT 1`,
+        [userId]
+    ).then((result) => {
+        if (result.rows.length === 0 || !result.rows[0].is_admin) {
+            return res.status(403).json({ ok: false, error: 'forbidden' });
+        }
+        next();
+    }).catch((err) => {
+        logger.error('[auth] require_admin_db_check_failed', { message: errorMessage(err) });
+        return res.status(500).json({ ok: false, error: 'internal_error' });
+    });
 }
 
 /**
