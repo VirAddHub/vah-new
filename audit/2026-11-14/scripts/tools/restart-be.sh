@@ -1,0 +1,1 @@
+pkill -f "dist/src/server.js"; sleep 1; cd /home/claude/vah/apps/backend && . /home/claude/be.env && (nohup node -r /home/claude/tools/heal.cjs dist/src/server.js >> /home/claude/be.log 2>&1 &); sleep 5; curl -s -m 5 -o /dev/null -w "be %{http_code}\n" http://127.0.0.1:4000/api/healthz

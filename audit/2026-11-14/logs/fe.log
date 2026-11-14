@@ -1,0 +1,1900 @@
+npm warn config ignoring workspace config at /home/claude/vah/apps/frontend/.npmrc
+   ▲ Next.js 15.5.18
+   - Local:        http://localhost:3000
+   - Network:      http://192.0.2.2:3000
+   - Experiments (use with caution):
+     · optimizePackageImports
+
+ ✓ Starting...
+ ⚠ Duplicate page detected. app/robots.ts and app/robots.txt resolve to /robots.txt
+ ⚠ Duplicate page detected. app/robots.ts and app/robots.txt resolve to /robots.txt/[__metadata_id__]
+ ✓ Compiled /instrumentation in 188ms (22 modules)
+ ⚠ Duplicate page detected. app/robots.ts and app/robots.txt resolve to /robots.txt
+ ⚠ Duplicate page detected. app/robots.ts and app/robots.txt resolve to /robots.txt/[__metadata_id__]
+ ✓ Ready in 1732ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 882ms (118 modules)
+ ○ Compiling / ...
+Failed to fetch font `Playfair Display`: https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `Newsreader`: https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `Poppins`: https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `IBM Plex Mono`: https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `Inter`: https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `DM Sans`: https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `Poppins`: https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `Inter`: https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `Newsreader`: https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `Playfair Display`: https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `IBM Plex Mono`: https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `DM Sans`: https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `Poppins`: https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+Failed to fetch font `Newsreader`: https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+Failed to fetch font `Inter`: https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+Failed to fetch font `DM Sans`: https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+Failed to fetch font `IBM Plex Mono`: https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+Failed to fetch font `Playfair Display`: https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+[Error: Failed to fetch font `Poppins`: https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap
+Please check your network connection.]
+ ⨯ Failed to download `Poppins` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `Poppins` from Google Fonts.}
+[Error: Failed to fetch font `DM Sans`: https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap
+Please check your network connection.]
+ ⨯ Failed to download `DM Sans` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `DM Sans` from Google Fonts.}
+[Error: Failed to fetch font `Newsreader`: https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap
+Please check your network connection.]
+ ⨯ Failed to download `Newsreader` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `Newsreader` from Google Fonts.}
+[Error: Failed to fetch font `Inter`: https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap
+Please check your network connection.]
+ ⨯ Failed to download `Inter` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `Inter` from Google Fonts.}
+[Error: Failed to fetch font `IBM Plex Mono`: https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap
+Please check your network connection.]
+ ⨯ Failed to download `IBM Plex Mono` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `IBM Plex Mono` from Google Fonts.}
+[Error: Failed to fetch font `Playfair Display`: https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap
+Please check your network connection.]
+ ⨯ Failed to download `Playfair Display` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `Playfair Display` from Google Fonts.}
+Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ ✓ Compiled / in 11.7s (1193 modules)
+ ✓ Compiled in 781ms (504 modules)
+ GET / 200 in 12570ms
+ ○ Compiling /pricing ...
+ ✓ Compiled /pricing in 3.1s (1135 modules)
+ GET /pricing 200 in 3366ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 549ms (1160 modules)
+ GET /login 200 in 957ms
+ ✓ Compiled /api/bff/auth/signup in 377ms (1182 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/signup] upstream error {
+  status: 400,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: 'validation_error',
+    message: 'Invalid input: expected boolean, received undefined',
+    details: { formErrors: [], fieldErrors: [Object] }
+  }
+}
+ POST /api/bff/auth/signup 400 in 752ms
+ ✓ Compiled /api/bff/auth/whoami in 392ms (1184 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 485ms
+[BFF auth/signup] upstream error {
+  status: 400,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: 'validation_error',
+    message: 'Invalid input: expected boolean, received undefined',
+    details: { formErrors: [], fieldErrors: [Object] }
+  }
+}
+ POST /api/bff/auth/signup 400 in 49ms
+[BFF auth/signup] upstream error {
+  status: 400,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: 'validation_error',
+    message: 'Password must be at least 8 characters long, Password must contain an uppercase letter, Password must contain a number, Invalid input: expected boolean, received undefined',
+    details: { formErrors: [], fieldErrors: [Object] }
+  }
+}
+ POST /api/bff/auth/signup 400 in 49ms
+ ✓ Compiled /api/bff/auth/logout in 254ms (1187 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/logout] Backend response: 200
+ POST /api/bff/auth/logout 200 in 327ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 42ms
+ ✓ Compiled /api/bff/auth/login in 345ms (1189 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 406ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 44ms
+ ✓ Compiled /api/bff/account in 285ms (1192 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/account 200 in 352ms
+ ✓ Compiled /api/bff/profile in 304ms (1194 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF profile] Backend response: 401 from http://localhost:4000/api/profile, body preview: {"ok":false,"error":"unauthenticated"}
+ GET /api/bff/profile 502 in 359ms
+ ✓ Compiled /api/bff/dashboard/bootstrap in 285ms (1196 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/dashboard/bootstrap 401 in 351ms
+ ✓ Compiled /api/bff/mail-items in 319ms (1198 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/mail-items 401 in 383ms
+ ✓ Compiled /api/bff/billing/overview in 391ms (1201 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+{"bff":true,"route":"/api/bff/billing/overview","category":"backend_upstream_error","upstreamStatus":401}
+ GET /api/bff/billing/overview 502 in 465ms
+ ✓ Compiled /api/bff/billing/invoices in 338ms (1203 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+{"bff":true,"route":"/api/bff/billing/invoices","category":"backend_upstream_error","upstreamStatus":401}
+ GET /api/bff/billing/invoices 502 in 392ms
+ ✓ Compiled /api/bff/profile/compliance in 359ms (1205 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/profile/compliance 401 in 414ms
+ ✓ Compiled /api/bff/forwarding/requests in 350ms (1207 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/forwarding/requests 401 in 424ms
+ ✓ Compiled /api/bff/business-owners in 389ms (1209 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/business-owners 502 in 448ms
+ ✓ Compiled /api/bff/account/businesses in 434ms (1211 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/account/businesses 401 in 504ms
+ ✓ Compiled /api/bff/tags in 394ms (1213 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/tags 401 in 456ms
+ ✓ Compiled /api/bff/profile/registered-office-address in 412ms (1215 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/profile/registered-office-address 401 in 480ms
+ ✓ Compiled /api/bff/profile/certificate-url in 404ms (1217 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/profile/certificate-url 401 in 489ms
+ ○ Compiling /api/bff/plans ...
+ ✓ Compiled /api/bff/plans in 510ms (1220 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/plans 200 in 582ms
+[BFF auth/signup] upstream error {
+  status: 500,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: { code: 'internal_error', message: 'Server error during signup' }
+  }
+}
+ POST /api/bff/auth/signup 500 in 146ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 58ms
+[BFF auth/signup] upstream error {
+  status: 500,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: { code: 'internal_error', message: 'Server error during signup' }
+  }
+}
+ POST /api/bff/auth/signup 500 in 95ms
+[BFF auth/signup] upstream error {
+  status: 400,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: 'validation_error',
+    message: 'Password must be at least 8 characters long, Password must contain an uppercase letter, Password must contain a number',
+    details: { formErrors: [], fieldErrors: [Object] }
+  }
+}
+ POST /api/bff/auth/signup 400 in 60ms
+[BFF auth/logout] Backend response: 200
+ POST /api/bff/auth/logout 200 in 42ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 31ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 41ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 41ms
+ GET /api/bff/account 200 in 52ms
+[BFF profile] Backend response: 401 from http://localhost:4000/api/profile, body preview: {"ok":false,"error":"unauthenticated"}
+ GET /api/bff/profile 502 in 32ms
+ GET /api/bff/dashboard/bootstrap 401 in 44ms
+ GET /api/bff/mail-items 401 in 42ms
+{"bff":true,"route":"/api/bff/billing/overview","category":"backend_upstream_error","upstreamStatus":401}
+ GET /api/bff/billing/overview 502 in 43ms
+{"bff":true,"route":"/api/bff/billing/invoices","category":"backend_upstream_error","upstreamStatus":401}
+ GET /api/bff/billing/invoices 502 in 29ms
+ GET /api/bff/profile/compliance 401 in 37ms
+ GET /api/bff/forwarding/requests 401 in 45ms
+ GET /api/bff/business-owners 502 in 45ms
+ GET /api/bff/account/businesses 401 in 34ms
+ GET /api/bff/tags 401 in 61ms
+ GET /api/bff/profile/registered-office-address 401 in 81ms
+ GET /api/bff/profile/certificate-url 401 in 76ms
+ GET /api/bff/plans 200 in 61ms
+[BFF auth/signup] upstream error {
+  status: 500,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: { code: 'internal_error', message: 'Server error during signup' }
+  }
+}
+ POST /api/bff/auth/signup 500 in 175ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 53ms
+[BFF auth/signup] upstream error {
+  status: 500,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: { code: 'internal_error', message: 'Server error during signup' }
+  }
+}
+ POST /api/bff/auth/signup 500 in 116ms
+[BFF auth/signup] upstream error {
+  status: 500,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: { code: 'internal_error', message: 'Server error during signup' }
+  }
+}
+ POST /api/bff/auth/signup 500 in 103ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 58ms
+[BFF auth/signup] upstream error {
+  status: 500,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: { code: 'internal_error', message: 'Server error during signup' }
+  }
+}
+ POST /api/bff/auth/signup 500 in 114ms
+[BFF auth/signup] upstream error {
+  status: 500,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: { code: 'internal_error', message: 'Server error during signup' }
+  }
+}
+ POST /api/bff/auth/signup 500 in 115ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 53ms
+[BFF auth/signup] upstream error {
+  status: 500,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: { code: 'internal_error', message: 'Server error during signup' }
+  }
+}
+ POST /api/bff/auth/signup 500 in 113ms
+[BFF auth/signup] Backend response: 201 from http://localhost:4000/api/auth/signup
+ POST /api/bff/auth/signup 201 in 258ms
+[BFF auth/whoami] Backend response: 500 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 500 in 43ms
+[BFF auth/signup] upstream error {
+  status: 409,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: {
+      code: 'EMAIL_ALREADY_EXISTS',
+      message: 'An account with this email already exists. Please sign in or reset your password.'
+    }
+  }
+}
+ POST /api/bff/auth/signup 409 in 69ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 53ms
+[BFF auth/signup] upstream error {
+  status: 409,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: {
+      code: 'EMAIL_ALREADY_EXISTS',
+      message: 'An account with this email already exists. Please sign in or reset your password.'
+    }
+  }
+}
+ POST /api/bff/auth/signup 409 in 34ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 35ms
+[BFF auth/signup] upstream error {
+  status: 409,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: {
+      code: 'EMAIL_ALREADY_EXISTS',
+      message: 'An account with this email already exists. Please sign in or reset your password.'
+    }
+  }
+}
+ POST /api/bff/auth/signup 409 in 54ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 47ms
+[BFF auth/signup] upstream error {
+  status: 409,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: {
+      code: 'EMAIL_ALREADY_EXISTS',
+      message: 'An account with this email already exists. Please sign in or reset your password.'
+    }
+  }
+}
+ POST /api/bff/auth/signup 409 in 35ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 43ms
+[BFF auth/signup] upstream error {
+  status: 409,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: {
+      code: 'EMAIL_ALREADY_EXISTS',
+      message: 'An account with this email already exists. Please sign in or reset your password.'
+    }
+  }
+}
+ POST /api/bff/auth/signup 409 in 56ms
+[BFF auth/signup] upstream error {
+  status: 400,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: 'validation_error',
+    message: 'Password must be at least 8 characters long, Password must contain an uppercase letter, Password must contain a number',
+    details: { formErrors: [], fieldErrors: [Object] }
+  }
+}
+ POST /api/bff/auth/signup 400 in 37ms
+[BFF auth/logout] Backend response: 200
+ POST /api/bff/auth/logout 200 in 35ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 49ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 41ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 32ms
+ GET /api/bff/account 200 in 50ms
+[BFF profile] Backend response: 401 from http://localhost:4000/api/profile, body preview: {"ok":false,"error":"unauthenticated"}
+ GET /api/bff/profile 502 in 34ms
+ GET /api/bff/dashboard/bootstrap 401 in 37ms
+ GET /api/bff/mail-items 401 in 28ms
+{"bff":true,"route":"/api/bff/billing/overview","category":"backend_upstream_error","upstreamStatus":401}
+ GET /api/bff/billing/overview 502 in 41ms
+{"bff":true,"route":"/api/bff/billing/invoices","category":"backend_upstream_error","upstreamStatus":401}
+ GET /api/bff/billing/invoices 502 in 38ms
+ GET /api/bff/profile/compliance 401 in 34ms
+ GET /api/bff/forwarding/requests 401 in 39ms
+ GET /api/bff/business-owners 502 in 48ms
+ GET /api/bff/account/businesses 401 in 39ms
+ GET /api/bff/tags 401 in 30ms
+ GET /api/bff/profile/registered-office-address 401 in 39ms
+ GET /api/bff/profile/certificate-url 401 in 38ms
+ GET /api/bff/plans 200 in 37ms
+[BFF auth/signup] upstream error {
+  status: 409,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: {
+      code: 'EMAIL_ALREADY_EXISTS',
+      message: 'An account with this email already exists. Please sign in or reset your password.'
+    }
+  }
+}
+ POST /api/bff/auth/signup 409 in 49ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 39ms
+[BFF auth/signup] upstream error {
+  status: 409,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: {
+      code: 'EMAIL_ALREADY_EXISTS',
+      message: 'An account with this email already exists. Please sign in or reset your password.'
+    }
+  }
+}
+ POST /api/bff/auth/signup 409 in 32ms
+[BFF auth/signup] upstream error {
+  status: 400,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: 'validation_error',
+    message: 'Password must be at least 8 characters long, Password must contain an uppercase letter, Password must contain a number',
+    details: { formErrors: [], fieldErrors: [Object] }
+  }
+}
+ POST /api/bff/auth/signup 400 in 32ms
+[BFF auth/logout] Backend response: 200
+ POST /api/bff/auth/logout 200 in 39ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 39ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 31ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 42ms
+ GET /api/bff/account 200 in 55ms
+[BFF profile] Backend response: 401 from http://localhost:4000/api/profile, body preview: {"ok":false,"error":"unauthenticated"}
+ GET /api/bff/profile 502 in 30ms
+ GET /api/bff/dashboard/bootstrap 401 in 34ms
+ GET /api/bff/mail-items 401 in 40ms
+{"bff":true,"route":"/api/bff/billing/overview","category":"backend_upstream_error","upstreamStatus":401}
+ GET /api/bff/billing/overview 502 in 43ms
+{"bff":true,"route":"/api/bff/billing/invoices","category":"backend_upstream_error","upstreamStatus":401}
+ GET /api/bff/billing/invoices 502 in 37ms
+ GET /api/bff/profile/compliance 401 in 47ms
+ GET /api/bff/forwarding/requests 401 in 41ms
+ GET /api/bff/business-owners 502 in 28ms
+ GET /api/bff/account/businesses 401 in 37ms
+ GET /api/bff/tags 401 in 63ms
+ GET /api/bff/profile/registered-office-address 401 in 40ms
+ GET /api/bff/profile/certificate-url 401 in 33ms
+ GET /api/bff/plans 200 in 41ms
+[BFF auth/signup] upstream error {
+  status: 409,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: {
+      code: 'EMAIL_ALREADY_EXISTS',
+      message: 'An account with this email already exists. Please sign in or reset your password.'
+    }
+  }
+}
+ POST /api/bff/auth/signup 409 in 87ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 189ms
+[BFF auth/signup] upstream error {
+  status: 409,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: {
+      code: 'EMAIL_ALREADY_EXISTS',
+      message: 'An account with this email already exists. Please sign in or reset your password.'
+    }
+  }
+}
+ POST /api/bff/auth/signup 409 in 31ms
+[BFF auth/signup] upstream error {
+  status: 429,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: 'Too many authentication attempts, please try again later.'
+}
+ POST /api/bff/auth/signup 429 in 44ms
+[BFF auth/logout] Backend response: 429
+[BFF auth/logout] No Set-Cookie headers from backend - will use fallback clearing
+ POST /api/bff/auth/logout 200 in 32ms
+[BFF auth/whoami] Backend response: 429 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 429 in 46ms
+[BFF auth/login] Backend response: 429
+ POST /api/bff/auth/login 429 in 49ms
+[BFF auth/login] Backend response: 429
+ POST /api/bff/auth/login 429 in 48ms
+ GET /api/bff/account 200 in 36ms
+[BFF profile] Backend response: 401 from http://localhost:4000/api/profile, body preview: {"ok":false,"error":"unauthenticated"}
+ GET /api/bff/profile 502 in 38ms
+ GET /api/bff/dashboard/bootstrap 401 in 44ms
+ GET /api/bff/mail-items 401 in 28ms
+{"bff":true,"route":"/api/bff/billing/overview","category":"backend_upstream_error","upstreamStatus":401}
+ GET /api/bff/billing/overview 502 in 34ms
+{"bff":true,"route":"/api/bff/billing/invoices","category":"backend_upstream_error","upstreamStatus":401}
+ GET /api/bff/billing/invoices 502 in 38ms
+ GET /api/bff/profile/compliance 401 in 41ms
+ GET /api/bff/forwarding/requests 401 in 36ms
+ GET /api/bff/business-owners 502 in 41ms
+ GET /api/bff/account/businesses 401 in 43ms
+ GET /api/bff/tags 401 in 31ms
+ GET /api/bff/profile/registered-office-address 401 in 31ms
+ GET /api/bff/profile/certificate-url 401 in 43ms
+ GET /api/bff/plans 200 in 43ms
+[BFF auth/signup] upstream error {
+  status: 409,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: {
+      code: 'EMAIL_ALREADY_EXISTS',
+      message: 'An account with this email already exists. Please sign in or reset your password.'
+    }
+  }
+}
+ POST /api/bff/auth/signup 409 in 70ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 56ms
+[BFF auth/signup] upstream error {
+  status: 409,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: {
+      code: 'EMAIL_ALREADY_EXISTS',
+      message: 'An account with this email already exists. Please sign in or reset your password.'
+    }
+  }
+}
+ POST /api/bff/auth/signup 409 in 71ms
+[BFF auth/signup] upstream error {
+  status: 400,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: 'validation_error',
+    message: 'Password must be at least 8 characters long, Password must contain an uppercase letter, Password must contain a number',
+    details: { formErrors: [], fieldErrors: [Object] }
+  }
+}
+ POST /api/bff/auth/signup 400 in 61ms
+[BFF auth/logout] Backend response: 200
+ POST /api/bff/auth/logout 200 in 56ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 61ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 56ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 39ms
+ GET /api/bff/account 200 in 35ms
+[BFF profile] Backend response: 401 from http://localhost:4000/api/profile, body preview: {"ok":false,"error":"unauthenticated"}
+ GET /api/bff/profile 502 in 41ms
+ GET /api/bff/dashboard/bootstrap 401 in 44ms
+ GET /api/bff/mail-items 401 in 32ms
+{"bff":true,"route":"/api/bff/billing/overview","category":"backend_upstream_error","upstreamStatus":401}
+ GET /api/bff/billing/overview 502 in 31ms
+{"bff":true,"route":"/api/bff/billing/invoices","category":"backend_upstream_error","upstreamStatus":401}
+ GET /api/bff/billing/invoices 502 in 33ms
+ GET /api/bff/profile/compliance 401 in 43ms
+ GET /api/bff/forwarding/requests 401 in 34ms
+ GET /api/bff/business-owners 502 in 36ms
+ GET /api/bff/account/businesses 401 in 40ms
+ GET /api/bff/tags 401 in 33ms
+ GET /api/bff/profile/registered-office-address 401 in 45ms
+ GET /api/bff/profile/certificate-url 401 in 94ms
+ GET /api/bff/plans 200 in 232ms
+[BFF auth/signup] upstream error {
+  status: 409,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: {
+      code: 'EMAIL_ALREADY_EXISTS',
+      message: 'An account with this email already exists. Please sign in or reset your password.'
+    }
+  }
+}
+ POST /api/bff/auth/signup 409 in 36ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 40ms
+[BFF auth/signup] upstream error {
+  status: 409,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: {
+      code: 'EMAIL_ALREADY_EXISTS',
+      message: 'An account with this email already exists. Please sign in or reset your password.'
+    }
+  }
+}
+ POST /api/bff/auth/signup 409 in 39ms
+[BFF auth/signup] upstream error {
+  status: 400,
+  url: 'http://localhost:4000/api/auth/signup',
+  data: {
+    ok: false,
+    error: 'validation_error',
+    message: 'Password must be at least 8 characters long, Password must contain an uppercase letter, Password must contain a number',
+    details: { formErrors: [], fieldErrors: [Object] }
+  }
+}
+ POST /api/bff/auth/signup 400 in 31ms
+[BFF auth/logout] Backend response: 200
+ POST /api/bff/auth/logout 200 in 43ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 41ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 32ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 42ms
+ GET /api/bff/account 200 in 54ms
+[BFF profile] Backend response: 401 from http://localhost:4000/api/profile, body preview: {"ok":false,"error":"unauthenticated"}
+ GET /api/bff/profile 502 in 41ms
+ GET /api/bff/dashboard/bootstrap 401 in 46ms
+ GET /api/bff/mail-items 401 in 52ms
+{"bff":true,"route":"/api/bff/billing/overview","category":"backend_upstream_error","upstreamStatus":401}
+ GET /api/bff/billing/overview 502 in 37ms
+{"bff":true,"route":"/api/bff/billing/invoices","category":"backend_upstream_error","upstreamStatus":401}
+ GET /api/bff/billing/invoices 502 in 28ms
+ GET /api/bff/profile/compliance 401 in 37ms
+ GET /api/bff/forwarding/requests 401 in 38ms
+ GET /api/bff/business-owners 502 in 30ms
+ GET /api/bff/account/businesses 401 in 29ms
+ GET /api/bff/tags 401 in 40ms
+ GET /api/bff/profile/registered-office-address 401 in 40ms
+ GET /api/bff/profile/certificate-url 401 in 31ms
+ GET /api/bff/plans 200 in 45ms
+[BFF auth/signup] Backend response: 201 from http://localhost:4000/api/auth/signup
+ POST /api/bff/auth/signup 201 in 178ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 85ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 62ms
+ GET /api/bff/dashboard/bootstrap 200 in 126ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 2.4s (1055 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ POST /api/contact 404 in 2911ms
+ GET /api/bff/account 200 in 2690ms
+[BFF profile] Backend response: 200 from http://localhost:4000/api/profile, body preview: {"ok":true,"data":{"id":"4","email":"cust1794683482@example.test","state":null,"first_name":"Test","last_name":"Customer","phone":"+447700900001","company_name":"Sandbox Widgets Ltd","companies_house_number":"12345678","company_number":"12345678","address_line1":"1 Test Street","address_line2":null,
+ GET /api/bff/profile 200 in 154ms
+ POST /api/contact 404 in 176ms
+ GET /api/bff/mail-items 403 in 64ms
+{"bff":true,"route":"/api/bff/billing/overview","category":"backend_upstream_error","upstreamStatus":403}
+ GET /api/bff/billing/overview 502 in 152ms
+ POST /api/contact 404 in 167ms
+ ○ Compiling /api/bff/payments/stripe/publishable-key ...
+ ✓ Compiled /api/bff/payments/stripe/publishable-key in 743ms (1057 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[proxy:error] {
+  target: 'http://localhost:4000/api/payments/stripe/publishable-key',
+  status: 403,
+  body: '{"ok":false,"error":"subscription_required","message":"An active subscription is required to access this resource."}'
+}
+ GET /api/bff/payments/stripe/publishable-key 403 in 1063ms
+ POST /api/contact 404 in 1047ms
+ GET /api/bff/profile/compliance 200 in 68ms
+ ✓ Compiled /api/bff/payments/stripe/checkout-session-embedded in 491ms (1059 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[proxy:error] {
+  target: 'http://localhost:4000/api/payments/stripe/checkout-session-embedded',
+  status: 403,
+  body: '{"ok":false,"error":"subscription_required","message":"An active subscription is required to access this resource."}'
+}
+ POST /api/bff/payments/stripe/checkout-session-embedded 403 in 551ms
+ ✓ Compiled /api/bff/payments/redirect-flows in 467ms (1061 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[proxy:error] {
+  target: 'http://localhost:4000/api/payments/redirect-flows',
+  status: 403,
+  body: '{"ok":false,"error":"subscription_required","message":"An active subscription is required to access this resource."}'
+}
+ POST /api/bff/payments/redirect-flows 403 in 556ms
+ ○ Compiling /api/bff/kyc/start ...
+ ✓ Compiled /api/bff/kyc/start in 657ms (1063 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ POST /api/bff/kyc/start 403 in 1360ms
+[BFF auth/signup] Backend response: 201 from http://localhost:4000/api/auth/signup
+ POST /api/bff/auth/signup 201 in 122ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 53ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 70ms
+ GET /api/bff/dashboard/bootstrap 200 in 105ms
+ GET /api/bff/account 200 in 109ms
+[BFF profile] Backend response: 200 from http://localhost:4000/api/profile, body preview: {"ok":true,"data":{"id":"5","email":"cust1794683491@example.test","state":null,"first_name":"Test","last_name":"Customer","phone":"+447700900001","company_name":"Sandbox Widgets Ltd","companies_house_number":"12345678","company_number":"12345678","address_line1":"1 Test Street","address_line2":null,
+ GET /api/bff/profile 200 in 55ms
+ GET /api/bff/mail-items 403 in 48ms
+{"bff":true,"route":"/api/bff/billing/overview","category":"backend_upstream_error","upstreamStatus":403}
+ GET /api/bff/billing/overview 502 in 44ms
+[proxy:error] {
+  target: 'http://localhost:4000/api/payments/stripe/publishable-key',
+  status: 403,
+  body: '{"ok":false,"error":"subscription_required","message":"An active subscription is required to access this resource."}'
+}
+ GET /api/bff/payments/stripe/publishable-key 403 in 32ms
+ GET /api/bff/profile/compliance 200 in 59ms
+[proxy:error] {
+  target: 'http://localhost:4000/api/payments/stripe/checkout-session-embedded',
+  status: 403,
+  body: '{"ok":false,"error":"subscription_required","message":"An active subscription is required to access this resource."}'
+}
+ POST /api/bff/payments/stripe/checkout-session-embedded 403 in 98ms
+[proxy:error] {
+  target: 'http://localhost:4000/api/payments/redirect-flows',
+  status: 403,
+  body: '{"ok":false,"error":"subscription_required","message":"An active subscription is required to access this resource."}'
+}
+ POST /api/bff/payments/redirect-flows 403 in 49ms
+ POST /api/bff/kyc/start 403 in 39ms
+[BFF auth/signup] Backend response: 201 from http://localhost:4000/api/auth/signup
+ POST /api/bff/auth/signup 201 in 108ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 54ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 69ms
+ GET /api/bff/dashboard/bootstrap 200 in 54ms
+ GET /api/bff/account 200 in 64ms
+[BFF profile] Backend response: 200 from http://localhost:4000/api/profile, body preview: {"ok":true,"data":{"id":"6","email":"cust1794683493@example.test","state":null,"first_name":"Test","last_name":"Customer","phone":"+447700900001","company_name":"Sandbox Widgets Ltd","companies_house_number":"12345678","company_number":"12345678","address_line1":"1 Test Street","address_line2":null,
+ GET /api/bff/profile 200 in 46ms
+ GET /api/bff/mail-items 403 in 49ms
+{"bff":true,"route":"/api/bff/billing/overview","category":"backend_upstream_error","upstreamStatus":403}
+ GET /api/bff/billing/overview 502 in 32ms
+[proxy:error] {
+  target: 'http://localhost:4000/api/payments/stripe/publishable-key',
+  status: 403,
+  body: '{"ok":false,"error":"subscription_required","message":"An active subscription is required to access this resource."}'
+}
+ GET /api/bff/payments/stripe/publishable-key 403 in 45ms
+ GET /api/bff/profile/compliance 200 in 51ms
+[proxy:error] {
+  target: 'http://localhost:4000/api/payments/stripe/checkout-session-embedded',
+  status: 403,
+  body: '{"ok":false,"error":"subscription_required","message":"An active subscription is required to access this resource."}'
+}
+ POST /api/bff/payments/stripe/checkout-session-embedded 403 in 30ms
+[proxy:error] {
+  target: 'http://localhost:4000/api/payments/redirect-flows',
+  status: 403,
+  body: '{"ok":false,"error":"subscription_required","message":"An active subscription is required to access this resource."}'
+}
+ POST /api/bff/payments/redirect-flows 403 in 44ms
+ POST /api/bff/kyc/start 403 in 53ms
+[BFF auth/signup] Backend response: 201 from http://localhost:4000/api/auth/signup
+ POST /api/bff/auth/signup 201 in 125ms
+ GET /api/bff/payments/stripe/publishable-key 200 in 51ms
+[proxy:error] {
+  target: 'http://localhost:4000/api/payments/stripe/checkout-session-embedded',
+  status: 500,
+  body: '{"ok":false,"error":"checkout_failed"}'
+}
+ POST /api/bff/payments/stripe/checkout-session-embedded 500 in 1086ms
+ GET /api/bff/billing/overview 200 in 50ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 56ms
+ GET /api/bff/billing/overview 200 in 64ms
+ GET /api/bff/billing/invoices 200 in 65ms
+ GET /api/bff/mail-items 403 in 57ms
+[BFF auth/logout] Backend response: 403
+[BFF auth/logout] No Set-Cookie headers from backend - will use fallback clearing
+ POST /api/bff/auth/logout 200 in 55ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 39ms
+[BFF auth/signup] Backend response: 201 from http://localhost:4000/api/auth/signup
+ POST /api/bff/auth/signup 201 in 129ms
+ GET /api/bff/payments/stripe/publishable-key 200 in 37ms
+[proxy:error] {
+  target: 'http://localhost:4000/api/payments/stripe/checkout-session-embedded',
+  status: 500,
+  body: '{"ok":false,"error":"checkout_failed"}'
+}
+ POST /api/bff/payments/stripe/checkout-session-embedded 500 in 1048ms
+ GET /api/bff/billing/overview 200 in 49ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 48ms
+ GET /api/bff/billing/overview 200 in 50ms
+ GET /api/bff/billing/invoices 200 in 50ms
+ GET /api/bff/mail-items 403 in 49ms
+[BFF auth/logout] Backend response: 403
+[BFF auth/logout] No Set-Cookie headers from backend - will use fallback clearing
+ POST /api/bff/auth/logout 200 in 37ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 166ms
+[BFF auth/signup] Backend response: 201 from http://localhost:4000/api/auth/signup
+ POST /api/bff/auth/signup 201 in 125ms
+ GET /api/bff/payments/stripe/publishable-key 200 in 46ms
+[proxy:error] {
+  target: 'http://localhost:4000/api/payments/stripe/checkout-session-embedded',
+  status: 500,
+  body: '{"ok":false,"error":"checkout_failed"}'
+}
+ POST /api/bff/payments/stripe/checkout-session-embedded 500 in 1068ms
+ GET /api/bff/billing/overview 200 in 37ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 53ms
+ GET /api/bff/billing/overview 200 in 51ms
+ GET /api/bff/billing/invoices 200 in 36ms
+ GET /api/bff/mail-items 403 in 42ms
+[BFF auth/logout] Backend response: 403
+[BFF auth/logout] No Set-Cookie headers from backend - will use fallback clearing
+ POST /api/bff/auth/logout 200 in 42ms
+[BFF auth/login] Backend response: 401
+ POST /api/bff/auth/login 401 in 38ms
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 115ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 76ms
+ GET /api/bff/mail-items 403 in 40ms
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 89ms
+ ○ Compiling /api/admin/mail-items ...
+ ✓ Compiled /api/admin/mail-items in 857ms (614 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[proxy:error] {
+  target: 'http://localhost:4000/api/admin/mail-items',
+  status: 404,
+  body: '{"ok":false,"error":"not_found"}'
+}
+ POST /api/admin/mail-items 404 in 1162ms
+ GET /api/admin/mail-items 200 in 53ms
+ GET /api/bff/mail-items 403 in 31ms
+ ✓ Compiled /api/admin/users in 232ms (616 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[proxy:error] {
+  target: 'http://localhost:4000/api/admin/users',
+  status: 403,
+  body: '{"ok":false,"error":"forbidden"}'
+}
+ GET /api/admin/users 403 in 316ms
+ ○ Compiling /api/bff/admin/overview ...
+ ✓ Compiled /api/bff/admin/overview in 758ms (620 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/admin/overview 403 in 829ms
+ ✓ Compiled /api/admin/plans in 268ms (622 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[proxy:error] {
+  target: 'http://localhost:4000/api/admin/plans',
+  status: 403,
+  body: '{"ok":false,"error":"forbidden"}'
+}
+ POST /api/admin/plans 403 in 355ms
+ ○ Compiling /api/admin/users/create ...
+ ✓ Compiled /api/admin/users/create in 1299ms (756 modules)
+ POST /api/admin/users/create 400 in 1526ms
+ ✓ Compiled /api/admin in 238ms (758 modules)
+ GET /api/admin?endpoint=stats 200 in 305ms
+ ✓ Compiled /api/admin/password-reset in 272ms (760 modules)
+Sending password reset email to: admin@example.test
+Reset link: undefined/admin/reset-password?token=J1HqRbYbXSlqevI7SvdViQGjFjqEWaUM
+ POST /api/admin/password-reset 200 in 323ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 116ms
+ ✓ Compiled /api/bff/account/businesses in 117ms (261 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/account/businesses 200 in 175ms
+ POST /api/bff/account/businesses 201 in 44ms
+ GET /api/bff/account/businesses 200 in 41ms
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 115ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 49ms
+ GET /api/bff/mail-items 200 in 63ms
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 102ms
+[proxy:error] {
+  target: 'http://localhost:4000/api/admin/mail-items',
+  status: 404,
+  body: '{"ok":false,"error":"not_found"}'
+}
+ POST /api/admin/mail-items 404 in 47ms
+ GET /api/admin/mail-items 200 in 216ms
+ GET /api/bff/mail-items 200 in 130ms
+ ✓ Compiled /api/bff/mail/scan-url in 427ms (764 modules)
+[scan-url] incoming {
+  disposition: 'inline',
+  mailItemId: '2',
+  hasCookie: true,
+  hasAuthHeader: false
+}
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[scan-url] backend error {
+  disposition: 'inline',
+  status: 400,
+  mailItemId: '2',
+  errorText: '{"ok":false,"error":"no_file_url"}'
+}
+ GET /api/bff/mail/scan-url?mailItemId=2&disposition=inline 400 in 596ms
+ ✓ Compiled /api/bff/mail-items/[id] in 287ms (766 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ PATCH /api/bff/mail-items/2 200 in 652ms
+ ✓ Compiled /api/bff/tags in 153ms (267 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/tags 200 in 204ms
+ ✓ Compiled /api/bff/tags/rename in 290ms (770 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ POST /api/bff/tags/rename 200 in 373ms
+ DELETE /api/bff/mail-items/2 200 in 89ms
+ GET /api/bff/mail-items 200 in 66ms
+ ✓ Compiled /api/bff/mail-items/[id]/restore in 316ms (772 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ POST /api/bff/mail-items/2/restore 200 in 745ms
+ ✓ Compiled /api/bff/forwarding/requests in 190ms (273 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[/api/bff/forwarding/requests] POST request received {
+  hasCookie: true,
+  cookieLength: 380,
+  hasAuthHeader: false,
+  bodyLength: 152
+}
+[/api/bff/forwarding/requests] Forwarding to backend { hasCookies: true, hasAuth: false, hasCsrf: true }
+ POST /api/bff/forwarding/requests 200 in 264ms
+ GET /api/bff/forwarding/requests 200 in 54ms
+ ✓ Compiled /api/bff/forwarding/requests/bulk in 390ms (776 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ POST /api/bff/forwarding/requests/bulk 404 in 469ms
+ ✓ Compiled /api/admin/forwarding/requests in 253ms (778 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/admin/forwarding/requests 200 in 314ms
+ ○ Compiling /api/admin/forwarding/queue ...
+ ✓ Compiled /api/admin/forwarding/queue in 946ms (780 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[proxy:error] {
+  target: 'http://localhost:4000/api/admin/forwarding/queue',
+  status: 404,
+  body: '{"ok":false,"error":"not_found"}'
+}
+ GET /api/admin/forwarding/queue 404 in 1007ms
+ ✓ Compiled /api/admin/forwarding/requests/[id]/status in 310ms (782 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[proxy:error] {
+  target: 'http://localhost:4000/api/admin/forwarding/requests/1/status',
+  status: 400,
+  body: '{"ok":false,"error":"invalid_status: Reviewed"}'
+}
+ POST /api/admin/forwarding/requests/1/status 400 in 722ms
+[proxy:error] {
+  target: 'http://localhost:4000/api/admin/forwarding/requests/1/status',
+  status: 400,
+  body: '{"ok":false,"error":"invalid_status: Processing"}'
+}
+ POST /api/admin/forwarding/requests/1/status 400 in 71ms
+ POST /api/admin/forwarding/requests/1/status 200 in 121ms
+[proxy:error] {
+  target: 'http://localhost:4000/api/admin/forwarding/requests/1/status',
+  status: 400,
+  body: '{"ok":false,"error":"invalid_status: Delivered"}'
+}
+ POST /api/admin/forwarding/requests/1/status 400 in 47ms
+ ✓ Compiled /api/admin/forwarding/requests/[id]/unlock in 290ms (784 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[proxy:error] {
+  target: 'http://localhost:4000/api/admin/forwarding/requests/1/unlock',
+  status: 404,
+  body: '{"ok":false,"error":"not_locked","message":"Request is not locked"}'
+}
+ POST /api/admin/forwarding/requests/1/unlock 404 in 692ms
+ ✓ Compiled /api/bff/forwarding/requests/[id] in 334ms (786 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/forwarding/requests/1 200 in 721ms
+ ✓ Compiled /api/bff/auth/signup in 250ms (287 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/signup] Backend response: 201 from http://localhost:4000/api/auth/signup
+ POST /api/bff/auth/signup 201 in 375ms
+[proxy:error] {
+  target: 'http://localhost:4000/api/admin/users',
+  status: 403,
+  body: '{"ok":false,"error":"forbidden"}'
+}
+ GET /api/admin/users 403 in 46ms
+ GET /api/bff/admin/overview 403 in 48ms
+[proxy:error] {
+  target: 'http://localhost:4000/api/admin/plans',
+  status: 403,
+  body: '{"ok":false,"error":"forbidden"}'
+}
+ POST /api/admin/plans 403 in 31ms
+ POST /api/admin/users/create 400 in 35ms
+ GET /api/admin?endpoint=stats 200 in 38ms
+Sending password reset email to: admin@example.test
+Reset link: undefined/admin/reset-password?token=byopo7xvNjrqeZvfd0d2vu6343xXQgXN
+ POST /api/admin/password-reset 200 in 38ms
+ ○ Compiling / ...
+ ✓ Compiled / in 2.6s (626 modules)
+ GET / 200 in 3258ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /api/bff/auth/whoami in 690ms (629 modules)
+ ✓ Compiled (651 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 1189ms
+ GET /api/bff/plans 200 in 1200ms
+ GET /icons/icon-192.png 404 in 1682ms
+ ✓ Compiled /pricing in 270ms (663 modules)
+ GET /pricing 200 in 556ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 118ms
+ GET /api/bff/plans 200 in 129ms
+ ○ Compiling /about ...
+ ✓ Compiled /about in 770ms (1170 modules)
+ GET /about 200 in 1278ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 67ms
+ ○ Compiling /contact ...
+ ✓ Compiled /contact in 577ms (1176 modules)
+ GET /contact 200 in 873ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 63ms
+ ○ Compiling /help ...
+ ✓ Compiled /help in 672ms (1184 modules)
+ GET /help 200 in 928ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 58ms
+ ○ Compiling /blog ...
+ ✓ Compiled /blog in 1089ms (1198 modules)
+ GET /blog 200 in 1374ms
+ GET /icons/icon-192.png 404 in 162ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 66ms
+ ○ Compiling /privacy ...
+ ✓ Compiled /privacy in 692ms (1206 modules)
+ GET /privacy 200 in 942ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 73ms
+ ○ Compiling /terms ...
+ ✓ Compiled /terms in 565ms (1214 modules)
+ GET /terms 200 in 771ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 43ms
+ ○ Compiling /kyc ...
+ ✓ Compiled /kyc in 664ms (1224 modules)
+ GET /kyc 200 in 1360ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 58ms
+ ○ Compiling /compliance-check ...
+ ✓ Compiled /compliance-check in 761ms (1235 modules)
+ GET /compliance-check 200 in 1002ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 55ms
+ ○ Compiling /signup ...
+ ✓ Compiled /signup in 695ms (1257 modules)
+ GET /signup 200 in 1036ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 63ms
+ GET /api/bff/plans 200 in 135ms
+ GET /icons/icon-192.png 404 in 69ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 1140ms (745 modules)
+ GET /login 200 in 1437ms
+ GET /icons/icon-192.png 404 in 186ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 108ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 123ms
+ ○ Compiling /reset-password ...
+ ✓ Compiled /reset-password in 2.2s (1278 modules)
+ GET /reset-password 200 in 2524ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 89ms
+ ○ Compiling /plans ...
+ ✓ Compiled /plans in 829ms (1280 modules)
+ GET /plans 200 in 999ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 131ms
+ GET /icons/icon-192.png 404 in 138ms
+ ○ Compiling /docs/api ...
+ ✓ Compiled /docs/api in 701ms (1282 modules)
+ GET /docs/api 200 in 876ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 61ms
+ ○ Compiling /verify-owner ...
+ ✓ Compiled /verify-owner in 944ms (1299 modules)
+ GET /verify-owner 200 in 1151ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 44ms
+ ○ Compiling /verify-email-change ...
+ ✓ Compiled /verify-email-change in 985ms (1235 modules)
+ GET /verify-email-change 200 in 1504ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 52ms
+ GET /nonexistent-page 404 in 164ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 32ms
+ ○ Compiling / ...
+ ✓ Compiled / in 535ms (724 modules)
+ GET / 200 in 1434ms
+ GET /icons/icon-192.png 404 in 188ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/plans 200 in 90ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 103ms
+ ✓ Compiled /pricing in 476ms (721 modules)
+ GET /pricing 200 in 749ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 96ms
+ GET /api/bff/plans 200 in 112ms
+ ✓ Compiled /about in 502ms (726 modules)
+ GET /about 200 in 901ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 69ms
+ ✓ Compiled /contact in 406ms (723 modules)
+ GET /contact 200 in 652ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 60ms
+ ✓ Compiled /help in 411ms (729 modules)
+ GET /help 200 in 741ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 84ms
+ ✓ Compiled /blog in 463ms (731 modules)
+ GET /blog 200 in 730ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 82ms
+ ○ Compiling /signup ...
+ ✓ Compiled /signup in 539ms (739 modules)
+ GET /signup 200 in 916ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/plans 200 in 122ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 81ms
+ GET /icons/icon-192.png 404 in 85ms
+ GET /login 200 in 118ms
+ GET /icons/icon-192.png 404 in 95ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 82ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 100ms
+ ○ Compiling /terms ...
+ ✓ Compiled /terms in 845ms (745 modules)
+ GET /terms 200 in 1307ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 96ms
+ ✓ Compiled /compliance-check in 401ms (745 modules)
+ GET /compliance-check 200 in 650ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 62ms
+ GET /login 200 in 125ms
+ GET /icons/icon-192.png 404 in 151ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 76ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 132ms
+ GET /icons/icon-192.png 404 in 122ms
+ ✓ Compiled /api/bff/auth/login in 468ms (735 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 1196ms
+ ○ Compiling /mail ...
+ ✓ Compiled /mail in 6.9s (1577 modules)
+ GET /mail 200 in 7143ms
+ ○ Compiling /api/bff/account/businesses ...
+ ✓ Compiled /api/bff/account/businesses in 580ms (935 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/account/businesses 200 in 1142ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 1119ms
+ ✓ Compiled /api/bff/tags in 439ms (937 modules)
+ ✓ Compiled (941 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/tags 200 in 1132ms
+ GET /api/bff/mail-items?includeArchived=true&business_id=1 200 in 1190ms
+ ○ Compiling /forwarding ...
+ ✓ Compiled /forwarding in 718ms (1592 modules)
+ GET /api/bff/dashboard/bootstrap 200 in 2218ms
+ GET /forwarding 200 in 994ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/account/businesses 200 in 88ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 90ms
+ GET /mail 200 in 118ms
+ GET /mail 200 in 123ms
+ GET /api/bff/mail-items?includeArchived=true&business_id=1 200 in 80ms
+ GET /api/bff/tags 200 in 170ms
+ GET /icons/icon-192.png 404 in 93ms
+ GET /api/bff/dashboard/bootstrap 200 in 1285ms
+ ○ Compiling /billing ...
+ ✓ Compiled /billing in 947ms (1599 modules)
+ GET /billing 200 in 1142ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 82ms
+ GET /api/bff/account/businesses 200 in 95ms
+ ○ Compiling /account ...
+ ✓ Compiled /account in 827ms (1610 modules)
+ GET /account 200 in 925ms
+ GET /account 200 in 45ms
+ GET /api/bff/dashboard/bootstrap 200 in 1095ms
+ ○ Compiling /account/overview ...
+ ✓ Compiled /account/overview in 1778ms (1622 modules)
+ GET /account/overview 200 in 2029ms
+ GET /icons/icon-192.png 404 in 1937ms
+ GET /account/overview 200 in 94ms
+ ○ Compiling /api/bff/account ...
+ ✓ Compiled /api/bff/account in 679ms (970 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /icons/icon-192.png 404 in 873ms
+ GET /api/bff/dashboard/bootstrap 200 in 2571ms
+ GET /api/bff/account 200 in 2638ms
+ GET /account 200 in 88ms
+ GET /api/bff/account/businesses 200 in 82ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 82ms
+ GET /account/overview 200 in 96ms
+ GET /account/overview 200 in 72ms
+ GET /icons/icon-192.png 404 in 59ms
+ GET /api/bff/dashboard/bootstrap 200 in 1098ms
+ GET /api/bff/account 200 in 1067ms
+ GET /account/overview 200 in 146ms
+ GET /api/bff/account/businesses 200 in 86ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 98ms
+ GET /api/bff/dashboard/bootstrap 200 in 1082ms
+ GET /api/bff/account 200 in 1070ms
+ ○ Compiling /account/verification ...
+ ✓ Compiled /account/verification in 1164ms (1571 modules)
+ GET /account/verification 200 in 1583ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/account/businesses 200 in 83ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 93ms
+ ○ Compiling /api/bff/business-owners ...
+ ✓ Compiled /api/bff/business-owners in 728ms (914 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/business-owners 200 in 1354ms
+ ○ Compiling /account/addresses ...
+ GET /api/bff/dashboard/bootstrap 200 in 2521ms
+ ✓ Compiled /account/addresses in 1360ms (1590 modules)
+ GET /account/addresses 200 in 1599ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/account/businesses 200 in 143ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 171ms
+ GET /api/bff/dashboard/bootstrap 200 in 1119ms
+ GET /api/bff/account 200 in 1137ms
+ ○ Compiling /account/billing ...
+ ✓ Compiled /account/billing in 883ms (1584 modules)
+ GET /account/billing 200 in 1190ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/account/businesses 200 in 76ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 57ms
+ ○ Compiling /api/bff/billing/invoices ...
+ ✓ Compiled /api/bff/billing/invoices in 547ms (914 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/billing/invoices?page=1&page_size=12 200 in 636ms
+ GET /api/bff/dashboard/bootstrap 200 in 1085ms
+ ○ Compiling /account/businesses ...
+ ✓ Compiled /account/businesses in 902ms (1598 modules)
+ GET /account/businesses 200 in 1161ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 120ms
+ GET /api/bff/account/businesses 200 in 124ms
+ GET /api/bff/dashboard/bootstrap 200 in 1115ms
+ ○ Compiling /account/settings ...
+ ✓ Compiled /account/settings in 963ms (1568 modules)
+ GET /account/settings 200 in 1201ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/account/businesses 200 in 88ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 100ms
+ GET /api/bff/dashboard/bootstrap 200 in 1095ms
+ ○ Compiling /account/support ...
+ ✓ Compiled /account/support in 1250ms (1579 modules)
+ GET /account/support 200 in 1488ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/account/businesses 200 in 105ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 86ms
+ GET /api/bff/dashboard/bootstrap 200 in 1066ms
+ ○ Compiling /business-owners ...
+ ✓ Compiled /business-owners in 1062ms (1592 modules)
+ GET /business-owners 200 in 1469ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/account/businesses 200 in 101ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 123ms
+ GET /api/bff/business-owners 200 in 48ms
+ GET /api/bff/business-owners 200 in 46ms
+ GET /api/bff/dashboard/bootstrap 200 in 1067ms
+ ○ Compiling /settings ...
+ ✓ Compiled /settings in 840ms (1594 modules)
+ GET /settings 307 in 1046ms
+ GET /account 200 in 109ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/account/businesses 200 in 106ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 76ms
+ GET /account/overview 200 in 104ms
+ GET /account/overview 200 in 105ms
+ GET /icons/icon-192.png 404 in 118ms
+ GET /api/bff/dashboard/bootstrap 200 in 1130ms
+ GET /api/bff/account 200 in 1112ms
+ ○ Compiling /admin/dashboard ...
+ ✓ Compiled /admin/dashboard in 3.3s (1658 modules)
+ GET /admin/dashboard 200 in 3647ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 81ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 98ms
+ ○ Compiling /admin/login ...
+ ✓ Compiled /admin/login in 1343ms (1665 modules)
+ GET /admin/login 200 in 1489ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 71ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 94ms
+ GET /icons/icon-192.png 404 in 259ms
+ GET /mail 200 in 268ms
+ GET /api/bff/account/businesses 200 in 34ms
+ GET /api/bff/dashboard/bootstrap 200 in 183ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 730ms (928 modules)
+ GET /login 200 in 1205ms
+ GET /icons/icon-192.png 404 in 169ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 95ms
+ GET /icons/icon-192.png 404 in 160ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 175ms
+ ○ Compiling /api/bff/auth/login ...
+ ✓ Compiled /api/bff/auth/login in 803ms (930 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 969ms
+ GET /admin/dashboard 200 in 180ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 71ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 109ms
+ ○ Compiling /api/admin/users ...
+ ✓ Compiled /api/admin/users in 867ms (933 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/admin/users?page=1&pageSize=50 200 in 1028ms
+ ○ Compiling /api/admin/users/stats ...
+ ✓ Compiled /api/admin/users/stats in 910ms (1675 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/admin/users/stats 200 in 1111ms
+ GET /api/admin/users/stats 200 in 51ms
+ GET /admin/dashboard?section=users 200 in 149ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 81ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 95ms
+ GET /api/admin/users?page=1&pageSize=50 200 in 59ms
+ GET /api/admin/users/stats 200 in 60ms
+ GET /api/admin/users/stats 200 in 47ms
+ ○ Compiling /admin/forwarding ...
+ ✓ Compiled /admin/forwarding in 988ms (1682 modules)
+ GET /admin/forwarding 200 in 1145ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 126ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 157ms
+ ○ Compiling /api/admin/forwarding/requests ...
+ ✓ Compiled /admin/invoices in 908ms (924 modules)
+ ✓ Compiled in 1137ms (745 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/admin/forwarding/requests?limit=100 200 in 2595ms
+ GET /admin/invoices 200 in 1969ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 96ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 117ms
+ ○ Compiling /api/bff/admin/invoices ...
+ ✓ Compiled /api/bff/admin/invoices in 988ms (1678 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/admin/invoices?page=1&page_size=25 200 in 1102ms
+ ○ Compiling /admin/filename-generator ...
+ ✓ Compiled /admin/filename-generator in 1248ms (1689 modules)
+ GET /admin/filename-generator 200 in 1528ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 90ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 116ms
+ ○ Compiling /admin/manual-forwarding ...
+ ✓ Compiled /admin/manual-forwarding in 1099ms (1679 modules)
+ GET /admin/manual-forwarding 200 in 1333ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 101ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 71ms
+ ○ Compiling /admin/mail/[id] ...
+ ✓ Compiled /admin/mail/[id] in 1111ms (1688 modules)
+ GET /admin/mail/2 200 in 1695ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 117ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 143ms
+ ○ Compiling /api/bff/admin/mail-items/[id] ...
+ ✓ Compiled /api/bff/admin/mail-items/[id] in 962ms (1690 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/admin/mail-items/2 200 in 1415ms
+ ○ Compiling /test-mail-management ...
+ ✓ Compiled /test-mail-management in 1054ms (1692 modules)
+ GET /test-mail-management 404 in 1299ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 141ms
+ GET /icons/icon-192.png 404 in 139ms
+ ○ Compiling /dev-api-check ...
+ ✓ Compiled /dev-api-check in 1144ms (1664 modules)
+ GET /dev-api-check 200 in 1338ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 113ms
+ ○ Compiling /api/bff/plans ...
+ ✓ Compiled /api/bff/plans in 636ms (909 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 1464ms
+ GET /api/bff/plans 200 in 1499ms
+ GET /login 200 in 207ms
+ GET /icons/icon-192.png 404 in 149ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 93ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 165ms
+ GET /icons/icon-192.png 404 in 162ms
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 127ms
+ GET /mail 200 in 129ms
+ GET /api/bff/account/businesses 200 in 79ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 74ms
+ GET /api/bff/mail-items?includeArchived=true&business_id=1 200 in 147ms
+ GET /api/bff/tags 200 in 150ms
+ GET /api/bff/dashboard/bootstrap 200 in 1159ms
+ GET /account/overview 200 in 294ms
+ GET /api/bff/account/businesses 200 in 127ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 139ms
+ GET /api/bff/dashboard/bootstrap 200 in 1103ms
+ GET /api/bff/account 200 in 1151ms
+ ○ Compiling /account/billing ...
+ ✓ Compiled /account/billing in 652ms (914 modules)
+ GET /account/billing 200 in 946ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/account/businesses 200 in 89ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 105ms
+ ○ Compiling /api/bff/billing/invoices ...
+ ✓ Compiled /api/bff/billing/invoices in 595ms (917 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/billing/invoices?page=1&page_size=12 200 in 690ms
+ GET /api/bff/dashboard/bootstrap 200 in 1095ms
+ ○ Compiling /account/settings ...
+ ✓ Compiled /account/settings in 685ms (928 modules)
+ GET /account/settings 200 in 968ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 140ms
+ GET /api/bff/account/businesses 200 in 150ms
+ GET /api/bff/dashboard/bootstrap 200 in 1056ms
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 922ms
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 194ms
+ POST /api/bff/auth/reset-password/request 404 in 125ms
+ POST /api/bff/auth/reset-password/request 404 in 89ms
+ ○ Compiling /api/bff/billing/overview ...
+ ✓ Compiled /api/bff/billing/overview in 783ms (823 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+{"bff":true,"route":"/api/bff/billing/overview","category":"backend_upstream_error","upstreamStatus":429}
+ GET /api/bff/billing/overview 502 in 879ms
+{"bff":true,"route":"/api/bff/billing/invoices","category":"backend_upstream_error","upstreamStatus":429}
+ GET /api/bff/billing/invoices 502 in 71ms
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 161ms
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 127ms
+ GET /images/logo.png 404 in 213ms
+ GET /images/logo.png 404 in 63ms
+ GET /api/bff/billing/overview 200 in 1067ms
+ GET /api/bff/billing/invoices 200 in 53ms
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 330ms
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 187ms
+ ○ Compiling /blog/[slug] ...
+ ✓ Compiled /blog/[slug] in 10.6s (1842 modules)
+ ○ Compiling /api/bff/blog/detail ...
+ ✓ Compiled /api/bff/blog/detail in 794ms (1844 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/blog/detail?slug=sbx-post-1794684221 404 in 899ms
+ ○ Compiling /api/bff/blog/list ...
+ ✓ Compiled /api/bff/blog/list in 721ms (1846 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/bff/blog/list 200 in 793ms
+ GET /blog/sbx-post-1794684221 404 in 13417ms
+ ✓ Compiled /api/bff/mail/scan-url in 472ms (1091 modules)
+[scan-url] incoming {
+  disposition: 'inline',
+  mailItemId: '2',
+  hasCookie: true,
+  hasAuthHeader: false
+}
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[scan-url] backend error {
+  disposition: 'inline',
+  status: 400,
+  mailItemId: '2',
+  errorText: '{"ok":false,"error":"no_file_url"}'
+}
+ GET /api/bff/mail/scan-url?mailItemId=2&disposition=inline 400 in 547ms
+ ✓ Compiled /api/admin/forwarding/queue in 420ms (1094 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[proxy:error] {
+  target: 'http://localhost:4000/api/admin/forwarding/queue',
+  status: 404,
+  body: '{"ok":false,"error":"not_found"}'
+}
+ GET /api/admin/forwarding/queue 404 in 490ms
+ ✓ Compiled /api/admin/forwarding/requests in 381ms (1096 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/admin/forwarding/requests 200 in 441ms
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 113ms
+[scan-url] incoming {
+  disposition: 'inline',
+  mailItemId: '2',
+  hasCookie: true,
+  hasAuthHeader: false
+}
+[scan-url] backend error {
+  disposition: 'inline',
+  status: 404,
+  mailItemId: '2',
+  errorText: '{"ok":false,"error":"not_found"}'
+}
+ GET /api/bff/mail/scan-url?mailItemId=2 404 in 38ms
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 111ms
+ ✓ Compiled /api/bff/profile in 333ms (1092 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ PATCH /api/bff/profile 200 in 408ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 2s (1100 modules)
+ GET /login 200 in 2350ms
+ ○ Compiling /api/bff/auth/whoami ...
+ ✓ Compiled /api/bff/auth/whoami in 577ms (1101 modules)
+ ✓ Compiled (1103 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 1184ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 1186ms
+ GET /icons/icon-192.png 404 in 1289ms
+ GET /icons/icon-192.png 404 in 70ms
+[BFF auth/login] Backend response: 200
+ POST /api/bff/auth/login 200 in 119ms
+ ○ Compiling /admin/dashboard ...
+ ✓ Compiled /admin/dashboard in 4.3s (1164 modules)
+ GET /admin/dashboard?section=mail 200 in 4562ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 279ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 397ms
+ ○ Compiling /api/admin/users ...
+ ✓ Compiled /api/admin/mail-items in 844ms (1166 modules)
+ ✓ Compiled (1168 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/admin/mail-items?limit=500&offset=0 200 in 1045ms
+ GET /api/admin/users?page=1&pageSize=50 200 in 1675ms
+ GET /admin/dashboard?section=forwarding 200 in 1095ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 98ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 103ms
+ GET /api/admin/users?page=1&pageSize=50 200 in 89ms
+ GET /api/admin/forwarding/requests?limit=100 200 in 51ms
+ GET /api/admin/forwarding/requests?limit=100 200 in 69ms
+ ○ Compiling /api/admin/forwarding/locks ...
+ ✓ Compiled /api/admin/forwarding/locks in 742ms (1921 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/admin/forwarding/locks 200 in 844ms
+ GET /api/admin/forwarding/locks 200 in 40ms
+ GET /admin/dashboard?section=plans 200 in 286ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 120ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 224ms
+ GET /api/admin/users?page=1&pageSize=50 200 in 150ms
+ ○ Compiling /api/admin/plans ...
+ ✓ Compiled /api/admin/plans in 540ms (1166 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+ GET /api/admin/plans 200 in 619ms
+ GET /api/admin/plans 200 in 66ms
+ GET /admin/dashboard?section=blog 200 in 229ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 100ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 120ms
+ GET /api/admin/users?page=1&pageSize=50 200 in 134ms
+ ○ Compiling /api/bff/admin/blog/categories ...
+ ✓ Compiled /api/bff/admin/blog/categories in 1422ms (1928 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF admin/blog/categories] Backend response: 500 from http://localhost:4000/api/admin/blog/categories
+ GET /api/bff/admin/blog/categories 502 in 1552ms
+[BFF admin/blog/posts] Backend response: 200 from http://localhost:4000/api/admin/blog/posts?includeDrafts=true&page=1&pageSize=20
+ GET /api/bff/admin/blog/posts?includeDrafts=true&page=1&pageSize=20 200 in 1588ms
+ GET /admin/dashboard?section=audit 200 in 163ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 128ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 136ms
+ GET /api/admin/users?page=1&pageSize=50 200 in 130ms
+ ○ Compiling /admin/forwarding ...
+ ✓ Compiled /admin/forwarding in 2.4s (862 modules)
+ GET /admin/forwarding 200 in 2757ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 99ms
+[BFF auth/whoami] Backend response: 200 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 200 in 82ms
+ GET /api/admin/forwarding/requests?limit=100 200 in 32ms
+ GET /api/admin/forwarding/requests?limit=100 200 in 90ms
+ GET /api/admin/forwarding/locks 200 in 65ms
+ GET /api/admin/forwarding/locks 200 in 51ms
+[?25h
+npm warn config ignoring workspace config at /home/claude/vah/apps/frontend/.npmrc
+   ▲ Next.js 15.5.18
+   - Local:        http://localhost:3000
+   - Network:      http://192.0.2.2:3000
+   - Experiments (use with caution):
+     · optimizePackageImports
+
+ ✓ Starting...
+ ⚠ Duplicate page detected. app/robots.ts and app/robots.txt resolve to /robots.txt
+ ⚠ Duplicate page detected. app/robots.ts and app/robots.txt resolve to /robots.txt/[__metadata_id__]
+ ✓ Compiled /instrumentation in 153ms (22 modules)
+ ⚠ Duplicate page detected. app/robots.ts and app/robots.txt resolve to /robots.txt
+ ⚠ Duplicate page detected. app/robots.ts and app/robots.txt resolve to /robots.txt/[__metadata_id__]
+ ✓ Ready in 1544ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 822ms (118 modules)
+ ○ Compiling /login ...
+Failed to fetch font `IBM Plex Mono`: https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `Inter`: https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `Poppins`: https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `DM Sans`: https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `Playfair Display`: https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `Newsreader`: https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `IBM Plex Mono`: https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `Newsreader`: https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `Playfair Display`: https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `DM Sans`: https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `Inter`: https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `Poppins`: https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `IBM Plex Mono`: https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+Failed to fetch font `Newsreader`: https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+Failed to fetch font `Inter`: https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+Failed to fetch font `DM Sans`: https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+Failed to fetch font `Playfair Display`: https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+Failed to fetch font `Poppins`: https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+[Error: Failed to fetch font `IBM Plex Mono`: https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap
+Please check your network connection.]
+ ⨯ Failed to download `IBM Plex Mono` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `IBM Plex Mono` from Google Fonts.}
+[Error: Failed to fetch font `DM Sans`: https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap
+Please check your network connection.]
+ ⨯ Failed to download `DM Sans` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `DM Sans` from Google Fonts.}
+[Error: Failed to fetch font `Poppins`: https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap
+Please check your network connection.]
+ ⨯ Failed to download `Poppins` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `Poppins` from Google Fonts.}
+[Error: Failed to fetch font `Inter`: https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap
+Please check your network connection.]
+ ⨯ Failed to download `Inter` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `Inter` from Google Fonts.}
+[Error: Failed to fetch font `Newsreader`: https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap
+Please check your network connection.]
+ ⨯ Failed to download `Newsreader` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `Newsreader` from Google Fonts.}
+[Error: Failed to fetch font `Playfair Display`: https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap
+Please check your network connection.]
+ ⨯ Failed to download `Playfair Display` from Google Fonts. Using fallback font instead.
+
+Failed to fetch `Playfair Display` from Google Fonts.}
+Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ ✓ Compiled /login in 9.2s (955 modules)
+ GET /login?next=%2Fmail 200 in 10167ms
+ ✓ Compiled in 902ms (376 modules)
+ ○ Compiling /api/bff/auth/whoami ...
+ ✓ Compiled /api/bff/auth/whoami in 2.4s (901 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 2668ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 2673ms
+ GET /icons/icon-192.png 404 in 2813ms
+ GET /icons/icon-192.png 404 in 69ms
+ GET /login?next=%2Faccount%2Foverview 200 in 231ms
+ GET /icons/icon-192.png 404 in 156ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 72ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 99ms
+ GET /login?next=%2Faccount%2Fbilling 200 in 195ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 170ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 178ms
+ GET /icons/icon-192.png 404 in 190ms
+ GET /login?next=%2Fadmin%2Fdashboard 200 in 80ms
+ GET /icons/icon-192.png 404 in 158ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 84ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 105ms
+ GET /login?next=%2Fadmin%2Finvoices 200 in 228ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 89ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 190ms
+ GET /icons/icon-192.png 404 in 192ms
+ ✓ Compiled /dev-api-check in 398ms (913 modules)
+ GET /dev-api-check 200 in 741ms
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 87ms
+ ○ Compiling /api/bff/plans ...
+ ✓ Compiled /api/bff/plans in 502ms (916 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 518ms
+ GET /api/bff/plans 200 in 586ms
+ GET /dev-api-check 200 in 158ms
+ ○ Compiling / ...
+ ✓ Compiled / in 3.7s (1175 modules)
+[backendOrigin] Using NEXT_PUBLIC_BACKEND_API_ORIGIN: http://localhost:4000
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 3967ms
+ GET /api/bff/plans 200 in 3974ms
+ GET / 200 in 4266ms
+ GET /icons/icon-192.png 404 in 221ms
+ GET /api/bff/plans 200 in 93ms
+[BFF auth/whoami] Backend response: 401 from http://localhost:4000/api/auth/whoami
+ GET /api/bff/auth/whoami 401 in 103ms

@@ -1,0 +1,22 @@
+
+> vah-backend@1.0.0 prebuild
+> bash scripts/banlist.sh || true
+
+✅ No banned test bypass detected
+
+> vah-backend@1.0.0 build
+> rm -rf dist && npx tsc -p tsconfig.server.json && node scripts/write-build-meta.cjs && node scripts/postbuild-shims.cjs && node scripts/verify-build.cjs
+
+npm warn config ignoring workspace config at /home/claude/vah-p0/apps/backend/.npmrc
+[build] wrote dist/build-meta.json { commit: '', branch: '', builtAt: '2026-11-14T19:39:54.212Z' }
+[shims] wrote dist/src/db.js
+[shims] wrote dist/src/metrics.js
+[shims] wrote dist/src/metrics-forwarding.js
+[shims] wrote dist/src/notify.js
+[shims] wrote dist/src/gdpr-export.js
+[shims] wrote dist/src/token.js
+[shims] wrote dist/src/mailer.js
+[shims] wrote dist/src/sumsub.js
+[shims] wrote dist/server/index.js
+[verify-build] OK: /home/claude/vah-p0/apps/backend/dist/src/server/routes/public/plans.js
+[verify-build] routes/public contents: [ 'plans.js' ]

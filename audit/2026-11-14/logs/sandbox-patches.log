@@ -1,0 +1,5 @@
+SANDBOX PATCH A: scoped requireActiveSubscription to /mail-items and /tags (dist only)
+SANDBOX PATCH 0: auth rate limit 30 -> 100000 (dist only)
+SANDBOX DATA FIX: user 9 set status=active, plan_id=1 by hand (app never does this after Stripe payment)
+SANDBOX DATA FIX: inserted active subscription row with fake mandate_id for user 9 (constraint requires mandate; Stripe flow never creates the row)
+retyped user.reset_token_expires_at bigint->timestamptz; DISABLE_RATE_LIMIT=1

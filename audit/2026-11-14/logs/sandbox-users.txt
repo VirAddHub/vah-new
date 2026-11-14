@@ -1,0 +1,9 @@
+1|cust1@example.test|pending_payment|pending_payment||pending|f
+3|admin@example.test|active|active||approved|t
+4|cust1794683482@example.test|pending_payment|pending_payment||pending|f
+5|cust1794683491@example.test|pending_payment|pending_payment||pending|f
+6|cust1794683493@example.test|pending_payment|pending_payment||pending|f
+7|pay1794683583@example.test|pending_payment|active||pending|f
+8|pay1794683586@example.test|pending_payment|active||pending|f
+9|pay1794683589@example.test|active|active|1|approved|f
+10|other1794683697@example.test|active|active|1|pending|f

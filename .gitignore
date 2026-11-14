@@ -157,3 +157,7 @@ apps/frontend/out/
 
 # Local template file
 quiz-day0-template.html
+
+# Audit evidence and checklists are kept in the repo (dummy data only)
+!audit/
+!audit/**
