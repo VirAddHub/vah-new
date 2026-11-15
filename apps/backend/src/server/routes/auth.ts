@@ -1,3 +1,4 @@
+import { getMonthlyPricePenceForNextBusiness } from "../../lib/business-pricing";
 import { Router } from "express";
 import bcrypt from "bcrypt";
 import crypto from 'crypto';
@@ -506,7 +507,10 @@ router.post("/signup", async (req, res) => {
             }
         }
 
+        // The user and their primary business are created in ONE statement, so a signup can never
+        // leave a user without the business record that mail items must belong to.
         const insertQuery = `
+      WITH new_user AS (
       INSERT INTO "user" (
         first_name, last_name, email, phone,
         business_type, country_of_incorporation, company_number, company_name,
@@ -524,7 +528,17 @@ router.post("/signup", async (req, res) => {
         $24,$25,
         $26,$27,$28,$29
       )
-      RETURNING id, email, first_name, last_name
+      RETURNING id, email, first_name, last_name, company_name, company_number
+      ),
+      new_business AS (
+        INSERT INTO business (user_id, company_name, companies_house_number, status, is_primary, monthly_price_pence, created_at, updated_at)
+        SELECT id,
+               COALESCE(NULLIF(TRIM(company_name), ''), TRIM(CONCAT(first_name, ' ', last_name))),
+               NULLIF(TRIM(company_number), ''),
+               'active', true, $30, $18, $18
+        FROM new_user
+      )
+      SELECT id, email, first_name, last_name FROM new_user
     `;
 
         const args = [
@@ -534,7 +548,8 @@ router.post("/signup", async (req, res) => {
             i.city, i.postcode, i.forward_country, forwardingAddress,
             hash, now, now, false, 'user', 'pending_payment', 'pending_payment', // Set both status and plan_status to 'pending_payment' - will be activated after payment succeeds
             i.billing ?? null, i.price ?? null,
-            isSoleController, additionalControllersCount, controllersDeclaredAt, ownersPendingInfo
+            isSoleController, additionalControllersCount, controllersDeclaredAt, ownersPendingInfo,
+            getMonthlyPricePenceForNextBusiness(0) // $30: price of the first (primary) business
         ];
 
         const rs = await pool.query(insertQuery, args);

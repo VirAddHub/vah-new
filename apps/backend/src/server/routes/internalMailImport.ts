@@ -366,6 +366,11 @@ router.post('/from-onedrive', async (req, res) => {
 
     const { getPrimaryBusinessIdForUser } = await import('../../lib/business-helpers');
     const primaryBusinessId = await getPrimaryBusinessIdForUser(payload.userId);
+    if (primaryBusinessId == null) {
+      // Every mail item must belong to a business. Signup creates one; this guards older accounts.
+      logger.error('[internalMailImport] user has no business; mail item not created', { userId: payload.userId });
+      return res.status(422).json({ ok: false, error: 'no_business', message: 'User has no business record to attach mail to.' });
+    }
 
     // Insert mail item with scan_file_url initially null
     // The worker will move the file to processed folder and update this URL with the final location
