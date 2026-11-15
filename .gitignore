@@ -164,3 +164,6 @@ quiz-day0-template.html
 
 # Local environment scripts are tracked (local/*.env stays ignored)
 !local/*.sh
+
+# Journey tests are tracked
+!apps/backend/tests/journey/*.mjs
