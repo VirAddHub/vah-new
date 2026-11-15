@@ -51,8 +51,10 @@ const DEMO = { email: 'demo.customer@example.test', password: 'Local!Customer#20
       // activated directly in the database (same manual activation the audit used; see audit README caveat 1).
       const plan = (await c.query(`SELECT id, name FROM plans WHERE slug='virtual-mailbox-monthly'`)).rows[0];
       const id = await upsertUser(DEMO, { is_admin: false, role: 'user', status: 'active', plan_status: 'active', plan_id: plan.id, company_name: DEMO.company, kyc_status: 'pending' });
-      await c.query(`INSERT INTO subscription (user_id, status, mandate_id, plan_name, cadence)
-                     SELECT $1,'active','local-dummy-mandate',$2,'monthly' WHERE NOT EXISTS (SELECT 1 FROM subscription WHERE user_id=$1)`, [id, plan.name]);
+      await c.query(`INSERT INTO subscription (user_id, status, stripe_subscription_id, plan_name, cadence, created_at, updated_at)
+                     SELECT $1,'active','sub_local_dummy_demo',$2,'monthly',$3,$3 WHERE NOT EXISTS (SELECT 1 FROM subscription WHERE user_id=$1)`, [id, plan.name, now]);
+      await c.query(`INSERT INTO business (user_id, company_name, status, is_primary, monthly_price_pence, created_at, updated_at)
+                     SELECT $1,$2,'active',true,999,$3,$3 WHERE NOT EXISTS (SELECT 1 FROM business WHERE user_id=$1)`, [id, DEMO.company, now]);
       console.log(`customer  ${DEMO.email} / ${DEMO.password} (id ${id})  [manually activated: workaround]`);
     }
     await c.query('COMMIT');

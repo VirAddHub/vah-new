@@ -38,6 +38,11 @@ function collectMigrationFiles() {
 
 const files = collectMigrationFiles();
 
+// --plan: list what would be applied and change nothing.
+const PLAN_ONLY = process.argv.includes('--plan');
+const BASELINE_SQL = path.join(__dirname, 'baseline', '000_baseline.sql');
+const BASELINE_MANIFEST = path.join(__dirname, 'baseline', 'baseline-manifest.json');
+
 function isConcurrentIndexMigration(sql) {
     return /\bCREATE\s+INDEX\s+CONCURRENTLY\b/i.test(sql);
 }
@@ -130,8 +135,39 @@ function isConcurrentIndexMigration(sql) {
             $$;
         `);
 
+        // Fresh database (no "user" table): build from the baseline, then treat the historical
+        // files as applied. A database that already has tables never receives the baseline.
+        const hasUserTable = (await client.query(
+            `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'user'`
+        )).rows.length > 0;
+        if (!hasUserTable) {
+            const manifest = JSON.parse(fs.readFileSync(BASELINE_MANIFEST, 'utf8'));
+            if (PLAN_ONLY) {
+                console.log('[pg-migrate] plan: fresh database -> would apply baseline and mark', manifest.files.length, 'historical files as applied');
+            } else {
+                console.log('[pg-migrate] fresh database: applying baseline');
+                await client.query(fs.readFileSync(BASELINE_SQL, 'utf8'));
+                for (const name of ['000_baseline.sql', ...manifest.files]) {
+                    await client.query(`INSERT INTO ${MIGRATIONS_TABLE}(name) VALUES ($1) ON CONFLICT (name) DO NOTHING`, [name]);
+                }
+            }
+        }
+
         const { rows } = await client.query(`SELECT name FROM ${MIGRATIONS_TABLE}`);
         const applied = new Set(rows.map(r => r.name));
+        if (PLAN_ONLY && !hasUserTable) {
+            const manifest = JSON.parse(fs.readFileSync(BASELINE_MANIFEST, 'utf8'));
+            manifest.files.forEach(n => applied.add(n));
+        }
+
+        if (PLAN_ONLY) {
+            const pending = files.filter(([filename]) => !applied.has(filename)).map(([filename]) => filename);
+            console.log(`[pg-migrate] plan: ${pending.length} pending`);
+            pending.forEach(n => console.log('  would apply', n));
+            await client.query('ROLLBACK');
+            console.log('[pg-migrate] plan only: nothing was changed');
+            return;
+        }
 
         for (const [filename, absolutePath] of files) {
             if (applied.has(filename)) { console.log('[pg-migrate] skip', filename); continue; }

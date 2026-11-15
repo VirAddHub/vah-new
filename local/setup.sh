@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-time (and repeatable) local setup: env files, database, provisional schema, dummy seed data.
+# One-time (and repeatable) local setup: env files, database built from the migrations, dummy seed data.
 #   npm run local:setup            keep existing data
 #   npm run local:setup -- --reset drop and recreate the local database first
 #   add --demo-customer            also seed a pre-activated demo customer (workaround, see README)
@@ -22,10 +22,8 @@ if [ "$RESET" = 1 ]; then psql "$ADMIN_URL" -q -c "DROP DATABASE IF EXISTS \"$DB
 if [ "$(psql "$ADMIN_URL" -Atc "select count(*) from pg_database where datname='$DB_NAME'")" = "0" ]; then
   psql "$ADMIN_URL" -q -c "CREATE DATABASE \"$DB_NAME\""
 fi
-if [ "$(psql "$DATABASE_URL" -Atc "select count(*) from information_schema.tables where table_schema='public' and table_name='user'")" = "0" ]; then
-  echo "Loading PROVISIONAL schema (local/schema.provisional.sql)…"
-  psql "$DATABASE_URL" -q -v ON_ERROR_STOP=1 -f "$LOCAL_DIR/schema.provisional.sql" >/dev/null
-fi
 [ -d "$ROOT_DIR/node_modules/pg" ] || { echo "Dependencies missing. Run: npm ci"; exit 1; }
+echo "Building the database from the project migrations…"
+( cd "$ROOT_DIR/apps/backend" && node scripts/migrate-pg.cjs | grep -v "\[pg-migrate\] skip" )
 ( cd "$ROOT_DIR/apps/backend" && SEED_DEMO_CUSTOMER="$DEMO" node "$LOCAL_DIR/seed.cjs" )
 echo "Local setup complete. Start the app with: npm run local:start"

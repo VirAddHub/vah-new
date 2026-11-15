@@ -8,7 +8,7 @@ the production database or any live provider. Every credential in `*.env.example
 ```bash
 npm ci                                     # install dependencies (Node 20 recommended)
 npm run local:db                           # start Postgres 16 in Docker on 127.0.0.1:5433
-npm run local:setup -- --demo-customer     # env files, provisional schema, dummy seed data
+npm run local:setup -- --demo-customer     # env files, database built from the migrations, dummy seed data
 npm run local:start                        # API on :4000, site on :3000 (Ctrl+C stops both)
 ```
 
@@ -28,7 +28,7 @@ to `postgres://<user>:<password>@127.0.0.1:<port>/vah_local` and run `npm run lo
 | Command | What it does |
 |---|---|
 | `npm run local:db` | Starts the Postgres container (`local/docker-compose.yml`) |
-| `npm run local:setup` | Creates `local/backend.env` and `local/frontend.env` if missing, creates the `vah_local` database, loads the schema if empty, seeds plans and the admin. Safe to re-run |
+| `npm run local:setup` | Creates `local/backend.env` and `local/frontend.env` if missing, creates the `vah_local` database, runs the migrations, seeds plans and the admin. Safe to re-run |
 | `npm run local:setup -- --reset` | Drops and recreates `vah_local` first |
 | `npm run local:start` | Builds the backend if needed and starts both servers. `REBUILD=1 npm run local:start` forces a rebuild |
 
@@ -42,13 +42,20 @@ token is present (local runs do not send email). `local/backend.env` and `local/
 
 ## Known limitations at the end of Phase 0
 
-- **The schema is provisional.** `local/schema.provisional.sql` is the database reconstructed during the audit,
-  not the production schema, and it is not built from the migrations (they do not run on an empty database).
-  Phase 1 replaces it with a migration-built database.
+- **The database is built from the migrations** (`apps/backend/scripts/baseline/000_baseline.sql` on an empty database, then the forward migrations). The baseline is a reconstruction that has not been compared with production: see `audit/SCHEMA-ASSUMPTIONS.md`.
 - **A new signup cannot complete the journey yet** (payment, activation, mail). Use the demo customer meanwhile.
 - **Rate limits are on.** The current limits are tight (30 auth requests per 15 minutes per IP, 200 per user);
   heavy clicking can hit them. Uncomment `DISABLE_RATE_LIMIT=1` in `local/backend.env` if needed, and note that
   any result obtained that way is provisional.
 - Email, Companies House, address lookup, OneDrive and Sumsub's live widget are not configured. Stripe needs
   your own **test-mode** keys in `local/backend.env` for a real checkout.
-- The tables `notification`, `mail_audit` and `forward_audit` do not exist (no migration creates them).
+
+## Journey test
+
+With the app running (`npm run local:start`):
+
+```bash
+node apps/backend/tests/journey/journey.mjs
+```
+
+It walks the customer journey against the local API with rate limits on and no manual activation. Steps the product cannot do yet are reported as PENDING with the commit that will deliver them.
