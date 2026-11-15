@@ -201,8 +201,10 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
 
     const nextStatus = ACTION_TO_STATUS[normalizedAction];
 
+    // A transaction needs ONE connection. BEGIN/COMMIT used to be sent through the pool, where each
+    // statement may use a different connection, so a status update could be left uncommitted and lost.
+    const pool = await getPool().connect();
     try {
-        const pool = getPool();
 
         // Start transaction for atomic operations
         await pool.query('BEGIN');
@@ -263,7 +265,10 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
                 }
             }
 
-            if (!canMove(current, nextStatus)) {
+            // 'mark_reviewed' records that staff looked at a request without moving it on: it keeps the
+            // status at Requested, which the transition table used to reject as Requested -> Requested.
+            const isReviewOnly = action === 'mark_reviewed' && current === nextStatus && nextStatus === MAIL_STATUS.Requested;
+            if (!isReviewOnly && !canMove(current, nextStatus)) {
                 await pool.query('ROLLBACK');
                 logger.warn('[forwarding_admin] can_move_rejected', { id, current, nextStatus });
                 return res.status(400).json({
@@ -337,19 +342,28 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
                 vals
             );
 
+            // Optional writes run inside a savepoint. A failed statement aborts the whole Postgres
+            // transaction, so the old bare try/catch here silently turned the final COMMIT into a
+            // rollback and the status change was lost.
+            const optional = async (label: string, run: () => Promise<unknown>) => {
+                await pool.query('SAVEPOINT optional_write');
+                try { await run(); await pool.query('RELEASE SAVEPOINT optional_write'); }
+                catch (err) {
+                    await pool.query('ROLLBACK TO SAVEPOINT optional_write');
+                    logger.warn('[forwarding_admin] optional_write_skipped', { label, message: (err as any)?.message });
+                }
+            };
+
             // mirror onto mail_item.forwarding_status (optional, if column exists)
-            try {
-                await pool.query('UPDATE mail_item SET forwarding_status = $1 WHERE id = $2', [nextStatus, cur.rows[0].mail_item_id]);
-            } catch { }
+            await optional('mail_item.forwarding_status', () =>
+                pool.query('UPDATE mail_item SET forwarding_status = $1 WHERE id = $2', [nextStatus, cur.rows[0].mail_item_id]));
 
             // audit (if table exists)
-            try {
-                await pool.query(
+            await optional('mail_event', () => pool.query(
                     `INSERT INTO mail_event(mail_item_id, user_id, event, meta_json, created_at)
          VALUES ($1, $2, $3, $4, $5)`,
                     [cur.rows[0].mail_item_id, admin.id, `forwarding.${nextStatus.toLowerCase()}`, JSON.stringify({ courier, tracking_number, admin_notes }), nowTimestamp]
-                );
-            } catch { }
+                ));
 
             // Commit the transaction
             await pool.query('COMMIT');
@@ -410,5 +424,7 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
     } catch (e: any) {
         logger.error('[forwarding_admin] update_error', { message: e?.message });
         return res.status(500).json({ ok: false, error: 'internal_error' });
+    } finally {
+        pool.release();
     }
 }
