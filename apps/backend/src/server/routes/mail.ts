@@ -7,7 +7,7 @@ import { selectPaged } from '../db-helpers';
 import { extractDrivePathFromSharePointUrl, streamSharePointFileByPath } from '../../services/sharepoint';
 import { logger } from '../../lib/logger';
 import { safeErrorMessage } from '../../lib/safeError';
-import { requireActiveSubscription } from '../../middleware/auth';
+import { requireFullService } from '../services/access';
 import { param } from '../../lib/express-params';
 
 const router = Router();
@@ -108,7 +108,7 @@ router.use((req, res, next) => (MAIL_ROUTER_PATHS.test(req.path) ? noConditional
  * Get all mail items for current user (with pagination support)
  * Query params: ?page=1&pageSize=20&includeArchived=true
  */
-router.get('/mail-items', requireAuth, requireActiveSubscription, async (req: Request, res: Response) => {
+router.get('/mail-items', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 20;
@@ -169,7 +169,7 @@ router.get('/mail-items', requireAuth, requireActiveSubscription, async (req: Re
  * GET /api/mail-items/:id
  * Get specific mail item
  */
-router.get('/mail-items/:id', requireAuth, requireActiveSubscription, async (req: Request, res: Response) => {
+router.get('/mail-items/:id', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(param(req, 'id'), 10);
     const pool = getPool();
@@ -213,7 +213,7 @@ router.get('/mail-items/:id', requireAuth, requireActiveSubscription, async (req
  * PATCH /api/mail-items/:id
  * Update mail item (user can update is_read, subject, and tag)
  */
-router.patch('/mail-items/:id', requireAuth, requireActiveSubscription, async (req: Request, res: Response) => {
+router.patch('/mail-items/:id', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(param(req, 'id'), 10);
     const { is_read, subject, tag } = req.body;
@@ -301,7 +301,7 @@ router.patch('/mail-items/:id', requireAuth, requireActiveSubscription, async (r
  * POST /api/mail-items/:id/tag
  * Add or update tag for mail item
  */
-router.post('/mail-items/:id/tag', requireAuth, requireActiveSubscription, async (req: Request, res: Response) => {
+router.post('/mail-items/:id/tag', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(param(req, 'id'), 10);
     const { tag } = req.body;
@@ -345,7 +345,7 @@ router.post('/mail-items/:id/tag', requireAuth, requireActiveSubscription, async
  * DELETE /api/mail-items/:id
  * Archive mail item (soft delete)
  */
-router.delete('/mail-items/:id', requireAuth, requireActiveSubscription, async (req: Request, res: Response) => {
+router.delete('/mail-items/:id', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(param(req, 'id'), 10);
     const pool = getPool();
@@ -382,7 +382,7 @@ router.delete('/mail-items/:id', requireAuth, requireActiveSubscription, async (
  * POST /api/mail-items/:id/restore
  * Restore archived mail item
  */
-router.post('/mail-items/:id/restore', requireAuth, requireActiveSubscription, async (req: Request, res: Response) => {
+router.post('/mail-items/:id/restore', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(param(req, 'id'), 10);
     const pool = getPool();
@@ -419,7 +419,7 @@ router.post('/mail-items/:id/restore', requireAuth, requireActiveSubscription, a
  * GET /api/mail-items/:id/scan-url
  * Get download URL for mail scan
  */
-router.get('/mail-items/:id/scan-url', requireAuth, requireActiveSubscription, async (req: Request, res: Response) => {
+router.get('/mail-items/:id/scan-url', requireAuth, requireFullService, async (req: Request, res: Response) => {
     try {
         const id = param(req, 'id');
         const userId = req.user!.id;
@@ -477,7 +477,7 @@ router.get('/mail-items/:id/scan-url', requireAuth, requireActiveSubscription, a
  * Query params:
  * - disposition=inline: Set Content-Disposition to inline (default: attachment)
  */
-router.get('/mail-items/:id/download', requireAuth, requireActiveSubscription, async (req: Request, res: Response) => {
+router.get('/mail-items/:id/download', requireAuth, requireFullService, async (req: Request, res: Response) => {
     try {
         const userId = req.user!.id;
         const mailId = Number(param(req, 'id'));
@@ -518,7 +518,7 @@ router.get('/mail-items/:id/download', requireAuth, requireActiveSubscription, a
  * POST /api/tags/rename
  * Atomically rename a tag across all user's mail items
  */
-router.post('/tags/rename', requireAuth, requireActiveSubscription, async (req: Request, res: Response) => {
+router.post('/tags/rename', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { from, to } = req.body;
     const pool = getPool();
@@ -564,7 +564,7 @@ router.post('/tags/rename', requireAuth, requireActiveSubscription, async (req: 
  * POST /api/tags/merge
  * Atomically merge one tag into another across all user's mail items
  */
-router.post('/tags/merge', requireAuth, requireActiveSubscription, async (req: Request, res: Response) => {
+router.post('/tags/merge', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { source, target } = req.body;
     const pool = getPool();
@@ -610,7 +610,7 @@ router.post('/tags/merge', requireAuth, requireActiveSubscription, async (req: R
  * GET /api/tags
  * Get list of all tags used by user (distinct, sorted)
  */
-router.get('/tags', requireAuth, requireActiveSubscription, async (req: Request, res: Response) => {
+router.get('/tags', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
 
@@ -636,7 +636,7 @@ router.get('/tags', requireAuth, requireActiveSubscription, async (req: Request,
  * POST /api/tags/delete
  * Delete a tag from all active mail items (archived mail keeps its tag)
  */
-router.post('/tags/delete', requireAuth, requireActiveSubscription, async (req: Request, res: Response) => {
+router.post('/tags/delete', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { tag } = req.body;
     const pool = getPool();

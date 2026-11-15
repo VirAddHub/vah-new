@@ -87,10 +87,12 @@ import blogRouter from './server/routes/blog';
 import debugRouterLegacy from './server/routes/debug';
 import mailSearchRouter from './server/routes/mail-search';
 import metricsRouter from './server/routes/metrics';
+import accessRouter from './server/routes/access';
 import notificationsRouter from './server/routes/notifications';
 
 import { ensureCsrfToken, requireCsrfToken, getOrCreateCsrfToken } from './middleware/csrf';
-import { authenticateJWT, requireActiveSubscription } from './middleware/auth';
+import { authenticateJWT } from './middleware/auth';
+import { requireFullService } from './server/services/access';
 
 type MaybeDefault<T> = { default?: T } | T;
 // handle CJS/ESM default interop safely
@@ -242,7 +244,7 @@ export function createApp() {
         message: 'Too many requests from this IP, please try again later.',
         standardHeaders: true,
         legacyHeaders: false,
-        keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
+        keyGenerator: (req) => clientKey(req),
         skip: (req) => {
             const ua = (req.headers['user-agent'] || '').toString();
             if (req.path === '/api/healthz') return true;
@@ -251,26 +253,55 @@ export function createApp() {
         },
     });
 
-    // Auth-only rate limiter (never disabled)
+    // Who is the client? Requests normally arrive from the website's server, so req.ip is that
+    // server and every visitor would share one allowance. When the website signs the visitor's
+    // address with BFF_SHARED_SECRET we use it; an unsigned or wrongly signed header is ignored.
+    const clientKey = (req: Request): string => {
+        const secret = (process.env.BFF_SHARED_SECRET || '').trim();
+        const ip = String(req.headers['x-vah-client-ip'] || '').trim();
+        const sig = String(req.headers['x-vah-client-sig'] || '').trim();
+        if (secret && ip && sig) {
+            const expected = require('crypto').createHmac('sha256', secret).update(ip).digest('hex');
+            if (sig.length === expected.length && require('crypto').timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
+                return ipKeyGenerator(ip);
+            }
+        }
+        return ipKeyGenerator(req.ip ?? '');
+    };
+
+    // Auth rate limiter (never disabled): 30 FAILED attempts per 15 minutes per client. Successful
+    // requests are not counted and the session check, CSRF token and logout are exempt, so normal
+    // use cannot lock a customer out while password guessing is still stopped.
     const authLimiter = rateLimit({
         windowMs: 15 * 60 * 1000,
         max: 30,
         message: 'Too many authentication attempts, please try again later.',
         standardHeaders: true,
         legacyHeaders: false,
-        keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
+        skipSuccessfulRequests: true,
+        skip: (req) => req.method === 'GET' || /^\/(whoami|logout|csrf)\b/.test(req.path),
+        keyGenerator: clientKey,
+    });
+    // Account creation: 60 per hour per client, counted whether or not it succeeds.
+    const signupLimiter = rateLimit({
+        windowMs: 60 * 60 * 1000,
+        max: 60,
+        message: 'Too many sign-up attempts, please try again later.',
+        standardHeaders: true,
+        legacyHeaders: false,
+        keyGenerator: clientKey,
     });
 
     // Per-user rate limiter for authenticated routes — keyed by user ID when available, falls back to IP
     const authenticatedUserLimiter = rateLimit({
         windowMs: 15 * 60 * 1000,
-        max: 200,
+        max: 600, // one pass through the dashboard makes ~40 requests; 200 locked real users out
         message: 'Too many requests for this user, please try again later.',
         standardHeaders: true,
         legacyHeaders: false,
         keyGenerator: (req) => {
             const userId = (req as Request & { user?: { id?: string } }).user?.id;
-            return userId ? `user:${userId}` : ipKeyGenerator(req.ip ?? '');
+            return userId ? `user:${userId}` : clientKey(req);
         },
     });
 
@@ -340,6 +371,7 @@ export function createApp() {
     logger.info('[middleware] CSRF protection middleware mounted');
 
     // Auth rate limiter (never disabled)
+    app.use('/api/auth/signup', signupLimiter);
     app.use('/api/auth', authLimiter);
 
     // CSP report endpoint
@@ -387,6 +419,7 @@ export function createApp() {
         }
         next();
     });
+    app.use('/api/access', accessRouter);
     app.use('/api', mailRouter);
     logger.info('[mount] /api (mail routes) mounted');
     app.use('/api/billing', billingRouter);
@@ -466,7 +499,7 @@ export function createApp() {
     app.use('/api/quiz', quizRouter);
     logger.info('[mount] /api/quiz mounted');
 
-    app.use('/api/bff', requireActiveSubscription, bffMailScanRouter);
+    app.use('/api/bff', requireFullService, bffMailScanRouter);
     logger.info('[mount] /api/bff (mail scan) mounted');
 
     if (process.env.NODE_ENV !== 'production') {
@@ -508,19 +541,26 @@ export function createApp() {
     app.use('/api/downloads', downloadsRouter);
     logger.info('[mount] /api/downloads mounted (TS handler)');
 
-    app.use('/api/files', requireActiveSubscription, filesRouter);
+    app.use('/api/files', requireFullService, filesRouter);
     logger.info('[mount] /api/files mounted (TS handler)');
 
     app.use('/api/gdpr-export', gdprExportRouter);
     logger.info('[mount] /api/gdpr-export mounted (TS handler)');
 
-    app.use('/api/mail/forward', requireActiveSubscription, mailForwardRouter);
+    app.use('/api/mail/forward', requireFullService, mailForwardRouter);
     logger.info('[mount] /api/mail/forward mounted (TS handler)');
 
-    app.use('/api/mail-search', requireActiveSubscription, mailSearchRouter);
+    app.use('/api/mail-search', requireFullService, mailSearchRouter);
     logger.info('[mount] /api/mail-search mounted (TS handler)');
 
-    app.use('/api/metrics', metricsRouter);
+    // Metrics are operational data: admins, or a scraper presenting METRICS_TOKEN as a bearer token.
+    app.use('/api/metrics', (req: Request, res: Response, next: NextFunction) => {
+        const token = (process.env.METRICS_TOKEN || '').trim();
+        const bearer = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+        if ((req as any).user?.is_admin) return next();
+        if (token && bearer && bearer.length === token.length && require('crypto').timingSafeEqual(Buffer.from(bearer), Buffer.from(token))) return next();
+        return res.status((req as any).user?.id ? 403 : 401).json({ ok: false, error: (req as any).user?.id ? 'forbidden' : 'unauthenticated' });
+    }, metricsRouter);
     logger.info('[mount] /api/metrics mounted (TS handler)');
 
     app.use('/api/notifications', notificationsRouter);

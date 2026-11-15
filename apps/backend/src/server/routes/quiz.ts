@@ -96,6 +96,9 @@ quizRouter.post("/submit", async (req: Request, res: Response) => {
 
 // Optional: Get quiz stats (admin endpoint)
 quizRouter.get("/stats", async (req: Request, res: Response) => {
+    // Lead statistics are internal: admins only.
+    if (!(req as any).user?.id) return res.status(401).json({ ok: false, error: 'unauthenticated' });
+    if (!(req as any).user?.is_admin) return res.status(403).json({ ok: false, error: 'forbidden' });
     try {
         const pool = getPool();
         const result = await pool.query(`

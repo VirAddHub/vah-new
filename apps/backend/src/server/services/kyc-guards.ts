@@ -33,8 +33,12 @@ export function isOfficialMailClassification(tag?: string | null, sourceSlug?: s
  * - HMRC and Companies House mail (tag or source_slug) can always be forwarded (regardless of KYC)
  * - All other mail requires approved KYC status
  */
-export function canForwardMail(kycStatus: KycStatus, tag?: string | null, sourceSlug?: string | null): boolean {
-    if (isOfficialMailClassification(tag, sourceSlug)) return true;
-    return kycStatus === "approved" || kycStatus === "verified";
+/**
+ * Forwarding needs an approved primary identity for every kind of mail. The earlier exception that
+ * let unverified customers forward HMRC and Companies House mail was removed on 15 Nov 2026
+ * (decision log 14). Official mail is still classified so that it can be forwarded free of charge.
+ */
+export function canForwardMail(kycStatus: KycStatus, _tag?: string | null, _sourceSlug?: string | null): boolean {
+    return isKycApproved(kycStatus);
 }
 

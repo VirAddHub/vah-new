@@ -2,7 +2,7 @@
 // User-facing forwarding requests API
 
 import { Router, Request, Response } from 'express';
-import { requireActiveSubscription } from '../../middleware/auth';
+import { requireFullService } from '../services/access';
 import { getPool } from '../db';
 import { selectPaged } from '../db-helpers';
 import { createForwardingRequest } from '../../modules/forwarding/forwarding.service';
@@ -32,7 +32,7 @@ const normalizeTag = (tag: string | null | undefined): string =>
  * List all forwarding requests for current user (with pagination support)
  * Query params: ?page=1&pageSize=20
  */
-router.get('/forwarding/requests', requireAuth, requireActiveSubscription, async (req: Request, res: Response) => {
+router.get('/forwarding/requests', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 20;
@@ -82,7 +82,7 @@ router.get('/forwarding/requests', requireAuth, requireActiveSubscription, async
  * GET /api/forwarding/requests/:id
  * Get specific forwarding request
  */
-router.get('/forwarding/requests/:id', requireAuth, requireActiveSubscription, async (req: Request, res: Response) => {
+router.get('/forwarding/requests/:id', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const requestId = parseInt(param(req, 'id'), 10);
 
@@ -122,7 +122,7 @@ router.get('/forwarding/requests/:id', requireAuth, requireActiveSubscription, a
 router.post(
     '/forwarding/requests',
     requireAuth,
-    requireActiveSubscription,
+    requireFullService,
     forwardingMutationUserLimiter,
     async (req: Request, res: Response) => {
     // First-line logging at the top
@@ -167,7 +167,8 @@ router.post(
     try {
         // Get user's forwarding address and KYC status
         const userResult = await pool.query(`
-            SELECT forwarding_address, first_name, last_name, kyc_status
+            SELECT forwarding_address, first_name, last_name, kyc_status,
+                   forward_to_first_name, forward_to_last_name, address_line1, address_line2, city AS fwd_city, postcode AS fwd_postcode, forward_country
             FROM "user" 
             WHERE id = $1
         `, [userId]);
@@ -364,6 +365,19 @@ router.post(
         });
 
         // Validate required fields for UK forwarding
+        // Prefer the structured address captured at signup. The free-text parser above guesses
+        // which line is which and used to put the recipient's name into address line 1.
+        if ((user.address_line1 || '').trim() && (user.fwd_city || '').trim() && (user.fwd_postcode || '').trim()) {
+            const recipient = `${user.forward_to_first_name || ''} ${user.forward_to_last_name || ''}`.trim()
+                || `${user.first_name || ''} ${user.last_name || ''}`.trim();
+            name = recipient;
+            address1 = String(user.address_line1).trim();
+            address2 = (user.address_line2 || '').trim() || undefined;
+            city = String(user.fwd_city).trim();
+            postal = normalizeUKPostcode(String(user.fwd_postcode)) || String(user.fwd_postcode).trim();
+            country = (user.forward_country || '').trim() || 'GB';
+        }
+
         // Required: address1, city, postcode
         // Optional: address2, country (defaults to GB)
         // Name: falls back to user's first_name/last_name if missing
@@ -482,7 +496,7 @@ router.post(
  * POST /api/forwarding/requests/bulk
  * Bulk forward multiple mail items
  */
-router.post('/requests/bulk', requireAuth, requireActiveSubscription, forwardingMutationUserLimiter, async (req: Request, res: Response) => {
+router.post('/requests/bulk', requireAuth, requireFullService, forwardingMutationUserLimiter, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { ids } = req.body;
 

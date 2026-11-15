@@ -56,3 +56,68 @@ export function report() {
   console.log(`\n${count('PASS')} passed, ${count('FAIL')} failed, ${count('PENDING')} pending (not yet implemented)`);
   return count('FAIL') === 0;
 }
+
+// ---- Provider simulators (mock tests: these are NOT provider-sandbox tests) --------------------
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import http from 'node:http';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const envFile = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../local/backend.env');
+export const ENV = Object.fromEntries(
+  (fs.existsSync(envFile) ? fs.readFileSync(envFile, 'utf8') : '').split('\n')
+    .map(l => l.match(/^\s*(?:export\s+)?([A-Z0-9_]+)=(.*)$/)).filter(Boolean).map(m => [m[1], m[2].replace(/^["']|["']$/g, '')]));
+
+let seq = 0;
+export const uid = p => `${p}_${Date.now().toString(36)}${(seq++).toString(36)}${crypto.randomBytes(3).toString('hex')}`;
+
+/** Build a Stripe event. `created` is in seconds, as Stripe sends it. */
+export function stripeEvent(type, object, { id = uid('evt'), created = Math.floor(Date.now() / 1000) } = {}) {
+  return { id, object: 'event', type, created, data: { object } };
+}
+/** Deliver an event to the webhook exactly as Stripe would: raw JSON body, signed header. */
+export async function sendStripe(event, { badSignature = false } = {}) {
+  const body = JSON.stringify(event), t = Math.floor(Date.now() / 1000);
+  const sig = crypto.createHmac('sha256', badSignature ? 'wrong' : ENV.STRIPE_WEBHOOK_SECRET).update(`${t}.${body}`).digest('hex');
+  const res = await fetch(API + '/api/webhooks/stripe', { method: 'POST', headers: { 'content-type': 'application/json', 'stripe-signature': `t=${t},v1=${sig}` }, body });
+  return { status: res.status, json: await res.json().catch(() => null) };
+}
+export async function sendSumsub(payload, { badSignature = false } = {}) {
+  const body = JSON.stringify(payload);
+  const sig = crypto.createHmac('sha256', badSignature ? 'wrong' : ENV.SUMSUB_WEBHOOK_SECRET).update(body).digest('hex');
+  const res = await fetch(API + '/api/webhooks/sumsub', { method: 'POST', headers: { 'content-type': 'application/json', 'x-payload-digest': sig, 'x-payload-digest-alg': 'HMAC_SHA256_HEX' }, body });
+  return { status: res.status, json: await res.json().catch(() => null) };
+}
+export const sumsubReview = (externalUserId, answer, extra = {}) => ({
+  type: 'applicantReviewed', applicantId: `app_${externalUserId}`, externalUserId: String(externalUserId), reviewStatus: 'completed',
+  reviewResult: { reviewAnswer: answer, ...extra }, createdAtMs: new Date().toISOString(),
+});
+export async function importMail(body) {
+  const res = await fetch(API + '/api/internal/from-onedrive', { method: 'POST', headers: { 'content-type': 'application/json', 'x-mail-import-secret': ENV.MAIL_IMPORT_WEBHOOK_SECRET }, body: JSON.stringify(body) });
+  return { status: res.status, json: await res.json().catch(() => null) };
+}
+export async function setScanUrl(mailId, scanFileUrl) {
+  const res = await fetch(API + `/api/internal/from-onedrive/${mailId}/scan-url`, { method: 'PATCH', headers: { 'content-type': 'application/json', 'x-mail-import-secret': ENV.MAIL_IMPORT_WEBHOOK_SECRET }, body: JSON.stringify({ scanFileUrl }) });
+  return { status: res.status, json: await res.json().catch(() => null) };
+}
+/** A tiny local server that plays the part of scan storage and serves one PDF. */
+export const TEST_PDF = Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n');
+export function startPdfServer(port = 4011) {
+  const server = http.createServer((_q, r) => { r.writeHead(200, { 'content-type': 'application/pdf', 'content-length': TEST_PDF.length }); r.end(TEST_PDF); });
+  return new Promise(ok => server.listen(port, '127.0.0.1', () => ok({ url: `http://127.0.0.1:${port}/scan.pdf`, close: () => server.close() })));
+}
+/** Stripe objects for one customer's subscription, sharing ids like a real checkout does. */
+export function stripeFixture(userId, planId, period = 'monthly') {
+  const customer = uid('cus'), subscription = uid('sub');
+  const metadata = { userId: String(userId), planId: String(planId), billingPeriod: period };
+  const price = period === 'annual' ? ENV.STRIPE_PRICE_ID_ANNUAL : ENV.STRIPE_PRICE_ID_MONTHLY;
+  const now = Math.floor(Date.now() / 1000), len = period === 'annual' ? 365 * 86400 : 30 * 86400;
+  return {
+    customer, subscription, metadata,
+    checkout: (o = {}) => ({ id: uid('cs'), object: 'checkout.session', mode: 'subscription', payment_status: 'paid', customer, subscription, metadata, ...o }),
+    sub: (status = 'active', o = {}) => ({ id: subscription, object: 'subscription', status, customer, cancel_at_period_end: false, metadata, items: { data: [{ price: { id: price } }] }, ...o }),
+    invoice: (o = {}) => ({ id: uid('in'), object: 'invoice', customer, subscription, amount_paid: period === 'annual' ? 8999 : 999, currency: 'gbp', payment_intent: uid('pi'),
+      subscription_details: { metadata }, lines: { data: [{ period: { start: o.start ?? now, end: o.end ?? now + len }, price: { id: price } }] }, ...o }),
+  };
+}

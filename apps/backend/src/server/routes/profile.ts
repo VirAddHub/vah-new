@@ -2,6 +2,7 @@
 // User profile API endpoints
 
 import { Router, Request, Response } from "express";
+import { requireFullService } from "../services/access";
 import { getPool } from '../db';
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
@@ -897,7 +898,7 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
  * GET /api/profile/registered-office-address
  * Get the registered office address (gated: billing active + KYC approved + user active)
  */
-router.get("/registered-office-address", requireAuth, async (req: Request, res: Response) => {
+router.get("/registered-office-address", requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
 
@@ -974,7 +975,7 @@ router.get("/registered-office-address", requireAuth, async (req: Request, res: 
  * Return certificate download URL if eligible; 403 with machine-readable reason if not.
  * Spec: primary_user_not_verified | owners_pending | company_number_missing
  */
-router.get("/certificate-url", requireAuth, async (req: Request, res: Response) => {
+router.get("/certificate-url", requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
     try {
@@ -1031,7 +1032,7 @@ router.get("/certificate-url", requireAuth, async (req: Request, res: Response) 
  * GET /api/profile/certificate
  * Generate and download proof of address certificate
  */
-router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
+router.get("/certificate", requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
 

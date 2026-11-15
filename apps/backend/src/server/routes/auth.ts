@@ -13,7 +13,7 @@ import { Templates } from '../../lib/postmark-templates';
 import { APP_BASE_URL } from '../../config/env';
 import { withTimeout } from '../../lib/withTimeout';
 import { ENV } from "../../env";
-import { upsertSubscriptionForUser } from "../services/subscription-linking";
+import { getAccess } from "../services/access";
 import { ok, unauthorized, badRequest, serverError } from "../lib/apiResponse";
 import { logger } from "../../lib/logger";
 import { isSecureEnv, sessionCookieSecurityOptions } from "../../lib/cookies";
@@ -546,7 +546,7 @@ router.post("/signup", async (req, res) => {
             i.business_type, i.country_of_incorporation, i.company_number ?? null, i.company_name,
             i.forward_to_first_name, i.forward_to_last_name, i.address_line1, i.address_line2 ?? null,
             i.city, i.postcode, i.forward_country, forwardingAddress,
-            hash, now, now, false, 'user', 'pending_payment', 'pending_payment', // Set both status and plan_status to 'pending_payment' - will be activated after payment succeeds
+            hash, now, now, false, 'user', 'active', 'pending_payment', // status = account standing (good); plan_status = payment (not yet paid). A payment never changes account standing. succeeds
             i.billing ?? null, i.price ?? null,
             isSoleController, additionalControllersCount, controllersDeclaredAt, ownersPendingInfo,
             getMonthlyPricePenceForNextBusiness(0) // $30: price of the first (primary) business
@@ -638,8 +638,10 @@ router.post("/login", async (req, res) => {
         // Get user from database (exclude soft-deleted users)
         const pool = getPool();
         const user = await pool.query(
-            'SELECT id, email, password, first_name, last_name, is_admin, role, status, kyc_status, login_attempts, locked_until FROM "user" WHERE email = $1 AND status = $2 AND deleted_at IS NULL',
-            [email, 'active'] // Use the validated and normalized email
+            'SELECT id, email, password, first_name, last_name, is_admin, role, status, kyc_status, login_attempts, locked_until FROM "user" WHERE email = $1 AND status = ANY($2) AND deleted_at IS NULL AND suspended_at IS NULL',
+            // Any account in good standing can sign in, paid or not, so customers can finish onboarding.
+            // 'pending_payment' is the legacy value signup used to write; suspended and closed accounts are refused.
+            [email, ['active', 'pending_payment']]
         );
 
         if (!user.rows[0]) {
@@ -894,29 +896,17 @@ router.get("/whoami", async (req, res) => {
 
         const userData = user.rows[0];
 
-        // Safety net: if an account is active but has no subscription row, recreate it automatically.
-        // This prevents "active user with no subscription row" from ever persisting again.
-        try {
-            if (userData?.plan_status === 'active' && userData?.plan_id) {
-                const s = await pool.query(`SELECT 1 FROM subscription WHERE user_id = $1 LIMIT 1`, [userData.id]);
-                if (!s.rows?.length) {
-                    await upsertSubscriptionForUser({
-                        pool,
-                        userId: Number(userData.id),
-                        status: 'active',
-                    });
-                }
-            }
-        } catch (e) {
-            // Never block whoami if this repair fails.
-            logger.warn('[auth/whoami] subscription repair failed', { message: (e as any)?.message ?? String(e) });
-        }
+        // Payment entitlement is written only by Stripe events (webhooks-stripe.ts). The old
+        // "repair" that recreated an active subscription from the display copy on the user row
+        // was removed: it could grant paid access without a payment.
+        const access = await getAccess(Number(userData.id));
 
         // Derived field: controllers_verification_required
         const controllersVerificationRequired = userData.is_sole_controller === false;
 
         // Return user data from database (not token)
         return ok(res, {
+            access,
             user: {
                 id: userData.id,
                 email: userData.email,

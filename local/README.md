@@ -43,19 +43,22 @@ token is present (local runs do not send email). `local/backend.env` and `local/
 ## Known limitations at the end of Phase 0
 
 - **The database is built from the migrations** (`apps/backend/scripts/baseline/000_baseline.sql` on an empty database, then the forward migrations). The baseline is a reconstruction that has not been compared with production: see `audit/SCHEMA-ASSUMPTIONS.md`.
-- **A new signup cannot complete the journey yet** (payment, activation, mail). Use the demo customer meanwhile.
 - **Rate limits are on.** The current limits are tight (30 auth requests per 15 minutes per IP, 200 per user);
   heavy clicking can hit them. Uncomment `DISABLE_RATE_LIMIT=1` in `local/backend.env` if needed, and note that
   any result obtained that way is provisional.
 - Email, Companies House, address lookup, OneDrive and Sumsub's live widget are not configured. Stripe needs
   your own **test-mode** keys in `local/backend.env` for a real checkout.
 
-## Journey test
+## Tests
 
-With the app running (`npm run local:start`):
+With the app running (`npm run local:start`), from the project root:
 
 ```bash
-node apps/backend/tests/journey/journey.mjs
+node apps/backend/tests/journey/journey.mjs        # the customer journey, signup to admin dispatch
+node apps/backend/tests/journey/stripe-events.mjs  # duplicates, retries, ordering, renewal, cancellation
+node apps/backend/tests/journey/rate-limits.mjs    # run last: exhausts the failed-login allowance
 ```
 
-It walks the customer journey against the local API with rate limits on and no manual activation. Steps the product cannot do yet are reported as PENDING with the commit that will deliver them.
+All run on the migration-built database with rate limits on and no manual account activation.
+They are MOCK tests: Stripe and Sumsub events are built and signed locally. A real Stripe
+test-mode payment and the live Sumsub widget are separate provider-sandbox checks.
