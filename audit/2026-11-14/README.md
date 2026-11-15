@@ -6,7 +6,7 @@ No production service, real customer record or real credential was used. All sec
 | Path | What it is |
 |---|---|
 | `AUDIT-REPORT.md` | The full audit, ranked fixes, redesign proposal and phased plan (export of the shared doc) |
-| `CHECKLIST.md` | Every backend route (213), proxy route (122) and page opened (45) with a Done box, what the audit saw, and the fix number |
+| `../CHECKLIST.md` | Every backend route (213), proxy route (122) and page opened (45) with a Done box, what the audit saw, and the fix number |
 | `inventory/` | Raw route inventories: `be_routes.txt` (method, path, guards), `fe_routes.txt` (proxy route, methods, backend target) |
 | `scripts/journeys/` | `t1.py`–`t7.py` journey scripts and `lib.py`. Run with Python 3 + requests against API :4000 and site :3000 |
 | `scripts/tools/` | `shot.cjs` (screenshots + axe + SEO), `anon.cjs` (redirects, mobile menu), `routes.cjs` (route inventory), `heal.cjs` (see below), `mkchecklist.py`, `restart-be.sh` |

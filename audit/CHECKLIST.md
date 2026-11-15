@@ -4,6 +4,14 @@ Generated from the audit inventory by `scripts/tools/mkchecklist.py`. Tick the *
 
 Fix numbers refer to the ranked fixes in `AUDIT-REPORT.md`. "not called" means no audit script hit that route; it is neither passed nor failed.
 
+## Progress log
+
+| Date | Milestone | Journey test | Unit tests |
+|---|---|---|---|
+| 2026-11-15 | Baseline + migrations, subscription check per route, business at signup | 9 pass, 0 fail, 8 pending (migration-built db, rate limits on, no manual activation) | 231 pass, 14 fail (unchanged from audit) |
+
+Ticked so far: routes proven by the journey test under the stated conditions. Journey steps 1.5-1.9 also show that checkout, verification start, support, billing overview and company search are reachable before payment and that mail, tags and forwarding answer 403; those routes stay unticked until their full behaviour is tested.
+
 **Backend routes:** 213 total, 117 exercised in the audit, 96 not called.
 
 ## Backend routes
@@ -19,7 +27,7 @@ Fix numbers refer to the ranked fixes in `AUDIT-REPORT.md`. "not called" means n
 | [ ] | POST | `/api/auth/logout` | none | 200, 403, 429 |  |  |
 | [ ] | POST | `/api/auth/reset-password/confirm` | none | 400, 500 |  |  |
 | [ ] | POST | `/api/auth/reset-password/request` | none | 200 |  |  |
-| [ ] | POST | `/api/auth/signup` | none | 201, 400, 409, 429 | No business row created | 6 |
+| [x] | POST | `/api/auth/signup` | none | 201, 400, 409, 429 | No business row created | 6 |
 | [ ] | GET | `/api/auth/test-db` | devOnly | not called |  |  |
 | [ ] | POST | `/api/auth/test-email` | devOnly | not called |  |  |
 | [ ] | GET | `/api/auth/test-user-table` | devOnly | not called |  |  |
@@ -151,7 +159,7 @@ Fix numbers refer to the ranked fixes in `AUDIT-REPORT.md`. "not called" means n
 | [ ] | POST | `/api/payments/redirect-flows` | requireAuth | 403 |  |  |
 | [ ] | POST | `/api/payments/stripe/checkout-session` | requireAuth | 429, 500 | Blocked by subscription check for new users | 3 |
 | [ ] | POST | `/api/payments/stripe/checkout-session-embedded` | requireAuth | 403, 500 | Blocked by subscription check for new users | 3 |
-| [ ] | GET | `/api/payments/stripe/publishable-key` | none | 200, 401, 403, 429, 503 |  |  |
+| [x] | GET | `/api/payments/stripe/publishable-key` | none | 200, 401, 403, 429, 503 |  |  |
 | [ ] | GET | `/api/payments/stripe/session-status` | requireAuth | not called | Not scoped to owner (S6) | 13 |
 | [ ] | POST | `/api/payments/subscriptions` | requireAuth | not called |  |  |
 | [ ] | GET | `/api/payments/subscriptions/status` | requireAuth | 200, 429 |  |  |
@@ -263,7 +271,7 @@ Fix numbers refer to the ranked fixes in `AUDIT-REPORT.md`. "not called" means n
 | [ ] | GET | `/api/blog/posts` | none | 200 |  |  |
 | [ ] | GET | `/api/blog/posts/:slug` | none | 404 |  |  |
 | [ ] | POST | `/api/blog/upload` | requireAdmin | not called |  |  |
-| [ ] | POST | `/api/contact` | none | 200, 401 | Reports success with no email provider (S12) | 21 |
+| [x] | POST | `/api/contact` | none | 200, 401 | Reports success with no email provider (S12) | 21 |
 | [ ] | GET | `/api/quiz/stats` | none | 200 | Public diagnostics (S5) | 12 |
 | [ ] | POST | `/api/quiz/submit` | none | 200, 401 |  |  |
 
