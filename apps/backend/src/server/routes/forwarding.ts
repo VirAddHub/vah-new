@@ -2,6 +2,7 @@
 // User-facing forwarding requests API
 
 import { Router, Request, Response } from 'express';
+import { requireActiveSubscription } from '../../middleware/auth';
 import { getPool } from '../db';
 import { selectPaged } from '../db-helpers';
 import { createForwardingRequest } from '../../modules/forwarding/forwarding.service';
@@ -31,7 +32,7 @@ const normalizeTag = (tag: string | null | undefined): string =>
  * List all forwarding requests for current user (with pagination support)
  * Query params: ?page=1&pageSize=20
  */
-router.get('/forwarding/requests', requireAuth, async (req: Request, res: Response) => {
+router.get('/forwarding/requests', requireAuth, requireActiveSubscription, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 20;
@@ -81,7 +82,7 @@ router.get('/forwarding/requests', requireAuth, async (req: Request, res: Respon
  * GET /api/forwarding/requests/:id
  * Get specific forwarding request
  */
-router.get('/forwarding/requests/:id', requireAuth, async (req: Request, res: Response) => {
+router.get('/forwarding/requests/:id', requireAuth, requireActiveSubscription, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const requestId = parseInt(param(req, 'id'), 10);
 
@@ -121,6 +122,7 @@ router.get('/forwarding/requests/:id', requireAuth, async (req: Request, res: Re
 router.post(
     '/forwarding/requests',
     requireAuth,
+    requireActiveSubscription,
     forwardingMutationUserLimiter,
     async (req: Request, res: Response) => {
     // First-line logging at the top
@@ -480,7 +482,7 @@ router.post(
  * POST /api/forwarding/requests/bulk
  * Bulk forward multiple mail items
  */
-router.post('/requests/bulk', requireAuth, forwardingMutationUserLimiter, async (req: Request, res: Response) => {
+router.post('/requests/bulk', requireAuth, requireActiveSubscription, forwardingMutationUserLimiter, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { ids } = req.body;
 

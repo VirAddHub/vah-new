@@ -90,7 +90,7 @@ import metricsRouter from './server/routes/metrics';
 import notificationsRouter from './server/routes/notifications';
 
 import { ensureCsrfToken, requireCsrfToken, getOrCreateCsrfToken } from './middleware/csrf';
-import { authenticateJWT } from './middleware/auth';
+import { authenticateJWT, requireActiveSubscription } from './middleware/auth';
 
 type MaybeDefault<T> = { default?: T } | T;
 // handle CJS/ESM default interop safely
@@ -466,7 +466,7 @@ export function createApp() {
     app.use('/api/quiz', quizRouter);
     logger.info('[mount] /api/quiz mounted');
 
-    app.use('/api/bff', bffMailScanRouter);
+    app.use('/api/bff', requireActiveSubscription, bffMailScanRouter);
     logger.info('[mount] /api/bff (mail scan) mounted');
 
     if (process.env.NODE_ENV !== 'production') {
@@ -508,16 +508,16 @@ export function createApp() {
     app.use('/api/downloads', downloadsRouter);
     logger.info('[mount] /api/downloads mounted (TS handler)');
 
-    app.use('/api/files', filesRouter);
+    app.use('/api/files', requireActiveSubscription, filesRouter);
     logger.info('[mount] /api/files mounted (TS handler)');
 
     app.use('/api/gdpr-export', gdprExportRouter);
     logger.info('[mount] /api/gdpr-export mounted (TS handler)');
 
-    app.use('/api/mail/forward', mailForwardRouter);
+    app.use('/api/mail/forward', requireActiveSubscription, mailForwardRouter);
     logger.info('[mount] /api/mail/forward mounted (TS handler)');
 
-    app.use('/api/mail-search', mailSearchRouter);
+    app.use('/api/mail-search', requireActiveSubscription, mailSearchRouter);
     logger.info('[mount] /api/mail-search mounted (TS handler)');
 
     app.use('/api/metrics', metricsRouter);

@@ -24,9 +24,11 @@ describe('Admin stats / overview routes', () => {
   ];
 
   adminRoutes.forEach((path) => {
-    it(`GET ${path} → 401 with no token`, async () => {
+    // 401 (not signed in) or 403 (admin guard) are both a refusal. The audit routers answer 403;
+    // they used to answer 401 only because a misplaced subscription check ran first.
+    it(`GET ${path} → refused (401 or 403) with no token`, async () => {
       const res = await request(app).get(path);
-      expect(res.status).toBe(401);
+      expect([401, 403]).toContain(res.status);
     });
 
     it(`GET ${path} → 403 or 500 with user token (no DB in test)`, async () => {
