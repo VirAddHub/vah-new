@@ -9,8 +9,9 @@ Fix numbers refer to the ranked fixes in `AUDIT-REPORT.md`. "not called" means n
 | Date | Milestone | Journey test | Unit tests |
 |---|---|---|---|
 | 2026-11-15 | Baseline + migrations, subscription check per route, business at signup | 9 pass, 0 fail, 8 pending (migration-built db, rate limits on, no manual activation) | 231 pass, 14 fail (unchanged from audit) |
+| 2026-11-15 | Access decision, restricted mail, Stripe event safety and activation, unpaid login, forwarding fixes, rate limits | journey 30 pass, 1 pending (real Stripe checkout); stripe-events 16 pass; rate-limits 4 pass. All mock tests | 231 pass, 14 fail (unchanged) |
 
-Ticked so far: routes proven by the journey test under the stated conditions. Journey steps 1.5-1.9 also show that checkout, verification start, support, billing overview and company search are reachable before payment and that mail, tags and forwarding answer 403; those routes stay unticked until their full behaviour is tested.
+Ticked so far: routes proven by the journey test under the stated conditions. Ticks from mock tests are provisional until the provider-sandbox run. Journey steps 1.5-1.9 also show that checkout, verification start, support, billing overview and company search are reachable before payment and that mail, tags and forwarding answer 403; those routes stay unticked until their full behaviour is tested.
 
 **Backend routes:** 213 total, 117 exercised in the audit, 96 not called.
 
@@ -23,8 +24,8 @@ Ticked so far: routes proven by the journey test under the stated conditions. Jo
 | [ ] | GET | `/api/auth/debug-env` | devOnly | not called | Debug/repair route: remove or prove disabled (S9) | 12 |
 | [ ] | POST | `/api/auth/debug-update-password` | devOnly | not called | Debug/repair route: remove or prove disabled (S9) | 12 |
 | [ ] | GET | `/api/auth/debug-user/:email` | devOnly | not called | Debug/repair route: remove or prove disabled (S9) | 12 |
-| [ ] | POST | `/api/auth/login` | none | 200, 401, 429 | Rejects pending_payment users | 5 |
-| [ ] | POST | `/api/auth/logout` | none | 200, 403, 429 |  |  |
+| [x] | POST | `/api/auth/login` | none | 200, 401, 429 | Rejects pending_payment users | 5 |
+| [x] | POST | `/api/auth/logout` | none | 200, 403, 429 |  |  |
 | [ ] | POST | `/api/auth/reset-password/confirm` | none | 400, 500 |  |  |
 | [ ] | POST | `/api/auth/reset-password/request` | none | 200 |  |  |
 | [x] | POST | `/api/auth/signup` | none | 201, 400, 409, 429 | No business row created | 6 |
@@ -32,7 +33,7 @@ Ticked so far: routes proven by the journey test under the stated conditions. Jo
 | [ ] | POST | `/api/auth/test-email` | devOnly | not called |  |  |
 | [ ] | GET | `/api/auth/test-user-table` | devOnly | not called |  |  |
 | [ ] | GET | `/api/auth/user-table-schema` | devOnly | not called |  |  |
-| [ ] | GET | `/api/auth/whoami` | none | 200, 401, 429, 500 |  |  |
+| [x] | GET | `/api/auth/whoami` | none | 200, 401, 429, 500 |  |  |
 
 ### Accounts / dashboard (17)
 
@@ -80,9 +81,9 @@ Ticked so far: routes proven by the journey test under the stated conditions. Jo
 | [ ] | GET | `/api/admin/exports/destruction-log` | requireAdmin*,requireAdmin | 200, 403 |  |  |
 | [ ] | POST | `/api/admin/forwarding/complete` | requireAdmin* | not called |  |  |
 | [ ] | GET | `/api/admin/forwarding/locks` | requireAdmin | 200, 403 |  |  |
-| [ ] | GET | `/api/admin/forwarding/requests` | requireAdmin*,adminListForwarding | 200, 403 |  |  |
+| [x] | GET | `/api/admin/forwarding/requests` | requireAdmin*,adminListForwarding | 200, 403 |  |  |
 | [ ] | DELETE | `/api/admin/forwarding/requests/:id` | requireAdmin*,requireAdmin | not called |  |  |
-| [ ] | PATCH | `/api/admin/forwarding/requests/:id` | requireAdmin*,adminUpdateForwarding | 400 |  |  |
+| [x] | PATCH | `/api/admin/forwarding/requests/:id` | requireAdmin*,adminUpdateForwarding | 400 |  |  |
 | [ ] | GET | `/api/admin/forwarding/requests/:id/debug-status` | requireAdmin | not called | Debug/repair route: remove or prove disabled (S9) | 12 |
 | [ ] | POST | `/api/admin/forwarding/requests/:id/force-unlock` | requireAdmin | not called |  |  |
 | [ ] | POST | `/api/admin/forwarding/requests/:id/lock` | requireAdmin | 400 | Admin identity from body (S3) | 13 |
@@ -137,7 +138,7 @@ Ticked so far: routes proven by the journey test under the stated conditions. Jo
 | [ ] | POST | `/api/internal/billing/generate-invoices` | none | 401 | No scheduler calls these | 17 |
 | [ ] | POST | `/api/internal/billing/run` | none | 401 | No scheduler calls these | 17 |
 | [ ] | GET | `/api/internal/daily-summary` | none | 401 | No scheduler calls these | 17 |
-| [ ] | POST | `/api/internal/from-onedrive` | none | 200, 401, 500 | No scheduler calls these | 17 |
+| [x] | POST | `/api/internal/from-onedrive` | none | 200, 401, 500 | No scheduler calls these | 17 |
 | [ ] | PATCH | `/api/internal/from-onedrive/:mailId/scan-url` | none | not called | No scheduler calls these | 17 |
 
 ### Billing (20)
@@ -186,9 +187,9 @@ Ticked so far: routes proven by the journey test under the stated conditions. Jo
 
 | Done | Method | Route | Guards | Audit: HTTP codes seen | Known finding | Fix # |
 |---|---|---|---|---|---|---|
-| [ ] | GET | `/api/mail-items` | requireActiveSubscription*,requireAuth | 200, 401, 403 |  |  |
+| [x] | GET | `/api/mail-items` | requireActiveSubscription*,requireAuth | 200, 401, 403 |  |  |
 | [ ] | DELETE | `/api/mail-items/:id` | requireActiveSubscription*,requireAuth | 200 |  |  |
-| [ ] | GET | `/api/mail-items/:id` | requireActiveSubscription*,requireAuth | 200, 403, 404 |  |  |
+| [x] | GET | `/api/mail-items/:id` | requireActiveSubscription*,requireAuth | 200, 403, 404 |  |  |
 | [ ] | PATCH | `/api/mail-items/:id` | requireActiveSubscription*,requireAuth | 200, 404 |  |  |
 | [ ] | GET | `/api/mail-items/:id/download` | requireActiveSubscription*,requireAuth | 400, 404 |  |  |
 | [ ] | POST | `/api/mail-items/:id/restore` | requireActiveSubscription*,requireAuth | 200 |  |  |
@@ -207,8 +208,8 @@ Ticked so far: routes proven by the journey test under the stated conditions. Jo
 | Done | Method | Route | Guards | Audit: HTTP codes seen | Known finding | Fix # |
 |---|---|---|---|---|---|---|
 | [ ] | GET | `/api/forwarding/requests` | requireAuth | 200, 401 |  |  |
-| [ ] | POST | `/api/forwarding/requests` | requireAuth | 200, 404 | Name stored in address1 | 9 |
-| [ ] | GET | `/api/forwarding/requests/:id` | requireAuth | 200, 404 |  |  |
+| [x] | POST | `/api/forwarding/requests` | requireAuth | 200, 404 | Name stored in address1 | 9 |
+| [x] | GET | `/api/forwarding/requests/:id` | requireAuth | 200, 404 |  |  |
 | [ ] | POST | `/api/requests/bulk` | requireAuth | not called |  |  |
 
 ### Onboarding (4)
@@ -256,7 +257,7 @@ Ticked so far: routes proven by the journey test under the stated conditions. Jo
 | Done | Method | Route | Guards | Audit: HTTP codes seen | Known finding | Fix # |
 |---|---|---|---|---|---|---|
 | [ ] | GET | `/api/__version` | none | not called |  |  |
-| [ ] | GET | `/api/bff/mail/scan-url` | requireAuth | 403 |  |  |
+| [x] | GET | `/api/bff/mail/scan-url` | requireAuth | 403 |  |  |
 | [ ] | POST | `/api/csp-report` | none | not called |  |  |
 | [ ] | GET | `/api/csrf` | none | not called |  |  |
 | [ ] | GET | `/api/files` | none | 401 |  |  |
@@ -307,7 +308,7 @@ Ticked so far: routes proven by the journey test under the stated conditions. Jo
 | [ ] | POST | `/api/webhooks-postmark` | none | not called |  |  |
 | [ ] | POST | `/api/webhooks/onedrive` | none | 400, 401 | No own secret (S7) | 13 |
 | [ ] | POST | `/api/webhooks/postmark` | none | not called |  |  |
-| [ ] | POST | `/api/webhooks/stripe` | none | not called | Never activates user / creates subscription | 4 |
+| [x] | POST | `/api/webhooks/stripe` | none | not called | Never activates user / creates subscription | 4 |
 
 ## Frontend API (proxy) routes (122)
 
