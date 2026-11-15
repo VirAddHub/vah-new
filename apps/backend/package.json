@@ -59,8 +59,6 @@
     "db:seed": "node scripts/seed-dev.cjs",
     "db:migrate:plans": "node scripts/db-migrate-plans.cjs",
     "db:migrate:kyc": "node scripts/db-migrate-kyc.cjs",
-    "db:migrate:invoices": "node scripts/db-migrate-invoices.cjs",
-    "invoices:backfill": "node scripts/backfill-invoices.cjs",
     "migrate:invoice-number": "node scripts/migrate-add-invoice-number.cjs",
     "migrate:sql": "node ../../dist/src/scripts/migrate-sql.js ../../migrations",
     "db:seed:plans": "node scripts/db-seed-plans.cjs",

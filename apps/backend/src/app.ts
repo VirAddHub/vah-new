@@ -21,8 +21,6 @@ import { health } from './server/routes/health';
 // --- routes that need raw body (webhooks)
 import { postmarkWebhook } from './server/routes/webhooks-postmark';
 import onedriveWebhook from './server/routes/webhooks-onedrive';
-// GoCardless: legacy disabled — project now uses Stripe
-// import gocardlessWebhook from './server/routes/webhooks-gocardless';
 import stripeWebhook from './server/routes/webhooks-stripe';
 import sumsubWebhook from './server/routes/webhooks-sumsub';
 import { Router } from 'express';
@@ -63,7 +61,6 @@ import internalBillingRouter from './server/routes/internal-billing';
 import internalDailySummaryRouter from './server/routes/internal-daily-summary';
 import { errorHandler } from './server/middleware/errorHandler';
 
-import paymentsStubRouter from './server/routes/payments-stub';
 import kycRouter from './server/routes/kyc';
 import forwardingRouter from './server/routes/forwarding';
 import emailPrefsRouterNew from './server/routes/email-prefs';
@@ -148,9 +145,7 @@ export function createApp() {
     app.post('/api/webhooks-postmark', (_req, res) => res.redirect(308, '/api/webhooks/postmark'));
 
     // Webhooks: Stripe (raw body required for signature verification)
-    // GoCardless: legacy disabled — project now uses Stripe
     const webhooksRouter = Router();
-    // webhooksRouter.use(gocardlessWebhook);
     webhooksRouter.use(stripeWebhook);
 
     // Sumsub webhook — raw Buffer for signature verification
@@ -161,8 +156,6 @@ export function createApp() {
         express.raw({ type: 'application/json' }),
         ((req: Request & { rawBody?: string }, _res: Response, next: NextFunction) => {
             if (req.path === '/stripe') {
-                // GoCardless: legacy disabled — project now uses Stripe
-                // req.path === '/gocardless' removed
                 req.rawBody = req.body?.toString?.('utf8') ?? '';
             }
             next();
@@ -433,7 +426,6 @@ export function createApp() {
     logger.info('[mount] /api/payments mounted');
 
     if (process.env.NODE_ENV !== 'production') {
-        app.use('/api/payments', paymentsStubRouter);
         logger.info('[mount] /api/payments (stubs) mounted (non-production only)');
     } else {
         logger.info('[mount] /api/payments (stubs) disabled (production)');

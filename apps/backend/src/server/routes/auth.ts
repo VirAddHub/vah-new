@@ -576,7 +576,7 @@ router.post("/signup", async (req, res) => {
         // NOTE: Welcome email is now sent AFTER payment succeeds (in payment completion endpoint)
         // This ensures users only receive welcome emails when their account is fully activated
 
-        // Auto-login after signup (so the user can immediately set up GoCardless mandate)
+        // Auto-login after signup (so the user can go straight to payment)
         const token = generateToken({
             id: row.id,
             email: row.email,

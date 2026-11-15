@@ -13,6 +13,10 @@
 --   * subscription: the rule "active requires a GoCardless mandate" is replaced by
 --     "active requires a Stripe subscription id" (decision log 2 and 3, 15 Nov 2026).
 --   * subscription: duplicate unique constraint on user_id removed.
+--   * GoCardless removed (15 Nov 2026): the two gc_* flow tables, the three gocardless_* columns on
+--     "user", subscription.mandate_id and payment.mandate_id are omitted; invoices.gocardless_payment_id is
+--     provider_payment_id; plan_status_event.gocardless_event_* is provider_event_*.
+--     Historical migration files still contain the old definitions and are not applied to fresh databases.
 
 --
 -- PostgreSQL database dump
@@ -1354,77 +1358,6 @@ ALTER SEQUENCE public.forwarding_request_id_seq OWNED BY public.forwarding_reque
 
 
 --
--- Name: gc_billing_request_flow; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.gc_billing_request_flow (
-    id bigint NOT NULL,
-    created_at_ms bigint NOT NULL,
-    user_id bigint NOT NULL,
-    plan_id bigint NOT NULL,
-    billing_request_id text NOT NULL,
-    billing_request_flow_id text NOT NULL,
-    customer_id text,
-    status text DEFAULT 'created'::text NOT NULL,
-    completed_at_ms bigint
-);
-
-
---
--- Name: gc_billing_request_flow_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.gc_billing_request_flow_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: gc_billing_request_flow_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.gc_billing_request_flow_id_seq OWNED BY public.gc_billing_request_flow.id;
-
-
---
--- Name: gc_redirect_flow; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.gc_redirect_flow (
-    id bigint NOT NULL,
-    created_at_ms bigint NOT NULL,
-    user_id bigint NOT NULL,
-    plan_id bigint NOT NULL,
-    flow_id text NOT NULL,
-    session_token text,
-    status text DEFAULT 'created'::text NOT NULL,
-    completed_at_ms bigint
-);
-
-
---
--- Name: gc_redirect_flow_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.gc_redirect_flow_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: gc_redirect_flow_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.gc_redirect_flow_id_seq OWNED BY public.gc_redirect_flow.id;
-
-
---
 -- Name: invoice; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1456,7 +1389,7 @@ CREATE TABLE public.invoices (
     status text DEFAULT 'paid'::text,
     created_at bigint NOT NULL,
     number text NOT NULL,
-    gocardless_payment_id text,
+    provider_payment_id text,
     currency text DEFAULT 'GBP'::text,
     email_sent_at timestamp with time zone,
     email_send_error text,
@@ -1488,10 +1421,10 @@ COMMENT ON COLUMN public.invoices.pdf_path IS 'Relative path to generated PDF in
 
 
 --
--- Name: COLUMN invoices.gocardless_payment_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN invoices.provider_payment_id; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.invoices.gocardless_payment_id IS 'GoCardless payment ID that triggered this invoice';
+COMMENT ON COLUMN public.invoices.provider_payment_id IS 'Payment provider reference for the payment that settled this invoice';
 
 
 --
@@ -1921,11 +1854,10 @@ CREATE TABLE public.payment (
     id integer NOT NULL,
     created_at bigint NOT NULL,
     user_id integer,
-    gocardless_customer_id text,
+    stripe_customer_id text,
     subscription_id text,
     status text,
     invoice_url text,
-    mandate_id text,
     billing_interval text
 );
 
@@ -1994,9 +1926,9 @@ CREATE TABLE public.plan_status_event (
     old_status text,
     new_status text NOT NULL,
     reason text NOT NULL,
-    gocardless_event_id text,
-    gocardless_event_type text,
-    gocardless_event_created_at timestamp with time zone,
+    provider_event_id text,
+    provider_event_type text,
+    provider_event_created_at timestamp with time zone,
     metadata jsonb,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -2013,14 +1945,14 @@ COMMENT ON TABLE public.plan_status_event IS 'Audit trail for every plan status 
 -- Name: COLUMN plan_status_event.reason; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.plan_status_event.reason IS 'Human-readable reason for the status change (e.g., "webhook_mandate_active", "webhook_payment_failed")';
+COMMENT ON COLUMN public.plan_status_event.reason IS 'Human-readable reason for the status change (e.g., "stripe_invoice_paid", "webhook_payment_failed")';
 
 
 --
--- Name: COLUMN plan_status_event.gocardless_event_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN plan_status_event.provider_event_id; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.plan_status_event.gocardless_event_id IS 'ID of the GoCardless webhook event that triggered this change (if applicable)';
+COMMENT ON COLUMN public.plan_status_event.provider_event_id IS 'ID of the payment provider event that triggered this change (if applicable)';
 
 
 --
@@ -2193,7 +2125,6 @@ CREATE TABLE public.subscription (
     cadence text DEFAULT 'monthly'::text NOT NULL,
     status text DEFAULT 'active'::text NOT NULL,
     next_charge_at bigint,
-    mandate_id text,
     created_at bigint DEFAULT ((EXTRACT(epoch FROM now()) * (1000)::numeric))::bigint NOT NULL,
     updated_at bigint DEFAULT ((EXTRACT(epoch FROM now()) * (1000)::numeric))::bigint NOT NULL,
     last_event_created_at timestamp with time zone,
@@ -2208,14 +2139,14 @@ CREATE TABLE public.subscription (
 -- Name: COLUMN subscription.last_event_created_at; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.subscription.last_event_created_at IS 'Timestamp of the most recent GoCardless webhook event that updated this subscription. Used to prevent stale/out-of-order events from overwriting newer state.';
+COMMENT ON COLUMN public.subscription.last_event_created_at IS 'Timestamp of the most recent payment provider event that updated this subscription. Used to prevent stale/out-of-order events from overwriting newer state.';
 
 
 --
 -- Name: COLUMN subscription.last_event_id; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.subscription.last_event_id IS 'ID of the most recent GoCardless webhook event that updated this subscription. Used for audit and debugging.';
+COMMENT ON COLUMN public.subscription.last_event_id IS 'ID of the most recent payment provider event that updated this subscription. Used for audit and debugging.';
 
 
 --
@@ -2355,9 +2286,6 @@ CREATE TABLE public."user" (
     ch_verification_reviewed_at timestamp with time zone,
     ch_verification_reviewer_id integer,
     ch_verification_notes text,
-    gocardless_customer_id text,
-    gocardless_mandate_id text,
-    gocardless_redirect_flow_id text,
     kyc_verified_at bigint,
     email_pref_marketing boolean DEFAULT false NOT NULL,
     email_pref_product boolean DEFAULT true NOT NULL,
@@ -2411,27 +2339,6 @@ CREATE TABLE public."user" (
     password_hash text,
     CONSTRAINT check_controllers_declaration CHECK (((is_sole_controller IS NULL) OR ((is_sole_controller = true) AND ((additional_controllers_count IS NULL) OR (additional_controllers_count = 0))) OR ((is_sole_controller = false) AND ((additional_controllers_count IS NULL) OR (additional_controllers_count >= 1)))))
 );
-
-
---
--- Name: COLUMN "user".gocardless_customer_id; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public."user".gocardless_customer_id IS 'GoCardless customer ID for payment processing';
-
-
---
--- Name: COLUMN "user".gocardless_mandate_id; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public."user".gocardless_mandate_id IS 'GoCardless mandate ID for direct debit';
-
-
---
--- Name: COLUMN "user".gocardless_redirect_flow_id; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public."user".gocardless_redirect_flow_id IS 'Temporary ID for GoCardless payment setup flow';
 
 
 --
@@ -2906,20 +2813,6 @@ ALTER TABLE ONLY public.forwarding_request ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
--- Name: gc_billing_request_flow id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.gc_billing_request_flow ALTER COLUMN id SET DEFAULT nextval('public.gc_billing_request_flow_id_seq'::regclass);
-
-
---
--- Name: gc_redirect_flow id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.gc_redirect_flow ALTER COLUMN id SET DEFAULT nextval('public.gc_redirect_flow_id_seq'::regclass);
-
-
---
 -- Name: invoice id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3309,30 +3202,6 @@ ALTER TABLE ONLY public.forwarding_outbox
 
 ALTER TABLE ONLY public.forwarding_request
     ADD CONSTRAINT forwarding_request_pkey PRIMARY KEY (id);
-
-
---
--- Name: gc_billing_request_flow gc_billing_request_flow_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.gc_billing_request_flow
-    ADD CONSTRAINT gc_billing_request_flow_pkey PRIMARY KEY (id);
-
-
---
--- Name: gc_redirect_flow gc_redirect_flow_flow_id_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.gc_redirect_flow
-    ADD CONSTRAINT gc_redirect_flow_flow_id_key UNIQUE (flow_id);
-
-
---
--- Name: gc_redirect_flow gc_redirect_flow_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.gc_redirect_flow
-    ADD CONSTRAINT gc_redirect_flow_pkey PRIMARY KEY (id);
 
 
 --
@@ -4295,27 +4164,6 @@ CREATE INDEX idx_fr_user_status ON public.forwarding_request USING btree (user_i
 
 
 --
--- Name: idx_gc_brf_customer_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_gc_brf_customer_id ON public.gc_billing_request_flow USING btree (customer_id);
-
-
---
--- Name: idx_gc_redirect_flow_plan_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_gc_redirect_flow_plan_id ON public.gc_redirect_flow USING btree (plan_id);
-
-
---
--- Name: idx_gc_redirect_flow_user_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_gc_redirect_flow_user_id ON public.gc_redirect_flow USING btree (user_id);
-
-
---
 -- Name: idx_invoice_created; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4407,17 +4255,17 @@ CREATE INDEX idx_invoices_email_sent_at ON public.invoices USING btree (email_se
 
 
 --
--- Name: idx_invoices_gocardless_payment_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX idx_invoices_gocardless_payment_id ON public.invoices USING btree (gocardless_payment_id) WHERE (gocardless_payment_id IS NOT NULL);
-
-
---
 -- Name: idx_invoices_number; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_invoices_number ON public.invoices USING btree (invoice_number);
+
+
+--
+-- Name: idx_invoices_provider_payment_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_invoices_provider_payment_id ON public.invoices USING btree (provider_payment_id) WHERE (provider_payment_id IS NOT NULL);
 
 
 --
@@ -4750,10 +4598,10 @@ CREATE INDEX idx_plan_status_event_created_at ON public.plan_status_event USING 
 
 
 --
--- Name: idx_plan_status_event_gocardless_event_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_plan_status_event_provider_event_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_plan_status_event_gocardless_event_id ON public.plan_status_event USING btree (gocardless_event_id) WHERE (gocardless_event_id IS NOT NULL);
+CREATE INDEX idx_plan_status_event_provider_event_id ON public.plan_status_event USING btree (provider_event_id) WHERE (provider_event_id IS NOT NULL);
 
 
 --
@@ -4936,20 +4784,6 @@ CREATE INDEX idx_user_email_active ON public."user" USING btree (email) WHERE (d
 --
 
 CREATE INDEX idx_user_email_unsubscribed_at ON public."user" USING btree (email_unsubscribed_at);
-
-
---
--- Name: idx_user_gocardless_customer; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_user_gocardless_customer ON public."user" USING btree (gocardless_customer_id);
-
-
---
--- Name: idx_user_gocardless_mandate; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_user_gocardless_mandate ON public."user" USING btree (gocardless_mandate_id);
 
 
 --
@@ -5181,20 +5015,6 @@ CREATE UNIQUE INDEX uniq_users_email_active ON public."user" USING btree (lower(
 --
 
 CREATE UNIQUE INDEX user_active_address_unique ON public.address_slot USING btree (assigned_to) WHERE (status = 'assigned'::text);
-
-
---
--- Name: ux_gc_brf_flow_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX ux_gc_brf_flow_id ON public.gc_billing_request_flow USING btree (billing_request_flow_id);
-
-
---
--- Name: ux_gc_brf_request_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX ux_gc_brf_request_id ON public.gc_billing_request_flow USING btree (billing_request_id);
 
 
 --
@@ -5483,38 +5303,6 @@ ALTER TABLE ONLY public.forwarding_request
 
 ALTER TABLE ONLY public.forwarding_request
     ADD CONSTRAINT forwarding_request_user_id_fkey FOREIGN KEY (user_id) REFERENCES public."user"(id) ON DELETE CASCADE;
-
-
---
--- Name: gc_billing_request_flow gc_billing_request_flow_plan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.gc_billing_request_flow
-    ADD CONSTRAINT gc_billing_request_flow_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES public.plans(id);
-
-
---
--- Name: gc_billing_request_flow gc_billing_request_flow_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.gc_billing_request_flow
-    ADD CONSTRAINT gc_billing_request_flow_user_id_fkey FOREIGN KEY (user_id) REFERENCES public."user"(id);
-
-
---
--- Name: gc_redirect_flow gc_redirect_flow_plan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.gc_redirect_flow
-    ADD CONSTRAINT gc_redirect_flow_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES public.plans(id);
-
-
---
--- Name: gc_redirect_flow gc_redirect_flow_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.gc_redirect_flow
-    ADD CONSTRAINT gc_redirect_flow_user_id_fkey FOREIGN KEY (user_id) REFERENCES public."user"(id);
 
 
 --

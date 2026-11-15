@@ -15,7 +15,6 @@ describe('Admin stats / overview routes', () => {
     '/api/admin/exports/destruction-log',
     '/api/admin/health/summary',
     '/api/admin/health/dependencies',
-    '/api/admin/gocardless',
     '/api/admin/sumsub',
     '/api/admin/postmark',
     '/api/admin/onedrive',

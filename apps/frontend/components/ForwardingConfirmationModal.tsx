@@ -207,7 +207,7 @@ export function ForwardingConfirmationModal({
                                                             <span className="font-medium">Pay Now via Stripe</span>
                                                         </div>
                                                         <p className="text-body-sm text-muted-foreground">
-                                                            £2.00 will be charged immediately via direct debit
+                                                            A £2.00 forwarding fee applies and will be added to your account
                                                         </p>
                                                     </div>
                                                 </div>

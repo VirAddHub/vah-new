@@ -1,7 +1,6 @@
 import type { Request, Response } from 'express';
 import fs from 'fs';
 import { getPool } from '../db';
-import { gcCreateReauthoriseLink, gcCreateUpdateBankLink } from '../../lib/gocardless';
 import { TimestampUtils } from '../../lib/timestamp-utils';
 import { logger } from '../../lib/logger';
 import { getBillingProvider } from '../../config/billing';
@@ -101,53 +100,31 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
   }
 }
 
-export async function postUpdateBank(req: Request, res: Response) {
+/**
+ * Open Stripe's customer portal: update card, view payment history, cancel at period end.
+ * /update-bank and /reauthorise are kept as aliases of /portal for existing screens.
+ */
+export async function postBillingPortal(req: Request, res: Response) {
   try {
     const userId = Number(req.user!.id);
-    if (getBillingProvider() === 'stripe') {
-      const customerResult = await getOrCreateStripeCustomerForUser(userId);
-      if (!customerResult.ok) {
-        if (customerResult.error === 'user_not_found') {
-          return res.status(404).json({ ok: false, error: customerResult.error });
-        }
-        return res.status(503).json({ ok: false, error: customerResult.error });
-      }
-      const url = await createStripeBillingPortalLink(customerResult.customerId);
-      return res.json({ ok: true, data: { redirect_url: url, url } });
+    const customerResult = await getOrCreateStripeCustomerForUser(userId);
+    if (!customerResult.ok) {
+      return res.status(customerResult.error === 'user_not_found' ? 404 : 503).json({ ok: false, error: customerResult.error });
     }
-    const link = await gcCreateUpdateBankLink(userId);
-    res.json({ ok: true, data: link });
+    const url = await createStripeBillingPortalLink(customerResult.customerId);
+    return res.json({ ok: true, data: { redirect_url: url, url } });
   } catch (error) {
-    logger.error('[postUpdateBank] error', { message: (error as any)?.message ?? String(error) });
-    res.status(500).json({ ok: false, error: 'Failed to create update bank link' });
+    logger.error('[postBillingPortal] error', { message: (error as any)?.message ?? String(error) });
+    return res.status(503).json({ ok: false, error: 'billing_portal_unavailable' });
   }
 }
+export const postUpdateBank = postBillingPortal;
+export const postReauthorise = postBillingPortal;
 
-export async function postReauthorise(req: Request, res: Response) {
-  try {
-    const userId = Number(req.user!.id);
-    if (getBillingProvider() === 'stripe') {
-      const customerResult = await getOrCreateStripeCustomerForUser(userId);
-      if (!customerResult.ok) {
-        if (customerResult.error === 'user_not_found') {
-          return res.status(404).json({ ok: false, error: customerResult.error });
-        }
-        return res.status(503).json({ ok: false, error: customerResult.error });
-      }
-      const url = await createStripeBillingPortalLink(customerResult.customerId);
-      return res.json({ ok: true, data: { redirect_url: url, url } });
-    }
-    const link = await gcCreateReauthoriseLink(userId);
-    res.json({ ok: true, data: link });
-  } catch (error) {
-    logger.error('[postReauthorise] error', { message: (error as any)?.message ?? String(error) });
-    res.status(500).json({ ok: false, error: 'Failed to create reauthorization link' });
-  }
-}
-
-export async function postRetryPayment(req: Request, res: Response) {
-  // Stub: schedule a retry on latest failed payment (implement via GC API)
-  res.json({ ok: true, data: { queued: true } });
+export async function postRetryPayment(_req: Request, res: Response) {
+  // Not implemented. Stripe retries failed renewals itself; the customer fixes their card in the
+  // billing portal. This used to answer "queued" without doing anything.
+  res.status(501).json({ ok: false, error: 'not_implemented', message: 'Update your payment method in the billing portal; Stripe retries the payment automatically.' });
 }
 
 export async function postChangePlan(req: Request, res: Response) {

@@ -1,18 +1,17 @@
 /**
  * Billing provider and Stripe configuration.
- * Single switch: BILLING_PROVIDER = "gocardless" | "stripe"
+ * Stripe is the only billing provider. The former BILLING_PROVIDER switch has been removed;
+ * the variable is ignored if it is still set.
  */
 
-export type BillingProvider = 'gocardless' | 'stripe';
+export type BillingProvider = 'stripe';
 
 export function getBillingProvider(): BillingProvider {
-  const v = (process.env.BILLING_PROVIDER || 'gocardless').toLowerCase().trim();
-  if (v === 'stripe') return 'stripe';
-  return 'gocardless';
+  return 'stripe';
 }
 
 export function isStripeEnabled(): boolean {
-  return getBillingProvider() === 'stripe' && Boolean(process.env.STRIPE_SECRET_KEY?.trim());
+  return Boolean(process.env.STRIPE_SECRET_KEY?.trim());
 }
 
 export function getStripeConfig(): {

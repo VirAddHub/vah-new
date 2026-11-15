@@ -412,18 +412,6 @@ describe('Reports (CSV) & Webhooks', () => {
     expect(fwd.headers['content-type']).toMatch(/text\/csv/);
   });
 
-  test('POST /api/webhooks/gocardless -> updates plan_status', async () => {
-    const r = await request(app).post('/api/webhooks/gocardless').send({
-      payment: { user_id: userId, status: 'confirmed', amount: 999, currency: 'GBP' },
-    });
-    expect(r.status).toBe(200);
-    expect(r.body.ok).toBe(true);
-
-    const status = await userAgent.get('/api/payments/subscriptions/status');
-    expect(status.status).toBe(200);
-    expect(status.body.data.plan_status).toBe('active');
-  });
-
   test('POST /api/webhooks/sumsub -> sets kyc to verified', async () => {
     const r = await request(app).post('/api/webhooks/sumsub').send({
       user_id: userId,

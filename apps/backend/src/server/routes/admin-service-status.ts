@@ -1,5 +1,5 @@
 // src/server/routes/admin-service-status.ts
-// Service monitoring endpoints for GoCardless, Sumsub, Postmark, OneDrive
+// Service monitoring endpoints for Stripe, Sumsub, Postmark, OneDrive
 
 import { Router, Request, Response } from 'express';
 import { logger } from '../../lib/logger';
@@ -9,61 +9,27 @@ import { requireAdmin } from '../../middleware/auth';
 const router = Router();
 
 /**
- * GET /api/admin/service-status/gocardless
- * Check GoCardless service status
+ * GET /api/admin/service-status/stripe
+ * Configuration and recent event activity. Does not call Stripe.
  */
-router.get('/gocardless', requireAdmin, async (req: Request, res: Response) => {
+router.get('/stripe', requireAdmin, async (_req: Request, res: Response) => {
     try {
+        const configured = Boolean((process.env.STRIPE_SECRET_KEY || '').trim() && (process.env.STRIPE_WEBHOOK_SECRET || '').trim());
         const pool = getPool();
-        const now = Date.now();
-        const oneDayAgo = now - (24 * 60 * 60 * 1000);
-        const oneHourAgo = now - (60 * 60 * 1000);
-
-        // Check recent webhook activity (GoCardless uses 'type' column)
-        const webhookResult = await pool.query(`
-            SELECT 
-                MAX(created_at) as last_webhook,
-                COUNT(*) as total_events,
-                COUNT(CASE WHEN created_at >= $1 THEN 1 END) as recent_events,
-                COUNT(CASE WHEN error IS NOT NULL THEN 1 END) as error_count
-            FROM webhook_log 
-            WHERE (type = 'gocardless' OR source = 'gocardless') 
-            AND created_at >= $2
-        `, [oneHourAgo, oneDayAgo]);
-
-        const webhookData = webhookResult.rows[0];
-        const lastWebhook = webhookData?.last_webhook ? parseInt(webhookData.last_webhook) : null;
-        const errorCount = parseInt(webhookData?.error_count || '0');
-        const recentEvents = parseInt(webhookData?.recent_events || '0');
-
-        // Determine status based on activity
-        let status = 'healthy';
-        if (!lastWebhook || (now - lastWebhook) > (2 * 60 * 60 * 1000)) {
-            status = 'down'; // No webhook in 2 hours
-        } else if (errorCount > 5 || recentEvents === 0) {
-            status = 'degraded'; // High error rate or no recent activity
-        }
-
-        // Calculate uptime (simplified)
-        const uptime = errorCount === 0 ? 99.9 : Math.max(95, 99.9 - (errorCount * 0.5));
-
-        res.json({
+        const since = Date.now() - 24 * 60 * 60 * 1000;
+        const r = await pool.query(
+            `SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status = 'failed')::int AS failed
+               FROM webhook_log WHERE provider = 'stripe' AND received_at_ms > $1`, [since]);
+        const { total, failed } = r.rows[0] || { total: 0, failed: 0 };
+        return res.json({
             ok: true,
-            status,
-            lastWebhook,
-            errorCount,
-            recentEvents,
-            uptime,
-            message: `GoCardless webhook activity: ${recentEvents} events in last hour`
+            status: !configured ? 'down' : failed > 0 ? 'degraded' : 'healthy',
+            configured,
+            message: !configured ? 'Stripe keys are not configured' : `Stripe events in the last 24 hours: ${total} received, ${failed} failed`,
         });
-
-    } catch (error: any) {
-        logger.error('[Service Status] GoCardless check failed:', error);
-        res.status(500).json({
-            ok: false,
-            error: 'service_check_failed',
-            message: error.message
-        });
+    } catch (error) {
+        logger.error('[Service Status] Stripe check failed:', error);
+        return res.status(500).json({ ok: false, status: 'down', message: 'Stripe status check failed' });
     }
 });
 

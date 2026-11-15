@@ -56,6 +56,7 @@ router.get('/overview', requireAuth, getBillingOverview);
 router.get('/invoices', requireAuth, listInvoices);
 router.get('/invoices/:id', requireAuth, getInvoiceById);
 router.get('/invoices/:id/download', requireAuth, billingInvoiceDownloadLimiter, downloadInvoicePdf);
+router.post('/portal', requireAuth, postUpdateBank);
 router.post('/update-bank', requireAuth, postUpdateBank);
 router.post('/reauthorise', requireAuth, postReauthorise);
 router.post(

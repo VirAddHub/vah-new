@@ -487,7 +487,6 @@ router.get('/users/:id', requireAdmin, async (req: Request, res: Response) => {
                 u.kyc_status, u.kyc_approved_at, u.kyc_rejection_reason,
                 u.companies_house_verified, u.ch_verification_status,
                 u.subscription_status, u.stripe_customer_id,
-                u.gocardless_customer_id, u.gocardless_mandate_id,
                 u.phone, u.forwarding_address, u.created_at, u.updated_at,
                 u.last_active_at, u.last_login_at, u.deleted_at, u.expires_at,
                 u.login_attempts, u.locked_until
@@ -770,7 +769,6 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
             await pool.query(`DELETE FROM mail_item WHERE user_id = $1`, [userId]);
 
             // Delete redirect flows
-            await pool.query(`DELETE FROM gc_redirect_flow WHERE user_id = $1`, [userId]);
 
             // Delete admin audit entries for this user
             await pool.query(`DELETE FROM admin_audit WHERE target_id = $1 AND target_type = 'user'`, [userId]);

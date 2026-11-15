@@ -46,7 +46,7 @@ function basePricePence(cadence: Cadence): number {
 export interface CreateInvoiceForUserPeriodOptions {
   userId: number;
   cadence: Cadence;
-  gocardlessPaymentId?: string | null;
+  providerPaymentId?: string | null;
   now?: Date;
 }
 
@@ -66,7 +66,7 @@ export interface CreateInvoiceForUserPeriodResult {
 export async function createInvoiceForUserPeriod(
   opts: CreateInvoiceForUserPeriodOptions
 ): Promise<CreateInvoiceForUserPeriodResult> {
-  const { userId, cadence, gocardlessPaymentId = null, now = new Date() } = opts;
+  const { userId, cadence, providerPaymentId = null, now = new Date() } = opts;
   const { start, end } = periodForNow(cadence, now);
   const pool = getPool();
 
@@ -134,17 +134,17 @@ export async function createInvoiceForUserPeriod(
 
   const createdAtMs = Date.now();
 
-  // 3) Create or update invoice (idempotent by gocardless_payment_id if provided, or by period)
+  // 3) Create or update invoice (idempotent by provider_payment_id if provided, or by period)
   // Note: invoices table doesn't have unique constraint on (user_id, period_start, period_end)
   // So we check for existing invoice first
   let invoiceId: number;
   let created = false;
 
-  if (gocardlessPaymentId) {
+  if (providerPaymentId) {
     // Check if invoice already exists for this payment
     const existing = await pool.query(
-      `SELECT id FROM invoices WHERE gocardless_payment_id = $1`,
-      [gocardlessPaymentId]
+      `SELECT id FROM invoices WHERE provider_payment_id = $1`,
+      [providerPaymentId]
     );
 
     if (existing.rows.length > 0) {
@@ -165,12 +165,12 @@ export async function createInvoiceForUserPeriod(
         `
         INSERT INTO invoices (
           user_id, invoice_number, amount_pence, period_start, period_end, 
-          status, created_at, number, billing_interval, gocardless_payment_id, currency
+          status, created_at, number, billing_interval, provider_payment_id, currency
         )
         VALUES ($1, $2, $3, $4, $5, 'paid', $6, $7, $8, $9, 'GBP')
         RETURNING id
         `,
-        [userId, invoiceNumberFormatted, totalPence, start, end, createdAtMs, invoiceNumber, cadence, gocardlessPaymentId]
+        [userId, invoiceNumberFormatted, totalPence, start, end, createdAtMs, invoiceNumber, cadence, providerPaymentId]
       );
       invoiceId = invRes.rows[0].id;
       created = true;

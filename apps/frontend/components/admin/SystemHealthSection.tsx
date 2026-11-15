@@ -25,14 +25,14 @@ export function SystemHealthSection() {
             
             // Check each service health endpoint
             const serviceChecks = await Promise.allSettled([
-                fetch('/api/admin/service-status/gocardless', { credentials: 'include' }),
+                fetch('/api/admin/service-status/stripe', { credentials: 'include' }),
                 fetch('/api/admin/service-status/sumsub', { credentials: 'include' }),
                 fetch('/api/admin/service-status/postmark', { credentials: 'include' }),
                 fetch('/api/admin/service-status/onedrive', { credentials: 'include' })
             ]);
 
             const serviceData = await Promise.all(serviceChecks.map(async (result, index): Promise<ServiceHealth> => {
-                const serviceNames = ['Payment Gateway', 'KYC Verification (Sumsub)', 'Email Notifications', 'Mail Processing API'];
+                const serviceNames = ['Payments (Stripe)', 'KYC Verification (Sumsub)', 'Email Notifications', 'Mail Processing API'];
                 
                 if (result.status === 'fulfilled' && result.value.ok) {
                     const data: any = await result.value.json().catch(() => ({}));

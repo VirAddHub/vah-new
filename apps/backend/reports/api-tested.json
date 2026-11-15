@@ -241,10 +241,6 @@
   },
   {
     "method": "POST",
-    "path": "/api/webhooks/gocardless"
-  },
-  {
-    "method": "POST",
     "path": "/api/webhooks/sumsub"
   }
 ]

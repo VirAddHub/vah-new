@@ -1,5 +1,5 @@
 // server/services/invoice.ts
-// Invoice generation service for GoCardless payments
+// Invoice generation service for payments
 
 import { getPool } from '../db';
 import { nanoid } from 'nanoid';

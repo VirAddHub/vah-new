@@ -109,7 +109,7 @@ export async function sendTemplateEmail(opts: {
     from?: string; // Optional From override
     templateId?: number; // Optional TemplateId fallback
 }) {
-    if (!ENV.POSTMARK_TOKEN) return;
+    if (!ENV.POSTMARK_TOKEN && !(process.env.MAIL_TRANSPORT === 'outbox' && process.env.NODE_ENV !== 'production')) return;
 
     const client = getClient();
     if (!client) return;

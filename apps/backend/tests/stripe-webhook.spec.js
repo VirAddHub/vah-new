@@ -267,7 +267,7 @@ describe('Stripe checkout session', () => {
   });
 
   test('POST /api/payments/stripe/checkout-session - authenticated without Stripe config returns 503', async () => {
-    process.env.BILLING_PROVIDER = 'gocardless';
+    delete process.env.STRIPE_SECRET_KEY;
     const agent = request.agent(app);
     await agent.post('/api/auth/signup').send({
       email: 'stripe-checkout-test@example.com',

@@ -9,7 +9,7 @@ describe('deleted routes regression guardrails', () => {
 
   it('POST /api/payments/redirect-flows is not handled by stub', async () => {
     const res = await request(app).post('/api/payments/redirect-flows').send({});
-    // Require auth from real route; stub would emit 501 + GOCARDLESS_NOT_CONFIGURED.
+    // Handled by the real Stripe checkout route, which requires auth (the old payments stub is gone).
     expect(res.status).toBe(401);
     expect(res.body?.code).toBeUndefined();
     expect(res.body?.error).toBe('unauthenticated');

@@ -1,12 +1,6 @@
 // apps/backend/src/config/integrations.ts
 import { isSumsubApiConfigured, isSumsubWebhookConfigured, resolveSumsubApiConfig } from '../lib/sumsubConfig';
 
-export type GoCardlessConfig = {
-    accessToken?: string;
-    webhookSecret?: string;
-    environment?: string; // "sandbox" | "live"
-};
-
 export type SumsubConfig = {
     apiKey?: string;
     webhookSecret?: string;
@@ -14,12 +8,6 @@ export type SumsubConfig = {
 };
 
 export const integrations = {
-    gocardless: {
-        accessToken: process.env.GOCARDLESS_ACCESS_TOKEN,
-        webhookSecret: process.env.GOCARDLESS_WEBHOOK_SECRET,
-        environment: process.env.GOCARDLESS_ENV || "live",
-    } as GoCardlessConfig,
-
     sumsub: {
         apiKey: process.env.SUMSUB_API_KEY,
         webhookSecret: process.env.SUMSUB_WEBHOOK_SECRET,
@@ -30,15 +18,12 @@ export const integrations = {
 };
 
 export const isConfigured = {
-    gocardless: () =>
-        Boolean(integrations.gocardless.accessToken && integrations.gocardless.webhookSecret),
-
     sumsub: () => Boolean(isSumsubApiConfigured() && isSumsubWebhookConfigured()),
 };
 
 export function getIntegrationStatus() {
     return {
-        gocardless: { configured: isConfigured.gocardless() },
+        stripe: { configured: Boolean((process.env.STRIPE_SECRET_KEY || '').trim() && (process.env.STRIPE_WEBHOOK_SECRET || '').trim()) },
         sumsub: { configured: isConfigured.sumsub() },
     };
 }

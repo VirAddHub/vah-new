@@ -204,7 +204,7 @@ router.post('/recalculate-invoice', adminBillingLimiter, async (req: Request, re
         
         await createInvoiceForPayment({
           userId: invoice.user_id,
-          gocardlessPaymentId: null,
+          providerPaymentId: null,
           amountPence: totalChargesPence,
           currency: invoice.currency || 'GBP',
           periodStart,

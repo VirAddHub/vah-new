@@ -29,7 +29,6 @@ const REDACT_PATTERNS = [
   "authorization",
   "raw_payload",
   "webhook",
-  "mandate",
   "card",
   "iban",
   "sort_code",

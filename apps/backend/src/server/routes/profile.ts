@@ -344,10 +344,8 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
         'state',
         'postal_code',
         'country',
-        // Payment/mandate fields (webhook/admin only)
-        'gocardless_mandate_id',
-        'gocardless_customer_id',
-        'gocardless_redirect_flow_id',
+        // Payment fields (Stripe events / admin only)
+        'stripe_customer_id',
         'subscription_status',
         'plan_id',
         'plan_status',
@@ -382,11 +380,11 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
                 message: 'Registered office address cannot be changed here.'
             });
         }
-        if (deniedFields.some(f => ['gocardless_mandate_id', 'gocardless_customer_id', 'gocardless_redirect_flow_id', 'subscription_status', 'plan_id', 'plan_status'].includes(f))) {
+        if (deniedFields.some(f => ['stripe_customer_id', 'subscription_status', 'plan_id', 'plan_status'].includes(f))) {
             return res.status(400).json({
                 ok: false,
                 error: 'payment_fields_immutable',
-                message: 'Payment and mandate fields cannot be changed via profile endpoint.'
+                message: 'Payment fields cannot be changed via profile endpoint.'
             });
         }
         return res.status(400).json({
@@ -667,7 +665,7 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
 
     const DENIED_FIELDS = [
         'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
-        'gocardless_mandate_id', 'gocardless_customer_id', 'gocardless_redirect_flow_id',
+        'stripe_customer_id',
         'subscription_status', 'plan_id', 'plan_status',
         'kyc_status', 'kyc_verified_at', 'kyc_verified_at_ms', 'companies_house_verified',
         'id', 'created_at', 'updated_at', 'last_login_at', 'is_admin', 'role', 'status',
@@ -685,11 +683,11 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
                 message: 'Registered office address cannot be changed here.'
             });
         }
-        if (deniedFields.some(f => ['gocardless_mandate_id', 'gocardless_customer_id', 'gocardless_redirect_flow_id', 'subscription_status', 'plan_id', 'plan_status'].includes(f))) {
+        if (deniedFields.some(f => ['stripe_customer_id', 'subscription_status', 'plan_id', 'plan_status'].includes(f))) {
             return res.status(400).json({
                 ok: false,
                 error: 'payment_fields_immutable',
-                message: 'Payment and mandate fields cannot be changed via profile endpoint.'
+                message: 'Payment fields cannot be changed via profile endpoint.'
             });
         }
         return res.status(400).json({

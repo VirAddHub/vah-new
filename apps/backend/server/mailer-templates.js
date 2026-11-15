@@ -1,5 +1,5 @@
 // server/mailer-templates.js
-// Email template functions for GoCardless webhooks
+// Email template functions for billing events
 
 /**
  * Send invoice email to user

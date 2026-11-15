@@ -30,7 +30,7 @@ export interface GenerateInvoiceForPeriodOptions {
   periodEnd: Date | string; // Will be normalized to 'YYYY-MM-DD'
   billingInterval: 'monthly' | 'annual';
   currency?: string; // Defaults to 'GBP'
-  gocardlessPaymentId?: string | null; // Optional: link invoice to payment
+  providerPaymentId?: string | null; // Optional: link invoice to payment
 }
 
 export interface GenerateInvoiceForPeriodResult {
@@ -252,7 +252,7 @@ export async function generateInvoiceForPeriod(
     periodEnd,
     billingInterval,
     currency = 'GBP',
-    gocardlessPaymentId = null,
+    providerPaymentId = null,
   } = opts;
 
   const periodStartStr = normalizeDate(periodStart);
@@ -260,9 +260,9 @@ export async function generateInvoiceForPeriod(
 
   // 1) Upsert invoice (idempotent by user_id + period)
   // Check if invoice exists for this period
-  const existingInvoice = await pool.query<{ id: number; gocardless_payment_id?: string | null; email_sent_at?: string | null; status?: string | null }>(
+  const existingInvoice = await pool.query<{ id: number; provider_payment_id?: string | null; email_sent_at?: string | null; status?: string | null }>(
     `
-    SELECT id, gocardless_payment_id, email_sent_at, status FROM invoices
+    SELECT id, provider_payment_id, email_sent_at, status FROM invoices
     WHERE user_id = $1
       AND period_start = $2
       AND period_end = $3
@@ -275,7 +275,7 @@ export async function generateInvoiceForPeriod(
   let invoiceId: number;
   const createdAtMs = Date.now();
   const existing = existingInvoice.rows[0];
-  const isFrozen = Boolean(existing?.email_sent_at) || Boolean(existing?.gocardless_payment_id);
+  const isFrozen = Boolean(existing?.email_sent_at) || Boolean(existing?.provider_payment_id);
 
   // 0) Ensure subscription charge exists for this period (idempotent)
   // Only when the invoice is still open. If the invoice is frozen, we must not create/attach new items into that closed period.
@@ -320,13 +320,13 @@ export async function generateInvoiceForPeriod(
     // Update existing invoice - keep status as-is unless explicitly changed
     invoiceId = existingInvoice.rows[0].id;
 
-    // Update gocardless_payment_id if provided and not already set
-    if (gocardlessPaymentId) {
+    // Update provider_payment_id if provided and not already set
+    if (providerPaymentId) {
       await pool.query(
         `UPDATE invoices 
-         SET gocardless_payment_id = COALESCE(gocardless_payment_id, $1)
+         SET provider_payment_id = COALESCE(provider_payment_id, $1)
          WHERE id = $2`,
-        [gocardlessPaymentId, invoiceId]
+        [providerPaymentId, invoiceId]
       );
     }
 
@@ -335,13 +335,13 @@ export async function generateInvoiceForPeriod(
     }
   } else {
     // Create new invoice - default status is 'issued' unless creating from payment flow
-    // Status will be set to 'paid' later in webhook handler if gocardlessPaymentId is provided
+    // Status will be set to 'paid' later in webhook handler if providerPaymentId is provided
     const status = 'issued'; // Always start as 'issued', webhook will update to 'paid'
     const invRes = await pool.query<{ id: number }>(
       `
       INSERT INTO invoices (
         user_id, invoice_number, amount_pence, period_start, period_end,
-        status, created_at, number, billing_interval, gocardless_payment_id, currency
+        status, created_at, number, billing_interval, provider_payment_id, currency
       )
       VALUES ($1, $2, 0, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING id
@@ -355,7 +355,7 @@ export async function generateInvoiceForPeriod(
         createdAtMs,
         invoiceNumber,
         billingInterval,
-        gocardlessPaymentId,
+        providerPaymentId,
         currency,
       ]
     );

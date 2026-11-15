@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import { getPool } from '../db';
-import { gcCreatePayment } from '../../lib/gocardless';
 import { generateInvoiceForPeriod } from '../../services/billing/invoiceService';
 import { ensureInvoicePdfAndEmail } from '../../services/invoices';
 import { logger } from '../../lib/logger';
@@ -42,98 +41,8 @@ function addInterval(from: Date, interval: string): Date {
   return d;
 }
 
-/**
- * POST /api/internal/billing/run
- *
- * Creates GoCardless payments for invoices that are ready to be collected.
- * This should be scheduled to run at end-of-period (after invoices are generated).
- *
- * Idempotent: will not create another payment if invoices.gocardless_payment_id is already set.
- */
-router.post('/billing/run', async (req: Request, res: Response) => {
-  const authErr = requireCronSecret(req, res);
-  if (authErr) return res.status(401).json({ ok: false, error: authErr });
-
-  const pool = getPool();
-  const now = Date.now();
-  const created: Array<{ user_id: number; invoice_id: number; payment_id: string }> = [];
-  const skipped: Array<{ user_id: number; reason: string }> = [];
-
-  // Find invoices that should be collected:
-  // - issued (not yet paid)
-  // - period ended
-  // - no GC payment linked yet
-  // - user + subscription active and has mandate
-  const invoicesToCollect = await pool.query(
-    `
-    SELECT
-      i.id AS invoice_id,
-      i.user_id,
-      i.amount_pence,
-      i.currency,
-      i.period_end,
-      s.mandate_id
-    FROM invoices i
-    JOIN subscription s ON s.user_id = i.user_id
-    JOIN "user" u ON u.id = i.user_id
-    WHERE
-      i.status = 'issued'
-      AND (i.gocardless_payment_id IS NULL OR i.gocardless_payment_id = '')
-      AND i.period_end::date <= (NOW()::date)
-      AND s.status = 'active'
-      AND s.mandate_id IS NOT NULL
-      AND COALESCE(s.mandate_id,'') <> ''
-      AND u.plan_status = 'active'
-    ORDER BY i.id ASC
-    LIMIT 500
-    `
-  );
-
-  for (const row of invoicesToCollect.rows) {
-    const invoiceId = Number(row.invoice_id);
-    const userId = Number(row.user_id);
-    const mandateId = String(row.mandate_id || '');
-    const amountPence = Number(row.amount_pence || 0);
-    const currency = String(row.currency || 'GBP');
-
-    if (!mandateId) {
-      skipped.push({ user_id: userId, reason: 'missing_mandate' });
-      continue;
-    }
-    if (!Number.isFinite(amountPence) || amountPence <= 0) {
-      skipped.push({ user_id: userId, reason: 'invalid_invoice_amount' });
-      continue;
-    }
-
-    try {
-      const payment = await gcCreatePayment({
-        amountPence,
-        currency,
-        mandateId,
-        metadata: { user_id: String(userId), invoice_id: String(invoiceId) },
-      });
-
-      await pool.query(
-        `UPDATE invoices SET gocardless_payment_id = $1 WHERE id = $2`,
-        [payment.payment_id, invoiceId]
-      );
-
-      created.push({ user_id: userId, invoice_id: invoiceId, payment_id: payment.payment_id });
-    } catch (e: any) {
-      skipped.push({ user_id: userId, reason: `payment_create_failed:${String(e?.message || e)}` });
-    }
-  }
-
-  return res.json({
-    ok: true,
-    now,
-    eligible: invoicesToCollect.rows.length,
-    created_count: created.length,
-    skipped_count: skipped.length,
-    created,
-    skipped,
-  });
-});
+// POST /api/internal/billing/run (collect invoices by creating GoCardless payments) was removed
+// with GoCardless. Stripe collects subscription payments itself.
 
 /**
  * POST /api/internal/billing/generate-invoices
@@ -222,7 +131,7 @@ router.post('/billing/generate-invoices', async (req: Request, res: Response) =>
         periodEnd: periodEndStr,
         billingInterval: interval,
         currency: 'GBP',
-        gocardlessPaymentId: null, // No payment ID yet - invoice is 'issued', not 'paid'
+        providerPaymentId: null, // No payment ID yet - invoice is 'issued', not 'paid'
       });
 
       // Finalise invoice: generate PDF + send invoice email ONCE (idempotent)

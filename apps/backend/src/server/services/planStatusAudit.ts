@@ -2,7 +2,7 @@
  * Plan Status Audit Service
  * 
  * Creates audit records for every plan status change.
- * This ensures we can always answer: what changed, when, why, and which GoCardless event did it.
+ * This ensures we can always answer: what changed, when, why, and which payment provider event did it.
  */
 
 import { getPool } from '../db';
@@ -12,10 +12,10 @@ export interface PlanStatusEventParams {
   subscriptionId?: number | null;
   oldStatus: string | null;
   newStatus: string;
-  reason: string; // e.g., 'webhook_mandate_active', 'webhook_payment_failed', etc.
-  gocardlessEventId?: string | null;
-  gocardlessEventType?: string | null; // e.g., 'mandates.active', 'payments.failed'
-  gocardlessEventCreatedAt?: Date | string | null;
+  reason: string; // e.g., 'stripe_invoice_paid', 'stripe_invoice_payment_failed', etc.
+  providerEventId?: string | null;
+  providerEventType?: string | null; // e.g., 'mandates.active', 'payments.failed'
+  providerEventCreatedAt?: Date | string | null;
   metadata?: Record<string, any> | null; // Additional context
 }
 
@@ -32,9 +32,9 @@ export async function insertPlanStatusEvent(params: PlanStatusEventParams): Prom
       old_status,
       new_status,
       reason,
-      gocardless_event_id,
-      gocardless_event_type,
-      gocardless_event_created_at,
+      provider_event_id,
+      provider_event_type,
+      provider_event_created_at,
       metadata,
       created_at
     )
@@ -45,9 +45,9 @@ export async function insertPlanStatusEvent(params: PlanStatusEventParams): Prom
       params.oldStatus,
       params.newStatus,
       params.reason,
-      params.gocardlessEventId ?? null,
-      params.gocardlessEventType ?? null,
-      params.gocardlessEventCreatedAt ? new Date(params.gocardlessEventCreatedAt) : null,
+      params.providerEventId ?? null,
+      params.providerEventType ?? null,
+      params.providerEventCreatedAt ? new Date(params.providerEventCreatedAt) : null,
       params.metadata ? JSON.stringify(params.metadata) : null,
     ]
   );
@@ -57,8 +57,8 @@ export async function insertPlanStatusEvent(params: PlanStatusEventParams): Prom
  * Check if a webhook event is stale (out-of-order)
  * 
  * @param userId - User ID
- * @param eventCreatedAt - When the event was created (from GoCardless)
- * @param eventId - Event ID from GoCardless
+ * @param eventCreatedAt - When the event was created (from the payment provider)
+ * @param eventId - Event ID from the payment provider
  * @returns true if event is stale (should be ignored)
  */
 export async function isStaleWebhookEvent(

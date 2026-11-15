@@ -262,15 +262,6 @@ describe('[smoke] api', () => {
     expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
   });
 
-  // TODO: Unskip once we can provide a valid HMAC signature in tests.
-  // GoCardless webhook verifies webhook-signature header; without it the handler
-  // returns 400 (bad_signature) which is safe, but the rawBody parsing middleware
-  // may behave differently in the supertest environment and produce a 500.
-  test.skip('POST /api/webhooks-gc', async () => {
-    const res = await request(app)[`post`](`/api/webhooks-gc`);
-    expect([200, 201, 202, 204, 400, 401, 403, 404, 405]).toContain(res.status);
-  });
-
   // TODO: Unskip once we can provide a valid Postmark signature in tests.
   // Postmark webhook verifies X-Postmark-Signature header; without it the handler
   // returns 401/400, but rawBody parsing middleware behaviour in supertest is unverified.

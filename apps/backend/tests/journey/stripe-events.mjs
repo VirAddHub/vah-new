@@ -32,8 +32,8 @@ await step('E1', 'Same event delivered twice: one subscription, one invoice, one
   const a = await sendStripe(paid), b = await sendStripe(paid);
   expect(a.status === 200 && b.status === 200 && b.json?.duplicate === true, `first ${a.status}, second ${b.status} ${JSON.stringify(b.json)}`);
   expect(await count('invoices', c.id) === 1 && await count('subscription', c.id) === 1, 'duplicate rows created');
-  const mails = Number((await one(`SELECT COUNT(*)::int n FROM local_email_outbox WHERE to_email=$1 AND template IS NOT NULL AND model::text ILIKE '%invoice%'`, [c.email])).n);
-  expect(mails <= 1, `${mails} invoice emails`);
+  const mails = Number((await one(`SELECT COUNT(*)::int n FROM local_email_outbox WHERE to_email=$1 AND template = 'invoice-sent'`, [c.email])).n);
+  expect(mails === 1, `${mails} invoice emails (expected exactly 1)`);
 });
 
 await step('E2', 'Ten concurrent deliveries of one event do the work once', async () => {
@@ -110,8 +110,9 @@ await step('E9', 'Cancel at period end: service continues, end date recorded; th
 
 await step('E10', 'Cancelled is final: a late event for the same subscription does not reactivate', async () => {
   const c = globalThis.cancelled;
-  await sendStripe(stripeEvent('invoice.paid', c.fx.invoice(), { created: T + 30 }));
-  await sendStripe(stripeEvent('customer.subscription.updated', c.fx.sub('active'), { created: T + 40 }));
+  for (const e of [stripeEvent('invoice.paid', c.fx.invoice(), { created: T + 30 }), stripeEvent('customer.subscription.updated', c.fx.sub('active'), { created: T + 40 })]) {
+    const r = await sendStripe(e); expect(r.status === 200, `${e.type} ${r.status}`);
+  }
   expect((await c.sub()).status === 'cancelled' && (await c.access()).level === 'onboarding', 'cancelled subscription came back');
 });
 
@@ -163,6 +164,12 @@ await step('E15', 'A failed first card leaves the account simply unpaid', async 
 await step('E16', 'Unknown event types are recorded and acknowledged', async () => {
   const e = stripeEvent('customer.tax_id.created', { id: uid('txi'), object: 'tax_id' }); const r = await sendStripe(e);
   expect(r.status === 200 && (await one(`SELECT status FROM webhook_log WHERE external_event_id=$1`, [e.id])).status === 'processed', `got ${r.status}`);
+});
+
+await step('E17', 'Two different Stripe invoices for the same period are both recorded', async () => {
+  const c = await newCustomer(), fx = stripeFixture(c.id, plan.id); await pay(c, fx, { start: T, end: T + 30 * 86400 });
+  const r = await sendStripe(stripeEvent('invoice.paid', fx.invoice({ start: T, end: T + 30 * 86400 }), { created: T + 5 }));
+  expect(r.status === 200, `second invoice ${r.status}`); expect(await count('invoices', c.id) === 2, `${await count('invoices', c.id)} invoices`);
 });
 
 await pg.end();

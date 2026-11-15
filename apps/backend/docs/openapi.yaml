@@ -48,10 +48,6 @@ components:
       type: apiKey
       in: cookie
       name: vah_session
-    GoCardlessWebhookSig:
-      type: http
-      scheme: bearer
-      description: GoCardless webhook signature using GOCARDLESS_WEBHOOK_SECRET
     SumsubWebhookSig:
       type: http
       scheme: bearer
@@ -1024,29 +1020,6 @@ paths:
                 $ref: '#/components/schemas/ApiResponse'
         '401':
           description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
-  /webhooks-gc:
-    post:
-      tags:
-        - webhooks
-      summary: GoCardless webhook
-      x-config-required: true
-      security:
-        - GoCardlessWebhookSig: []
-      responses:
-        '204':
-          description: Accepted
-        '501':
-          description: Not Implemented (missing configuration)
           content:
             application/json:
               schema:

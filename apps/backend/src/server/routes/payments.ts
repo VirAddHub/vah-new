@@ -7,7 +7,6 @@ import { getPool } from '../db';
 import { pricingService } from '../services/pricing';
 import { param } from '../../lib/express-params';
 import { ensureUserPlanLinked } from '../services/plan-linking';
-import { upsertSubscriptionForUser } from '../services/subscription-linking';
 import { sendPlanCancelled, buildAppUrl, sendWelcomeKycEmail } from '../../lib/mailer';
 import { logger } from '../../lib/logger';
 import { safeErrorMessage } from '../../lib/safeError';
@@ -54,8 +53,6 @@ router.get('/subscriptions/status', requireAuth, async (req: Request, res: Respo
         const result = await pool.query(`
             SELECT
                 u.plan_status,
-                u.gocardless_customer_id,
-                u.gocardless_mandate_id,
                 u.stripe_customer_id,
                 p.name as plan_name,
                 p.billing_interval as billing_cycle,
@@ -88,7 +85,7 @@ router.get('/subscriptions/status', requireAuth, async (req: Request, res: Respo
             nextPaymentDate = new Date(periodEnd.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
         }
 
-        const hasPaymentMethod = !!(user.gocardless_mandate_id || user.stripe_customer_id);
+        const hasPaymentMethod = !!user.stripe_customer_id;
         return res.json({
             ok: true,
             data: {
@@ -122,28 +119,30 @@ router.post('/subscriptions', requireAuth, paymentsSubscriptionWriteLimiter, asy
     try {
         const newStatus = action === 'cancel' ? 'cancelled' : 'active';
 
-        // --- Stripe cancellation (must happen BEFORE any DB write) ---
-        if (action === 'cancel') {
+        // Both actions are instructions to Stripe. Our own subscription state changes only when
+        // Stripe's event arrives, so this route never reports a state it has not achieved:
+        //   cancel      -> the subscription ends at the end of the paid period
+        //   reactivate  -> undoes a pending cancellation (it cannot revive an ended subscription)
+        {
             const subRow = await pool.query(
-                `SELECT stripe_subscription_id FROM subscription WHERE user_id = $1 LIMIT 1`,
+                `SELECT stripe_subscription_id, status FROM subscription WHERE user_id = $1 LIMIT 1`,
                 [userId]
             );
             const stripeSubscriptionId = subRow.rows[0]?.stripe_subscription_id as string | undefined;
-
             if (!stripeSubscriptionId) {
                 return res.status(400).json({ ok: false, error: 'no_stripe_subscription' });
             }
-
+            if (action === 'reactivate' && subRow.rows[0]?.status === 'cancelled') {
+                return res.status(409).json({ ok: false, error: 'subscription_ended', message: 'This subscription has ended. Start a new one from the billing page.' });
+            }
             const stripe = getStripe();
             if (!stripe) {
                 return res.status(503).json({ ok: false, error: 'stripe_not_configured' });
             }
-
-            await stripe.subscriptions.update(stripeSubscriptionId, { cancel_at_period_end: true });
+            await stripe.subscriptions.update(stripeSubscriptionId, { cancel_at_period_end: action === 'cancel' });
         }
 
-        // NOTE: plan_status is only updated via GoCardless webhooks when subscription.status transitions to 'active'
-        // Do not update plan_status here - it will be updated by webhook handlers
+        // plan_status is updated only by Stripe events
         await pool.query(`
             UPDATE "user"
             SET updated_at = $1
@@ -181,9 +180,7 @@ router.post('/subscriptions', requireAuth, paymentsSubscriptionWriteLimiter, asy
             }
         }
 
-        // TODO: Also cancel/reactivate the mandate in GoCardless API
-
-        return res.json({ ok: true, status: newStatus });
+        return res.json({ ok: true, status: action === 'cancel' ? 'cancels_at_period_end' : 'cancellation_withdrawn' });
     } catch (error: any) {
         logger.error('[payments] post_subscription_error', { message: (error as any)?.message });
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
