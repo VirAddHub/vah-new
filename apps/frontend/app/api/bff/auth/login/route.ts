@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
+import { clientIpHeaders } from '@/lib/server/clientIpHeaders';
 // Force dynamic rendering - never cache this route
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     const response = await fetch(backendUrl, {
       method: 'POST',
-      headers: {
+      headers: { ...clientIpHeaders(request),
         'Cookie': cookie,
         'Content-Type': 'application/json',
       },

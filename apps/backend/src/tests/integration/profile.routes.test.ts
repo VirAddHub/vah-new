@@ -74,9 +74,10 @@ describe('Profile routes', () => {
     expect([200, 400, 401]).toContain(res.status);
   });
 
-  it('POST /api/profile/email-change/resend → 400 or 401 without a token', async () => {
+  it('POST /api/profile/email-change/resend → neutral answer without a token (no crash)', async () => {
     const res = await request(app).post('/api/profile/email-change/resend');
-    // 500 was a crash on a missing body (fixed): the route now answers 400 for a missing token.
-    expect([400, 401]).toContain(res.status);
+    // 500 was a crash on a missing body (fixed). The route gives the same neutral 200 whether or not
+    // a token matches, so it cannot be used to probe for valid tokens.
+    expect([200, 400, 401]).toContain(res.status);
   });
 });

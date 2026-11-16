@@ -74,15 +74,15 @@ export function PaymentReturnClient() {
                     <h1 className="text-h1 text-foreground">Payment Successful</h1>
                     <p className="text-muted-foreground leading-relaxed">
                         Your subscription is being activated. We&apos;ve sent a confirmation to{' '}
-                        {email ? <strong>{email}</strong> : 'your email'}. You can now sign in to your
-                        dashboard to complete identity verification and start using your London address.
+                        {email ? <strong>{email}</strong> : 'your email'}. Next, verify your identity so we can
+                        open your address and mail.
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                         <Link
-                            href="/login"
+                            href="/account/verification"
                             className="inline-flex items-center justify-center h-11 px-8 rounded-lg text-body-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                         >
-                            Sign in to Dashboard
+                            Continue to verification
                         </Link>
                         <Link
                             href="/"

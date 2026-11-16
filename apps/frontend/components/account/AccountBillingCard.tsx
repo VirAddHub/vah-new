@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Loader2, ExternalLink } from 'lucide-react';
+import { Loader2, ExternalLink } from 'lucide-react';
+import { useBillingOverview } from '@/hooks/useDashboardData';
 import { SubscriptionSummary } from '@/lib/account/types';
 import { toast } from '@/hooks/use-toast';
-import { useBillingOverview } from '@/hooks/useDashboardData';
 interface AccountBillingCardProps {
   subscription: SubscriptionSummary;
   onRefresh?: () => void;
@@ -16,9 +16,8 @@ export function AccountBillingCard({
   subscription,
   onRefresh,
 }: AccountBillingCardProps) {
-  const [isLoading, setIsLoading] = useState<string | null>(null);
   const [manageBillingBusy, setManageBillingBusy] = useState(false);
-  const { data: overview, mutate: mutateOverview } = useBillingOverview();
+  const { data: overview } = useBillingOverview();
 
   const canOpenBillingPortal =
     subscription.status === 'active' || subscription.status === 'past_due';
@@ -60,88 +59,6 @@ export function AccountBillingCard({
     }
   };
 
-  const handleReactivate = async () => {
-    setIsLoading('reactivate');
-    try {
-      // Get plan_id from overview or use subscription data
-      // The backend will use user.plan_id if not provided, but we should try to get it
-      const planId = overview?.data?.plan_id || null;
-      const billingPeriod = subscription.billing_period || 'monthly';
-
-      const response = await fetch('/api/bff/payments/redirect-flows', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          plan_id: planId,
-          billing_period: billingPeriod,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.ok) {
-        throw new Error(data.error || 'Failed to restart subscription');
-      }
-
-      // Handle already linked case
-      if (data.data?.alreadyLinked) {
-        toast({
-          title: 'Already active',
-          description: 'Your subscription is already active.',
-        });
-        await mutateOverview();
-        if (onRefresh) {
-          await onRefresh();
-        }
-        return;
-      }
-
-      // Handle resume case
-      if (data.data?.resume && data.data?.redirectFlowId) {
-        const appUrl = window.location.origin;
-        window.location.href = `${appUrl}/billing?billing_request_flow_id=${encodeURIComponent(
-          data.data.redirectFlowId
-        )}`;
-        return;
-      }
-
-      // Handle redirect URL
-      const redirectUrl = data.data?.redirect_url || data.redirect_url;
-      if (redirectUrl) {
-        toast({
-          title: 'Redirecting to payment setup',
-          description: "You'll be redirected to complete your payment setup.",
-        });
-        window.location.href = redirectUrl;
-        return;
-      }
-
-      if (data.data?.skip_payment) {
-        toast({
-          title: 'Payment setup',
-          description:
-            data.data.message || 'Payment setup will be completed later.',
-        });
-        await mutateOverview();
-        if (onRefresh) {
-          await onRefresh();
-        }
-        return;
-      }
-
-      throw new Error('No redirect URL received');
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description:
-          error.message || 'Failed to restart subscription. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(null);
-    }
-  };
 
   // Next billing: backend sends next_billing_date (YYYY-MM-DD) or we use next_charge_at (ms) or latest_invoice.period_end
   const nextBillingDate =
@@ -258,33 +175,22 @@ export function AccountBillingCard({
                 )}
               </Button>
               <p className="mt-2 text-caption leading-snug text-muted-foreground">
-                Manage your subscription and payment details securely.
+                Update your card, view payments or cancel. Cancelling takes effect at the end of the period you have paid for.
               </p>
             </div>
           )}
 
-          {(subscription.status === 'cancelled' ||
-            subscription.status === 'past_due') && (
-            <div className="space-y-3 pt-2">
-              <Button
-                onClick={handleReactivate}
-                disabled={isLoading === 'reactivate'}
-                className="h-12 w-full touch-manipulation sm:h-11"
-                size="lg"
-              >
-                {isLoading === 'reactivate' ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Reactivating…
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Reactivate subscription
-                  </>
-                )}
-              </Button>
-            </div>
+          {subscription.cancel_at_period_end && subscription.paid_through_label && subscription.status === 'active' && (
+            <p className="rounded-xl border border-border bg-muted/40 p-3 text-body-sm text-foreground" role="status">
+              Your subscription is cancelled and ends on <strong className="font-semibold">{subscription.paid_through_label}</strong>.
+              Your service continues until then. You can undo this in Manage billing.
+            </p>
+          )}
+          {subscription.status === 'past_due' && (
+            <p className="rounded-xl border border-border bg-muted/40 p-3 text-body-sm text-foreground" role="alert">
+              Your last payment did not go through. Use Manage billing to update your card.
+              {subscription.paid_through_label ? ` Your service continues until ${subscription.paid_through_label}.` : ''}
+            </p>
           )}
         </div>
       </CardContent>

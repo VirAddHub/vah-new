@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
 
+import { clientIpHeaders } from '@/lib/server/clientIpHeaders';
 export async function POST(req: NextRequest) {
     try {
         const backend = getBackendOrigin();
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest) {
 
         const res = await fetch(backendUrl, {
             method: "POST",
-            headers: {
+            headers: { ...clientIpHeaders(req),
                 "content-type": contentType,
                 // Forward any custom headers if needed
                 ...(req.headers.get('x-webhook-secret') && {

@@ -33,7 +33,8 @@ await step('A2', 'Suspend: recorded with reason, existing session ends at once, 
   expect(r.status === 200 && r.json.data.standing === 'suspended' && r.json.data.access_level === 'none', JSON.stringify(r.json));
   expect(r.json.data.stripe.status === 'action_required', 'did not flag the live Stripe subscription');
   for (const p of ['/api/access', '/api/mail-items', '/api/billing/overview', '/api/auth/whoami']) expect((await c.s.get(p)).status === 401, `${p} still works for the suspended session`);
-  expect((await new Session().post('/api/auth/login', { email: c.email, password: PW })).status === 401, 'suspended account logged in');
+  const li = await new Session().post('/api/auth/login', { email: c.email, password: PW }); expect(li.status === 403 && li.json.error === 'account_suspended', `suspended login -> ${li.status} ${li.json?.error}`);
+  const wrong = await new Session().post('/api/auth/login', { email: c.email, password: 'not-the-password' }); expect(wrong.status === 401 && wrong.json.error === 'invalid_credentials', 'suspension revealed to someone without the password');
   const a = await one(`SELECT admin_id, details FROM admin_audit WHERE target_id=$1 AND action='account_suspend'`, [c.id]);
   expect(a && Number(a.admin_id) === adminId && JSON.parse(a.details).reason === 'Chargeback under investigation', 'audit row missing or wrong');
 });
@@ -57,7 +58,7 @@ await step('A4', 'Restore: needs a reason, access returns, history shows both ac
 await step('A5', 'Close: no login, no access; a later payment does not reopen it; restore lands in onboarding or full by the normal rule', async () => {
   const r = await admin.post(`/api/admin/users/${c.id}/close`, { reason: 'Customer requested closure' });
   expect(r.status === 200 && r.json.data.standing === 'closed' && r.json.data.access_level === 'none', JSON.stringify(r.json));
-  expect((await new Session().post('/api/auth/login', { email: c.email, password: PW })).status === 401, 'closed account logged in');
+  const lc = await new Session().post('/api/auth/login', { email: c.email, password: PW }); expect(lc.status === 403 && lc.json.error === 'account_closed', `closed login -> ${lc.status}`);
   await sendStripe(stripeEvent('invoice.paid', c.fx.invoice({ start: T + 60 * 86400, end: T + 90 * 86400 }), { created: T + 80 }));
   expect((await one('SELECT status, deleted_at FROM "user" WHERE id=$1', [c.id])).status === 'closed', 'payment reopened a closed account');
   expect((await admin.post(`/api/admin/users/${c.id}/suspend`, { reason: 'suspend a closed account' })).status === 409, 'suspended a closed account');

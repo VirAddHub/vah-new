@@ -146,12 +146,12 @@ await step('E14', 'Payment never unlocks verification, suspension or closure', a
   const unverified = await newCustomer({ verified: false }); await pay(unverified, stripeFixture(unverified.id, plan.id));
   expect((await unverified.access()).level === 'onboarding', 'payment bypassed verification');
   const c = await newCustomer();
-  // Fixture: suspension is set directly here until the admin suspend action exists (later commit).
-  await pg.query(`UPDATE "user" SET status='suspended', suspended_at=NOW() WHERE id=$1`, [c.id]);
+  const adminS = new Session(); await adminS.post('/api/auth/login', { email: 'admin@example.test', password: 'Local!Admin#2026' });
+  expect((await adminS.post(`/api/admin/users/${c.id}/suspend`, { reason: 'event test: suspended before payment' })).status === 200, 'could not suspend');
   await pay(c, stripeFixture(c.id, plan.id));
   expect((await one('SELECT status FROM "user" WHERE id=$1', [c.id])).status === 'suspended', 'payment changed account standing');
   expect((await c.s.get('/api/access')).status === 401, 'suspended session still works');
-  const again = new Session(); expect((await again.post('/api/auth/login', { email: c.email, password: 'Journey!Passw0rd#1' })).status === 401, 'suspended account can log in');
+  const again = new Session(); expect((await again.post('/api/auth/login', { email: c.email, password: 'Journey!Passw0rd#1' })).status === 403, 'suspended account can log in');
 });
 
 await step('E15', 'A failed first card leaves the account simply unpaid', async () => {

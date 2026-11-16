@@ -90,6 +90,12 @@ function getLoginErrorMessage(
   const errorLower = backendError.toLowerCase().trim();
 
   // Map technical error codes to friendly messages
+  if (errorLower === 'account_suspended') {
+    return { message: 'This account has been suspended. Please contact support.', showResetHint: false };
+  }
+  if (errorLower === 'account_closed') {
+    return { message: 'This account has been closed. Please contact support if you think this is a mistake.', showResetHint: false };
+  }
   if (
     errorLower === 'invalid_credentials' ||
     errorLower.includes('invalid') ||

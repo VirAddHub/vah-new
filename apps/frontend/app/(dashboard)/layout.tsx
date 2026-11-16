@@ -3,6 +3,7 @@ import { DashboardNavigation } from '@/components/DashboardNavigation';
 import { DashboardViewProvider } from '@/contexts/DashboardViewContext';
 import { ActiveBusinessProvider } from '@/contexts/ActiveBusinessContext';
 import { OnboardingGate } from '@/components/OnboardingGate';
+import { AccessNoticeSlot } from '@/components/account/AccessNotice';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +30,7 @@ export default function DashboardLayout({
                                 className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto"
                             >
                                 <div className="w-full max-w-full px-4 pb-3 pt-2 sm:px-4 sm:pb-5 sm:pt-4 md:px-6 md:pb-6 md:pt-6">
+                                    <AccessNoticeSlot />
                                     {children}
                                 </div>
                             </main>

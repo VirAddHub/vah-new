@@ -13,7 +13,7 @@ import { Templates } from '../../lib/postmark-templates';
 import { APP_BASE_URL } from '../../config/env';
 import { withTimeout } from '../../lib/withTimeout';
 import { ENV } from "../../env";
-import { getAccess } from "../services/access";
+import { getAccess, standingOf } from "../services/access";
 import { ok, unauthorized, badRequest, serverError } from "../lib/apiResponse";
 import { logger } from "../../lib/logger";
 import { isSecureEnv, sessionCookieSecurityOptions } from "../../lib/cookies";
@@ -638,10 +638,11 @@ router.post("/login", async (req, res) => {
         // Get user from database (exclude soft-deleted users)
         const pool = getPool();
         const user = await pool.query(
-            'SELECT id, email, password, first_name, last_name, is_admin, role, status, kyc_status, login_attempts, locked_until FROM "user" WHERE email = $1 AND status = ANY($2) AND deleted_at IS NULL AND suspended_at IS NULL',
+            'SELECT id, email, password, first_name, last_name, is_admin, role, status, kyc_status, login_attempts, locked_until, deleted_at, suspended_at FROM "user" WHERE email = $1',
             // Any account in good standing can sign in, paid or not, so customers can finish onboarding.
-            // 'pending_payment' is the legacy value signup used to write; suspended and closed accounts are refused.
-            [email, ['active', 'pending_payment']]
+            // Suspended and closed accounts are refused further down, after the password has been checked,
+            // so the reason is only ever shown to someone who knows the password.
+            [email]
         );
 
         if (!user.rows[0]) {
@@ -733,6 +734,20 @@ router.post("/login", async (req, res) => {
                 message: 'Invalid email or password',
             });
         }
+
+        // Password is correct. Refuse accounts that are not in good standing, and say why.
+        const standing = standingOf(userData);
+        if (standing !== 'good') {
+            logger.warn('[auth/login] refused_standing', { userId: userData.id, standing });
+            return res.status(403).json({
+                ok: false,
+                error: standing === 'closed' ? 'account_closed' : 'account_suspended',
+                message: standing === 'closed'
+                    ? 'This account has been closed. Please contact support if you think this is a mistake.'
+                    : 'This account has been suspended. Please contact support.',
+            });
+        }
+
 
         // Note: KYC verification is done in the dashboard after login
         // Users can log in regardless of KYC status - KYC is enforced at the feature level (mail forwarding, certificates, etc.)
