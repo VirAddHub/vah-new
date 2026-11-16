@@ -305,8 +305,9 @@ describe('POST /api/auth/reset-password/confirm — password policy (M-2)', () =
       .post('/api/auth/reset-password/confirm')
       .send({ token: 'some-token', password: 'ValidPass1' });
 
-    // 400 would mean complexity failed; anything else means it passed the check
-    expect(res.status).not.toBe(400);
+    // With a real test database the unknown token is correctly refused with 400 too, so the
+    // status alone no longer tells the two apart: assert on the error code instead.
     expect(res.body.error).not.toBe('password_too_weak');
+    expect(res.status).not.toBe(500);
   });
 });

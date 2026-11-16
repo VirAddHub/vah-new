@@ -934,7 +934,7 @@ router.get("/whoami", async (req, res) => {
 // Password reset confirmation endpoint
 router.post("/reset-password/confirm", async (req, res) => {
     try {
-        const { token, password } = req.body;
+        const { token, password } = req.body ?? {};
 
         if (!token || !password) {
             return res.status(400).json({

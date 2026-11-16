@@ -67,14 +67,20 @@ describe('POST /api/admin/users/:id/unlock-account', () => {
     expect(res.status).toBe(403);
   });
 
-  it('404 when user does not exist', async () => {
-    const pool = {
-      query: vi.fn().mockResolvedValue({ rows: [], rowCount: 0 }),
-    };
-    vi.spyOn(db, 'getPool').mockReturnValue(pool as any);
+  // These three ran against a mocked pool that answered every SELECT with the same row. The auth
+  // middleware has since gained its own database checks, which the mock also answered, so the
+  // tests could no longer reach the route. They now use the real test database (globalSetup.ts).
+  const lockedUser = async () => {
+    const r = await db.getPool().query(
+      `INSERT INTO "user" (email, password, first_name, last_name, is_admin, role, status, plan_status, is_sole_controller, login_attempts, locked_until, created_at, updated_at)
+       VALUES ($1, 'x', 'Locked', 'User', false, 'user', 'active', 'pending_payment', true, 7, $2, $3, $3) RETURNING id`,
+      [`locked.${Date.now()}.${Math.random().toString(36).slice(2)}@example.test`, Date.now() + 3600_000, Date.now()]);
+    return Number(r.rows[0].id);
+  };
 
+  it('404 when user does not exist', async () => {
     const res = await request(app)
-      .post('/api/admin/users/9999/unlock-account')
+      .post('/api/admin/users/987654321/unlock-account')
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(404);
@@ -82,58 +88,29 @@ describe('POST /api/admin/users/:id/unlock-account', () => {
   });
 
   it('200 and resets login_attempts + locked_until for a locked user', async () => {
-    const pool = {
-      query: vi.fn().mockImplementation((sql: string) => {
-        if (/SELECT/.test(sql)) {
-          // User exists
-          return Promise.resolve({ rows: [{ id: 42 }], rowCount: 1 });
-        }
-        // UPDATE and INSERT into admin_audit
-        return Promise.resolve({ rows: [], rowCount: 1 });
-      }),
-    };
-    vi.spyOn(db, 'getPool').mockReturnValue(pool as any);
-
+    const id = await lockedUser();
     const res = await request(app)
-      .post('/api/admin/users/42/unlock-account')
+      .post(`/api/admin/users/${id}/unlock-account`)
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
     expect(res.body.message).toBe('Account unlocked');
 
-    // Verify the UPDATE sets login_attempts = 0 and locked_until = NULL
-    const updateCall = pool.query.mock.calls.find(
-      (args: any[]) => /UPDATE/.test(args[0]) &&
-                       /login_attempts\s*=\s*0/.test(args[0]) &&
-                       /locked_until\s*=\s*NULL/.test(args[0])
-    );
-    expect(updateCall).toBeDefined();
-    // Second param ($2) is userId = 42
-    expect(updateCall![1][1]).toBe(42);
+    const after = await db.getPool().query('SELECT login_attempts, locked_until FROM "user" WHERE id = $1', [id]);
+    expect(Number(after.rows[0].login_attempts)).toBe(0);
+    expect(after.rows[0].locked_until).toBeNull();
   });
 
   it('logs the unlock to admin_audit', async () => {
-    const pool = {
-      query: vi.fn().mockImplementation((sql: string) => {
-        if (/SELECT/.test(sql)) {
-          return Promise.resolve({ rows: [{ id: 42 }], rowCount: 1 });
-        }
-        return Promise.resolve({ rows: [], rowCount: 1 });
-      }),
-    };
-    vi.spyOn(db, 'getPool').mockReturnValue(pool as any);
-
+    const id = await lockedUser();
     await request(app)
-      .post('/api/admin/users/42/unlock-account')
+      .post(`/api/admin/users/${id}/unlock-account`)
       .set('Authorization', `Bearer ${adminToken}`);
 
-    const auditCall = pool.query.mock.calls.find(
-      (args: any[]) => /INSERT INTO admin_audit/.test(args[0]) &&
-                       /unlock_account/.test(args[0])
-    );
-    expect(auditCall).toBeDefined();
-    // target_id param ($2 in INSERT) = 42
-    expect(auditCall![1][1]).toBe(42);
+    const audit = await db.getPool().query(
+      `SELECT admin_id FROM admin_audit WHERE action = 'unlock_account' AND target_id = $1`, [id]);
+    expect(audit.rows.length).toBe(1);
+    expect(Number(audit.rows[0].admin_id)).toBe(9999);
   });
 });

@@ -616,10 +616,14 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
             updates.push(`plan_status = $${paramIndex++}`);
             values.push(plan_status);
         }
-        // Allow admin to update main status field
+        // Account standing is changed only through the audited suspend / restore / close actions
+        // (admin-account-standing.ts), which require a reason. It used to accept any text here.
         if (typeof status === 'string') {
-            updates.push(`status = $${paramIndex++}`);
-            values.push(status);
+            return res.status(400).json({
+                ok: false,
+                error: 'use_standing_actions',
+                message: 'Account status is changed with the Suspend, Restore or Close actions, which record a reason.',
+            });
         }
         if (typeof kyc_status === 'string') {
             updates.push(`kyc_status = $${paramIndex++}`);
@@ -964,17 +968,27 @@ router.post('/users', requireAdmin, async (req: Request, res: Response) => {
             : crypto.randomBytes(20).toString('hex');
         const passwordHash = await bcrypt.hash(rawPassword, 10);
 
+        // Same shape as signup: the password column is "password", timestamps are milliseconds,
+        // status is account standing ('active'), and the primary business is created in the same
+        // statement. Payment state always starts unpaid: an admin cannot grant paid access here.
+        // (This insert used a password_hash column and NOW() for a millisecond column, and failed.)
         const result = await pool.query(
-            `INSERT INTO "user"
-               (email, first_name, last_name, company_name, plan_status, password_hash, status, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, 'pending', NOW(), $7)
-             RETURNING id, email, first_name, last_name, company_name, plan_status, status, created_at`,
+            `WITH new_user AS (
+               INSERT INTO "user"
+                 (email, first_name, last_name, company_name, plan_status, password, status, is_admin, role, is_sole_controller, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, 'pending_payment', $5, 'active', false, 'user', true, $6, $6)
+               RETURNING id, email, first_name, last_name, company_name, plan_status, status, created_at
+             ), new_business AS (
+               INSERT INTO business (user_id, company_name, status, is_primary, monthly_price_pence, created_at, updated_at)
+               SELECT id, COALESCE(NULLIF(TRIM(company_name), ''), NULLIF(TRIM(CONCAT(first_name, ' ', last_name)), ''), email), 'active', true, 999, $6, $6
+               FROM new_user
+             )
+             SELECT * FROM new_user`,
             [
                 email.toLowerCase().trim(),
                 first_name || null,
                 last_name || null,
                 company_name || null,
-                plan_status || 'pending_payment',
                 passwordHash,
                 nowMs(),
             ]

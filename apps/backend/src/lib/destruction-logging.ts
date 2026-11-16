@@ -175,7 +175,8 @@ export function validateStaffAttribution(staffName: string, staffInitials: strin
     if (!staffInitials || staffInitials.trim() === '') {
         throw new Error('staff_initials cannot be empty');
     }
-    if (staffInitials === 'UN') {
+    // 'UN' is the placeholder for an unknown member of staff, in any letter case.
+    if (staffInitials.trim().toUpperCase() === 'UN') {
         throw new Error(`staff_initials cannot be "UN" (got: "${staffInitials}")`);
     }
 }

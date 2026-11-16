@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import request from 'supertest';
 import { createTestApp } from '../helpers/createTestApp';
+import { makeAdminToken } from '../helpers/authHelper';
 import * as db from '../../server/db';
 
 const app = createTestApp();
@@ -10,9 +11,12 @@ afterEach(() => {
 });
 
 describe('Ops/health routes', () => {
-  it('GET /api/health returns 200', async () => {
-    const res = await request(app).get('/api/health');
-    expect(res.status).toBe(200);
+  // /api/health is the detailed, admin-only check; /api/healthz is the public liveness check.
+  it('GET /api/health is refused without an admin session and answers an admin', async () => {
+    const anon = await request(app).get('/api/health');
+    expect(anon.status).toBe(401);
+    const admin = await request(app).get('/api/health').set('Authorization', `Bearer ${makeAdminToken()}`);
+    expect([200, 503]).toContain(admin.status);
   });
 
   it('GET /api/healthz returns 200', async () => {
@@ -20,13 +24,17 @@ describe('Ops/health routes', () => {
     expect(res.status).toBe(200);
   });
 
-  it('GET /api/healthz/status-guard returns 200', async () => {
-    const res = await request(app).get('/api/healthz/status-guard');
+  // Diagnostics are admin-only (decision 18); they were public.
+  it('GET /api/healthz/status-guard is refused anonymously and answers an admin', async () => {
+    expect((await request(app).get('/api/healthz/status-guard')).status).toBe(401);
+    const res = await request(app).get('/api/healthz/status-guard').set('Authorization', `Bearer ${makeAdminToken()}`);
     expect(res.status).toBe(200);
   });
 
-  it('GET /api/healthz/metrics returns 200', async () => {
-    const res = await request(app).get('/api/healthz/metrics');
+  // Diagnostics are admin-only (decision 18); they were public.
+  it('GET /api/healthz/metrics is refused anonymously and answers an admin', async () => {
+    expect((await request(app).get('/api/healthz/metrics')).status).toBe(401);
+    const res = await request(app).get('/api/healthz/metrics').set('Authorization', `Bearer ${makeAdminToken()}`);
     expect(res.status).toBe(200);
   });
 

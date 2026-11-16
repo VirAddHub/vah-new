@@ -238,11 +238,17 @@ function healthLive(_req: Request, res: Response) {
 }
 
 // Mount routes
-router.get('/health', requireAdmin, healthCheck);
 router.get('/healthz', healthCheckMinimal);
 router.get('/healthz/', healthCheckMinimal);
-router.get('/healthz/status-guard', statusGuardHealthCheck);
-router.get('/healthz/metrics', metricsHealthCheck);
+
+// Detailed diagnostics are for admins. This router (`health`) is mounted before the session
+// middleware so that liveness checks never depend on it, which meant requireAdmin could never
+// see a signed-in admin and /api/health answered 401 to everyone. The detailed routes now live
+// on `healthAdmin`, mounted after the session middleware.
+export const healthAdmin = Router();
+healthAdmin.get('/health', requireAdmin, healthCheck);
+healthAdmin.get('/healthz/status-guard', requireAdmin, statusGuardHealthCheck);
+healthAdmin.get('/healthz/metrics', requireAdmin, metricsHealthCheck);
 router.get('/healthz/ready', healthReady);
 router.get('/healthz/live', healthLive);
 

@@ -17,6 +17,9 @@
 --     "user", subscription.mandate_id and payment.mandate_id are omitted; invoices.gocardless_payment_id is
 --     provider_payment_id; plan_status_event.gocardless_event_* is provider_event_*.
 --     Historical migration files still contain the old definitions and are not applied to fresh databases.
+--   * Date column types follow the code's own declaration (src/lib/timestamp-utils.ts) where the
+--     reconstruction disagreed: user.deleted_at, user.reset_token_used_at and admin_audit.created_at
+--     are timestamptz.
 
 --
 -- PostgreSQL database dump
@@ -336,7 +339,7 @@ CREATE TABLE public.admin_audit (
     target_type text,
     target_id bigint,
     details text,
-    created_at bigint NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -2274,7 +2277,7 @@ CREATE TABLE public."user" (
     created_at bigint NOT NULL,
     updated_at bigint NOT NULL,
     last_active_at bigint,
-    deleted_at bigint,
+    deleted_at timestamp with time zone,
     plan_id bigint,
     last_login_at bigint,
     companies_house_verified boolean DEFAULT false NOT NULL,
@@ -2333,7 +2336,7 @@ CREATE TABLE public."user" (
     subscription_status text,
     reset_token_hash text,
     reset_token_expires_at timestamp with time zone,
-    reset_token_used_at bigint,
+    reset_token_used_at timestamp with time zone,
     is_staff boolean,
     expires_at bigint,
     password_hash text,

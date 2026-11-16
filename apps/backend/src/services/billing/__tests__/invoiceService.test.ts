@@ -18,8 +18,8 @@ describe('InvoiceService', () => {
   beforeAll(async () => {
     // Create a test user
     const userRes = await pool.query(
-      `INSERT INTO "user" (email, password, first_name, last_name, status, plan_status, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO "user" (email, password, first_name, last_name, status, plan_status, created_at, updated_at, is_sole_controller)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $7, true)
        RETURNING id`,
       ['test-billing@example.com', 'hashed-password', 'Test', 'User', 'active', 'active', Date.now()]
     );

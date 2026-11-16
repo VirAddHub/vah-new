@@ -6,7 +6,7 @@ import { z } from 'zod';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { requireAdmin } from '../../middleware/require-admin';
 import { adminListForwarding, adminUpdateForwarding } from '../../modules/forwarding/forwarding.admin.controller';
-import { getPool } from '../db';
+import { getPool, connectForRequest } from '../db';
 import { sendMailForwarded } from '../../lib/mailer';
 import { parseForwardingStatus, FWD_LABEL } from '@vah/shared';
 import { safeErrorMessage } from '../../lib/safeError';
@@ -192,7 +192,8 @@ router.post('/forwarding/complete', async (req: Request, res: Response) => {
     }
 
     const { mail_id, forwarded_date } = parse.data;
-    const pool = getPool();
+    // One connection for the whole transaction (see connectForRequest).
+    const pool = await connectForRequest(res);
 
     try {
         // Start transaction

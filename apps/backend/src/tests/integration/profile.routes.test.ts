@@ -74,8 +74,9 @@ describe('Profile routes', () => {
     expect([200, 400, 401]).toContain(res.status);
   });
 
-  it('POST /api/profile/email-change/resend → 401 or 500 unauthenticated', async () => {
+  it('POST /api/profile/email-change/resend → 400 or 401 without a token', async () => {
     const res = await request(app).post('/api/profile/email-change/resend');
-    expect([401, 500]).toContain(res.status);
+    // 500 was a crash on a missing body (fixed): the route now answers 400 for a missing token.
+    expect([400, 401]).toContain(res.status);
   });
 });

@@ -342,8 +342,8 @@ router.put('/mail-items/:id', requireAdmin, async (req: Request, res: Response) 
         const auditPayload = { status, subject, sender_name, tag, notes, forwarding_status };
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
-            VALUES ($1, 'update_mail_item', 'mail_item', $2, $3, $4)
-        `, [adminId, mailId, JSON.stringify(auditPayload), Date.now()]);
+            VALUES ($1, 'update_mail_item', 'mail_item', $2, $3, NOW())
+        `, [adminId, mailId, JSON.stringify(auditPayload)]);
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
@@ -406,8 +406,8 @@ router.post('/mail-items/:id/log-physical-dispatch', requireAdmin, async (req: R
         // Log admin action
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
-            VALUES ($1, 'log_physical_dispatch', 'mail_item', $2, $3, $4)
-        `, [adminId, mailId, JSON.stringify({ tracking_number, courier, dispatched_at }), Date.now()]);
+            VALUES ($1, 'log_physical_dispatch', 'mail_item', $2, $3, NOW())
+        `, [adminId, mailId, JSON.stringify({ tracking_number, courier, dispatched_at })]);
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {

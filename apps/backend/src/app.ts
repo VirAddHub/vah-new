@@ -16,7 +16,7 @@ import { isCorsOriginAllowed } from './lib/corsAllowlist';
 import { safeHttpAccessLog } from './lib/accessLog';
 
 // Health routes (no DB dependencies)
-import { health } from './server/routes/health';
+import { health, healthAdmin } from './server/routes/health';
 
 // --- routes that need raw body (webhooks)
 import { postmarkWebhook } from './server/routes/webhooks-postmark';
@@ -85,6 +85,7 @@ import debugRouterLegacy from './server/routes/debug';
 import mailSearchRouter from './server/routes/mail-search';
 import metricsRouter from './server/routes/metrics';
 import accessRouter from './server/routes/access';
+import adminAccountStandingRouter from './server/routes/admin-account-standing';
 import notificationsRouter from './server/routes/notifications';
 
 import { ensureCsrfToken, requireCsrfToken, getOrCreateCsrfToken } from './middleware/csrf';
@@ -412,6 +413,7 @@ export function createApp() {
         }
         next();
     });
+    app.use('/api', healthAdmin); // admin-only diagnostics (needs the session middleware above)
     app.use('/api/access', accessRouter);
     app.use('/api', mailRouter);
     logger.info('[mount] /api (mail routes) mounted');
@@ -435,6 +437,7 @@ export function createApp() {
     logger.info('[mount] /api (forwarding routes) mounted');
     app.use('/api/email-prefs', emailPrefsRouterNew);
     logger.info('[mount] /api/email-prefs (new) mounted');
+    app.use('/api/admin', adminAccountStandingRouter);
     app.use('/api/admin', adminUsersRouter);
     logger.info('[mount] /api/admin (users) mounted');
     app.use('/api/admin', adminForwardingRouter);
