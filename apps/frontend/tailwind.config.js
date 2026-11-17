@@ -22,7 +22,8 @@ module.exports = {
         extend: {
             fontFamily: {
                 // Default stack: Poppins everywhere (marketing, dashboard, blog, help)
-                sans: ['var(--font-poppins)', 'system-ui', 'sans-serif'],
+                sans: ['var(--font-inter)', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+                mono: ['var(--font-plex)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
                 playfair: ['var(--font-playfair)', 'Georgia', 'serif'],
                 poppins: ['var(--font-poppins)', 'system-ui', 'sans-serif'],
                 // MIX homepage editorial fonts
@@ -48,12 +49,12 @@ module.exports = {
             },
             fontSize: {
                 // ── Canonical type scale ──
-                display: ["clamp(2rem, 5vw, 3.5rem)", { lineHeight: "1.1", fontWeight: "600", letterSpacing: "-0.025em" }],
-                h1: ["clamp(1.75rem, 4vw, 2.25rem)", { lineHeight: "1.2", fontWeight: "600", letterSpacing: "-0.02em" }],
-                h2: ["clamp(1.5rem, 3vw, 1.875rem)", { lineHeight: "1.3", fontWeight: "600", letterSpacing: "-0.015em" }],
-                h3: ["1.25rem", { lineHeight: "1.4", fontWeight: "600", letterSpacing: "-0.01em" }],
-                h4: ["1.125rem", { lineHeight: "1.4", fontWeight: "600", letterSpacing: "-0.005em" }],
-                "body-lg": ["1.125rem", { lineHeight: "1.7", fontWeight: "400" }],
+                display: ["clamp(2.5rem, 5vw, 4rem)", { lineHeight: "1.05", fontWeight: "600", letterSpacing: "-0.045em" }],
+                h1: ["clamp(1.75rem, 4vw, 2.5rem)", { lineHeight: "1.1", fontWeight: "600", letterSpacing: "-0.035em" }],
+                h2: ["1.75rem", { lineHeight: "1.2", fontWeight: "600", letterSpacing: "-0.03em" }],
+                h3: ["1.25rem", { lineHeight: "1.35", fontWeight: "600", letterSpacing: "-0.02em" }],
+                h4: ["1rem", { lineHeight: "1.4", fontWeight: "600", letterSpacing: "-0.01em" }],
+                "body-lg": ["1.25rem", { lineHeight: "1.6", fontWeight: "400" }],
                 body: ["1rem", { lineHeight: "1.6", fontWeight: "400" }],
                 "body-sm": ["0.875rem", { lineHeight: "1.5", fontWeight: "400" }],
                 label: ["0.875rem", { lineHeight: "1.4", fontWeight: "500" }],
@@ -61,6 +62,12 @@ module.exports = {
                 legal: ["0.75rem", { lineHeight: "1.6", fontWeight: "400" }],
             },
             colors: {
+                ink: "hsl(var(--ink))",
+                graphite: "hsl(var(--graphite))",
+                slate: { DEFAULT: "hsl(var(--slate))" },
+                line: "hsl(var(--line))",
+                mist: "hsl(var(--mist))",
+                paper: "hsl(var(--paper))",
                 border: "hsl(var(--border))",
                 input: "hsl(var(--input))",
                 ring: "hsl(var(--ring))",
@@ -99,19 +106,6 @@ module.exports = {
                     fg: "hsl(var(--primary-foreground))",
                 },
                 // ── MIX homepage editorial palette ──
-                mix: {
-                    paper: '#F2EBDD',
-                    'paper-deep': '#E8E0CE',
-                    'paper-light': '#FBF6E9',
-                    ink: '#1F1A14',
-                    ink2: '#3D362C',
-                    muted: '#7A6F5E',
-                    rule: '#D7CDB6',
-                    green: '#1F4934',
-                    'green-deep': '#173628',
-                    stamp: '#B9352A',
-                    warn: '#A88438',
-                },
                 success: {
                     DEFAULT: "hsl(var(--success))",
                     foreground: "hsl(var(--success-foreground))",
@@ -127,19 +121,22 @@ module.exports = {
             },
             // ── Canonical radius scale (Batch 2) ──
             borderRadius: {
-                sm: "0.25rem",
-                md: "0.5rem",
-                lg: "0.75rem",
-                xl: "1rem",
-                "2xl": "1.25rem",
+                sm: "4px",
+                DEFAULT: "6px",
+                md: "6px",
+                lg: "8px",
+                xl: "12px",
+                "2xl": "16px",
                 full: "9999px",
             },
             // ── Canonical shadow scale (Batch 2) ──
             boxShadow: {
-                xs: "0 1px 2px rgba(2, 6, 23, 0.04)",
-                sm: "0 1px 2px rgba(2, 6, 23, 0.06)",
-                md: "0 4px 12px rgba(2, 6, 23, 0.06)",
-                lg: "0 10px 24px rgba(2, 6, 23, 0.08)",
+                xs: "none",
+                sm: "none",
+                DEFAULT: "none",
+                md: "0 8px 24px -12px rgba(0, 0, 0, 0.18)",
+                lg: "0 18px 50px -20px rgba(0, 0, 0, 0.25)",
+                xl: "0 18px 50px -20px rgba(0, 0, 0, 0.25)",
             },
             keyframes: {
                 "accordion-down": {

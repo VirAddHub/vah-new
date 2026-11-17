@@ -402,7 +402,7 @@ export function SignupStep2({ onNext, onBack, initialData, initialBilling = 'mon
                                 </p>
                                 <p className="text-body-sm text-muted-foreground mt-1">
                                     {billing === 'annual'
-                                        ? `≈ £${getMonthlyEquivalent()}/month — 2 months free`
+                                        ? `≈ £${getMonthlyEquivalent()}/month, billed annually`
                                         : 'Cancel anytime'
                                     }
                                 </p>

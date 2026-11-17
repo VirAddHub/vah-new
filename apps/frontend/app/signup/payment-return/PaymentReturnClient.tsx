@@ -100,8 +100,8 @@ export function PaymentReturnClient() {
         return (
             <div className="min-h-[70vh] flex flex-col items-center justify-center p-6">
                 <div className="w-full max-w-lg text-center space-y-6">
-                    <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto">
-                        <RotateCcw className="h-8 w-8 text-amber-600" />
+                    <div className="w-16 h-16 rounded-full bg-mist flex items-center justify-center mx-auto">
+                        <RotateCcw className="h-8 w-8 text-ink" />
                     </div>
                     <h1 className="text-h1 text-foreground">Payment Not Completed</h1>
                     <p className="text-muted-foreground leading-relaxed">

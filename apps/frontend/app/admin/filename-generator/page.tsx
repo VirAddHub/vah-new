@@ -33,15 +33,15 @@ type SearchResponse =
 
 const PLAN_STATUS_CLASSES: Record<string, string> = {
   active: "bg-primary/10 text-primary border border-primary/20",
-  pending_payment: "bg-amber-50 text-amber-800 border border-amber-200",
+  pending_payment: "bg-mist text-ink border border-line",
   cancelled: "bg-destructive/10 text-destructive border border-destructive/20",
-  trialing: "bg-sky-50 text-sky-700 border border-sky-200",
+  trialing: "bg-mist text-ink border border-line",
 };
 
 const KYC_CLASSES: Record<string, string> = {
   approved: "bg-primary/10 text-primary border border-primary/20",
   verified: "bg-primary/10 text-primary border border-primary/20",
-  pending: "bg-amber-50 text-amber-800 border border-amber-200",
+  pending: "bg-mist text-ink border border-line",
   rejected: "bg-destructive/10 text-destructive border border-destructive/20",
 };
 

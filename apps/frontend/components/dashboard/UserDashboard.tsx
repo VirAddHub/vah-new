@@ -336,7 +336,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       return { label: "Scanned", badgeClass: "bg-muted text-foreground border-transparent" };
     }
     if (isNew) {
-      return { label: "New", badgeClass: "bg-blue-600 text-primary-foreground border-transparent" };
+      return { label: "New", badgeClass: "bg-ink text-primary-foreground border-transparent" };
     }
     return { label: "Received", badgeClass: "bg-muted text-foreground border-transparent" };
   };

@@ -6,15 +6,15 @@ import { formatPrice } from '@/lib/formatPrice';
 
 // ── Design tokens ────────────────────────────────────────────
 const T = {
-    paper:      '#F2EBDD',
-    paperDeep:  '#E8E0CE',
-    paperLight: '#FBF6E9',
-    ink:        '#1F1A14',
-    ink2:       '#3D362C',
-    muted:      '#7A6F5E',
-    rule:       '#D7CDB6',
-    green:      '#1F4934',
-    font:       "'Poppins', system-ui, sans-serif",
+    paper:      '#FFFFFF',
+    paperDeep:  '#F5F5F5',
+    paperLight: '#FFFFFF',
+    ink:        '#0A0A0A',
+    ink2:       '#404040',
+    muted:      '#6B6B6B',
+    rule:       '#E5E5E5',
+    green:      '#0A0A0A',
+    font:       "'Inter', system-ui, sans-serif",
 } as const;
 
 interface PlansPageProps {
@@ -25,8 +25,8 @@ interface PlansPageProps {
 function CheckItem({ text }: { text: string }) {
     return (
         <li style={{ display: 'grid', gridTemplateColumns: '20px 1fr', gap: 12 }}>
-            <span style={{ color: T.green, fontStyle: 'italic', fontSize: 18, lineHeight: 1.1, fontWeight: 500 }}>✓</span>
-            <span style={{ fontFamily: T.font, fontSize: 15, color: T.ink2, lineHeight: 1.5, fontWeight: 300 }}>{text}</span>
+            <span style={{ color: T.green, fontStyle: 'normal', fontSize: 18, lineHeight: 1.1, fontWeight: 500 }}>✓</span>
+            <span style={{ fontFamily: T.font, fontSize: 15, color: T.ink2, lineHeight: 1.5, fontWeight: 400 }}>{text}</span>
         </li>
     );
 }
@@ -182,7 +182,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                     font-size: 15px;
                     font-weight: 500;
                     border: none;
-                    border-radius: 4px;
+                    border-radius: 999px;
                     cursor: pointer;
                     min-height: 48px;
                     transition: opacity 0.15s;
@@ -211,12 +211,12 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                         fontSize: 'clamp(2.25rem, 5vw, 4rem)',
                         color: T.ink,
                         margin: 0,
-                        letterSpacing: '-0.03em',
-                        fontWeight: 300,
+                        letterSpacing: '-0.045em',
+                        fontWeight: 600,
                         lineHeight: 1.05,
                     }}>
                         One plan.{' '}
-                        <span style={{ fontStyle: 'italic', color: T.green, fontWeight: 400 }}>
+                        <span style={{ color: T.muted, fontWeight: 600 }}>
                             Everything in it.
                         </span>
                     </h1>
@@ -224,7 +224,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                         fontFamily: T.font,
                         fontSize: 'clamp(0.9rem, 1.5vw, 1.1rem)',
                         color: T.ink2,
-                        fontWeight: 300,
+                        fontWeight: 400,
                         margin: '16px 0 0',
                         maxWidth: 560,
                         lineHeight: 1.65,
@@ -258,10 +258,10 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                 fontFamily: T.font,
                                 fontSize: 'clamp(1.25rem, 2.5vw, 1.875rem)',
                                 color: T.ink, margin: '12px 0 24px',
-                                fontWeight: 300, letterSpacing: '-0.02em', lineHeight: 1.2,
+                                fontWeight: 600, letterSpacing: '-0.045em', lineHeight: 1.2,
                             }}>
                                 Everything you need,<br />
-                                <span style={{ fontStyle: 'italic', color: T.green, fontWeight: 400 }}>
+                                <span style={{ color: T.muted, fontWeight: 600 }}>
                                     one honest price.
                                 </span>
                             </h2>
@@ -309,7 +309,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                         color: T.ink,
                                         lineHeight: 1,
                                         letterSpacing: '-0.04em',
-                                        fontWeight: 300,
+                                        fontWeight: 600,
                                     }}>
                                         {displayPrice}
                                     </span>
@@ -337,7 +337,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                             }}>
                                 {isAnnual
                                     ? `Equivalent to ${formatPrice(annualPrice / 12, { interval: 'month' })}`
-                                    : 'Switch to annual anytime · save two months'
+                                    : `Switch to annual anytime · save ${savingsPct}%`
                                 }
                             </div>
                         </div>
@@ -355,8 +355,8 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                 {explanatoryFeatures.map((item) => <CheckItem key={item} text={item} />)}
                             </ul>
                             <p style={{
-                                fontFamily: T.font, fontStyle: 'italic', fontSize: 13,
-                                color: T.muted, fontWeight: 300,
+                                fontFamily: T.font, fontStyle: 'normal', fontSize: 13,
+                                color: T.muted, fontWeight: 400,
                                 margin: '14px 0 0', paddingLeft: 32, maxWidth: 380,
                             }}>
                                 You only pay for physical forwarding when you actually need it.

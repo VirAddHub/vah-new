@@ -578,8 +578,8 @@ export default function CollaborativeForwardingBoard({
     return (
       <Card
         key={request.id}
-        className={`mb-3 transition-all duration-200 ${lockedByOther ? 'opacity-60 border-orange-200 bg-orange-50' :
-            lockedByMe ? 'border-blue-200 bg-blue-50' :
+        className={`mb-3 transition-all duration-200 ${lockedByOther ? 'opacity-60 border-line bg-mist' :
+            lockedByMe ? 'border-line bg-mist' :
               isDone ? 'border-primary/20 bg-primary/5' :
                 'border-border hover:shadow-md hover:border-primary/20'
           }`}
@@ -634,13 +634,13 @@ export default function CollaborativeForwardingBoard({
                   <div className="flex items-center gap-1">
                     {lockedByMe ? (
                       <>
-                        <Lock className="h-3 w-3 text-blue-600" />
-                        <span className="text-blue-600">You are editing</span>
+                        <Lock className="h-3 w-3 text-ink" />
+                        <span className="text-ink">You are editing</span>
                       </>
                     ) : (
                       <>
-                        <User className="h-3 w-3 text-orange-600" />
-                        <span className="text-orange-600">{lockInfo.admin_name} is editing</span>
+                        <User className="h-3 w-3 text-ink" />
+                        <span className="text-ink">{lockInfo.admin_name} is editing</span>
                       </>
                     )}
                   </div>

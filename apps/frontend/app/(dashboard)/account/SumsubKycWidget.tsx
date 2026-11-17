@@ -486,11 +486,11 @@ export function SumsubKycWidget({ hideIntro = false }: SumsubKycWidgetProps) {
       </div>
 
       {notConfigured && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
-          <p className="text-body-sm font-medium text-amber-800 dark:text-amber-200">
+        <div className="rounded-lg border border-line bg-mist p-4 dark:border-amber-800 dark:bg-amber-900/20">
+          <p className="text-body-sm font-medium text-ink dark:text-amber-200">
             Identity verification is currently unavailable
           </p>
-          <p className="mt-1 text-caption text-amber-700 dark:text-amber-300">
+          <p className="mt-1 text-caption text-ink dark:text-amber-300">
             KYC will be available once the verification service is configured. Contact support if you need help.
           </p>
         </div>

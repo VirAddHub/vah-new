@@ -146,7 +146,7 @@ export function DashboardSidebar() {
                             className={cn(
                                 "flex items-center gap-3 px-4 py-2.5 text-sm font-normal transition-colors text-left w-full border-l-2",
                                 isMailActive
-                                    ? "border-l-[#1a6b3c] text-foreground bg-muted/50 [&_svg]:opacity-100"
+                                    ? "border-l-ink text-foreground bg-muted/50 [&_svg]:opacity-100"
                                     : "border-l-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                             )}
                         >
@@ -176,7 +176,7 @@ export function DashboardSidebar() {
                                                         className={cn(
                                                             "flex items-center gap-3 px-4 py-2.5 text-sm font-normal transition-colors border-l-2",
                                                             active
-                                                                ? "border-l-[#1a6b3c] text-foreground bg-muted/40"
+                                                                ? "border-l-ink text-foreground bg-muted/40"
                                                                 : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                                                         )}
                                                     >
@@ -215,7 +215,7 @@ export function DashboardSidebar() {
                                                         className={cn(
                                                             "flex items-center gap-3 px-4 py-2.5 text-sm font-normal transition-colors border-l-2",
                                                             active
-                                                                ? "border-l-[#1a6b3c] text-foreground bg-muted/40"
+                                                                ? "border-l-ink text-foreground bg-muted/40"
                                                                 : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                                                         )}
                                                     >
@@ -361,7 +361,7 @@ export function DashboardSidebar() {
                                                 className={cn(
                                                     "flex items-center gap-3 px-3 py-3 min-h-[44px] text-[12.5px] font-normal transition-colors text-left w-full touch-manipulation border-l-2",
                                                     isMailActive
-                                                        ? "border-l-[#1a6b3c] text-foreground bg-muted/40"
+                                                        ? "border-l-ink text-foreground bg-muted/40"
                                                         : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                                                 )}
                                             >
@@ -390,7 +390,7 @@ export function DashboardSidebar() {
                                                         className={cn(
                                                             "flex items-center gap-3 px-3 py-3 min-h-[44px] text-[12.5px] font-normal transition-colors touch-manipulation border-l-2",
                                                             active
-                                                                ? "border-l-[#1a6b3c] text-foreground bg-muted/40"
+                                                                ? "border-l-ink text-foreground bg-muted/40"
                                                                 : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                                                         )}
                                                     >
@@ -428,7 +428,7 @@ export function DashboardSidebar() {
                                                         className={cn(
                                                             "flex items-center gap-3 px-3 py-3 min-h-[44px] text-[12.5px] font-normal transition-colors touch-manipulation border-l-2",
                                                             active
-                                                                ? "border-l-[#1a6b3c] text-foreground bg-muted/40"
+                                                                ? "border-l-ink text-foreground bg-muted/40"
                                                                 : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                                                         )}
                                                     >

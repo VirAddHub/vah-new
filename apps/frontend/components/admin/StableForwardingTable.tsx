@@ -343,7 +343,7 @@ export default function StableForwardingTable() {
           </div>
         </CardHeader>
         <CardContent>
-          {error && <p className="text-red-600 mb-4">{error}</p>}
+          {error && <p className="text-destructive mb-4">{error}</p>}
 
           {/* Search Filter */}
           <div className="relative">
@@ -423,10 +423,10 @@ export default function StableForwardingTable() {
             </CardHeader>
             <CardContent>
               {other.map(request => (
-                <div key={request.id} className="mb-2 p-2 border border-dashed border-red-200 rounded" data-testid="forwarding-card" data-status="Other">
+                <div key={request.id} className="mb-2 p-2 border border-dashed border-destructive/25 rounded" data-testid="forwarding-card" data-status="Other">
                   <div className="text-body-sm">
                     <span className="font-mono">{formatFRId(request.id)}</span>
-                    <span className="ml-2 text-red-600" data-testid="status-text">Status: "{request.status}"</span>
+                    <span className="ml-2 text-destructive" data-testid="status-text">Status: "{request.status}"</span>
                     <span className="ml-2 text-muted-foreground">User #{request.user_id}</span>
                   </div>
                 </div>

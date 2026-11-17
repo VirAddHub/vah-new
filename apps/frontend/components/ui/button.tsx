@@ -14,29 +14,24 @@ export interface ButtonProps
     fullWidth?: boolean
 }
 
+// One button set for the whole product: black pills, outlined pills, quiet text buttons.
 const base =
-    "inline-flex items-center justify-center whitespace-nowrap rounded-[3px] font-normal transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-offset-1 disabled:opacity-50 disabled:pointer-events-none select-none ring-offset-background active:scale-[0.97] active:brightness-90"
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,color,border-color,opacity] duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:pointer-events-none disabled:opacity-40 select-none [&_svg]:shrink-0"
 
 const sizes: Record<Size, string> = {
-    sm: "h-7 px-2.5 text-[12px]",
-    md: "h-8 px-3 text-[13px]",
-    lg: "h-10 px-5 text-[13px]",
-    icon: "h-8 w-8",
+    sm: "h-9 px-4 text-[13px]",
+    md: "h-11 px-5 text-[14px]",
+    lg: "h-12 px-6 text-[15px]",
+    icon: "h-11 w-11",
 }
 
 const variants: Record<Variant, string> = {
-    primary:
-        "bg-[#1a6b3c] !text-white hover:bg-[#155a32] hover:!text-white focus-visible:ring-[#1a6b3c] [&_svg]:!text-white",
-    secondary:
-        "bg-neutral-900 text-white hover:bg-neutral-800 focus-visible:ring-neutral-900",
-    ghost:
-        "bg-transparent text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:ring-neutral-300",
-    outline:
-        "bg-transparent text-neutral-700 border border-[0.5px] border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 focus-visible:ring-neutral-300",
-    destructive:
-        "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600",
-    link:
-        "bg-transparent text-[#1a6b3c] underline-offset-4 hover:underline focus-visible:ring-[#1a6b3c]",
+    primary: "bg-ink text-paper hover:bg-graphite",
+    secondary: "bg-ink text-paper hover:bg-graphite",
+    outline: "border border-ink/15 bg-paper text-ink hover:border-ink hover:bg-paper",
+    ghost: "bg-transparent text-ink hover:bg-mist",
+    destructive: "bg-destructive text-paper hover:bg-destructive/90",
+    link: "h-auto rounded-none px-0 text-ink underline underline-offset-4 decoration-ink/30 hover:decoration-ink",
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

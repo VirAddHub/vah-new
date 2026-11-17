@@ -142,14 +142,14 @@ export default function BusinessOwnersPage() {
         switch (status) {
             case 'approved':
                 return (
-                    <Badge variant="default" className="bg-green-500">
+                    <Badge variant="default" className="bg-success">
                         <CheckCircle2 className="h-3 w-3 mr-1" />
                         Verified
                     </Badge>
                 );
             case 'pending':
                 return (
-                    <Badge variant="default" className="bg-amber-500">
+                    <Badge variant="default" className="bg-ink">
                         <Clock className="h-3 w-3 mr-1" />
                         Pending
                     </Badge>
@@ -190,8 +190,8 @@ export default function BusinessOwnersPage() {
                         <ArrowLeft className="h-4 w-4" />
                         Back to dashboard
                     </Link>
-                    <h1 className="text-h2 font-bold mb-2">Business Owners</h1>
-                    <p className="text-muted-foreground">
+                    <h1 className="page-title">Business Owners</h1>
+                    <p className="page-lede">
                         Manage directors, owners, and controllers who need identity verification
                     </p>
                 </div>

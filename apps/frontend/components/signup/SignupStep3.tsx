@@ -61,7 +61,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
 
     const isAnnual = billing === 'annual';
     const planName = isAnnual ? 'Annual Plan' : 'Monthly Plan';
-    const planDescription = isAnnual ? 'Annual subscription (2 months free)' : 'Monthly subscription';
+    const planDescription = isAnnual ? 'Annual subscription' : 'Monthly subscription';
     const displayPrice = isAnnual ? `£${getPlanPrice('annual')}` : `£${getPlanPrice('monthly')}`;
     const priceUnit = isAnnual ? '/year' : '/month';
     const totalDescription = isAnnual

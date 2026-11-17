@@ -227,8 +227,8 @@ export default function ForwardingPage() {
         <div className="w-full h-[calc(100vh-8rem)] flex flex-col">
             {/* Header */}
             <div className="mb-6 pt-2 px-6">
-                <h1 className="text-h2 text-foreground mb-1">Forwarding Requests</h1>
-                <p className="text-body-sm text-muted-foreground">Track the status of your physical mail forwarding requests</p>
+                <h1 className="page-title">Forwarding Requests</h1>
+                <p className="page-lede">Track the status of your physical mail forwarding requests</p>
             </div>
 
             {/* Two Column Layout: List on Left, Details on Right */}

@@ -3,7 +3,7 @@
 export function StatusBadge({ severity }: { severity: 'ok' | 'degraded' | 'down' }) {
     const map = {
         ok: { label: 'Operational', cls: 'bg-primary/10 text-primary border-primary/30' },
-        degraded: { label: 'Degraded', cls: 'bg-amber-100 text-amber-800 border-amber-300' },
+        degraded: { label: 'Degraded', cls: 'bg-mist text-ink border-line' },
         down: { label: 'Down', cls: 'bg-destructive/10 text-destructive border-destructive/30' },
     } as const;
 

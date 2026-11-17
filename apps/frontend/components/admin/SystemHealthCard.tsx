@@ -12,8 +12,8 @@ export default function SystemHealthCard() {
 
     if (error || !data) {
         return (
-            <div className="rounded-2xl p-4 bg-card border border-red-200">
-                <div className="font-medium text-red-600">Failed to load system health</div>
+            <div className="rounded-2xl p-4 bg-card border border-destructive/25">
+                <div className="font-medium text-destructive">Failed to load system health</div>
                 <div className="text-caption text-muted-foreground mt-1">
                     {error instanceof Error ? error.message : 'Unknown error'}
                 </div>

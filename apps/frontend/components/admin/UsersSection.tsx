@@ -27,9 +27,9 @@ const PLAN_STATUS_OPTIONS = [
 
 const PLAN_STATUS_STYLES: Record<string, string> = {
   active: 'bg-primary/10 text-primary',
-  pending_payment: 'bg-amber-50 text-amber-800',
+  pending_payment: 'bg-mist text-ink',
   cancelled: 'bg-destructive/10 text-destructive',
-  trialing: 'bg-sky-50 text-sky-700',
+  trialing: 'bg-mist text-ink',
 };
 
 const formatPlanStatus = (value?: string) => {
@@ -50,6 +50,7 @@ type AdminUser = {
   plan_price?: number;
   plan_interval?: string;
   kyc_status?: string;
+  service_label?: string | null;
   deleted_at?: string;
   locked_until?: string | number | null;
 };
@@ -70,6 +71,13 @@ interface UsersSectionProps {
     kyc_status: string;
   }) => void;
   onRefreshUsers?: () => void;
+}
+
+function statusVariant(label: string | null | undefined, u: { deleted_at?: unknown; status?: string }) {
+  if (!label) return u.deleted_at || u.status === 'suspended' ? 'destructive' as const : 'secondary' as const;
+  if (label.startsWith('Active') || label === 'Administrator') return 'success' as const;
+  if (label === 'Closed' || label === 'Suspended' || label === 'Payment overdue' || label === 'Verification failed') return 'destructive' as const;
+  return 'secondary' as const;
 }
 
 export default function UsersSection({ users, loading, error, total, page, pageSize, onPageChange, isValidating, onFiltersChange, onRefreshUsers }: UsersSectionProps) {
@@ -479,31 +487,26 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 <TableHead>Company</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
-                <TableHead>Plan status</TableHead>
-                <TableHead>KYC</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {displayUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-muted-foreground">
+                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
                     {error ?? "No users found."}
                   </TableCell>
                 </TableRow>
               ) : (
                 displayUsers.map((u) => {
-                  const planStatusValue = u.plan_status ?? 'pending_payment';
-                  const planStatusClass = PLAN_STATUS_STYLES[planStatusValue] ?? 'bg-muted text-muted-foreground';
                   return (
-                  <TableRow key={u.id} className={u.deleted_at ? "opacity-60 bg-destructive/10" : ""}>
+                  <TableRow key={u.id} className={u.deleted_at ? "text-graphite" : ""}>
                     <TableCell className="font-mono text-body-sm">
                       {u.id}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span>{u.email}</span>
-                        {u.deleted_at && <Badge variant="destructive" className="text-caption">Deleted</Badge>}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -514,12 +517,12 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
-                        <Badge variant={u.status === "active" ? "default" : u.status === "suspended" ? "destructive" : "secondary"}>
-                          {u.deleted_at ? "closed" : (u.status || "active")}
+                        <Badge variant={statusVariant(u.service_label, u)}>
+                          {u.service_label ?? (u.deleted_at ? "Closed" : u.status === "suspended" ? "Suspended" : "Unknown")}
                         </Badge>
                         {u.locked_until && Number(u.locked_until) > Date.now() && (
-                          <span className="inline-flex items-center text-caption text-amber-700 font-medium">
-                            🔒 Locked until {new Date(Number(u.locked_until)).toLocaleString()}
+                          <span className="text-caption text-graphite">
+                            Sign-in blocked until {new Date(Number(u.locked_until)).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         )}
                       </div>
@@ -539,16 +542,8 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                         <span className="text-body-sm text-muted-foreground">No plan</span>
                       )}
                     </TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-caption font-medium ${planStatusClass}`}>
-                        {formatPlanStatus(planStatusValue)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{u.kyc_status || "pending"}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
                         {u.deleted_at ? (
                           <Button
                             variant="outline"
@@ -567,14 +562,6 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                               disabled={isMutating}
                             >
                               Edit
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setPlanStatusModal({ id: u.id, email: u.email, plan_status: u.plan_status })}
-                              disabled={isMutating}
-                            >
-                              Plan status
                             </Button>
                             <Button
                               variant="outline"
@@ -708,7 +695,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       {/* Delete confirmation modal */}
       {deleteModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className={`bg-card border-2 rounded-2xl p-6 w-full max-w-md ${deleteModal.permanent ? 'border-destructive/30' : 'border-yellow-200'}`}>
+          <div className={`bg-card border-2 rounded-2xl p-6 w-full max-w-md ${deleteModal.permanent ? 'border-destructive/30' : 'border-line'}`}>
             <h3 className={`font-semibold text-body-lg mb-2 ${deleteModal.permanent ? 'text-destructive' : ''}`}>
               {deleteModal.permanent ? '⚠️ Permanent Delete User' : 'Delete User'}
             </h3>
@@ -730,11 +717,11 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                   </ul>
                 </div>
               ) : (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-body-sm text-yellow-900">
+                <div className="bg-mist border border-line rounded-lg p-4">
+                  <p className="text-body-sm text-ink">
                     This will <strong>soft-delete</strong> user <span className="font-mono">{deleteModal.email}</span>.
                   </p>
-                  <p className="text-caption text-yellow-800 mt-1">
+                  <p className="text-caption text-ink mt-1">
                     The user can be restored later. Their data will be hidden but not permanently removed.
                   </p>
                 </div>

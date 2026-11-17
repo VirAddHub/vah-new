@@ -7,15 +7,15 @@ import { useAsync } from "@/hooks/useAsync";
 
 // ── Design tokens ────────────────────────────────────────────
 const T = {
-    paper:      '#F2EBDD',
-    paperDeep:  '#E8E0CE',
-    paperLight: '#FBF6E9',
-    ink:        '#1F1A14',
-    ink2:       '#3D362C',
-    muted:      '#7A6F5E',
-    rule:       '#D7CDB6',
-    green:      '#1F4934',
-    font:       "'Poppins', system-ui, sans-serif",
+    paper:      '#FFFFFF',
+    paperDeep:  '#F5F5F5',
+    paperLight: '#FFFFFF',
+    ink:        '#0A0A0A',
+    ink2:       '#404040',
+    muted:      '#6B6B6B',
+    rule:       '#E5E5E5',
+    green:      '#0A0A0A',
+    font:       "'Inter', system-ui, sans-serif",
 } as const;
 
 interface ContactPageProps {
@@ -107,7 +107,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
         background: T.paperLight,
         fontFamily: T.font,
         fontSize: 15,
-        fontWeight: 300,
+        fontWeight: 400,
         color: T.ink,
         outline: 'none',
         borderRadius: 0,
@@ -134,20 +134,20 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                 <div style={{ maxWidth: 560, textAlign: 'center' }}>
                     <h1 style={{
                         fontFamily: T.font, fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
-                        color: T.ink, fontWeight: 300, letterSpacing: '-0.02em',
+                        color: T.ink, fontWeight: 600, letterSpacing: '-0.045em',
                         margin: '0 0 16px',
                     }}>
                         Message sent —{' '}
-                        <span style={{ fontStyle: 'italic', color: T.green, fontWeight: 400 }}>thank you!</span>
+                        <span style={{ color: T.muted, fontWeight: 600 }}>thank you!</span>
                     </h1>
-                    <p style={{ fontFamily: T.font, fontSize: 16, color: T.ink2, fontWeight: 300, margin: '0 0 32px', lineHeight: 1.6 }}>
+                    <p style={{ fontFamily: T.font, fontSize: 16, color: T.ink2, fontWeight: 400, margin: '0 0 32px', lineHeight: 1.6 }}>
                         We've received your enquiry. A real human in London will reply same working day.
                     </p>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center' }}>
                         <Link href="/" style={{
                             background: T.green, color: T.paperLight,
                             padding: '13px 22px', fontFamily: T.font, fontSize: 14,
-                            fontWeight: 500, borderRadius: 4, textDecoration: 'none',
+                            fontWeight: 500, borderRadius: 999, textDecoration: 'none',
                             display: 'inline-flex', alignItems: 'center', minHeight: 44,
                         }}>
                             Return home
@@ -203,15 +203,15 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                         fontFamily: T.font,
                         fontSize: 'clamp(2.25rem, 6vw, 4.5rem)',
                         color: T.ink, margin: 0,
-                        letterSpacing: '-0.03em', fontWeight: 300, lineHeight: 1.05,
+                        letterSpacing: '-0.045em', fontWeight: 600, lineHeight: 1.05,
                     }}>
                         Get in{' '}
-                        <span style={{ fontStyle: 'italic', color: T.green, fontWeight: 400 }}>touch.</span>
+                        <span style={{ color: T.muted, fontWeight: 600 }}>touch.</span>
                     </h1>
                     <p style={{
                         fontFamily: T.font,
                         fontSize: 'clamp(0.95rem, 1.5vw, 1.1rem)',
-                        color: T.ink2, fontWeight: 300,
+                        color: T.ink2, fontWeight: 400,
                         margin: '16px 0 0', maxWidth: 620, lineHeight: 1.65,
                     }}>
                         Questions about the service, your account, compliance, billing — anything. A real human in London writes back, same working day.
@@ -358,7 +358,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
 
                         <p style={{
                             fontFamily: T.font, fontSize: 13, color: T.muted,
-                            fontWeight: 300, marginTop: 14, fontStyle: 'italic',
+                            fontWeight: 400, marginTop: 14, fontStyle: 'normal',
                         }}>
                             Your information stays with us — never shared with third parties.
                         </p>
@@ -381,7 +381,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                             }}>
                                 support@virtualaddresshub.co.uk
                             </div>
-                            <p style={{ fontFamily: T.font, fontSize: 14, color: T.muted, fontWeight: 300, margin: '0 0 14px', fontStyle: 'italic' }}>
+                            <p style={{ fontFamily: T.font, fontSize: 14, color: T.muted, fontWeight: 400, margin: '0 0 14px', fontStyle: 'normal' }}>
                                 Same-day reply, Mon–Fri.
                             </p>
                             <a
@@ -422,7 +422,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                     display: 'inline-flex', alignItems: 'center',
                                     background: T.green, color: T.paper,
                                     padding: '10px 18px', fontFamily: T.font, fontSize: 13,
-                                    fontWeight: 500, textDecoration: 'none', borderRadius: 4, minHeight: 40,
+                                    fontWeight: 500, textDecoration: 'none', borderRadius: 999, minHeight: 40,
                                 }}
                             >
                                 Chat on WhatsApp →
@@ -435,22 +435,22 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 Service address
                             </div>
                             <div style={{
-                                fontFamily: T.font, fontSize: 20, fontWeight: 300,
+                                fontFamily: T.font, fontSize: 20, fontWeight: 400,
                                 margin: '10px 0 6px', lineHeight: 1.35,
                             }}>
                                 A trusted<br />
-                                <span style={{ fontStyle: 'italic', fontWeight: 400 }}>Central London</span><br />
+                                <span style={{ fontStyle: 'normal', fontWeight: 400 }}>Central London</span><br />
                                 business address.
                             </div>
                             <p style={{
-                                fontFamily: T.font, fontSize: 13, fontWeight: 300,
+                                fontFamily: T.font, fontSize: 13, fontWeight: 400,
                                 opacity: 0.85, margin: '12px 0 0', lineHeight: 1.6,
                             }}>
                                 The full postal address is shared after signup, payment and successful identity verification.
                             </p>
                             <p style={{
-                                fontFamily: T.font, fontSize: 13, fontWeight: 300,
-                                opacity: 0.7, margin: '14px 0 0', fontStyle: 'italic',
+                                fontFamily: T.font, fontSize: 13, fontWeight: 400,
+                                opacity: 0.7, margin: '14px 0 0', fontStyle: 'normal',
                             }}>
                                 Support hours · Mon–Fri 9am–6pm GMT
                             </p>

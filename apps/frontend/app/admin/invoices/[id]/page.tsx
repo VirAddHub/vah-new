@@ -220,7 +220,7 @@ export default function AdminInvoiceDetailPage() {
             </div>
           </div>
 
-          {error ? <div className="text-body-sm text-red-600">{error}</div> : null}
+          {error ? <div className="text-body-sm text-destructive">{error}</div> : null}
 
           <Card>
             <CardHeader>

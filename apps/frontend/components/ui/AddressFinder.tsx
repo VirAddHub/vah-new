@@ -119,7 +119,7 @@ export function AddressFinder({
             {label && (
                 <Label htmlFor="address-finder-input" className="text-sm font-medium">
                     {label}
-                    {required && <span className="text-red-500 ml-1">*</span>}
+                    {required && <span className="text-destructive ml-1">*</span>}
                 </Label>
             )}
 
@@ -142,7 +142,7 @@ export function AddressFinder({
             </div>
 
             {error && (
-                <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded p-2">
+                <div className="text-xs text-ink bg-mist border border-line rounded p-2">
                     <AlertCircle className="h-3 w-3 inline mr-1" />
                     {error}
                 </div>

@@ -350,7 +350,7 @@ export default function MailInboxPage() {
         const isNew = !item.is_read && !isForwarded;
         if (isForwarded) return { label: 'Forwarded', badgeClass: 'bg-primary text-white border-transparent' };
         if (isScanned) return { label: 'Scanned', badgeClass: 'bg-muted text-foreground border-transparent' };
-        if (isNew) return { label: 'New', badgeClass: 'bg-blue-600 text-white border-transparent' };
+        if (isNew) return { label: 'New', badgeClass: 'bg-ink text-white border-transparent' };
         return { label: 'Received', badgeClass: 'bg-muted text-foreground border-transparent' };
     }, []);
 
@@ -407,7 +407,7 @@ export default function MailInboxPage() {
                 <>
                     {/* Page title */}
                     <div className="mb-4 md:mb-6">
-                        <h1 className="text-2xl font-semibold text-foreground tracking-tight">Mail</h1>
+                        <h1 className="page-title">Mail</h1>
                     </div>
 
                     {/* Search */}
@@ -566,7 +566,7 @@ export default function MailInboxPage() {
                                     {/* Mobile row */}
                                     <div className="flex items-center gap-2.5 w-full min-w-0 md:hidden">
                                         <Icon className="h-4 w-4 text-muted-foreground opacity-50 shrink-0" strokeWidth={1.5} />
-                                        {isUnread && <span className="h-2 w-2 rounded-full bg-[#1a6b3c] shrink-0" aria-label="Unread" />}
+                                        {isUnread && <span className="h-2 w-2 rounded-full bg-ink shrink-0" aria-label="Unread" />}
                                         <p className={cn('flex-1 min-w-0 text-sm leading-tight truncate', isUnread ? 'font-medium text-foreground' : 'font-normal text-neutral-600')}>
                                             {rowLabel}
                                         </p>
@@ -586,7 +586,7 @@ export default function MailInboxPage() {
                                     {/* Desktop row */}
                                     <div className="hidden md:flex items-center gap-3 flex-1 min-w-0">
                                         <Icon className="h-4 w-4 text-muted-foreground opacity-50 shrink-0" strokeWidth={1.5} />
-                                        {isUnread && <span className="h-2 w-2 rounded-full bg-[#1a6b3c] shrink-0" aria-label="Unread" />}
+                                        {isUnread && <span className="h-2 w-2 rounded-full bg-ink shrink-0" aria-label="Unread" />}
                                         <p className={cn('flex-1 min-w-0 text-sm leading-tight truncate', isUnread ? 'font-medium text-foreground' : 'font-normal text-neutral-600')}>
                                             {rowLabel}
                                         </p>

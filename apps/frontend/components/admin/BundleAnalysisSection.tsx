@@ -98,11 +98,11 @@ export function BundleAnalysisSection() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'good':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-success/[0.06] text-success border-success/25';
       case 'warning':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-mist text-ink border-line';
       case 'critical':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-destructive/[0.06] text-destructive border-destructive/25';
       default:
         return 'bg-muted text-foreground border-border';
     }
@@ -169,8 +169,8 @@ export function BundleAnalysisSection() {
 
         {error && (
           <div className="text-center py-8">
-            <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-500" />
-            <h3 className="font-medium mb-2 text-red-600">Analysis Failed</h3>
+            <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-destructive" />
+            <h3 className="font-medium mb-2 text-destructive">Analysis Failed</h3>
             <p className="text-body-sm text-muted-foreground mb-4">{error}</p>
             <Button onClick={analyzeBundles} variant="outline" size="sm">
               Try Again
@@ -183,7 +183,7 @@ export function BundleAnalysisSection() {
             {/* Summary Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="text-center">
-                <div className="text-h2 font-bold text-blue-600">
+                <div className="text-h2 font-bold text-ink">
                   {formatBytes(analysis.totalGzipSize)}
                 </div>
                 <div className="text-body-sm text-muted-foreground">Total Gzipped</div>
@@ -195,13 +195,13 @@ export function BundleAnalysisSection() {
                 <div className="text-body-sm text-muted-foreground">Bundles</div>
               </div>
               <div className="text-center">
-                <div className="text-h2 font-bold text-green-600">
+                <div className="text-h2 font-bold text-success">
                   {analysis.bundles.filter(b => getBundleStatus(b) === 'good').length}
                 </div>
                 <div className="text-body-sm text-muted-foreground">Good</div>
               </div>
               <div className="text-center">
-                <div className="text-h2 font-bold text-yellow-600">
+                <div className="text-h2 font-bold text-ink">
                   {analysis.bundles.filter(b => getBundleStatus(b) === 'warning').length}
                 </div>
                 <div className="text-body-sm text-muted-foreground">Warning</div>
@@ -240,7 +240,7 @@ export function BundleAnalysisSection() {
                     />
                     
                     {isOverLimit && (
-                      <div className="mt-2 text-body-sm text-red-600">
+                      <div className="mt-2 text-body-sm text-destructive">
                         ⚠️ Exceeds limit by {formatBytes(bundle.gzipSize - bundle.limit)}
                       </div>
                     )}

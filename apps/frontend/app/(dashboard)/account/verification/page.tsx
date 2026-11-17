@@ -324,8 +324,8 @@ export default function AccountVerificationPage() {
     return (
         <div className="w-full">
             <div className="mb-5 sm:mb-6 md:mb-8">
-                <h1 className="mb-2 text-h1 text-foreground sm:mb-4">Identity Verification</h1>
-                <p className="text-body-sm text-muted-foreground sm:text-body">
+                <h1 className="page-title">Identity Verification</h1>
+                <p className="page-lede">
                     Check your verification status and any required next steps.
                 </p>
             </div>

@@ -3,20 +3,19 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
+// Status labels. Neutral by default; colour only where it carries meaning (paid/verified, errors),
+// and always with words, never colour alone.
 const badgeVariants = cva(
-    "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+    "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[12px] font-medium leading-5",
     {
         variants: {
             variant: {
-                default:
-                    "border-transparent bg-gray-100 text-gray-800 border border-gray-200",
-                secondary:
-                    "border-transparent bg-secondary text-secondary-foreground border border-secondary",
-                success:
-                    "border-transparent bg-green-100 text-green-800 border border-green-200",
-                destructive:
-                    "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-                outline: "text-foreground",
+                default: "border-line bg-mist text-ink",
+                secondary: "border-line bg-paper text-graphite",
+                success: "border-success/25 bg-success/[0.06] text-success",
+                destructive: "border-destructive/25 bg-destructive/[0.06] text-destructive",
+                outline: "border-line bg-paper text-ink",
+                solid: "border-ink bg-ink text-paper",
             },
         },
         defaultVariants: {

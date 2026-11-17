@@ -30,13 +30,14 @@ const aboutPageJsonLd = {
 };
 
 const T = {
-    paper:      '#F2EBDD',
-    paperLight: '#FBF6E9',
-    ink:        '#1F1A14',
-    ink2:       '#3D362C',
-    rule:       '#D7CDB6',
-    green:      '#1F4934',
-    font:       "'Poppins', system-ui, sans-serif",
+    paper:      '#FFFFFF',
+    paperLight: '#FFFFFF',
+    ink:        '#0A0A0A',
+    ink2:       '#404040',
+    muted:      '#6B6B6B',
+    rule:       '#E5E5E5',
+    green:      '#0A0A0A',
+    font:       "'Inter', system-ui, sans-serif",
 } as const;
 
 const paragraphs = [
@@ -64,12 +65,12 @@ export default function AboutPage() {
                             fontSize: 'clamp(2.25rem, 6vw, 4.5rem)',
                             color: T.ink,
                             margin: 0,
-                            letterSpacing: '-0.03em',
-                            fontWeight: 300,
+                            letterSpacing: '-0.045em',
+                            fontWeight: 600,
                             lineHeight: 1.05,
                         }}>
                             A simpler way to be{' '}
-                            <span style={{ fontStyle: 'italic', color: T.green, fontWeight: 400 }}>
+                            <span style={{ color: T.muted, fontWeight: 600 }}>
                                 a London business.
                             </span>
                         </h1>
@@ -87,32 +88,15 @@ export default function AboutPage() {
                                 key={i}
                                 style={{
                                     fontFamily: T.font,
-                                    fontSize: 'clamp(1rem, 2vw, 1.35rem)',
+                                    fontSize: 'clamp(1rem, 2vw, 1.25rem)',
                                     lineHeight: 1.7,
-                                    color: T.ink,
+                                    color: i === 0 ? T.ink : T.ink2,
                                     margin: '0 0 24px',
-                                    fontWeight: 300,
+                                    fontWeight: 400,
                                     overflow: 'hidden',
                                 }}
                             >
-                                {i === 0 ? (
-                                    <>
-                                        <span style={{
-                                            fontFamily: T.font,
-                                            fontSize: 'clamp(3rem, 7vw, 4rem)',
-                                            float: 'left',
-                                            lineHeight: 0.82,
-                                            marginRight: 10,
-                                            marginTop: 10,
-                                            color: T.green,
-                                            fontWeight: 400,
-                                            fontStyle: 'italic',
-                                        }}>
-                                            {p[0]}
-                                        </span>
-                                        {p.slice(1)}
-                                    </>
-                                ) : p}
+                                {p}
                             </p>
                         ))}
 
@@ -126,8 +110,8 @@ export default function AboutPage() {
                                 fontFamily: T.font,
                                 fontSize: 17,
                                 color: T.ink2,
-                                fontStyle: 'italic',
-                                fontWeight: 300,
+                                fontStyle: 'normal',
+                                fontWeight: 400,
                                 margin: '0 0 20px',
                             }}>
                                 Ready to see pricing or talk to the team?
@@ -142,7 +126,7 @@ export default function AboutPage() {
                                         fontFamily: T.font,
                                         fontSize: 14,
                                         fontWeight: 500,
-                                        borderRadius: 4,
+                                        borderRadius: 999,
                                         textDecoration: 'none',
                                         display: 'inline-flex',
                                         alignItems: 'center',

@@ -9,7 +9,7 @@ import { WebVitalsProvider } from '@/components/WebVitalsProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 /**
- * Global typography: Poppins as default (`font-sans` → `--font-poppins`). Playfair variable on `<html>` for optional display headings (`next/font`, display: swap).
+ * Global typography: Poppins as default (`font-sans` → `--font-sans`). Playfair variable on `<html>` for optional display headings (`next/font`, display: swap).
  */
 
 export const metadata: Metadata = {

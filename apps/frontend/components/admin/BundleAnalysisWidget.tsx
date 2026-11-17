@@ -33,11 +33,11 @@ export function BundleAnalysisWidget({ onViewDetails }: BundleWidgetProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'good':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-success/[0.06] text-success border-success/25';
       case 'warning':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-mist text-ink border-line';
       case 'critical':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-destructive/[0.06] text-destructive border-destructive/25';
       default:
         return 'bg-muted text-foreground border-border';
     }
@@ -109,19 +109,19 @@ export function BundleAnalysisWidget({ onViewDetails }: BundleWidgetProps) {
         {/* Summary */}
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-body-lg font-bold text-blue-600">
+            <div className="text-body-lg font-bold text-ink">
               {formatBytes(bundleData.totalSize)}
             </div>
             <div className="text-caption text-muted-foreground">Total Size</div>
           </div>
           <div>
-            <div className="text-body-lg font-bold text-green-600">
+            <div className="text-body-lg font-bold text-success">
               {bundleData.bundles.length - criticalBundles - warningBundles}
             </div>
             <div className="text-caption text-muted-foreground">Good</div>
           </div>
           <div>
-            <div className="text-body-lg font-bold text-yellow-600">
+            <div className="text-body-lg font-bold text-ink">
               {warningBundles + criticalBundles}
             </div>
             <div className="text-caption text-muted-foreground">Issues</div>
@@ -147,7 +147,7 @@ export function BundleAnalysisWidget({ onViewDetails }: BundleWidgetProps) {
                   className="h-1"
                 />
                 {isOverLimit && (
-                  <div className="text-caption text-red-600">
+                  <div className="text-caption text-destructive">
                     ⚠️ Exceeds limit
                   </div>
                 )}

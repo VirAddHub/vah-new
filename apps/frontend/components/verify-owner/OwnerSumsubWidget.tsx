@@ -94,8 +94,8 @@ export function OwnerSumsubWidget({
         </div>
       )}
       {completed && (
-        <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-          <p className="text-body-sm text-green-800 dark:text-green-200 font-medium">
+        <div className="p-3 rounded-lg bg-success/[0.06] dark:bg-green-900/20 border border-success/25 dark:border-green-800">
+          <p className="text-body-sm text-success dark:text-green-200 font-medium">
             Verification submitted. This page will refresh shortly.
           </p>
         </div>

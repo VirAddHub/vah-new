@@ -250,8 +250,8 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
                 </Button>
               </div>
               {pendingEmail && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
-                  <p className="text-caption text-blue-800">
+                <div className="bg-mist border border-line rounded-lg p-2">
+                  <p className="text-caption text-ink">
                     Pending: <strong>{pendingEmail}</strong> (confirmation required)
                   </p>
                 </div>

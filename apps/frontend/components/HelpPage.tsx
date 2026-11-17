@@ -344,7 +344,7 @@ const FAQS: FAQ[] = [
           Head to the{' '}
           <a
             href="/pricing"
-            style={{ color: '#1F4934', textDecoration: 'underline', fontWeight: 500 }}
+            style={{ color: '#0A0A0A', textDecoration: 'underline', fontWeight: 500 }}
           >
             Pricing page
           </a>
@@ -355,8 +355,8 @@ const FAQS: FAQ[] = [
             href="/signup"
             style={{
               display: 'inline-block',
-              background: '#1F4934',
-              color: '#F2EBDD',
+              background: '#0A0A0A',
+              color: '#FFFFFF',
               padding: '10px 20px',
               borderRadius: '4px',
               textDecoration: 'none',
@@ -467,7 +467,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
   const getItemNumber = (index: number) => String(index + 1).padStart(2, '0');
 
   return (
-    <div style={{ fontFamily: "'Poppins', sans-serif", backgroundColor: '#F2EBDD', minHeight: '100vh' }}>
+    <div style={{ fontFamily: "'Inter', sans-serif", backgroundColor: '#FFFFFF', minHeight: '100vh' }}>
       <style>{`
         .help-sidebar-btn {
           display: block;
@@ -477,26 +477,26 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           border: none;
           cursor: pointer;
           padding: 10px 16px 10px 20px;
-          font-family: 'Poppins', sans-serif;
+          font-family: 'Inter', sans-serif;
           font-size: 13.5px;
-          color: #7A6F5E;
+          color: #6B6B6B;
           border-left: 2px solid transparent;
           transition: color 0.15s, border-color 0.15s;
           line-height: 1.4;
         }
         .help-sidebar-btn:hover {
-          color: #1F1A14;
+          color: #0A0A0A;
         }
         .help-sidebar-btn.active {
-          color: #1F4934;
-          font-style: italic;
-          border-left-color: #1F4934;
+          color: #0A0A0A;
+          font-style: normal;
+          border-left-color: #0A0A0A;
         }
         .help-faq-row {
-          border-bottom: 1px solid #D7CDB6;
+          border-bottom: 1px solid #E5E5E5;
         }
         .help-faq-row:first-child {
-          border-top: 1px solid #D7CDB6;
+          border-top: 1px solid #E5E5E5;
         }
         .help-faq-trigger {
           display: flex;
@@ -508,15 +508,15 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           cursor: pointer;
           padding: 20px 0;
           text-align: left;
-          font-family: 'Poppins', sans-serif;
+          font-family: 'Inter', sans-serif;
         }
         .help-faq-trigger:hover .help-faq-question {
-          color: #1F4934;
+          color: #0A0A0A;
         }
         .help-faq-num {
           font-family: 'IBM Plex Mono', 'Courier New', monospace;
           font-size: 12px;
-          color: #7A6F5E;
+          color: #6B6B6B;
           flex-shrink: 0;
           margin-top: 2px;
           letter-spacing: 0.02em;
@@ -525,16 +525,16 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           flex: 1;
           font-size: 15px;
           font-weight: 500;
-          color: #1F1A14;
+          color: #0A0A0A;
           line-height: 1.45;
           transition: color 0.15s;
         }
         .help-faq-plus {
           flex-shrink: 0;
-          font-family: 'Poppins', sans-serif;
+          font-family: 'Inter', sans-serif;
           font-size: 18px;
-          font-style: italic;
-          color: #1F4934;
+          font-style: normal;
+          color: #0A0A0A;
           font-weight: 400;
           margin-left: 12px;
           transition: transform 0.2s ease;
@@ -547,7 +547,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
         .help-faq-answer {
           padding: 0 0 20px 38px;
           font-size: 14px;
-          color: #3D362C;
+          color: #404040;
           line-height: 1.7;
         }
         .help-faq-answer p { margin: 0 0 10px; }
@@ -555,7 +555,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
         .help-faq-answer ul { margin: 8px 0; padding-left: 18px; }
         .help-faq-answer li { margin-bottom: 4px; }
         .help-cta-card {
-          background: #1F4934;
+          background: #0A0A0A;
           border-radius: 8px;
           padding: 36px 40px;
           margin-top: 56px;
@@ -566,12 +566,12 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           flex-wrap: wrap;
         }
         .help-cta-btn {
-          background: #F2EBDD;
-          color: #1F4934;
+          background: #FFFFFF;
+          color: #0A0A0A;
           border: none;
           border-radius: 4px;
           padding: 12px 24px;
-          font-family: 'Poppins', sans-serif;
+          font-family: 'Inter', sans-serif;
           font-size: 14px;
           font-weight: 500;
           cursor: pointer;
@@ -579,8 +579,8 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           transition: background 0.15s, transform 0.1s;
           flex-shrink: 0;
         }
-        .help-cta-btn:hover { background: #FBF6E9; }
-        .help-cta-btn:active { transform: scale(0.97); background: #E8E0CE; }
+        .help-cta-btn:hover { background: #FFFFFF; }
+        .help-cta-btn:active { transform: scale(0.97); background: #F5F5F5; }
         @media (max-width: 768px) {
           .help-layout { flex-direction: column !important; }
           .help-sidebar { position: static !important; width: 100% !important; }
@@ -593,7 +593,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
             font-size: 12.5px;
           }
           .help-sidebar-btn.active {
-            border-bottom-color: #1F4934 !important;
+            border-bottom-color: #0A0A0A !important;
             border-left-color: transparent !important;
           }
           .help-faq-answer { padding-left: 28px; }
@@ -612,21 +612,21 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
         {/* Header */}
         <div style={{ marginBottom: 'clamp(40px,6vw,64px)' }}>
           <h1 style={{
-            fontFamily: "'Poppins', sans-serif",
+            fontFamily: "'Inter', sans-serif",
             fontSize: 'clamp(32px,5vw,54px)',
             fontWeight: 600,
-            color: '#1F1A14',
+            color: '#0A0A0A',
             lineHeight: 1.15,
             margin: '0 0 16px',
             letterSpacing: '-0.02em',
           }}>
             Got questions?{' '}
-            <em style={{ fontStyle: 'italic', color: '#1F4934', fontWeight: 600 }}>We've got answers.</em>
+            <em style={{ color: '#6B6B6B', fontStyle: 'normal' }}>We've got answers.</em>
           </h1>
           <p style={{
-            fontFamily: "'Poppins', sans-serif",
+            fontFamily: "'Inter', sans-serif",
             fontSize: 'clamp(14px,2vw,17px)',
-            color: '#7A6F5E',
+            color: '#6B6B6B',
             margin: 0,
             maxWidth: '560px',
             lineHeight: 1.6,
@@ -634,7 +634,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
             Everything we get asked about, in plain English. If your question isn't here,{' '}
             <button
               onClick={() => onNavigate?.('contact')}
-              style={{ background: 'none', border: 'none', color: '#1F4934', textDecoration: 'underline', cursor: 'pointer', font: 'inherit', padding: 0 }}
+              style={{ background: 'none', border: 'none', color: '#0A0A0A', textDecoration: 'underline', cursor: 'pointer', font: 'inherit', padding: 0 }}
             >
               the contact page is.
             </button>
@@ -665,16 +665,16 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           {/* FAQ column */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <h2 style={{
-              fontFamily: "'Poppins', sans-serif",
+              fontFamily: "'Inter', sans-serif",
               fontSize: 'clamp(18px,2.5vw,24px)',
               fontWeight: 600,
-              color: '#1F1A14',
+              color: '#0A0A0A',
               margin: '0 0 8px',
               letterSpacing: '-0.01em',
             }}>
               {activeCategory}
             </h2>
-            <p style={{ fontFamily: "'Poppins', sans-serif", fontSize: '13px', color: '#7A6F5E', margin: '0 0 28px' }}>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: '#6B6B6B', margin: '0 0 28px' }}>
               {activeFAQs.length} {activeFAQs.length === 1 ? 'question' : 'questions'}
             </p>
 
@@ -710,16 +710,16 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
             <div className="help-cta-card">
               <div>
                 <p style={{
-                  fontFamily: "'Poppins', sans-serif",
+                  fontFamily: "'Inter', sans-serif",
                   fontSize: 'clamp(18px,2.5vw,22px)',
                   fontWeight: 600,
-                  color: '#F2EBDD',
+                  color: '#FFFFFF',
                   margin: '0 0 6px',
                 }}>
                   Still stuck?
                 </p>
                 <p style={{
-                  fontFamily: "'Poppins', sans-serif",
+                  fontFamily: "'Inter', sans-serif",
                   fontSize: '14px',
                   color: 'rgba(242,235,221,0.75)',
                   margin: 0,

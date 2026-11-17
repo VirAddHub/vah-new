@@ -34,7 +34,7 @@ export function MailItemCard({
 
   const badgeClass =
     statusVariant === "new"
-      ? "bg-blue-600 text-white border-transparent"
+      ? "bg-ink text-white border-transparent"
       : statusVariant === "forwarded"
         ? "bg-primary text-white border-transparent"
         : statusVariant === "scanned"
@@ -45,7 +45,7 @@ export function MailItemCard({
     <button
       type="button"
       onClick={onOpen}
-      className={`w-full text-left transition-colors ${isUnread ? "bg-blue-50/50 hover:bg-blue-50" : "bg-card hover:bg-muted/50"}`}
+      className={`w-full text-left transition-colors ${isUnread ? "bg-mist/50 hover:bg-mist" : "bg-card hover:bg-muted/50"}`}
     >
       {/* Mobile: dense row (no badges) */}
       <div className="md:hidden flex items-center gap-3 px-4 py-3">
@@ -56,7 +56,7 @@ export function MailItemCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 min-w-0">
             <div className={`text-body-sm truncate ${isUnread ? "font-bold text-foreground" : "font-semibold text-foreground"}`}>{sender}</div>
-            {isUnread && <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0" aria-label="Unread" />}
+            {isUnread && <span className="h-2 w-2 rounded-full bg-ink shrink-0" aria-label="Unread" />}
           </div>
           <div className="mt-0.5 text-caption text-muted-foreground truncate">
             {displayStatusLabel}
@@ -75,7 +75,7 @@ export function MailItemCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3 min-w-0">
             <div className={`text-h2 text-foreground truncate ${isUnread ? "font-bold" : "font-semibold"}`}>{sender}</div>
-            {isUnread && <span className="h-3 w-3 rounded-full bg-blue-600 shrink-0" aria-label="Unread" />}
+            {isUnread && <span className="h-3 w-3 rounded-full bg-ink shrink-0" aria-label="Unread" />}
           </div>
         </div>
 

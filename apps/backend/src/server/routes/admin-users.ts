@@ -1,6 +1,7 @@
 // src/server/routes/admin-users.ts
 // Admin user management endpoints
 
+import { getAccess } from '../services/access';
 import { clientKey } from '../lib/clientKey';
 import { clearAccount } from '../services/loginThrottle';
 import { Router, Request, Response } from 'express';
@@ -15,6 +16,22 @@ import { Templates } from '../../lib/postmark-templates';
 import { logger } from '../../lib/logger';
 
 const router = Router();
+
+/** Closed, Suspended, Awaiting payment, Payment overdue, Subscription ended, Awaiting verification, Owners to verify, Active. */
+function serviceLabel(a: Awaited<ReturnType<typeof getAccess>>): string | null {
+    if (!a) return null;
+    if (a.standing === 'closed') return 'Closed';
+    if (a.standing === 'suspended') return 'Suspended';
+    const m = a.missing;
+    if (m.includes('payment_overdue')) return 'Payment overdue';
+    if (m.includes('subscription_cancelled')) return 'Subscription ended';
+    if (m.includes('payment_required')) return 'Awaiting payment';
+    if (m.includes('identity_rejected')) return 'Verification failed';
+    if (m.includes('identity_in_review')) return 'Verification in review';
+    if (m.includes('identity_required')) return 'Awaiting verification';
+    if (m.includes('owners_required')) return 'Owners to verify';
+    return a.payment.cancelAtPeriodEnd ? 'Active (ends at period end)' : 'Active';
+}
 
 // Admin users rate limiter - very generous for admin dashboard usage
 const adminUsersLimiter = rateLimit({
@@ -231,9 +248,15 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
         const countResult = await pool.query(countQuery, countParams);
         const total = parseInt(countResult.rows[0].count);
 
+        // One plain service label per row, from the same access decision the API enforces.
+        const items = await Promise.all(result.rows.map(async (row: any) => {
+            if (row.is_admin) return { ...row, service_label: 'Administrator' };
+            try { return { ...row, service_label: serviceLabel(await getAccess(Number(row.id))) }; }
+            catch { return { ...row, service_label: null }; }
+        }));
         return res.json({
             ok: true,
-            items: result.rows,
+            items,
             total,
             page: pageNum,
             pageSize: limitNum,

@@ -12,8 +12,8 @@
 .container { max-width: 1248px; margin: 0 auto; padding: 0 48px; }
 .eyebrow { display: inline-flex; align-items: center; gap: 9px; font-size: 10px; font-weight: 600; letter-spacing: .12em; line-height: 1.7; color: #666; }
 .eyebrow > span { height: 6px; width: 6px; border-radius: 50%; background: #171717; }
-.primaryButton { display: inline-flex; justify-content: center; align-items: center; gap: 25px; min-height: 49px; padding: 13px 22px; border: 1px solid #111; border-radius: 7px; background: #111; color: #fff; font-size: 13px; font-weight: 500; line-height: 1.4; transition: background .2s, transform .2s; }
-.primaryButton:hover { background: #333; }
+.primaryButton { display: inline-flex; justify-content: center; align-items: center; gap: 25px; min-height: 49px; padding: 13px 22px; border: 1px solid #111; border-radius: 999px; background: #0a0a0a; color: #fff; font-size: 13px; font-weight: 500; line-height: 1.4; transition: background .2s, transform .2s; }
+.primaryButton:hover { background: #404040; }
 .textButton { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; padding: 8px 0; background: none; border: 0; color: #252525; font-size: 13px; font-weight: 500; line-height: 1.4; }
 .textButton:hover { color: #666; }
 .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; padding-top: 94px; padding-bottom: 86px; }

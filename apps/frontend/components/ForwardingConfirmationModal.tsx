@@ -124,7 +124,7 @@ export function ForwardingConfirmationModal({
                             <p><strong>Document:</strong> {formatSubjectForDisplay(mailItem?.subject || mailItem?.description || "No subject")}</p>
                             <p><strong>Source:</strong> {formatSenderForDisplay(mailItem?.sender_name || "Unknown sender")}</p>
                             {isGovernmentMail && (
-                                <Badge variant="outline" className="text-caption border-green-500 text-green-700 bg-green-50">
+                                <Badge variant="outline" className="text-caption border-success/25 text-success bg-success/[0.06]">
                                     Official Mail - Free Forwarding
                                 </Badge>
                             )}

@@ -171,7 +171,7 @@ function VerifyOwnerContent() {
               <ShieldCheck className="h-12 w-12 text-primary" />
             )}
             {(status === 'already_verified' || status === 'verified') && (
-              <CheckCircle2 className="h-12 w-12 text-green-500" />
+              <CheckCircle2 className="h-12 w-12 text-success" />
             )}
             {(status === 'invalid_token' || status === 'expired_token' || status === 'token_used' || status === 'rejected') && (
               <XCircle className="h-12 w-12 text-destructive" />
@@ -240,9 +240,9 @@ function VerifyOwnerContent() {
           )}
 
           {status === 'already_verified' && (
-            <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <AlertDescription className="text-green-800 dark:text-green-200">
+            <Alert className="bg-success/[0.06] dark:bg-green-900/20 border-success/25 dark:border-green-800">
+              <CheckCircle2 className="h-4 w-4 text-success dark:text-green-400" />
+              <AlertDescription className="text-success dark:text-green-200">
                 No further action is needed. You can close this page.
               </AlertDescription>
             </Alert>
@@ -260,8 +260,8 @@ function VerifyOwnerContent() {
           )}
 
           {status === 'token_used' && (
-            <Alert className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
-              <AlertDescription className="text-amber-800 dark:text-amber-200">
+            <Alert className="bg-mist dark:bg-amber-900/20 border-line dark:border-amber-800">
+              <AlertDescription className="text-ink dark:text-amber-200">
                 If you have not yet completed verification, ask the account holder to send you a new
                 verification email from their Account → Verification page.
               </AlertDescription>

@@ -136,10 +136,10 @@ export default function AccountBillingPage() {
     return (
         <div className="w-full">
             <div className="mb-5 sm:mb-6 md:mb-8">
-                <h1 className="text-h1 text-foreground mb-2 sm:mb-4">
+                <h1 className="page-title">
                     Billing
                 </h1>
-                <p className="text-body-sm text-muted-foreground sm:text-body">
+                <p className="page-lede">
                     View your subscription and invoices.
                 </p>
             </div>

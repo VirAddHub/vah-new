@@ -289,14 +289,14 @@ export function AddressCompleter({
                         onBlur={handleInputBlur}
                         placeholder={placeholder}
                         disabled={disabled}
-                        className={`pl-10 ${isSelected ? 'border-green-500 bg-green-50' : ''} ${error ? 'border-destructive' : ''}`}
+                        className={`pl-10 ${isSelected ? 'border-success/25 bg-success/[0.06]' : ''} ${error ? 'border-destructive' : ''}`}
                         autoComplete="off"
                     />
                     {isLoading && (
                         <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />
                     )}
                     {isSelected && !isLoading && (
-                        <CheckCircle className="absolute right-3 top-3 h-4 w-4 text-green-500" />
+                        <CheckCircle className="absolute right-3 top-3 h-4 w-4 text-success" />
                     )}
                 </div>
 
@@ -438,9 +438,9 @@ export function AddressCompleter({
 
             {/* Selected Address Display */}
             {isSelected && (
-                <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
+                <Alert className="border-success/25 bg-success/[0.06]">
+                    <CheckCircle className="h-4 w-4 text-success" />
+                    <AlertDescription className="text-success">
                         Address selected successfully
                     </AlertDescription>
                 </Alert>

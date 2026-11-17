@@ -28,9 +28,9 @@ export function DashboardSummary({
     <>
       {/* Business Owners Pending Banner */}
       {userProfile?.owners_pending_info === true && (
-        <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800">
-          <Users className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          <AlertDescription className="text-amber-800 dark:text-amber-200">
+        <Alert className="border-line bg-mist dark:bg-amber-900/20 dark:border-amber-800">
+          <Users className="h-4 w-4 text-ink dark:text-ink" />
+          <AlertDescription className="text-ink dark:text-amber-200">
             <div className="flex items-center justify-between">
               <div>
                 <strong>Business owners required:</strong> You told us there are other directors/owners. Please add them
@@ -39,7 +39,7 @@ export function DashboardSummary({
               <Button
                 size="sm"
                 onClick={() => onNavigate('business-owners')}
-                className="ml-4 bg-amber-600 hover:bg-amber-700 !text-white [&_svg]:!text-white"
+                className="ml-4 bg-ink hover:bg-ink !text-white [&_svg]:!text-white"
               >
                 Add business owners
                 <ArrowRight className="h-4 w-4 ml-2" />

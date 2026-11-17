@@ -83,29 +83,29 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
     }), [blogPosts]);
 
     return (
-        <div style={{ fontFamily: "'Poppins', sans-serif", backgroundColor: '#F2EBDD', minHeight: '100vh' }}>
+        <div style={{ fontFamily: "'Inter', sans-serif", backgroundColor: '#FFFFFF', minHeight: '100vh' }}>
             <style>{`
                 .blog-search-input {
                     flex: 1;
                     border: none;
                     background: transparent;
                     outline: none;
-                    font-family: 'Poppins', sans-serif;
+                    font-family: 'Inter', sans-serif;
                     font-size: 16px;
-                    font-style: italic;
-                    color: #1F1A14;
+                    font-style: normal;
+                    color: #0A0A0A;
                 }
                 .blog-search-input::placeholder {
-                    color: #7A6F5E;
-                    font-style: italic;
+                    color: #6B6B6B;
+                    font-style: normal;
                 }
                 .featured-post-link {
                     display: grid;
                     grid-template-columns: 1fr 1.2fr;
                     gap: 48px;
                     padding: 40px 0;
-                    border-top: 1px solid #D7CDB6;
-                    border-bottom: 1px solid #D7CDB6;
+                    border-top: 1px solid #E5E5E5;
+                    border-bottom: 1px solid #E5E5E5;
                     margin-bottom: 56px;
                     text-decoration: none;
                     cursor: pointer;
@@ -115,7 +115,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                     opacity: 0.7;
                 }
                 .featured-post-link:hover .featured-title {
-                    color: #1F4934;
+                    color: #0A0A0A;
                 }
                 .featured-title { transition: color 0.15s; }
                 .blog-grid-item {
@@ -125,15 +125,15 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                     display: block;
                 }
                 .blog-grid-item:hover .blog-grid-title {
-                    color: #1F4934;
+                    color: #0A0A0A;
                 }
                 .blog-grid-title { transition: color 0.15s; }
                 .blog-read-link {
-                    font-family: 'Poppins', sans-serif;
+                    font-family: 'Inter', sans-serif;
                     font-size: 14px;
                     font-weight: 500;
-                    color: #1F4934;
-                    border-bottom: 1px solid #1F4934;
+                    color: #0A0A0A;
+                    border-bottom: 1px solid #0A0A0A;
                     padding-bottom: 2px;
                     text-decoration: none;
                     display: inline-block;
@@ -151,7 +151,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                         border-right: none !important;
                         padding-left: 0 !important;
                         padding-right: 0 !important;
-                        border-top: 1px solid #D7CDB6 !important;
+                        border-top: 1px solid #E5E5E5 !important;
                     }
                     .blog-post-grid .blog-grid-item:first-child {
                         border-top: none !important;
@@ -167,26 +167,26 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
             {/* Page header */}
             <div style={{ maxWidth: '1100px', margin: '0 auto', padding: 'clamp(40px,6vw,72px) clamp(20px,5vw,56px) 0' }}>
                 <h1 style={{
-                    fontFamily: "'Poppins', sans-serif",
+                    fontFamily: "'Inter', sans-serif",
                     fontSize: 'clamp(32px,6vw,68px)',
                     fontWeight: 600,
-                    color: '#1F1A14',
+                    color: '#0A0A0A',
                     margin: '0 0 18px',
                     letterSpacing: '-0.025em',
                     lineHeight: 1.05,
                 }}>
                     Helpful notes for{' '}
-                    <em style={{ fontStyle: 'italic', color: '#1F4934' }}>running a UK business.</em>
+                    <em style={{ fontStyle: 'normal', color: '#6B6B6B' }}>running a UK business.</em>
                 </h1>
 
                 <p style={{
-                    fontFamily: "'Poppins', sans-serif",
+                    fontFamily: "'Inter', sans-serif",
                     fontSize: 'clamp(14px,2vw,19px)',
-                    color: '#3D362C',
+                    color: '#404040',
                     margin: '0 0 36px',
                     maxWidth: '620px',
                     lineHeight: 1.55,
-                    fontWeight: 300,
+                    fontWeight: 400,
                 }}>
                     Simple, practical advice, honest lessons and things we wish we'd known earlier — written for founders, freelancers and small business owners.
                 </p>
@@ -196,8 +196,8 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '16px',
-                    background: '#FBF6E9',
-                    border: '1px solid #D7CDB6',
+                    background: '#FFFFFF',
+                    border: '1px solid #E5E5E5',
                     padding: '14px 20px',
                     borderRadius: '4px',
                     marginBottom: '56px',
@@ -206,7 +206,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                     <span style={{
                         fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
                         fontSize: '11px',
-                        color: '#7A6F5E',
+                        color: '#6B6B6B',
                         letterSpacing: '0.1em',
                         textTransform: 'uppercase',
                         flexShrink: 0,
@@ -220,7 +220,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                     <span style={{
                         fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
                         fontSize: '11px',
-                        color: '#7A6F5E',
+                        color: '#6B6B6B',
                         flexShrink: 0,
                     }}>⏎</span>
                 </div>
@@ -231,7 +231,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
 
                 {/* Loading */}
                 {loading && (
-                    <div style={{ padding: '60px 0', textAlign: 'center', color: '#7A6F5E', fontFamily: "'Poppins', sans-serif", fontSize: '14px' }}>
+                    <div style={{ padding: '60px 0', textAlign: 'center', color: '#6B6B6B', fontFamily: "'Inter', sans-serif", fontSize: '14px' }}>
                         Loading posts…
                     </div>
                 )}
@@ -239,13 +239,13 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                 {/* Error */}
                 {error && !loading && (
                     <div style={{ padding: '60px 0', textAlign: 'center' }}>
-                        <p style={{ color: '#7A6F5E', fontFamily: "'Poppins', sans-serif", fontSize: '14px', marginBottom: '16px' }}>{error}</p>
+                        <p style={{ color: '#6B6B6B', fontFamily: "'Inter', sans-serif", fontSize: '14px', marginBottom: '16px' }}>{error}</p>
                         <button
                             onClick={() => window.location.reload()}
                             style={{
-                                background: 'none', border: '1px solid #D7CDB6', borderRadius: '4px',
-                                padding: '8px 16px', cursor: 'pointer', fontFamily: "'Poppins', sans-serif",
-                                fontSize: '13px', color: '#3D362C',
+                                background: 'none', border: '1px solid #E5E5E5', borderRadius: '4px',
+                                padding: '8px 16px', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+                                fontSize: '13px', color: '#404040',
                             }}
                         >
                             Try again
@@ -255,7 +255,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
 
                 {/* Empty */}
                 {!loading && !error && filteredPosts.length === 0 && (
-                    <div style={{ padding: '60px 0', textAlign: 'center', color: '#7A6F5E', fontFamily: "'Poppins', sans-serif", fontSize: '14px' }}>
+                    <div style={{ padding: '60px 0', textAlign: 'center', color: '#6B6B6B', fontFamily: "'Inter', sans-serif", fontSize: '14px' }}>
                         {searchQuery ? `No posts matching "${searchQuery}"` : 'No posts yet.'}
                     </div>
                 )}
@@ -272,12 +272,12 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                         {/* Cover */}
                         <div style={{
                             aspectRatio: '4/3',
-                            background: '#E8E0CE',
-                            backgroundImage: `repeating-linear-gradient(45deg, #D7CDB640 0 1px, transparent 1px 16px)`,
+                            background: '#F5F5F5',
+                            backgroundImage: `repeating-linear-gradient(45deg, #E5E5E540 0 1px, transparent 1px 16px)`,
                             display: 'grid',
                             placeItems: 'center',
                             position: 'relative',
-                            border: '1px solid #D7CDB6',
+                            border: '1px solid #E5E5E5',
                             overflow: 'hidden',
                             borderRadius: '2px',
                         }}>
@@ -291,7 +291,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                                 <div style={{
                                     fontFamily: "'IBM Plex Mono', monospace",
                                     fontSize: '11px',
-                                    color: '#7A6F5E',
+                                    color: '#6B6B6B',
                                     letterSpacing: '0.1em',
                                     textAlign: 'center',
                                     padding: '24px',
@@ -303,7 +303,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                             {/* Featured badge */}
                             <div style={{
                                 position: 'absolute', top: '16px', left: '16px',
-                                background: '#B9352A', color: '#F2EBDD',
+                                background: '#B42318', color: '#FFFFFF',
                                 padding: '4px 12px',
                                 fontFamily: "'IBM Plex Mono', monospace",
                                 fontSize: '10px',
@@ -319,13 +319,13 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                                 gap: '12px',
                                 fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
                                 fontSize: '11px',
-                                color: '#7A6F5E',
+                                color: '#6B6B6B',
                                 letterSpacing: '0.1em',
                                 textTransform: 'uppercase',
                                 marginBottom: '18px',
                                 flexWrap: 'wrap',
                             }}>
-                                <span style={{ color: '#1F4934', fontWeight: 500 }}>{featuredPost.category}</span>
+                                <span style={{ color: '#0A0A0A', fontWeight: 500 }}>{featuredPost.category}</span>
                                 <span>·</span>
                                 <span>{featuredPost.dateLong}</span>
                                 <span>·</span>
@@ -333,9 +333,9 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                             </div>
 
                             <h2 className="featured-title" style={{
-                                fontFamily: "'Poppins', sans-serif",
+                                fontFamily: "'Inter', sans-serif",
                                 fontSize: 'clamp(24px,3.5vw,42px)',
-                                color: '#1F1A14',
+                                color: '#0A0A0A',
                                 margin: '0 0 16px',
                                 letterSpacing: '-0.02em',
                                 fontWeight: 600,
@@ -346,12 +346,12 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
 
                             {featuredPost.excerpt && (
                                 <p style={{
-                                    fontFamily: "'Poppins', sans-serif",
+                                    fontFamily: "'Inter', sans-serif",
                                     fontSize: 'clamp(14px,1.8vw,17px)',
-                                    color: '#3D362C',
+                                    color: '#404040',
                                     lineHeight: 1.6,
                                     margin: '0 0 24px',
-                                    fontWeight: 300,
+                                    fontWeight: 400,
                                 }}>
                                     {featuredPost.excerpt}
                                 </p>
@@ -374,8 +374,8 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                                 tabIndex={0}
                                 onKeyDown={e => { if (e.key === 'Enter') onNavigate?.('blog-post', { slug: post.slug }); }}
                                 style={{
-                                    borderTop: i >= 2 ? '1px solid #D7CDB6' : 'none',
-                                    borderRight: i % 2 === 0 ? '1px solid #D7CDB6' : 'none',
+                                    borderTop: i >= 2 ? '1px solid #E5E5E5' : 'none',
+                                    borderRight: i % 2 === 0 ? '1px solid #E5E5E5' : 'none',
                                     paddingRight: i % 2 === 0 ? '36px' : '0',
                                     paddingLeft: i % 2 === 1 ? '36px' : '0',
                                 }}
@@ -385,21 +385,21 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                                     gap: '10px',
                                     fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
                                     fontSize: '11px',
-                                    color: '#7A6F5E',
+                                    color: '#6B6B6B',
                                     letterSpacing: '0.1em',
                                     textTransform: 'uppercase',
                                     marginBottom: '14px',
                                     flexWrap: 'wrap',
                                 }}>
-                                    <span style={{ color: '#1F4934', fontWeight: 500 }}>{post.category}</span>
+                                    <span style={{ color: '#0A0A0A', fontWeight: 500 }}>{post.category}</span>
                                     <span>·</span>
                                     <span>{post.dateLong}</span>
                                 </div>
 
                                 <h3 className="blog-grid-title" style={{
-                                    fontFamily: "'Poppins', sans-serif",
+                                    fontFamily: "'Inter', sans-serif",
                                     fontSize: 'clamp(18px,2.2vw,24px)',
-                                    color: '#1F1A14',
+                                    color: '#0A0A0A',
                                     margin: '0 0 10px',
                                     letterSpacing: '-0.015em',
                                     fontWeight: 600,
@@ -410,12 +410,12 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
 
                                 {post.excerpt && (
                                     <p style={{
-                                        fontFamily: "'Poppins', sans-serif",
+                                        fontFamily: "'Inter', sans-serif",
                                         fontSize: 'clamp(13px,1.5vw,15px)',
-                                        color: '#3D362C',
+                                        color: '#404040',
                                         lineHeight: 1.6,
                                         margin: '0 0 14px',
-                                        fontWeight: 300,
+                                        fontWeight: 400,
                                     }}>
                                         {post.excerpt}
                                     </p>
@@ -424,7 +424,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                                 <span style={{
                                     fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
                                     fontSize: '11px',
-                                    color: '#7A6F5E',
+                                    color: '#6B6B6B',
                                     letterSpacing: '0.1em',
                                     textTransform: 'uppercase',
                                 }}>

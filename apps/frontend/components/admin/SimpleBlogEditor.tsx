@@ -242,8 +242,8 @@ This is the content of my blog post. You can use **markdown** formatting.
 
                         {message && (
                             <div className={`p-3 rounded-md ${message.startsWith('✅')
-                                ? 'bg-green-50 text-green-800 border border-green-200'
-                                : 'bg-red-50 text-red-800 border border-red-200'
+                                ? 'bg-success/[0.06] text-success border border-success/25'
+                                : 'bg-destructive/[0.06] text-destructive border border-destructive/25'
                                 }`}>
                                 {message}
                             </div>

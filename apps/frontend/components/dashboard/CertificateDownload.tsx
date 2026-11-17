@@ -176,22 +176,22 @@ export function CertificateDownload({
                         <div
                             className={
                                 quiet
-                                    ? 'rounded-md border border-amber-200/70 bg-amber-50/80 p-2.5'
-                                    : 'rounded-md border border-amber-200 bg-amber-50 p-3'
+                                    ? 'rounded-md border border-line/70 bg-mist/80 p-2.5'
+                                    : 'rounded-md border border-line bg-mist p-3'
                             }
                         >
                             <div className="flex items-start gap-2">
                                 <AlertCircle
-                                    className={`mt-0.5 flex-shrink-0 text-amber-900 ${quiet ? 'h-3.5 w-3.5' : 'h-4 w-4'}`}
+                                    className={`mt-0.5 flex-shrink-0 text-ink ${quiet ? 'h-3.5 w-3.5' : 'h-4 w-4'}`}
                                 />
                                 <div className="flex flex-col gap-0.5">
                                     <p
-                                        className={`font-medium leading-tight text-amber-900 ${quiet ? 'text-[0.6875rem]' : 'text-caption'}`}
+                                        className={`font-medium leading-tight text-ink ${quiet ? 'text-[0.6875rem]' : 'text-caption'}`}
                                     >
                                         {meta.title}
                                     </p>
                                     <p
-                                        className={`leading-tight text-amber-900/80 ${quiet ? 'text-[0.6875rem]' : 'text-caption'}`}
+                                        className={`leading-tight text-ink/80 ${quiet ? 'text-[0.6875rem]' : 'text-caption'}`}
                                     >
                                         {meta.description}
                                     </p>
