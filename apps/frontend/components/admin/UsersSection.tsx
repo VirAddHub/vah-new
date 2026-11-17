@@ -516,8 +516,8 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                       {u.company_name || <span className="text-body-sm text-muted-foreground">—</span>}
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <Badge variant={statusVariant(u.service_label, u)}>
+                      <div className="flex flex-col items-start gap-1">
+                        <Badge variant={statusVariant(u.service_label, u)} className="whitespace-nowrap">
                           {u.service_label ?? (u.deleted_at ? "Closed" : u.status === "suspended" ? "Suspended" : "Unknown")}
                         </Badge>
                         {u.locked_until && Number(u.locked_until) > Date.now() && (
