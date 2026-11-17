@@ -1,5 +1,6 @@
+import { clientKey } from '../lib/clientKey';
 import { Router } from 'express';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import { getPool } from '../db';
 import { generateRawToken, hashToken, verifyToken } from '../security/reset-token';
 import { sendTemplateEmail, sendPasswordChangedConfirmation } from '../../lib/mailer';
@@ -19,7 +20,7 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   // IPv6-safe: use helper on req.ip (string | undefined)
-  keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
+  keyGenerator: (req) => clientKey(req),
 });
 
 export const passwordResetRouter = Router();

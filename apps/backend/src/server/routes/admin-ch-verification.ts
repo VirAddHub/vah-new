@@ -7,8 +7,52 @@ import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { param } from '../../lib/express-params';
 import { safeErrorMessage } from '../../lib/safeError';
+import fs from 'fs';
+import path from 'path';
 
 const router = Router();
+
+/** Audit row for a review decision. Best effort: a failure here is logged, not shown as a failed review. */
+async function recordReview(adminId: string | number, userId: number, action: string, details: Record<string, unknown>) {
+    try {
+        await getPool().query(
+            `INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at) VALUES ($1, $2, 'user', $3, $4, NOW())`,
+            [adminId, action, userId, JSON.stringify(details)]);
+    } catch (e) {
+        logger.warn('[admin-ch-verification] audit_failed', { action, userId, message: (e as Error)?.message });
+    }
+}
+
+/**
+ * GET /api/admin/ch-verification/:userId/proof
+ * The proof file a customer uploaded, for the reviewing administrator.
+ */
+router.get('/ch-verification/:userId/proof', requireAdmin, async (req: Request, res: Response) => {
+    const userId = parseInt(param(req, 'userId'), 10);
+    if (Number.isNaN(userId)) return res.status(400).json({ ok: false, error: 'invalid_user_id' });
+    try {
+        const r = await getPool().query('SELECT ch_verification_proof_url FROM "user" WHERE id = $1', [userId]);
+        const proofUrl: string | null = r.rows[0]?.ch_verification_proof_url ?? null;
+        if (!proofUrl) return res.status(404).json({ ok: false, error: 'no_proof' });
+        // Stored as a URL/path ending in the file name; only the base name is used, so no path can escape the folder.
+        const filename = path.basename(String(proofUrl).split('?')[0]);
+        const dir = path.join(process.cwd(), 'data', 'ch-verification');
+        const filePath = path.join(dir, filename);
+        if (!filename || !filePath.startsWith(dir + path.sep) || !fs.existsSync(filePath)) {
+            return res.status(404).json({ ok: false, error: 'file_not_found' });
+        }
+        const ext = path.extname(filename).toLowerCase();
+        const type = ext === '.pdf' ? 'application/pdf' : /\.(jpe?g|png|gif|webp)$/.test(ext) ? `image/${ext === '.jpg' ? 'jpeg' : ext.slice(1)}` : 'application/octet-stream';
+        res.setHeader('Content-Type', type);
+        res.setHeader('Content-Disposition', `inline; filename="${filename.replace(/"/g, '')}"`);
+        res.setHeader('Cache-Control', 'private, no-store');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        fs.createReadStream(filePath).pipe(res);
+    } catch (error: any) {
+        logger.error('[GET /api/admin/ch-verification/:userId/proof] error', { message: error?.message });
+        return res.status(500).json({ ok: false, error: 'file_serve_error' });
+    }
+});
 
 /**
  * GET /api/admin/ch-verification/submissions
@@ -106,6 +150,7 @@ router.post('/ch-verification/:userId/approve', requireAdmin, async (req: Reques
         if (result.rows.length === 0) {
             return res.status(404).json({ ok: false, error: 'user_not_found' });
         }
+        await recordReview(adminId, userId, 'ch_verification_approve', { notes: notes || null });
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
@@ -149,6 +194,7 @@ router.post('/ch-verification/:userId/reject', requireAdmin, async (req: Request
         if (result.rows.length === 0) {
             return res.status(404).json({ ok: false, error: 'user_not_found' });
         }
+        await recordReview(adminId, userId, 'ch_verification_reject', { reason: reason.trim() });
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {

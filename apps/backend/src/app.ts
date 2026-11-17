@@ -91,6 +91,7 @@ import notificationsRouter from './server/routes/notifications';
 import { ensureCsrfToken, requireCsrfToken, getOrCreateCsrfToken } from './middleware/csrf';
 import { authenticateJWT } from './middleware/auth';
 import { requireFullService } from './server/services/access';
+import { clientKey } from './server/lib/clientKey';
 
 type MaybeDefault<T> = { default?: T } | T;
 // handle CJS/ESM default interop safely
@@ -142,6 +143,19 @@ export function createApp() {
     app.use('/api', health);
 
     // ---- Webhooks BEFORE CORS ----
+    // Machine-to-machine endpoints (provider callbacks, mail-import worker): authenticated by signatures
+    // or shared secrets, not sessions, so they get one generous limit per source instead of the visitor limits.
+    const MACHINE_PATHS = /^\/api\/(webhooks|webhooks-onedrive|internal)\b/;
+    const machineLimiter = rateLimit({
+        windowMs: 60 * 1000,
+        max: 600,
+        message: 'Too many requests.',
+        standardHeaders: true,
+        legacyHeaders: false,
+        keyGenerator: (req) => clientKey(req),
+    });
+    app.use((req, res, next) => (MACHINE_PATHS.test(req.originalUrl || req.url) ? machineLimiter(req, res, next) : next()));
+
     app.post('/api/webhooks/postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
     app.post('/api/webhooks-postmark', (_req, res) => res.redirect(308, '/api/webhooks/postmark'));
 
@@ -241,27 +255,20 @@ export function createApp() {
         keyGenerator: (req) => clientKey(req),
         skip: (req) => {
             const ua = (req.headers['user-agent'] || '').toString();
-            if (req.path === '/api/healthz') return true;
+            const url = req.originalUrl || req.url;
+            if (/^\/api\/healthz\b/.test(url)) return true;
             if (ua.startsWith('Render/1.0')) return true;
+            // Provider callbacks and the mail-import worker have their own limiter (machineLimiter).
+            if (MACHINE_PATHS.test(url)) return true;
+            // Signed-in traffic is limited per account by authenticatedUserLimiter (after auth). A forged
+            // or expired session cookie gains nothing: that limiter then falls back to the visitor key.
+            if (/(?:^|;\s*)vah_session=/.test(String(req.headers.cookie || ''))) return true;
             return false;
         },
     });
+    // Machine-to-machine endpoints: authenticated by signatures or shared secrets, not sessions.
 
-    // Who is the client? Requests normally arrive from the website's server, so req.ip is that
-    // server and every visitor would share one allowance. When the website signs the visitor's
-    // address with BFF_SHARED_SECRET we use it; an unsigned or wrongly signed header is ignored.
-    const clientKey = (req: Request): string => {
-        const secret = (process.env.BFF_SHARED_SECRET || '').trim();
-        const ip = String(req.headers['x-vah-client-ip'] || '').trim();
-        const sig = String(req.headers['x-vah-client-sig'] || '').trim();
-        if (secret && ip && sig) {
-            const expected = require('crypto').createHmac('sha256', secret).update(ip).digest('hex');
-            if (sig.length === expected.length && require('crypto').timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
-                return ipKeyGenerator(ip);
-            }
-        }
-        return ipKeyGenerator(req.ip ?? '');
-    };
+    // Visitor key: see server/lib/clientKey.ts (signed visitor address from the website, else req.ip).
 
     // Auth rate limiter (never disabled): 30 FAILED attempts per 15 minutes per client. Successful
     // requests are not counted and the session check, CSRF token and logout are exempt, so normal
@@ -289,7 +296,8 @@ export function createApp() {
     // Per-user rate limiter for authenticated routes — keyed by user ID when available, falls back to IP
     const authenticatedUserLimiter = rateLimit({
         windowMs: 15 * 60 * 1000,
-        max: 600, // one pass through the dashboard makes ~40 requests; 200 locked real users out
+        // One pass through the dashboard makes ~40 requests; the admin dashboard polls several panels.
+        max: (req: Request) => ((req as Request & { user?: { is_admin?: boolean } }).user?.is_admin ? 1500 : 600),
         message: 'Too many requests for this user, please try again later.',
         standardHeaders: true,
         legacyHeaders: false,
@@ -297,6 +305,7 @@ export function createApp() {
             const userId = (req as Request & { user?: { id?: string } }).user?.id;
             return userId ? `user:${userId}` : clientKey(req);
         },
+        skip: (req) => MACHINE_PATHS.test(req.originalUrl || req.url),
     });
 
     const disableLimiterRaw = String(process.env.DISABLE_RATE_LIMIT ?? '').trim();

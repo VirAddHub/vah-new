@@ -14,9 +14,10 @@
  *   - `db.transaction()` was SQLite-era → replaced with Postgres pool.query()
  */
 
+import { clientKey } from '../lib/clientKey';
 import { Router, Request, Response } from 'express';
 import { logger } from '../../lib/logger';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import { getPool } from '../db';
 import { safeErrorMessage } from '../../lib/safeError';
 import { requireAdmin } from '../../middleware/auth';
@@ -34,7 +35,7 @@ const adminRepairMutationLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => {
     const u = (req as { user?: { id?: number } }).user;
-    return u?.id != null ? `admin-repair:mutation:${u.id}` : ipKeyGenerator(req.ip ?? '');
+    return u?.id != null ? `admin-repair:mutation:${u.id}` : clientKey(req);
   },
   handler: (_req, res) => {
     res.setHeader('Retry-After', '3600');

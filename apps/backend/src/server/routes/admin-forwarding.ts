@@ -1,9 +1,10 @@
 // src/server/routes/admin-forwarding.ts
 // Admin forwarding request management endpoints
 
+import { clientKey } from '../lib/clientKey';
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import { requireAdmin } from '../../middleware/require-admin';
 import { adminListForwarding, adminUpdateForwarding } from '../../modules/forwarding/forwarding.admin.controller';
 import { getPool, connectForRequest } from '../db';
@@ -38,7 +39,7 @@ const adminForwardingLimiter = rateLimit({
     legacyHeaders: false,
     keyGenerator: (req) => {
         const u = (req as any).user;
-        return u?.id ? `admin:${u.id}` : ipKeyGenerator(req.ip ?? '');
+        return u?.id ? `admin:${u.id}` : clientKey(req);
     },
     handler: (_req, res) => {
         res.setHeader("Retry-After", "30");

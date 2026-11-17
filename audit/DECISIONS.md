@@ -24,6 +24,9 @@ Newest last. Source: owner instructions of the date shown.
 | 18 | 15 Nov | Metrics and quiz statistics are access-controlled | Implemented |
 | 19 | 15 Nov | Render database changes need a schema review, backup/recovery plan and separate approval | Standing rule |
 | 20 | 14 Nov | Postmark rotation parked; no deployment, production change or destructive operation on existing data without approval | Standing rule |
+| 21 | 17 Nov | Five wrong passwords no longer lock the account. Throttling is per account and source; recognised devices keep their own allowance; a password reset lifts the account-wide block (audit/RATE-LIMITS.md) | Implemented and tested (login-throttle.mjs, auth.routes.test.ts) |
+| 22 | 17 Nov | Internal invoices: a Stripe payment is recorded as its own paid invoice (from the Stripe event). The period-end generator only gathers extra charges (e.g. forwarding) and never adds the subscription fee or touches a Stripe record, so nothing is billed twice. Collecting those extra charges is outstanding Stripe work | Implemented; invoiceService tests pass (one added for the duplicate guard) |
+| 23 | 17 Nov | Obsolete code removed only where the feature is confirmed replaced: in-page billing/KYC/profile views (now /account/*), admin Billing/Overview/Settings/Analytics sections and user edit form (not mounted; called endpoints that never existed), GoCardless client methods, client-side "audit" posts to a non-existent endpoint | Done; list in commit message |
 
 ## Deferred launch decisions (owner)
 
@@ -40,8 +43,8 @@ Newest last. Source: owner instructions of the date shown.
 - A real test-mode card payment through the embedded checkout, and events delivered by Stripe itself (needs test keys and price ids in `local/backend.env`).
 - Customer portal session opening for a real customer (code path exists: `/api/billing/portal`).
 - Changing plan (monthly <-> annual): returns 501 until it updates the Stripe subscription.
-- Admin immediate cancellation and refunds: not built. Suspend and close report a live Stripe subscription as "action required"; they do not cancel it.
-- Collecting forwarding charges through Stripe. Related open question: the internal invoice generator adds the subscription fee, which Stripe already invoices (6 invoiceService tests fail on this).
+- Admin immediate cancellation and refunds: not built. Suspend and close report a live Stripe subscription as "action required"; they do not cancel it. The admin screen shows this result as returned.
+- Collecting forwarding charges through Stripe (decision 22: they are recorded on an internal invoice but not collected yet).
 - Welcome email after first payment is no longer sent (it was tied to the GoCardless handler).
 - A payment event with a plan that does not match keeps failing on every Stripe retry by design; needs an admin view of failed events.
 

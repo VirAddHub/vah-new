@@ -1,262 +1,93 @@
-// apps/backend/src/server/routes/__tests__/emailChange.test.ts
-// Tests for email change verification functionality
-
+// Email/phone change routes. The email-change service is mocked here (its own behaviour is tested
+// against the real database in server/services/__tests__/emailChange.service.test.ts).
+// Converted from Jest to Vitest; previously this file could not load under the project's runner.
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import request from 'supertest';
 import express from 'express';
-import { getPool } from '../../../db';
+
+vi.mock('../../services/emailChange', () => ({
+    requestEmailChange: vi.fn(),
+    confirmEmailChange: vi.fn(),
+    resendEmailChangeConfirmation: vi.fn(),
+}));
+vi.mock('../../../lib/mailer', () => ({ sendTemplateEmail: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('../../../middleware/auth', () => ({
+    requireAuth: (req: any, _res: any, next: any) => { req.user = { id: '1001' }; next(); },
+}));
+
+import { getPool } from '../../db';
 import profileEmailChangeRouter from '../profileEmailChange';
 import { requestEmailChange, confirmEmailChange } from '../../services/emailChange';
-import { hashToken } from '../../security/tokens';
-
-// Mock the email change service
-jest.mock('../../services/emailChange');
-jest.mock('../../../lib/mailer', () => ({
-    sendTemplateEmail: jest.fn().mockResolvedValue(undefined),
-}));
 
 const app = express();
 app.use(express.json());
 app.use('/api/profile', profileEmailChangeRouter);
 
-// Mock auth middleware
-const mockRequireAuth = (req: any, res: any, next: any) => {
-    req.user = { id: '1' };
-    next();
-};
+const USER = 1001; // fixture user created by src/tests/globalSetup.ts
 
-// Replace requireAuth in the router (hacky but works for tests)
-const originalRequireAuth = require('../../middleware/auth').requireAuth;
-jest.mock('../../middleware/auth', () => ({
-    requireAuth: mockRequireAuth,
-}));
-
-describe('Email Change Routes', () => {
-    let pool: any;
-
-    beforeAll(async () => {
-        pool = getPool();
-    });
+describe('Email change routes', () => {
+    let originalPhone: string | null = null;
 
     beforeEach(async () => {
-        // Clean up test data
-        await pool.query('DELETE FROM email_change_request WHERE user_id = 1');
-        await pool.query('DELETE FROM activity_log WHERE user_id = 1');
-        jest.clearAllMocks();
+        vi.mocked(requestEmailChange).mockReset();
+        vi.mocked(confirmEmailChange).mockReset();
+        const r = await getPool().query('SELECT phone FROM "user" WHERE id = $1', [USER]);
+        originalPhone = r.rows[0]?.phone ?? null;
+    });
+    afterAll(async () => {
+        await getPool().query('UPDATE "user" SET phone = $2 WHERE id = $1', [USER, originalPhone]);
     });
 
     describe('PATCH /api/profile/contact', () => {
-        it('should create email change request when email provided', async () => {
-            const mockRequestEmailChange = requestEmailChange as jest.MockedFunction<typeof requestEmailChange>;
-            mockRequestEmailChange.mockResolvedValue(undefined);
-
-            const response = await request(app)
-                .patch('/api/profile/contact')
-                .send({ email: 'newemail@example.com' })
-                .expect(200);
-
-            expect(response.body.ok).toBe(true);
-            expect(response.body.data.message).toContain('confirmation link');
-            expect(mockRequestEmailChange).toHaveBeenCalledWith(
-                1,
-                'newemail@example.com',
-                expect.any(String),
-                expect.anything(),
-                expect.anything()
-            );
+        it('starts an email change (confirmation link) when an email is given', async () => {
+            vi.mocked(requestEmailChange).mockResolvedValue(undefined as any);
+            const res = await request(app).patch('/api/profile/contact').send({ email: 'newemail@example.com' }).expect(200);
+            expect(res.body.ok).toBe(true);
+            expect(res.body.data.email_change_started).toBe(true);
+            expect(vi.mocked(requestEmailChange).mock.calls[0].slice(0, 3)).toEqual([USER, 'newemail@example.com', 'test@example.com']);
         });
 
-        it('should update phone immediately when phone provided', async () => {
-            // Mock user exists
-            await pool.query(`
-                INSERT INTO "user" (id, email, phone, created_at, updated_at)
-                VALUES (1, 'test@example.com', 'old-phone', $1, $1)
-                ON CONFLICT (id) DO UPDATE SET phone = EXCLUDED.phone
-            `, [Date.now()]);
-
-            const response = await request(app)
-                .patch('/api/profile/contact')
-                .send({ phone: '+44 20 1234 5678' })
-                .expect(200);
-
-            expect(response.body.ok).toBe(true);
-
-            // Verify phone was updated
-            const userResult = await pool.query('SELECT phone FROM "user" WHERE id = 1');
-            expect(userResult.rows[0].phone).toBe('+44 20 1234 5678');
+        it('updates the phone number straight away', async () => {
+            const res = await request(app).patch('/api/profile/contact').send({ phone: '+44 20 1234 5678' }).expect(200);
+            expect(res.body.ok).toBe(true);
+            const u = await getPool().query('SELECT phone FROM "user" WHERE id = $1', [USER]);
+            expect(String(u.rows[0].phone).replace(/\s+/g, '')).toBe('+442012345678');
         });
 
-        it('should return error if neither email nor phone provided', async () => {
-            const response = await request(app)
-                .patch('/api/profile/contact')
-                .send({})
-                .expect(400);
-
-            expect(response.body.ok).toBe(false);
-            expect(response.body.error).toBe('no_updates_provided');
+        it('rejects a request with neither email nor phone', async () => {
+            const res = await request(app).patch('/api/profile/contact').send({}).expect(400);
+            expect(res.body.ok).toBe(false);
+            expect(res.body.error).toBe('no_updates_provided');
         });
 
-        it('should return generic success even if email already exists (no enumeration)', async () => {
-            // Create another user with the email
-            await pool.query(`
-                INSERT INTO "user" (id, email, created_at, updated_at)
-                VALUES (2, 'existing@example.com', $1, $1)
-                ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email
-            `, [Date.now()]);
-
-            const mockRequestEmailChange = requestEmailChange as jest.MockedFunction<typeof requestEmailChange>;
-            mockRequestEmailChange.mockResolvedValue(undefined); // Service returns success even if email taken
-
-            const response = await request(app)
-                .patch('/api/profile/contact')
-                .send({ email: 'existing@example.com' })
-                .expect(200);
-
-            // Should return success (no enumeration)
-            expect(response.body.ok).toBe(true);
-            expect(response.body.data.message).toContain('confirmation link');
+        it('gives the same reply when the email is already in use (no enumeration)', async () => {
+            vi.mocked(requestEmailChange).mockResolvedValue(undefined as any);
+            const res = await request(app).patch('/api/profile/contact').send({ email: 'admin@example.com' }).expect(200);
+            expect(res.body.ok).toBe(true);
+            expect(res.body.data.email_change_started).toBe(true);
         });
     });
 
     describe('GET /api/profile/confirm-email-change', () => {
-        it('should confirm email change with valid token', async () => {
-            const mockConfirmEmailChange = confirmEmailChange as jest.MockedFunction<typeof confirmEmailChange>;
-            mockConfirmEmailChange.mockResolvedValue({ changed: true });
-
-            const response = await request(app)
-                .get('/api/profile/confirm-email-change')
-                .query({ token: 'valid-token' })
-                .expect(200);
-
-            expect(response.body.ok).toBe(true);
-            expect(response.body.data.changed).toBe(true);
-            expect(mockConfirmEmailChange).toHaveBeenCalledWith('valid-token');
+        it('confirms with a valid token', async () => {
+            vi.mocked(confirmEmailChange).mockResolvedValue({ changed: true });
+            const res = await request(app).get('/api/profile/confirm-email-change').query({ token: 'valid-token' }).expect(200);
+            expect(res.body.ok).toBe(true);
+            expect(res.body.data.changed).toBe(true);
+            expect(confirmEmailChange).toHaveBeenCalledWith('valid-token');
         });
 
-        it('should return changed=false for invalid/expired token (no enumeration)', async () => {
-            const mockConfirmEmailChange = confirmEmailChange as jest.MockedFunction<typeof confirmEmailChange>;
-            mockConfirmEmailChange.mockResolvedValue({ changed: false });
-
-            const response = await request(app)
-                .get('/api/profile/confirm-email-change')
-                .query({ token: 'invalid-token' })
-                .expect(200);
-
-            expect(response.body.ok).toBe(true);
-            expect(response.body.data.changed).toBe(false);
-            // Generic message, doesn't reveal if token was invalid or expired
-            expect(response.body.data.message).toBeDefined();
+        it('returns changed=false for an invalid or expired token, without saying which', async () => {
+            vi.mocked(confirmEmailChange).mockResolvedValue({ changed: false });
+            const res = await request(app).get('/api/profile/confirm-email-change').query({ token: 'invalid-token' }).expect(200);
+            expect(res.body.ok).toBe(true);
+            expect(res.body.data).toEqual({ changed: false });
         });
 
-        it('should return error if token missing', async () => {
-            const response = await request(app)
-                .get('/api/profile/confirm-email-change')
-                .expect(400);
-
-            expect(response.body.ok).toBe(false);
-            expect(response.body.error).toBe('token_required');
+        it('a missing token changes nothing and gets the same generic reply', async () => {
+            const res = await request(app).get('/api/profile/confirm-email-change').expect(200);
+            expect(res.body.data).toEqual({ changed: false });
+            expect(confirmEmailChange).not.toHaveBeenCalled();
         });
     });
 });
-
-describe('Email Change Service', () => {
-    let pool: any;
-
-    beforeAll(async () => {
-        pool = getPool();
-    });
-
-    beforeEach(async () => {
-        // Clean up test data
-        await pool.query('DELETE FROM email_change_request');
-        await pool.query('DELETE FROM activity_log WHERE action LIKE \'email_change%\'');
-        
-        // Create test user
-        await pool.query(`
-            INSERT INTO "user" (id, email, first_name, created_at, updated_at)
-            VALUES (1, 'old@example.com', 'Test', $1, $1)
-            ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email
-        `, [Date.now()]);
-    });
-
-    afterEach(async () => {
-        await pool.query('DELETE FROM email_change_request');
-        await pool.query('DELETE FROM activity_log WHERE action LIKE \'email_change%\'');
-    });
-
-    describe('confirmEmailChange', () => {
-        it('should update user email and mark request as used with valid token', async () => {
-            // Create email change request
-            const token = 'test-token-123';
-            const tokenHash = hashToken(token);
-            const expiresAt = new Date();
-            expiresAt.setMinutes(expiresAt.getMinutes() + 30);
-
-            await pool.query(
-                `INSERT INTO email_change_request (user_id, new_email, token_hash, expires_at, created_at)
-                 VALUES ($1, $2, $3, $4, NOW())`,
-                [1, 'new@example.com', tokenHash, expiresAt]
-            );
-
-            // Confirm email change
-            const result = await confirmEmailChange(token);
-
-            expect(result.changed).toBe(true);
-
-            // Verify user email updated
-            const userResult = await pool.query('SELECT email FROM "user" WHERE id = 1');
-            expect(userResult.rows[0].email).toBe('new@example.com');
-
-            // Verify request marked as used
-            const requestResult = await pool.query(
-                'SELECT used_at FROM email_change_request WHERE token_hash = $1',
-                [tokenHash]
-            );
-            expect(requestResult.rows[0].used_at).not.toBeNull();
-        });
-
-        it('should return changed=false for expired token', async () => {
-            const token = 'expired-token';
-            const tokenHash = hashToken(token);
-            const expiresAt = new Date();
-            expiresAt.setMinutes(expiresAt.getMinutes() - 1); // Expired
-
-            await pool.query(
-                `INSERT INTO email_change_request (user_id, new_email, token_hash, expires_at, created_at)
-                 VALUES ($1, $2, $3, $4, NOW())`,
-                [1, 'new@example.com', tokenHash, expiresAt]
-            );
-
-            const result = await confirmEmailChange(token);
-
-            expect(result.changed).toBe(false);
-
-            // Verify user email NOT updated
-            const userResult = await pool.query('SELECT email FROM "user" WHERE id = 1');
-            expect(userResult.rows[0].email).toBe('old@example.com');
-        });
-
-        it('should return changed=false for invalid token', async () => {
-            const result = await confirmEmailChange('invalid-token-xyz');
-
-            expect(result.changed).toBe(false);
-        });
-
-        it('should return changed=false for already used token', async () => {
-            const token = 'used-token';
-            const tokenHash = hashToken(token);
-            const expiresAt = new Date();
-            expiresAt.setMinutes(expiresAt.getMinutes() + 30);
-
-            await pool.query(
-                `INSERT INTO email_change_request (user_id, new_email, token_hash, expires_at, used_at, created_at)
-                 VALUES ($1, $2, $3, $4, NOW(), NOW())`,
-                [1, 'new@example.com', tokenHash, expiresAt]
-            );
-
-            const result = await confirmEmailChange(token);
-
-            expect(result.changed).toBe(false);
-        });
-    });
-});
-

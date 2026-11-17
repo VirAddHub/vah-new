@@ -20,9 +20,11 @@ import {
     Package,
     Mail,
     ClipboardList,
+    ShieldCheck,
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
+const ChVerificationQueue = dynamic(() => import('@/components/admin/ChVerificationQueue'), { ssr: false });
 const PlansSection = dynamic(() => import('@/components/admin/PlansSection'), {
     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
@@ -72,7 +74,7 @@ interface AdminDashboardProps {
     verifiedAdminUser: WhoamiUser | null;
 }
 
-type AdminSection = "users" | "mail" | "forwarding" | "plans" | "blog" | "audit";
+type AdminSection = "users" | "mail" | "forwarding" | "companies-house" | "plans" | "blog" | "audit";
 
 export function EnhancedAdminDashboard({
     onLogout,
@@ -88,7 +90,7 @@ export function EnhancedAdminDashboard({
     // Sync activeSection with URL query param
     useEffect(() => {
         const sectionParam = searchParams.get('section');
-        if (sectionParam && ['users', 'mail', 'forwarding', 'plans', 'blog', 'audit'].includes(sectionParam)) {
+        if (sectionParam && ['users', 'mail', 'forwarding', 'companies-house', 'plans', 'blog', 'audit'].includes(sectionParam)) {
             setActiveSection(sectionParam as AdminSection);
         }
     }, [searchParams]);
@@ -161,6 +163,7 @@ export function EnhancedAdminDashboard({
         { id: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
         { id: "mail", label: "Mail", icon: <Mail className="h-4 w-4" /> },
         { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
+        { id: "companies-house", label: "Companies House", icon: <ShieldCheck className="h-4 w-4" /> },
         { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" /> },
         { id: "blog", label: "Blog", icon: <FileText className="h-4 w-4" /> },
         { id: "audit", label: "Audit log", icon: <ClipboardList className="h-4 w-4" /> },
@@ -199,6 +202,8 @@ export function EnhancedAdminDashboard({
                 return (
                     <CollaborativeForwardingBoard verifiedAdminUser={verifiedAdminUser} />
                 );
+            case "companies-house":
+                return <ChVerificationQueue />;
             case "plans":
                 return <PlansSection />;
             case "blog":

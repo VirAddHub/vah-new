@@ -4,6 +4,7 @@ export const revalidate = 0;
 
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendOrigin } from "@/lib/server/backendOrigin";
+import { clientIpHeaders } from "@/lib/server/clientIpHeaders";
 
 export async function proxy(req: NextRequest, targetPath: string) {
   let normalizedOrigin: string;
@@ -42,13 +43,7 @@ export async function proxy(req: NextRequest, targetPath: string) {
   headers.set('x-forwarded-host', url.host);
   // Tell the API which visitor this is, signed so the API can trust it for rate limiting.
   // Without BFF_SHARED_SECRET nothing is sent and the API falls back to the connection address.
-  const bffSecret = (process.env.BFF_SHARED_SECRET || '').trim();
-  const clientIp = (req.headers.get('x-real-ip') || (req.headers.get('x-forwarded-for') || '').split(',')[0] || '').trim();
-  if (bffSecret && clientIp) {
-    const { createHmac } = await import('node:crypto');
-    headers.set('x-vah-client-ip', clientIp);
-    headers.set('x-vah-client-sig', createHmac('sha256', bffSecret).update(clientIp).digest('hex'));
-  }
+  for (const [k, v] of Object.entries(clientIpHeaders(req))) headers.set(k, v);
   headers.set('x-forwarded-proto', url.protocol.replace(':', ''));
 
   // CSRF: Double-submit cookie pattern

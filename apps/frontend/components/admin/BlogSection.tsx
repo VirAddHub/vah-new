@@ -90,18 +90,8 @@ interface BlogPost {
     excerpt: string;
 }
 
-const logAdminAction = async (action: string, data?: any) => {
-    try {
-        await apiClient.post('/api/audit/admin-action', {
-            action,
-            data,
-            timestamp: new Date().toISOString(),
-            adminId: null
-        });
-    } catch (error) {
-        console.error('Failed to log admin action:', error);
-    }
-};
+// Blog changes are recorded by the API; the old client-side audit endpoint never existed.
+const logAdminAction = async (_action: string, _data?: unknown) => {};
 
 export function BlogSection() {
     const [searchTerm, setSearchTerm] = useState('');

@@ -1,9 +1,10 @@
 // apps/backend/src/server/routes/admin-invoices.ts
 // Admin invoice search + download endpoints
 
+import { clientKey } from '../lib/clientKey';
 import { Router, Request, Response } from 'express';
 import { logger } from '../../lib/logger';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { downloadInvoicePdf } from '../controllers/billing';
@@ -17,7 +18,7 @@ const adminInvoicesLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => {
     const u = (req as any).user;
-    return u?.id ? `admin-invoices:${u.id}` : ipKeyGenerator(req.ip ?? '');
+    return u?.id ? `admin-invoices:${u.id}` : clientKey(req);
   },
   handler: (_req, res) => {
     res.setHeader('Retry-After', '10');

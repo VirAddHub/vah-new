@@ -1,6 +1,7 @@
 // src/server/routes/contact.ts
 // Contact form API endpoint
 
+import { clientKey } from '../lib/clientKey';
 import { Router, Request, Response } from 'express';
 import { logger } from '../../lib/logger';
 import rateLimit from 'express-rate-limit';
@@ -19,6 +20,7 @@ const contactLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
+    keyGenerator: clientKey,
 });
 
 // Validation schema

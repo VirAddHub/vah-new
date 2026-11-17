@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useAuthedSWR } from "@/lib/useAuthedSWR";
 import { apiClient } from "@/lib/apiClient";
-import { API_BASE } from "@/lib/config";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Button } from "../ui/button";

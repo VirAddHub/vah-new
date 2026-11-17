@@ -1,8 +1,9 @@
 // src/server/routes/payments.ts
 // Payment and subscription management endpoints
 
+import { clientKey } from '../lib/clientKey';
 import { Router, Request, Response } from 'express';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import { getPool } from '../db';
 import { pricingService } from '../services/pricing';
 import { param } from '../../lib/express-params';
@@ -25,7 +26,7 @@ const paymentsSubscriptionWriteLimiter = rateLimit({
     legacyHeaders: false,
     keyGenerator: (req) => {
         const u = (req as { user?: { id?: number } }).user;
-        return u?.id != null ? `payments:subscription-write:${u.id}` : ipKeyGenerator(req.ip ?? '');
+        return u?.id != null ? `payments:subscription-write:${u.id}` : clientKey(req);
     },
     handler: (_req, res) => {
         res.setHeader('Retry-After', '900');

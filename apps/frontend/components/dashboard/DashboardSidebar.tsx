@@ -24,6 +24,8 @@ import { useDashboardView } from '@/contexts/DashboardViewContext';
 import { useDashboardBootstrap } from '@/hooks/useDashboardData';
 import { isPrimaryVerificationRequiredForNav } from '@/lib/verification-state';
 import { useToast } from '@/components/ui/use-toast';
+import { useAccess } from '@/hooks/useAccess';
+import { navAttention } from '@/components/account/AccessNotice';
 
 // Lazy load CertificateDownload to avoid unnecessary bundle size
 // Only load when sidebar is rendered (not on every page)
@@ -85,6 +87,11 @@ export function DashboardSidebar() {
         verificationState: compliance?.verificationState,
         kycStatus: profile?.kyc_status,
     });
+
+    const { access } = useAccess();
+    const attention = access ? navAttention(access) : { billing: false, verification: verificationNavRequired };
+    const needsAttention = (href: string) =>
+        (href === '/account/verification' && attention.verification) || (href === '/account/billing' && attention.billing);
 
     const handleLogout = () => performLogout(
         setIsMobileSidebarOpen ? () => setIsMobileSidebarOpen(false) : undefined
@@ -176,7 +183,7 @@ export function DashboardSidebar() {
                                                         <Icon className="w-5 h-5 shrink-0 opacity-60" strokeWidth={1.5} />
                                                         <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                                                             <span className="truncate">{item.label}</span>
-                                                            {item.href === '/account/verification' && verificationNavRequired && (
+                                                            {needsAttention(item.href) && (
                                                                 <span className="shrink-0 text-caption font-semibold text-destructive">
                                                                     Required
                                                                 </span>
@@ -390,7 +397,7 @@ export function DashboardSidebar() {
                                                         <Icon className="w-4 h-4 shrink-0 opacity-60" strokeWidth={1.5} />
                                                         <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                                                             <span className="truncate">{item.label}</span>
-                                                            {item.href === '/account/verification' && verificationNavRequired && (
+                                                            {needsAttention(item.href) && (
                                                                 <span className="shrink-0 text-caption font-semibold text-destructive">
                                                                     Required
                                                                 </span>

@@ -1,5 +1,6 @@
 "use client";
 
+import { AccountStandingDialog } from './AccountStandingDialog';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { adminApi } from "../../lib/apiClient";
 import { Button } from "../ui/button";
@@ -126,6 +127,8 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   // Password reset sending state
   const [resetSendingId, setResetSendingId] = useState<string | number | null>(null);
 
+  // Account standing dialog (suspend / restore / close)
+  const [standingUser, setStandingUser] = useState<null | { id: string | number; email: string }>(null);
   // Account unlock state
   const [unlockingId, setUnlockingId] = useState<string | number | null>(null);
 
@@ -512,7 +515,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                     <TableCell>
                       <div className="flex flex-col gap-1">
                         <Badge variant={u.status === "active" ? "default" : u.status === "suspended" ? "destructive" : "secondary"}>
-                          {u.status || "active"}
+                          {u.deleted_at ? "closed" : (u.status || "active")}
                         </Badge>
                         {u.locked_until && Number(u.locked_until) > Date.now() && (
                           <span className="inline-flex items-center text-caption text-amber-700 font-medium">
@@ -550,10 +553,10 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setRestoreModal({ id: u.id })}
+                            onClick={() => setStandingUser({ id: u.id, email: u.email })}
                             disabled={isMutating}
                           >
-                            Restore
+                            Standing…
                           </Button>
                         ) : (
                           <>
@@ -629,18 +632,18 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                                     disabled={unlockingId === u.id}
                                   >
                                     <div className="w-full">
-                                      <div className="font-medium text-foreground">{unlockingId === u.id ? 'Unlocking…' : '🔓 Unlock account'}</div>
-                                      <div className="text-caption text-muted-foreground mt-0.5">Clear login lockout immediately</div>
+                                      <div className="font-medium text-foreground">{unlockingId === u.id ? 'Clearing…' : 'Clear sign-in block'}</div>
+                                      <div className="text-caption text-muted-foreground mt-0.5">Lets new devices sign in again after too many wrong passwords</div>
                                     </div>
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem
-                                  onClick={() => setDeleteModal({ id: u.id, email: u.email, permanent: false })}
+                                  onClick={() => setStandingUser({ id: u.id, email: u.email })}
                                   className="cursor-pointer"
                                 >
                                   <div className="w-full">
-                                    <div className="font-medium text-foreground">Soft delete</div>
-                                    <div className="text-caption text-muted-foreground mt-0.5">Can be restored later</div>
+                                    <div className="font-medium text-foreground">Suspend, restore or close…</div>
+                                    <div className="text-caption text-muted-foreground mt-0.5">Requires a reason; recorded in the audit trail</div>
                                   </div>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
@@ -819,6 +822,12 @@ export default function UsersSection({ users, loading, error, total, page, pageS
           </div>
         </div>
       )}
+
+      <AccountStandingDialog
+        user={standingUser}
+        onClose={() => setStandingUser(null)}
+        onChanged={async () => { if (onRefreshUsers) await onRefreshUsers(); }}
+      />
 
       {/* Plan status modal */}
       {planStatusModal && (

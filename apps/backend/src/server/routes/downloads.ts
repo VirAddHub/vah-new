@@ -15,11 +15,12 @@
  *   - Expiry is checked server-side before streaming begins.
  */
 
+import { clientKey } from '../lib/clientKey';
 import path from 'path';
 import { logger } from '../../lib/logger';
 import fs from 'fs';
 import { Router, Request, Response } from 'express';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import { getPool } from '../db';
 
 const router = Router();
@@ -33,7 +34,7 @@ const gdprExportDownloadIpLimiter = rateLimit({
   limit: 60,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
+  keyGenerator: (req) => clientKey(req),
   handler: (_req, res) => {
     res.setHeader('Retry-After', '900');
     return res.status(429).send('Too many requests');

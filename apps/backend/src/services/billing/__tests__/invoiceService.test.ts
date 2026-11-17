@@ -40,6 +40,30 @@ describe('InvoiceService', () => {
   });
 
   describe('generateInvoiceForPeriod', () => {
+    it('records extra charges only: never adds the subscription fee or touches a Stripe payment record', async () => {
+      // A subscription payment Stripe already took, recorded for the same period.
+      const stripeInv = await pool.query(
+        `INSERT INTO invoices (user_id, invoice_number, number, amount_pence, period_start, period_end, status, created_at, stripe_invoice_id, currency)
+         VALUES ($1, 'STRIPE-REC-1', 'STRIPE-REC-1', 999, $2, $3, 'paid', $4, 'in_test_dup_guard', 'GBP') RETURNING id`,
+        [testUserId, testPeriodStart, testPeriodEnd, Date.now()]
+      );
+      await pool.query(
+        `INSERT INTO charge (user_id, amount_pence, currency, type, description, service_date, status, related_type, related_id)
+         VALUES ($1, 250, 'GBP', 'forwarding_fee', 'Forwarding', $2, 'pending', 'forwarding_request', 9001)`,
+        [testUserId, '2025-01-10']
+      );
+
+      const result = await generateInvoiceForPeriod({ userId: testUserId, periodStart: testPeriodStart, periodEnd: testPeriodEnd, billingInterval: 'monthly' });
+
+      expect(result.invoiceId).not.toBe(Number(stripeInv.rows[0].id));
+      expect(result.totalChargesPence).toBe(250);
+      const fees = await pool.query(`SELECT COUNT(*)::int AS n FROM charge WHERE user_id = $1 AND type = 'subscription_fee'`, [testUserId]);
+      expect(fees.rows[0].n).toBe(0);
+      const rec = await pool.query('SELECT amount_pence, status FROM invoices WHERE id = $1', [stripeInv.rows[0].id]);
+      expect(Number(rec.rows[0].amount_pence)).toBe(999);
+      expect(rec.rows[0].status).toBe('paid');
+    });
+
     it('should create invoice with no charges when period has no pending charges', async () => {
       const result = await generateInvoiceForPeriod({
         userId: testUserId,
@@ -59,7 +83,7 @@ describe('InvoiceService', () => {
         [result.invoiceId]
       );
       expect(invoice.rows).toHaveLength(1);
-      expect(invoice.rows[0].amount_pence).toBe(0);
+      expect(Number(invoice.rows[0].amount_pence)).toBe(0);
       expect(invoice.rows[0].period_start).toBe(testPeriodStart);
       expect(invoice.rows[0].period_end).toBe(testPeriodEnd);
     });
@@ -97,7 +121,7 @@ describe('InvoiceService', () => {
       expect(charges.rows).toHaveLength(2);
       charges.rows.forEach((charge) => {
         expect(charge.status).toBe('billed');
-        expect(charge.invoice_id).toBe(result.invoiceId);
+        expect(Number(charge.invoice_id)).toBe(result.invoiceId);
         expect(charge.billed_at).not.toBeNull();
       });
 
@@ -106,7 +130,7 @@ describe('InvoiceService', () => {
         'SELECT * FROM invoices WHERE id = $1',
         [result.invoiceId]
       );
-      expect(invoice.rows[0].amount_pence).toBe(400);
+      expect(Number(invoice.rows[0].amount_pence)).toBe(400);
     });
 
     it('should not attach charges outside the period', async () => {
@@ -141,7 +165,7 @@ describe('InvoiceService', () => {
 
       // Verify the other charge is still pending
       const pendingCharges = await pool.query(
-        'SELECT * FROM charge WHERE user_id = $1 AND status = $2',
+        "SELECT *, service_date::text AS service_date FROM charge WHERE user_id = $1 AND status = $2",
         [testUserId, 'pending']
       );
       expect(pendingCharges.rows).toHaveLength(1);
@@ -207,7 +231,7 @@ describe('InvoiceService', () => {
         'SELECT amount_pence FROM invoices WHERE id = $1',
         [result1.invoiceId]
       );
-      expect(invoice1.rows[0].amount_pence).toBe(0);
+      expect(Number(invoice1.rows[0].amount_pence)).toBe(0);
 
       // Now create charges and attach them
       await pool.query(
@@ -242,7 +266,7 @@ describe('InvoiceService', () => {
         'SELECT amount_pence FROM invoices WHERE id = $1',
         [result1.invoiceId]
       );
-      expect(invoice2.rows[0].amount_pence).toBe(400);
+      expect(Number(invoice2.rows[0].amount_pence)).toBe(400);
 
       // Verify charges are marked as billed
       const charges = await pool.query(

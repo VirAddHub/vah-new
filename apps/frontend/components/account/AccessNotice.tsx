@@ -18,7 +18,7 @@ export function stepsFor(access: AccessDecision): Step[] {
       ? { key: 'payment', label: 'Update your payment', detail: 'Your last payment did not go through. Update your card to restore your service.', done: false, href: '/account/billing', action: 'Update payment' }
       : payment.state === 'cancelled'
         ? { key: 'payment', label: 'Restart your subscription', detail: 'Your subscription has ended. Start a new one to use your address again.', done: false, href: '/account/billing', action: 'Go to billing' }
-        : { key: 'payment', label: 'Pay for your plan', detail: 'Choose monthly or annual billing and pay securely by card.', done: payment.entitled, href: '/account/billing', action: 'Complete payment' };
+        : { key: 'payment', label: 'Pay for your plan', detail: payment.entitled ? 'Your plan is paid.' : 'Choose monthly or annual billing and pay securely by card.', done: payment.entitled, href: '/account/billing', action: 'Complete payment' };
 
   const identityDetail: Record<AccessDecision['verification']['state'], string> = {
     not_started: 'Confirm who you are with a photo ID. It takes a few minutes.',
@@ -38,7 +38,7 @@ export function stepsFor(access: AccessDecision): Step[] {
     const n = verification.pendingOwners;
     steps.push({
       key: 'owners', label: 'Business owners verified',
-      detail: `${n} business owner${n === 1 ? '' : 's'} still need${n === 1 ? 's' : ''} to verify their identity. We have emailed them a link; you can resend it.`,
+      detail: `${n} business owner${n === 1 ? '' : 's'} still need${n === 1 ? 's' : ''} to verify their identity. Your service is paused until every required owner is verified. We have emailed them a link; you can resend it.`,
       done: false, href: '/business-owners', action: 'View owners',
     });
   }
@@ -106,4 +106,36 @@ export function AccessNoticeSlot() {
   const pathname = usePathname() || '';
   if (!access || access.isAdmin || access.level === 'full') return null;
   return <AccessNotice access={access} currentPath={pathname} />;
+}
+
+/**
+ * Short sidebar summary of the first thing still missing, taken from the same access decision
+ * the backend enforces. Null when the account is in full service.
+ */
+export function sidebarStatusFor(access: AccessDecision): { title: string; detail: string; href: string } | null {
+  if (access.level === 'full') return null;
+  const m = access.missing;
+  if (m.includes('account_suspended')) return { title: 'Account suspended', detail: 'Contact support to restore your service.', href: '/account/support' };
+  if (m.includes('account_closed')) return { title: 'Account closed', detail: 'Contact support if you think this is a mistake.', href: '/account/support' };
+  if (m.includes('payment_overdue')) return { title: 'Payment overdue', detail: 'Update your payment to restore your service.', href: '/account/billing' };
+  if (m.includes('subscription_cancelled')) return { title: 'Subscription ended', detail: 'Start a new subscription to use your address.', href: '/account/billing' };
+  if (m.includes('payment_required')) return { title: 'Payment needed', detail: 'Pay for your plan to activate your address.', href: '/account/billing' };
+  if (m.includes('identity_rejected')) return { title: 'Identity check unsuccessful', detail: 'Contact support so we can review it.', href: '/account/support' };
+  if (m.includes('identity_in_review')) return { title: 'Identity check in review', detail: 'We are checking your documents.', href: '/account/verification' };
+  if (m.includes('identity_required')) return { title: 'Verify your identity', detail: 'Needed before your address and mail open.', href: '/account/verification' };
+  if (m.includes('owners_required')) {
+    const n = access.verification.pendingOwners;
+    return { title: 'Owners to verify', detail: `${n || 'Some'} business owner${n === 1 ? '' : 's'} still need${n === 1 ? 's' : ''} to verify.`, href: '/business-owners' };
+  }
+  return { title: 'Setup not finished', detail: 'Complete the steps on your dashboard.', href: '/account' };
+}
+
+/** Which sidebar items need attention. */
+export function navAttention(access: AccessDecision | null): { billing: boolean; verification: boolean } {
+  if (!access || access.level === 'full') return { billing: false, verification: false };
+  const m = access.missing;
+  return {
+    billing: m.some(x => x === 'payment_required' || x === 'payment_overdue' || x === 'subscription_cancelled'),
+    verification: m.some(x => x === 'identity_required' || x === 'identity_rejected' || x === 'owners_required'),
+  };
 }

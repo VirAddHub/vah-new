@@ -1,13 +1,15 @@
 // src/server/routes/admin-users.ts
 // Admin user management endpoints
 
+import { clientKey } from '../lib/clientKey';
+import { clearAccount } from '../services/loginThrottle';
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { TimestampUtils } from '../../lib/timestamp-utils';
 import { toDateOrNull, nowMs } from '../helpers/time';
 import { param } from '../../lib/express-params';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import { sendTemplateEmail, buildAppUrl } from '../../lib/mailer';
 import { Templates } from '../../lib/postmark-templates';
 import { logger } from '../../lib/logger';
@@ -22,7 +24,7 @@ const adminUsersLimiter = rateLimit({
     legacyHeaders: false,
     keyGenerator: (req) => {
         const u = (req as any).user;
-        return u?.id ? `admin-users:${u.id}` : ipKeyGenerator(req.ip ?? '');
+        return u?.id ? `admin-users:${u.id}` : clientKey(req);
     },
     handler: (_req, res) => {
         res.setHeader("Retry-After", "10");
@@ -76,8 +78,8 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
                 u.updated_at,
                 u.last_active_at,
                 u.last_login_at,
-                u.login_attempts,
-                u.locked_until,
+                (SELECT COALESCE(SUM(t.failures), 0)::int FROM login_throttle t WHERE t.key LIKE 'u:' || u.id || ':%' AND t.locked_until > (extract(epoch from now()) * 1000)::bigint) AS login_attempts,
+                (SELECT MAX(t.locked_until) FROM login_throttle t WHERE t.key LIKE 'u:' || u.id || ':%' AND t.locked_until > (extract(epoch from now()) * 1000)::bigint) AS locked_until,
                 COALESCE(p_sub.name, p.name, p_cadence.name, s.plan_name) as plan_name,
                 COALESCE(
                     p_sub.interval,
@@ -489,7 +491,8 @@ router.get('/users/:id', requireAdmin, async (req: Request, res: Response) => {
                 u.subscription_status, u.stripe_customer_id,
                 u.phone, u.forwarding_address, u.created_at, u.updated_at,
                 u.last_active_at, u.last_login_at, u.deleted_at, u.expires_at,
-                u.login_attempts, u.locked_until
+                (SELECT COALESCE(SUM(t.failures), 0)::int FROM login_throttle t WHERE t.key LIKE 'u:' || u.id || ':%' AND t.locked_until > (extract(epoch from now()) * 1000)::bigint) AS login_attempts,
+                (SELECT MAX(t.locked_until) FROM login_throttle t WHERE t.key LIKE 'u:' || u.id || ':%' AND t.locked_until > (extract(epoch from now()) * 1000)::bigint) AS locked_until
             FROM "user" u
             WHERE u.id = $1
         `, [userId]);
@@ -1117,6 +1120,7 @@ router.post('/users/:id/unlock-account', requireAdmin, async (req: Request, res:
             'UPDATE "user" SET login_attempts = 0, locked_until = NULL, updated_at = $1 WHERE id = $2',
             [Date.now(), userId]
         );
+        await clearAccount(userId);
 
         await pool.query(
             `INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)

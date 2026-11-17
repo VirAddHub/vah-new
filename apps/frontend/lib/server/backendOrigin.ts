@@ -20,6 +20,8 @@
  * - https://vah-api-staging.onrender.com/api/profile (path beyond `/api`)
  */
 
+import { installVisitorFetch } from './visitorFetch';
+
 // Render-only allowlist
 const ALLOWED = new Set([
   'https://vah-api.onrender.com',
@@ -115,6 +117,7 @@ function validateRenderOrigin(origin: string, envVarName: string): void {
  *   - Origin is not in Render allowlist
  */
 export function getBackendOrigin(): string {
+  installVisitorFetch();
   const isProduction = process.env.NODE_ENV === 'production';
 
   // Production: Require NEXT_PUBLIC_BACKEND_API_ORIGIN (no fallbacks)

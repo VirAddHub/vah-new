@@ -93,6 +93,9 @@ function getLoginErrorMessage(
   if (errorLower === 'account_suspended') {
     return { message: 'This account has been suspended. Please contact support.', showResetHint: false };
   }
+  if (errorLower === 'too_many_attempts' || errorLower.includes('too many')) {
+    return { message: 'Too many sign-in attempts from this device. Please wait a few minutes, or reset your password to sign in straight away.', showResetHint: true };
+  }
   if (errorLower === 'account_closed') {
     return { message: 'This account has been closed. Please contact support if you think this is a mistake.', showResetHint: false };
   }

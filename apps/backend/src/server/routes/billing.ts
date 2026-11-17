@@ -1,5 +1,6 @@
+import { clientKey } from '../lib/clientKey';
 import { Router } from 'express';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import { requireAuth } from '../../middleware/auth';
 import {
   downloadInvoicePdf,
@@ -25,7 +26,7 @@ const billingUserLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => {
     const u = (req as { user?: { id?: number } }).user;
-    return u?.id != null ? `billing:user:${u.id}` : ipKeyGenerator(req.ip ?? "");
+    return u?.id != null ? `billing:user:${u.id}` : clientKey(req);
   },
   handler: (_req, res) => {
     res.setHeader("Retry-After", "900");
@@ -41,7 +42,7 @@ const billingInvoiceDownloadLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => {
     const u = (req as { user?: { id?: number } }).user;
-    return u?.id != null ? `billing:invoice-pdf:${u.id}` : ipKeyGenerator(req.ip ?? "");
+    return u?.id != null ? `billing:invoice-pdf:${u.id}` : clientKey(req);
   },
   handler: (_req, res) => {
     res.setHeader("Retry-After", "3600");

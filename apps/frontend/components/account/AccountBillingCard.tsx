@@ -131,7 +131,7 @@ export function AccountBillingCard({
 
           <div className="flex items-center justify-between gap-4 min-w-0">
             <span className="shrink-0 text-caption text-muted-foreground">
-              Next billing date
+              {subscription.cancel_at_period_end ? 'Service ends' : subscription.status === 'past_due' ? 'Paid until' : 'Next billing date'}
             </span>
             <span className="min-w-0 truncate text-right text-body-sm text-foreground sm:max-w-none">
               {nextBillingLabel}

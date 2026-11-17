@@ -3,7 +3,7 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import crypto from 'crypto';
 import { z } from "zod";
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import { getPool } from "../db";
 import { generateToken, verifyToken, extractTokenFromHeader } from "../../lib/jwt";
 import { BCRYPT_ROUNDS, SESSION_IDLE_TIMEOUT_SECONDS } from "../../config/auth";
@@ -18,12 +18,12 @@ import { ok, unauthorized, badRequest, serverError } from "../lib/apiResponse";
 import { logger } from "../../lib/logger";
 import { isSecureEnv, sessionCookieSecurityOptions } from "../../lib/cookies";
 import { passwordSchema } from "../../lib/passwordSchema";
+import { clientKey } from "../lib/clientKey";
+import * as throttle from "../services/loginThrottle";
 
 const router = Router();
 
 // Account lockout constants
-const LOGIN_MAX_ATTEMPTS = 5;
-const LOGIN_LOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
 // ADDED: Define a schema for login input validation
 const loginSchema = z.object({
@@ -52,14 +52,25 @@ const resetPasswordRequestLimiter = rateLimit({
     max: 5,
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
+    keyGenerator: (req) => clientKey(req),
+});
+// Per email address as well, so one address cannot be flooded with reset emails from many sources.
+const resetPasswordEmailLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 3,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => `reset-email:${String(req.body?.email ?? '').trim().toLowerCase()}`,
+    skip: (req) => !String(req.body?.email ?? '').trim(),
+    // Same response as success so the limit does not reveal whether the account exists.
+    handler: (_req, res) => res.status(200).json({ ok: true, message: "If that email exists, we've sent a link." }),
 });
 
 const ResetPasswordRequestBody = z.object({
     email: z.string().email(),
 });
 
-router.post('/reset-password/request', resetPasswordRequestLimiter, async (req, res) => {
+router.post('/reset-password/request', resetPasswordRequestLimiter, resetPasswordEmailLimiter, async (req, res) => {
     const parsed = ResetPasswordRequestBody.safeParse(req.body);
     res.status(200).json({ ok: true, message: "If that email exists, we've sent a link." });
     if (!parsed.success) return;
@@ -638,14 +649,31 @@ router.post("/login", async (req, res) => {
         // Get user from database (exclude soft-deleted users)
         const pool = getPool();
         const user = await pool.query(
-            'SELECT id, email, password, first_name, last_name, is_admin, role, status, kyc_status, login_attempts, locked_until, deleted_at, suspended_at FROM "user" WHERE email = $1',
+            'SELECT id, email, password, first_name, last_name, is_admin, role, status, kyc_status, deleted_at, suspended_at FROM "user" WHERE email = $1',
             // Any account in good standing can sign in, paid or not, so customers can finish onboarding.
             // Suspended and closed accounts are refused further down, after the password has been checked,
             // so the reason is only ever shown to someone who knows the password.
             [email]
         );
 
+        const visitor = clientKey(req);
+        const tooMany = (ms: number) => {
+            const minutes = Math.max(1, Math.ceil(ms / 60000));
+            res.setHeader('Retry-After', String(Math.ceil(ms / 1000)));
+            return res.status(429).json({
+                ok: false,
+                error: 'too_many_attempts',
+                message: `Too many sign-in attempts. Please try again in ${minutes} minute${minutes === 1 ? '' : 's'}, or reset your password.`,
+                retryAfterSeconds: Math.ceil(ms / 1000),
+            });
+        };
+
         if (!user.rows[0]) {
+            // Counted like a real account so the response does not reveal whether the email exists.
+            const k = throttle.keys.unknownEmail(email, visitor);
+            const wait = await throttle.lockedFor(k);
+            if (wait) return tooMany(wait);
+            await throttle.recordFailure(k, throttle.LIMITS.visitor);
             return res.status(401).json({
                 ok: false,
                 error: "invalid_credentials",
@@ -654,30 +682,24 @@ router.post("/login", async (req, res) => {
         }
 
         const userData = user.rows[0];
+        const userIdNum = Number(userData.id);
 
-        // Account lockout: block active locks; clear expired locks before password check.
-        // Clearing first ensures the failure-increment UPDATE reads 0 from the DB,
-        // so one wrong password after expiry counts as attempt 1, not attempt 6.
-        const lockedUntil = userData.locked_until ? Number(userData.locked_until) : null;
-        if (lockedUntil && lockedUntil > Date.now()) {
-            // Active lock — reject with same generic message as wrong password (no enumeration)
-            logger.warn('[auth/login] account_locked', { userId: userData.id });
-            return res.status(401).json({
-                ok: false,
-                error: 'invalid_credentials',
-                message: 'Invalid email or password',
-            });
-        } else if (lockedUntil) {
-            // Lock has expired — awaited so the DB counter is 0 before the failure-increment fires
-            await pool.query(
-                'UPDATE "user" SET login_attempts = 0, locked_until = NULL, updated_at = $1 WHERE id = $2',
-                [Date.now(), userData.id]
-            ).catch((err: any) => {
-                logger.warn('[auth/login] failed_to_clear_expired_lock', {
-                    userId: userData.id,
-                    message: err?.message ?? String(err),
-                });
-            });
+        // Throttling is per source: a recognised device has its own allowance, so failures from
+        // anywhere else can never lock the customer out of a device they already use.
+        const deviceId = throttle.recognisedDevice(req, userIdNum);
+        const sourceKey = deviceId ? throttle.keys.device(userIdNum, deviceId) : throttle.keys.visitor(userIdNum, visitor);
+        const sourceLimit = deviceId ? throttle.LIMITS.device : throttle.LIMITS.visitor;
+        const waitSource = await throttle.lockedFor(sourceKey);
+        if (waitSource) {
+            logger.warn('[auth/login] throttled', { userId: userData.id, scope: deviceId ? 'device' : 'visitor' });
+            return tooMany(waitSource);
+        }
+        if (!deviceId) {
+            const waitAccount = await throttle.lockedFor(throttle.keys.untrusted(userIdNum));
+            if (waitAccount) {
+                logger.warn('[auth/login] throttled', { userId: userData.id, scope: 'untrusted_account' });
+                return tooMany(waitAccount);
+            }
         }
 
         const passwordHash = userData.password;
@@ -707,27 +729,9 @@ router.post("/login", async (req, res) => {
         }
 
         if (!isValidPassword) {
-            // Awaited so the next request always reads the committed counter.
-            // Fire-and-forget caused a race on fast retries where the increment
-            // hadn't landed yet, letting users exceed the lockout threshold.
-            try {
-                await pool.query(
-                    `UPDATE "user"
-                     SET login_attempts = login_attempts + 1,
-                         locked_until   = CASE WHEN login_attempts + 1 >= $1
-                                              THEN $2
-                                              ELSE locked_until
-                                         END,
-                         updated_at     = $3
-                     WHERE id = $4`,
-                    [LOGIN_MAX_ATTEMPTS, Date.now() + LOGIN_LOCK_DURATION_MS, Date.now(), userData.id]
-                );
-            } catch (err: any) {
-                logger.warn('[auth/login] failed_to_increment_attempts', {
-                    userId: userData.id,
-                    message: err?.message ?? String(err),
-                });
-            }
+            // Awaited so a fast retry always sees the committed count.
+            await throttle.recordFailure(sourceKey, sourceLimit);
+            if (!deviceId) await throttle.recordFailure(throttle.keys.untrusted(userIdNum), throttle.LIMITS.untrustedAccount);
             return res.status(401).json({
                 ok: false,
                 error: 'invalid_credentials',
@@ -754,9 +758,10 @@ router.post("/login", async (req, res) => {
 
         // Successful login — update timestamps and reset lockout state (non-blocking)
         const now = Date.now();
+        await throttle.clearKey(sourceKey).catch(() => undefined);
         pool
             .query(
-                'UPDATE "user" SET last_login_at = $1, last_active_at = $2, login_attempts = 0, locked_until = NULL, updated_at = $3 WHERE id = $4',
+                'UPDATE "user" SET last_login_at = $1, last_active_at = $2, updated_at = $3 WHERE id = $4',
                 [now, now, now, userData.id]
             )
             .catch((err: any) => {
@@ -803,6 +808,7 @@ router.post("/login", async (req, res) => {
             ...sessionCookieSecurityOptions(),
             maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000,
         });
+        throttle.rememberDevice(req, res, userIdNum);
 
         // Explicit primitives — avoid JSON.stringify throwing on BigInt / odd pg types in response body
         const userPayload = {
@@ -1037,6 +1043,8 @@ router.post("/reset-password/confirm", async (req, res) => {
         }
 
         logger.info('[reset-confirm] password updated', { userId: candidate.id });
+        // A password reset proves control of the mailbox: lift any sign-in throttling on the account.
+        await throttle.clearAccount(Number(candidate.id)).catch(() => undefined);
 
         return res.status(200).json({
             ok: true,

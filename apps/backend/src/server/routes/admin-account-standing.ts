@@ -71,9 +71,11 @@ async function act(req: Request, res: Response, action: Action) {
                 standing: access?.standing ?? null,
                 access_level: access?.level ?? null,
                 // Billing is NOT changed by this action.
-                stripe: liveStripe && action !== 'restore'
-                    ? { status: 'action_required', message: 'This account still has a live Stripe subscription. It has NOT been cancelled or refunded. Cancel it in the Stripe dashboard if required.' }
-                    : { status: 'none', message: 'No live Stripe subscription.' },
+                stripe: !liveStripe
+                    ? { status: 'none', message: 'No live Stripe subscription.' }
+                    : action === 'restore'
+                        ? { status: 'unchanged', message: 'Billing was not changed. The Stripe subscription is still live.' }
+                        : { status: 'action_required', message: 'This account still has a live Stripe subscription. It has NOT been cancelled or refunded. Cancel it in the Stripe dashboard if required.' },
             },
         });
     } catch (e) {

@@ -1,10 +1,11 @@
 // apps/backend/src/server/routes/admin-billing.ts
 // Admin billing management endpoints
 
+import { clientKey } from '../lib/clientKey';
 import { Router, Request, Response } from 'express';
 import { logger } from '../../lib/logger';
 import { z } from 'zod';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import { requireAdmin } from '../../middleware/auth';
 import { generateInvoiceForPeriod, repairOrphanCharges } from '../../services/billing/invoiceService';
 import { getPool } from '../../lib/db';
@@ -19,7 +20,7 @@ const adminBillingLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => {
     const u = (req as any).user;
-    return u?.id ? `admin-billing:${u.id}` : ipKeyGenerator(req.ip ?? '');
+    return u?.id ? `admin-billing:${u.id}` : clientKey(req);
   },
   handler: (_req, res) => {
     res.setHeader('Retry-After', '10');

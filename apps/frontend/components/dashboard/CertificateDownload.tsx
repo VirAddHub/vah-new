@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
+import Link from 'next/link';
+import { useAccess } from '@/hooks/useAccess';
+import { sidebarStatusFor } from '@/components/account/AccessNotice';
 import { useToast } from '@/components/ui/use-toast';
 import {
   getCertificateBlockMeta,
@@ -47,6 +50,8 @@ export function CertificateDownload({
     const quiet = variant === 'quiet';
     const [isCertBusy, setIsCertBusy] = useState(false);
     const { toast } = useToast();
+    const { access } = useAccess();
+    const setupStatus = access && !access.isAdmin ? sidebarStatusFor(access) : null;
 
     const userProfile = profile && typeof profile === 'object' && 'data' in profile && profile.data != null
         ? (profile as { data: Record<string, unknown> }).data
@@ -61,9 +66,9 @@ export function CertificateDownload({
     );
     const hasCompanyNumber = String(companyNumber ?? '').trim().length > 0;
 
-    const canDownload = compliance
+    const canDownload = !setupStatus && (compliance
         ? Boolean(compliance.canDownloadProofOfAddressCertificate)
-        : (isKycApproved && hasCompanyNumber);
+        : (isKycApproved && hasCompanyNumber));
 
     const handleDownloadCertification = async () => {
         if (isCertBusy || !canDownload) return;
@@ -154,6 +159,14 @@ export function CertificateDownload({
                             {isCertBusy ? 'Preparing…' : 'Download certificate'}
                         </Button>
                     </>
+                ) : setupStatus ? (
+                    <Link
+                        href={setupStatus.href}
+                        className="block rounded-xl border border-border bg-muted/40 p-3 hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-foreground"
+                    >
+                        <p className="text-caption font-semibold leading-tight text-foreground">{setupStatus.title}</p>
+                        <p className="mt-0.5 text-caption leading-tight text-muted-foreground">{setupStatus.detail}</p>
+                    </Link>
                 ) : (() => {
                     const reason = compliance
                         ? getCertificateBlockReasonFromCompliance(compliance)

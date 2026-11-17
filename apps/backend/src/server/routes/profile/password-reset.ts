@@ -1,9 +1,10 @@
+import { clientKey } from '../../lib/clientKey';
 import { Router } from "express";
 import type { Pool } from "pg";
 import { generateResetTokenRaw, hashToken, verifyToken, expiryFromNow } from "../../../security/reset-token";
 import { sendTemplateEmail } from "../../../lib/mailer";
 import { Templates } from "../../../lib/postmark-templates";
-import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import rateLimit from 'express-rate-limit';
 import { BCRYPT_ROUNDS } from "../../../config/auth";
 import { logger } from "../../../lib/logger";
 import { getAppUrl } from "../../../config/appUrl";
@@ -18,7 +19,7 @@ export default function passwordResetRouter(pool: Pool) {
     max: 5,
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => ipKeyGenerator(req.ip ?? ""),
+    keyGenerator: (req) => clientKey(req),
   });
 
   // No user enumeration: always 204
