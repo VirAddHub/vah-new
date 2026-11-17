@@ -2,14 +2,17 @@
 // (no direct database writes), for checking the dashboard in a browser.
 // Writes the logins to /tmp/vah-ui-states.json. Mock provider events: NOT provider-sandbox tests.
 import { writeFileSync } from 'node:fs';
-import { Session, db, stripeEvent, sendStripe, sendSumsub, sumsubReview, importMail, startPdfServer, stripeFixture } from './lib.mjs';
+import { Session, db, stripeEvent, sendStripe, sendSumsub, sumsubReview, importMail, setScanUrl, startPdfServer, stripeFixture } from './lib.mjs';
 
 const PW = 'Journey!Passw0rd#1';
 const stamp = Date.now().toString(36);
 const pg = await db();
 const one = async (sql, args) => (await pg.query(sql, args)).rows[0];
 const plan = await one(`SELECT id FROM plans WHERE slug='virtual-mailbox-monthly'`);
-const pdf = await startPdfServer(4012);
+// Reuse a scan server already listening (UI_SCAN_PORT), e.g. one left running for browser checks.
+const scanPort = Number(process.env.UI_SCAN_PORT || 4012);
+const pdf = await startPdfServer(scanPort).catch(() => ({ url: `http://127.0.0.1:${scanPort}/scan.pdf`, close() {} }));
+if (!pdf.close) pdf.close = () => {};
 const admin = new Session();
 const a = await admin.post('/api/auth/login', { email: 'admin@example.test', password: 'Local!Admin#2026' });
 if (a.status !== 200) throw new Error(`admin login ${a.status}`);
@@ -25,6 +28,8 @@ async function customer(tag) {
   if (r.status !== 200 && r.status !== 201) throw new Error(`signup ${tag}: ${r.status} ${r.text.slice(0, 120)}`);
   const id = Number((await one('SELECT id FROM "user" WHERE email=$1', [email])).id);
   await importMail({ userId: id, sourceSlug: 'hmrc', fileName: `user${id}_2026-11-17_HMRC.pdf`, oneDriveFileId: `ui-${tag}-${stamp}`, oneDriveDownloadUrl: pdf.url, receivedAt: new Date().toISOString() });
+  const mailId = Number((await one('SELECT id FROM mail_item WHERE user_id=$1 ORDER BY id DESC LIMIT 1', [id])).id);
+  await setScanUrl(mailId, pdf.url);
   return { s, id, email };
 }
 async function pay(id, inv = {}) {

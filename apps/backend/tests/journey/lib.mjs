@@ -35,6 +35,8 @@ export class Session {
     const res = await fetch(API + path, { method, headers, body: payload, redirect: 'manual' });
     this.store(res);
     const text = await res.text(); let json = null; try { json = JSON.parse(text); } catch { /* not json */ }
+    recent.push({ at: new Date().toISOString(), method, path, status: res.status, requestId: res.headers.get('x-request-id'), body: text.slice(0, 300) });
+    if (recent.length > 8) recent.shift();
     return { status: res.status, json, text, headers: res.headers };
   }
   get(p) { return this.req('GET', p); }
@@ -43,9 +45,15 @@ export class Session {
 }
 
 const results = [];
+/** The last few requests made through Session, printed when a step fails (evidence for intermittent failures). */
+const recent = [];
 export async function step(id, name, fn) {
+  recent.length = 0;
   try { const note = await fn(); results.push({ id, name, status: 'PASS', note: note || '' }); }
-  catch (e) { results.push({ id, name, status: e.pending ? 'PENDING' : 'FAIL', note: e.message }); }
+  catch (e) {
+    results.push({ id, name, status: e.pending ? 'PENDING' : 'FAIL', note: e.message });
+    if (!e.pending) console.error(`[evidence] ${id} ${name}\n` + recent.map(r => `  ${r.at} ${r.method} ${r.path} -> ${r.status} (request ${r.requestId ?? '-'}) ${r.body.replace(/\s+/g, ' ')}`).join('\n'));
+  }
 }
 export function expect(cond, msg) { if (!cond) throw new Error(msg); }
 export function pending(reason) { const e = new Error(reason); e.pending = true; throw e; }
@@ -105,7 +113,7 @@ export async function setScanUrl(mailId, scanFileUrl) {
 export const TEST_PDF = Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n');
 export function startPdfServer(port = 4011) {
   const server = http.createServer((_q, r) => { r.writeHead(200, { 'content-type': 'application/pdf', 'content-length': TEST_PDF.length }); r.end(TEST_PDF); });
-  return new Promise(ok => server.listen(port, '127.0.0.1', () => ok({ url: `http://127.0.0.1:${port}/scan.pdf`, close: () => server.close() })));
+  return new Promise((ok, fail) => { server.once('error', fail); server.listen(port, '127.0.0.1', () => ok({ url: `http://127.0.0.1:${port}/scan.pdf`, close: () => server.close() })); });
 }
 /** Stripe objects for one customer's subscription, sharing ids like a real checkout does. */
 export function stripeFixture(userId, planId, period = 'monthly') {

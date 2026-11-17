@@ -157,6 +157,9 @@ await step('6.3', 'Customer opens the scan and receives the PDF', async () => {
   const d = await s.get(`/api/mail-items/${mailId}`); expect(d.status === 200, `detail ${d.status}`);
   const r = await s.get(`/api/bff/mail/scan-url?mailItemId=${mailId}`);
   expect(r.status === 200 && r.text.startsWith('%PDF') && r.text.length === TEST_PDF.length, `scan ${r.status}, ${r.text.length} bytes`);
+  // The route the website actually uses for the scan view and download:
+  const w = await s.get(`/api/mail-items/${mailId}/download?disposition=inline`);
+  expect(w.status === 200 && w.text.startsWith('%PDF'), `website scan route ${w.status}`);
 });
 await step('6.4', 'Another customer cannot open it', async () => {
   const other = new Session(); await other.post('/api/auth/signup', { ...customer, email: `other.${stamp}@example.test`, company_name: 'Other Ltd' });

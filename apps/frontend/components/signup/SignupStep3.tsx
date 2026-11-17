@@ -1,6 +1,7 @@
+import { SignupProgress } from './SignupProgress';
 import React, { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Shield, AlertTriangle, Check, Loader2, RotateCcw } from 'lucide-react';
+import { CreditCard, Shield, AlertTriangle, Check, Loader2, RotateCcw } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
@@ -209,38 +210,18 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
     // --- Pre-checkout / account creation view ---
     return (
         <main className="flex-1">
-            <div className="min-h-screen bg-background flex items-center justify-center p-4">
-                <div className="w-full max-w-2xl">
-                    {/* Header with progress and back button */}
-                    <div className="text-center mb-8">
-                        <div className="flex items-center justify-center gap-4 mb-6">
-                            <button
-                                onClick={onBack}
-                                disabled={isProcessing}
-                                className="inline-flex items-center justify-center border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-8 rounded-md gap-1.5 px-3 text-body-sm font-medium transition-all disabled:opacity-50"
-                            >
-                                <ArrowLeft className="h-4 w-4 mr-2" />
-                                Back
-                            </button>
-
-                            <div className="flex items-center gap-2" aria-label="Step progress">
-                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-body-sm font-medium">✓</div>
-                                <div className="w-8 h-1 bg-primary rounded-full"></div>
-                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-body-sm font-medium">✓</div>
-                                <div className="w-8 h-1 bg-primary rounded-full"></div>
-                                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-body-sm font-medium">3</div>
-                            </div>
-                        </div>
-
-                        <h1 className="mb-2">Complete Your Payment</h1>
-                        <p className="text-muted-foreground max-w-2xl mx-auto">
-                            Secure your London address with our trusted payment partner Stripe. After payment, you&apos;ll receive login details
-                            and complete identity verification (KYC) in your dashboard to activate your address.
-                        </p>
-                    </div>
+            <div className="min-h-screen bg-paper px-5 py-10 sm:px-8 sm:py-14">
+                <div className="mx-auto w-full max-w-2xl">
+                    <SignupProgress
+                        current={3}
+                        onBack={onBack}
+                        backDisabled={isProcessing}
+                        title="Payment"
+                        lede="Pay securely by card with Stripe. Afterwards you verify your identity in your dashboard, then your address and mail open."
+                    />
 
                     {/* Order Summary Card */}
-                    <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border mb-8">
+                    <div className="mb-8 flex flex-col gap-6 rounded-lg border border-line bg-paper">
                         <div className="px-6 pt-6">
                             <h4 className="leading-none">Order Summary</h4>
                         </div>
@@ -268,7 +249,7 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
                     </div>
 
                     {/* Payment Method Card */}
-                    <div className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border mb-8">
+                    <div className="mb-8 flex flex-col gap-6 rounded-lg border border-line bg-paper">
                         <div className="px-6 pt-6">
                             <h4 className="leading-none">Payment Method</h4>
                         </div>

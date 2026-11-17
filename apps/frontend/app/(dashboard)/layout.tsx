@@ -4,6 +4,7 @@ import { DashboardViewProvider } from '@/contexts/DashboardViewContext';
 import { ActiveBusinessProvider } from '@/contexts/ActiveBusinessContext';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { AccessNoticeSlot } from '@/components/account/AccessNotice';
+import { MobileTabBar } from '@/components/dashboard/MobileTabBar';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,12 +30,13 @@ export default function DashboardLayout({
                                 role="main"
                                 className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto"
                             >
-                                <div className="w-full max-w-full px-4 pb-3 pt-2 sm:px-4 sm:pb-5 sm:pt-4 md:px-6 md:pb-6 md:pt-6">
+                                <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-4 sm:px-6 md:px-8 md:pt-8 lg:pb-10">
                                     <AccessNoticeSlot />
                                     {children}
                                 </div>
                             </main>
                         </div>
+                        <MobileTabBar />
                     </div>
                 </OnboardingGate>
             </ActiveBusinessProvider>

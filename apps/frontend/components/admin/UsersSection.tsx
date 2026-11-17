@@ -1,6 +1,7 @@
 "use client";
 
 import { AccountStandingDialog } from './AccountStandingDialog';
+import { AdminUserPanel } from './AdminUserPanel';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { adminApi } from "../../lib/apiClient";
 import { Button } from "../ui/button";
@@ -137,6 +138,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
   // Account standing dialog (suspend / restore / close)
   const [standingUser, setStandingUser] = useState<null | { id: string | number; email: string }>(null);
+  const [panelUser, setPanelUser] = useState<null | { id: string | number; email: string; service_label?: string | null }>(null);
   // Account unlock state
   const [unlockingId, setUnlockingId] = useState<string | number | null>(null);
 
@@ -360,7 +362,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       )}
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-4 p-4 bg-muted/50 rounded-lg">
+      <div className="flex flex-wrap gap-3 rounded-lg border border-line p-4">
         <div className="flex items-center gap-2">
           <label className="text-body-sm font-medium">Status:</label>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -422,14 +424,14 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-h4 font-semibold">Users</h2>
           <p className="text-body-sm text-muted-foreground">
             {showDeleted ? `Showing ${users.length + deletedUsers.length} users (${users.length} active + ${deletedUsers.length} deleted)` : `Total: ${users.length}`}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
           <Button
             variant="primary"
             size="sm"
@@ -453,7 +455,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
             placeholder="Search ID, name or email…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="w-60"
+            className="w-full sm:w-60"
           />
         </div>
       </div>
@@ -477,8 +479,35 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
       {/* Users table */}
       <div className="relative">
-        <div className="border rounded-md">
-          <Table>
+        {/* Small screens: one card per customer, every action reachable without sideways scrolling */}
+        <ul className="space-y-3 md:hidden" aria-label="Users">
+          {displayUsers.length === 0 ? (
+            <li className="rounded-lg border border-line p-6 text-center text-[14px] text-graphite">{error ?? "No users found."}</li>
+          ) : displayUsers.map((u) => (
+            <li key={u.id} className="rounded-lg border border-line p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-[15px] font-medium text-ink">{u.email}</p>
+                  <p className="mt-0.5 text-[13px] text-graphite">
+                    <span className="figure-mono">#{u.id}</span>
+                    {u.company_name ? ` · ${u.company_name}` : ''}
+                  </p>
+                </div>
+                <Badge variant={statusVariant(u.service_label, u)} className="shrink-0 whitespace-nowrap">
+                  {u.service_label ?? (u.deleted_at ? "Closed" : u.status === "suspended" ? "Suspended" : "Unknown")}
+                </Badge>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => setPanelUser({ id: u.id, email: u.email, service_label: u.service_label })}>Details</Button>
+                <Button size="sm" variant="outline" onClick={() => setStandingUser({ id: u.id, email: u.email })}>Standing…</Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        {/* Larger screens: the table scrolls sideways inside its own frame if it is wider than the screen */}
+        <div className="hidden overflow-x-auto rounded-lg border border-line md:block focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink" role="region" aria-label="Users table" tabIndex={0}>
+          <Table className="min-w-[860px]">
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
@@ -487,7 +516,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 <TableHead>Company</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="sticky right-0 bg-mist text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -505,9 +534,10 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                       {u.id}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span>{u.email}</span>
-                      </div>
+                      <button type="button" onClick={() => setPanelUser({ id: u.id, email: u.email, service_label: u.service_label })}
+                        className="text-left font-medium text-ink underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink">
+                        {u.email}
+                      </button>
                     </TableCell>
                     <TableCell>
                       {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}
@@ -542,7 +572,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                         <span className="text-body-sm text-muted-foreground">No plan</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="sticky right-0 bg-paper text-right shadow-[-1px_0_0_hsl(var(--line))]">
                       <div className="flex justify-end gap-2">
                         {u.deleted_at ? (
                           <Button
@@ -809,6 +839,12 @@ export default function UsersSection({ users, loading, error, total, page, pageS
           </div>
         </div>
       )}
+
+      <AdminUserPanel
+        user={panelUser}
+        onClose={() => setPanelUser(null)}
+        onOpenStanding={(x) => { setPanelUser(null); setStandingUser(x); }}
+      />
 
       <AccountStandingDialog
         user={standingUser}

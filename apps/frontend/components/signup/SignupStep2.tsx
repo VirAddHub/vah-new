@@ -1,11 +1,11 @@
 'use client';
 
+import { SignupProgress } from './SignupProgress';
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, User, Building, MapPin, Eye, EyeOff, Loader2, CreditCard } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
-import { ScrollToTopButton } from '../ScrollToTopButton';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Plus, X } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
@@ -72,24 +72,22 @@ function SectionCard({
     children: React.ReactNode;
 }) {
     return (
-        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-visible">
-            <div className="border-l-4 border-l-primary">
-                <div className="px-4 pt-5 pb-2 md:px-6 md:pt-6 md:pb-2">
-                    <div className="flex items-center gap-2">
-                        <Icon className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
-                        <h4 className="leading-none font-semibold text-foreground">{title}</h4>
-                    </div>
-                    {helper && (
-                        <p className="text-body-sm text-muted-foreground mt-1.5">{helper}</p>
-                    )}
+        <section className="border-t border-line pt-6">
+            <div className="mb-5">
+                <div className="flex items-center gap-2">
+                    <Icon className="h-4 w-4 flex-shrink-0 text-graphite" aria-hidden />
+                    <h2 className="text-[16px] font-semibold text-ink">{title}</h2>
                 </div>
+                {helper && <p className="mt-1 text-[14px] text-graphite">{helper}</p>}
             </div>
-            <div className="px-4 pb-5 md:px-6 md:pb-6 space-y-4">
+            <div className="space-y-4">
                 {children}
             </div>
-        </div>
+        </section>
     );
 }
+
+const DETAIL_FIELDS = ['first_name', 'last_name', 'email', 'password', 'phone'];
 
 export function SignupStep2({ onNext, onBack, initialData, initialBilling = 'monthly', onBillingChange }: SignupStep2Props) {
     const [billing, setBilling] = useState<'monthly' | 'annual'>(initialBilling);
@@ -141,6 +139,8 @@ export function SignupStep2({ onNext, onBack, initialData, initialBilling = 'mon
 
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    // Two screens share this form's state: 1 = your details, 2 = your company
+    const [part, setPart] = useState<1 | 2>(1);
     const [companyMode, setCompanyMode] = useState<'registered' | 'not_registered'>('registered');
     const [showOptionalWorkingName, setShowOptionalWorkingName] = useState(false);
 
@@ -157,7 +157,7 @@ export function SignupStep2({ onNext, onBack, initialData, initialBilling = 'mon
         }
     };
 
-    const validateForm = (): boolean => {
+    const validateForm = (scope: 'details' | 'all' = 'all'): boolean => {
         const newErrors: Record<string, string> = {};
 
         // Contact Information validation
@@ -213,8 +213,19 @@ export function SignupStep2({ onNext, onBack, initialData, initialBilling = 'mon
             }
         }
 
+        if (scope === 'details') {
+            for (const k of Object.keys(newErrors)) if (!DETAIL_FIELDS.includes(k)) delete newErrors[k];
+        }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
+    };
+
+    const goNext = () => {
+        if (part === 1) {
+            if (validateForm('details')) { setPart(2); window.scrollTo({ top: 0 }); }
+            return;
+        }
+        if (validateForm()) onNext(buildPayload());
     };
 
     const buildPayload = (): SignupStep2Data => {
@@ -242,9 +253,7 @@ export function SignupStep2({ onNext, onBack, initialData, initialBilling = 'mon
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (validateForm()) {
-            onNext(buildPayload());
-        }
+        goNext();
     };
 
     // Debounced Companies House search via BFF endpoint (only when "registered" mode)
@@ -327,51 +336,31 @@ export function SignupStep2({ onNext, onBack, initialData, initialBilling = 'mon
     };
 
     return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
-            <div className="w-full max-w-4xl">
-                {/* Header with progress and back button */}
-                <div className="text-center mb-8">
-                    <div className="flex items-center justify-center gap-4 mb-6">
-                        <button
-                            onClick={onBack}
-                            className="inline-flex items-center justify-center border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-8 rounded-md gap-1.5 px-3 text-body-sm font-medium transition-all"
-                        >
-                            <ArrowLeft className="h-4 w-4 mr-2" />
-                            Back
-                        </button>
+        <div className="min-h-screen bg-paper px-5 py-10 sm:px-8 sm:py-14">
+            <div className="mx-auto w-full max-w-2xl">
+                <SignupProgress
+                    current={part}
+                    onBack={part === 2 ? () => { setPart(1); window.scrollTo({ top: 0 }); } : onBack}
+                    title={part === 1 ? 'Your details' : 'Your company'}
+                    lede={part === 1
+                        ? 'Choose monthly or annual billing and tell us who you are.'
+                        : 'Your company, where we forward post, and who controls the business.'}
+                />
 
-                        {/* Progress indicator — 2 steps */}
-                        <div className="flex items-center gap-2" aria-label="Step progress">
-                            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-body-sm font-medium">
-                                1
-                            </div>
-                            <div className="w-8 h-1 bg-muted rounded-full"></div>
-                            <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-body-sm font-medium">
-                                2
-                            </div>
-                        </div>
-                    </div>
+                <form onSubmit={handleSubmit} noValidate>
+                    <div className="space-y-8">
 
-                    <h1 className="mb-2">Get Started</h1>
-                    <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Choose your plan and tell us about yourself and your company. All fields marked with{" "}
-                        <span className="text-destructive">*</span> are required.
-                    </p>
-                </div>
-
-                <form onSubmit={handleSubmit} className="bg-muted rounded-2xl p-4 md:p-6">
-                    <div className="space-y-6 md:space-y-8">
-
+                    {part === 1 && (<>
                     {/* Plan Selection */}
                     <SectionCard title="Billing" icon={CreditCard}>
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             {/* Toggle */}
-                            <div className="inline-flex rounded-xl border border-border bg-muted p-1 self-start">
+                            <div className="inline-flex rounded-full border border-line p-1 self-start">
                                 <button
                                     type="button"
                                     onClick={() => handleBillingChange('monthly')}
-                                    className={`inline-flex items-center justify-center gap-2 whitespace-nowrap text-body-sm font-medium transition-all h-8 rounded-lg px-4 ${billing === 'monthly'
-                                        ? 'bg-card text-foreground shadow-sm'
+                                    className={`inline-flex items-center justify-center gap-2 whitespace-nowrap text-body-sm font-medium transition-all h-9 rounded-full px-4 ${billing === 'monthly'
+                                        ? 'bg-ink text-paper'
                                         : 'text-muted-foreground hover:text-foreground'
                                         }`}
                                 >
@@ -380,8 +369,8 @@ export function SignupStep2({ onNext, onBack, initialData, initialBilling = 'mon
                                 <button
                                     type="button"
                                     onClick={() => handleBillingChange('annual')}
-                                    className={`inline-flex items-center justify-center gap-2 whitespace-nowrap text-body-sm font-medium transition-all h-8 rounded-lg px-4 ${billing === 'annual'
-                                        ? 'bg-card text-foreground shadow-sm'
+                                    className={`inline-flex items-center justify-center gap-2 whitespace-nowrap text-body-sm font-medium transition-all h-9 rounded-full px-4 ${billing === 'annual'
+                                        ? 'bg-ink text-paper'
                                         : 'text-muted-foreground hover:text-foreground'
                                         }`}
                                 >
@@ -516,12 +505,15 @@ export function SignupStep2({ onNext, onBack, initialData, initialBilling = 'mon
                     </SectionCard>
 
                     {/* Company Details — toggle: registered (search) vs not registered (manual name) */}
+                    </>)}
+
+                    {part === 2 && (<>
                     <SectionCard title="Company Details" icon={Building}>
-                            <div className="inline-flex rounded-xl border border-border bg-muted p-1">
+                            <div className="inline-flex rounded-full border border-line p-1">
                                 <button
                                     type="button"
                                     onClick={() => setCompanyMode('registered')}
-                                    className={`rounded-lg px-3 py-2 text-body-sm font-medium transition-all ${companyMode === 'registered' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                    className={`rounded-lg px-3 py-2 text-body-sm font-medium transition-all ${companyMode === 'registered' ? 'bg-ink text-paper' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
                                     Registered company
                                 </button>
@@ -532,7 +524,7 @@ export function SignupStep2({ onNext, onBack, initialData, initialBilling = 'mon
                                         setShowOptionalWorkingName(false);
                                         setErrors(prev => ({ ...prev, company_name: '' }));
                                     }}
-                                    className={`rounded-lg px-3 py-2 text-body-sm font-medium transition-all ${companyMode === 'not_registered' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                    className={`rounded-lg px-3 py-2 text-body-sm font-medium transition-all ${companyMode === 'not_registered' ? 'bg-ink text-paper' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
                                     Not registered yet
                                 </button>
@@ -834,23 +826,20 @@ export function SignupStep2({ onNext, onBack, initialData, initialBilling = 'mon
                                 We ask this for compliance and account security. Additional owners will need to complete identity verification.
                             </div>
                     </SectionCard>
+                    </>)}
 
                     </div>
 
                     {/* Submit Button */}
-                    <div className="text-center">
-                        <ScrollToTopButton
-                            onClick={() => {
-                                if (validateForm()) {
-                                    onNext(buildPayload());
-                                }
-                            }}
-                            className="h-10 px-6 min-w-48 inline-flex items-center justify-center gap-2 whitespace-nowrap text-body-sm font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90 rounded-md"
-                        >
-                            Continue to Payment
-                        </ScrollToTopButton>
-                        <p className="text-body-sm text-muted-foreground mt-4">
-                            Your information is encrypted and secure. We&apos;ll create your account in the next step.
+                    <div className="mt-10 border-t border-line pt-6">
+                        <Button type="submit" size="lg" className="w-full sm:w-auto">
+                            {part === 1 ? 'Continue' : 'Continue to payment'}
+                        </Button>
+                        {Object.values(errors).some(Boolean) && (
+                            <p role="alert" className="mt-4 text-[14px] text-destructive">Please check the highlighted fields.</p>
+                        )}
+                        <p className="mt-4 text-[13px] text-slate">
+                            {part === 1 ? 'Next: your company and where we forward post.' : 'Your account is created on the next step, before payment.'}
                         </p>
                     </div>
                 </form>

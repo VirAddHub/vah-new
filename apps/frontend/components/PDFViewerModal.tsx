@@ -151,17 +151,12 @@ export default function PDFViewerModal({
                     )}
                     {!loading && !error && viewerUrl && (
                         <div className="h-full w-full overflow-x-auto overflow-y-hidden rounded-lg border border-border shadow-inner transition-opacity duration-150 [-webkit-overflow-scrolling:touch]">
-                            <object
-                                data={pdfEmbedUrl(viewerUrl)}
-                                type="application/pdf"
-                                className="h-full min-h-full w-full min-w-full"
-                            >
-                                <iframe
-                                    title="PDF preview"
-                                    src={pdfEmbedUrl(viewerUrl)}
-                                    className="h-full min-h-full w-full min-w-full border-0"
-                                />
-                            </object>
+                            {/* iframe, not <object>: the site's CSP blocks plugin content (object-src 'none') */}
+                            <iframe
+                                title="Scan of this letter"
+                                src={pdfEmbedUrl(viewerUrl)}
+                                className="h-full min-h-full w-full min-w-full border-0"
+                            />
                         </div>
                     )}
                 </div>

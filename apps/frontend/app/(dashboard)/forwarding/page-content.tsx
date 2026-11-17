@@ -4,6 +4,18 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { StatusSteps } from '@/components/ui/status-steps';
+
+const FORWARDING_STEPS = ['Requested', 'In progress', 'Dispatched', 'Delivered'];
+function forwardingStepIndex(status: string): number {
+    switch (status) {
+        case 'Requested': return 0;
+        case 'Reviewed': case 'Processing': return 1;
+        case 'Dispatched': return 2;
+        case 'Delivered': return 3;
+        default: return 0;
+    }
+}
 import { ArrowLeft, Truck, Clock, CheckCircle, Mail, X } from 'lucide-react';
 import { ForwardingRequestModal } from '@/components/ForwardingRequestModal';
 import { useToast } from '@/components/ui/use-toast';
@@ -175,27 +187,15 @@ export default function ForwardingPage() {
         }
     };
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'Requested': return 'bg-warning/10 text-warning-foreground';
-            case 'Reviewed': return 'bg-primary/10 text-primary-foreground';
-            case 'Processing': return 'bg-primary/10 text-primary-foreground';
-            case 'Dispatched': return 'bg-warning/10 text-warning-foreground';
-            case 'Delivered': return 'bg-success/10 text-success-foreground';
-            case 'Cancelled': return 'bg-destructive/10 text-destructive-foreground';
-            default: return 'bg-muted text-muted-foreground';
-        }
-    };
-
     const getStatusIcon = (status: string) => {
         switch (status) {
-            case 'Requested': return <Clock className="h-4 w-4" />;
-            case 'Reviewed': return <CheckCircle className="h-4 w-4" />;
-            case 'Processing': return <Truck className="h-4 w-4" />;
-            case 'Dispatched': return <Truck className="h-4 w-4" />;
-            case 'Delivered': return <CheckCircle className="h-4 w-4" />;
-            case 'Cancelled': return <Mail className="h-4 w-4" />;
-            default: return <Clock className="h-4 w-4" />;
+            case 'Requested': return <Clock className="h-3.5 w-3.5" aria-hidden />;
+            case 'Reviewed': return <CheckCircle className="h-3.5 w-3.5" aria-hidden />;
+            case 'Processing': return <Truck className="h-3.5 w-3.5" aria-hidden />;
+            case 'Dispatched': return <Truck className="h-3.5 w-3.5" aria-hidden />;
+            case 'Delivered': return <CheckCircle className="h-3.5 w-3.5" aria-hidden />;
+            case 'Cancelled': return <Mail className="h-3.5 w-3.5" aria-hidden />;
+            default: return <Clock className="h-3.5 w-3.5" aria-hidden />;
         }
     };
 
@@ -276,11 +276,9 @@ export default function ForwardingPage() {
                                                     <h3 className="text-body font-medium text-foreground">
                                                         Request #{request.id}
                                                     </h3>
-                                                    <Badge className={getStatusColor(request.status)}>
-                                                        <span className="flex items-center gap-1.5">
-                                                            {getStatusIcon(request.status)}
-                                                            {request.status}
-                                                        </span>
+                                                    <Badge variant={request.status === 'Cancelled' ? 'destructive' : request.status === 'Delivered' ? 'success' : 'default'}>
+                                                        {getStatusIcon(request.status)}
+                                                        {request.status}
                                                     </Badge>
                                                 </div>
                                                 
@@ -326,12 +324,16 @@ export default function ForwardingPage() {
                             {/* Status */}
                             <div>
                                 <h3 className="text-label text-muted-foreground mb-2 uppercase tracking-wide">Status</h3>
-                                <Badge className={getStatusColor(selectedRequest.status)}>
-                                    <span className="flex items-center gap-1.5">
-                                        {getStatusIcon(selectedRequest.status)}
-                                        {selectedRequest.status}
-                                    </span>
-                                </Badge>
+                                {selectedRequest.status === 'Cancelled' ? (
+                                    <Badge variant="destructive">{getStatusIcon('Cancelled')} Cancelled</Badge>
+                                ) : (
+                                    <StatusSteps
+                                        label="Forwarding progress"
+                                        steps={FORWARDING_STEPS}
+                                        current={forwardingStepIndex(selectedRequest.status)}
+                                        orientation="vertical"
+                                    />
+                                )}
                             </div>
 
                             {/* Recipient Information */}

@@ -22,6 +22,29 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { getOwnerStatusMeta } from '@/lib/verification-state';
 import { devError } from '@/lib/devConsole';
+import { StatusSteps } from '@/components/ui/status-steps';
+import { useAccess } from '@/hooks/useAccess';
+
+/** Identity check as a step line, from the same access decision the API enforces. */
+function IdentityProgress() {
+    const { access } = useAccess();
+    if (!access || access.isAdmin) return null;
+    const v = access.verification;
+    const steps = v.pendingOwners > 0 || v.state === 'owners_pending'
+        ? ['Not started', 'In review', 'You are verified', 'Owners verified']
+        : ['Not started', 'In review', 'Verified'];
+    const current = v.state === 'not_started' || v.state === 'action_required' || v.state === 'rejected' ? 0
+        : v.state === 'in_review' ? 1
+        : v.state === 'owners_pending' ? 2
+        : steps.length - 1;
+    return (
+        <div className="mt-6 rounded-lg border border-line p-4">
+            <StatusSteps label="Identity check" steps={steps} current={current} />
+            {v.state === 'action_required' && <p className="mt-3 text-[14px] text-graphite">We need a little more information. Start the check again below.</p>}
+            {v.state === 'rejected' && <p className="mt-3 text-[14px] text-destructive">We could not verify your identity. Please contact support so we can review it.</p>}
+        </div>
+    );
+}
 
 const SumsubKycWidget = dynamic(() => import('../SumsubKycWidget').then(mod => ({ default: mod.SumsubKycWidget })), { ssr: false });
 
@@ -328,6 +351,7 @@ export default function AccountVerificationPage() {
                 <p className="page-lede">
                     Check your verification status and any required next steps.
                 </p>
+                <IdentityProgress />
             </div>
 
             <div className="flex w-full min-w-0 flex-col gap-8 sm:gap-10">

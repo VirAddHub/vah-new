@@ -1,6 +1,7 @@
 // src/server/routes/mail.ts
 // Mail items API endpoints for users
 
+import { streamPdfFromUrl } from '../../controllers/pdfProxy';
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { selectPaged } from '../db-helpers';
@@ -494,6 +495,19 @@ router.get('/mail-items/:id/download', requireAuth, requireFullService, async (r
         }
 
         logger.debug('[mail] download requested', { mailItemId: mailId, disposition });
+
+        // Scans normally live in SharePoint and are fetched through Microsoft Graph. A scan stored at a
+        // plain web address (local development and tests, or a host listed in SCAN_DIRECT_HOSTS) is
+        // streamed directly, so the website's scan view works the same way everywhere.
+        const scanHost = (() => { try { return new URL(result.url).hostname.toLowerCase(); } catch { return ''; } })();
+        if (!scanHost.endsWith('.sharepoint.com')) {
+            const directHosts = String(process.env.SCAN_DIRECT_HOSTS || '').split(',').map(h => h.trim().toLowerCase()).filter(Boolean);
+            if (process.env.NODE_ENV !== 'production' || directHosts.includes(scanHost)) {
+                return streamPdfFromUrl(res, result.url, `mail-${mailId}.pdf`, disposition === 'attachment' ? 'attachment' : 'inline');
+            }
+            logger.warn('[mail] scan at an unsupported location', { mailItemId: mailId });
+            return res.status(502).json({ ok: false, error: 'scan_location_unsupported' });
+        }
 
         // Extract SharePoint drive path from URL
         const drivePath = extractDrivePathFromSharePointUrl(result.url);

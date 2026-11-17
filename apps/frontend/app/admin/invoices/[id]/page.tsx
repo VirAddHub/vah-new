@@ -203,7 +203,7 @@ export default function AdminInvoiceDetailPage() {
         activePage="invoices"
       />
 
-      <main id="main-content" role="main" className="p-6">
+      <main id="main-content" role="main" className="p-4 sm:p-6 lg:ml-56 lg:p-8">
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="flex items-center justify-between gap-3">
             <div>

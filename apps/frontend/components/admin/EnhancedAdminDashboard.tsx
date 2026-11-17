@@ -246,7 +246,7 @@ export function EnhancedAdminDashboard({
             />
 
             {/* Main Content */}
-            <main className="p-4 lg:p-6">
+            <main id="main-content" className="p-4 lg:ml-56 lg:p-8">
                 {renderContent()}
             </main>
 
