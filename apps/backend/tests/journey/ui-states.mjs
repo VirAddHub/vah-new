@@ -28,12 +28,16 @@ async function customer(tag) {
     forward_to_first_name: 'Ui', forward_to_last_name: 'Customer', address_line1: '1 Test Street', city: 'London', postcode: 'SW1A 1AA', forward_country: 'GB',
     billing: 'monthly', price: '9.99', isSoleController: true, additionalControllersCount: 0,
   });
-  if (STABLE && r.status === 409) { out[tag] = email; console.log(tag.padEnd(10), 'already exists, kept as it is'); throw SKIP; }
-  if (r.status !== 200 && r.status !== 201) throw new Error(`signup ${tag}: ${r.status} ${r.text.slice(0, 120)}`);
+  const exists = STABLE && r.status === 409;
+  if (!exists && r.status !== 200 && r.status !== 201) throw new Error(`signup ${tag}: ${r.status} ${r.text.slice(0, 120)}`);
   const id = Number((await one('SELECT id FROM "user" WHERE email=$1', [email])).id);
-  await importMail({ userId: id, sourceSlug: 'hmrc', fileName: `user${id}_2026-11-17_HMRC.pdf`, oneDriveFileId: `ui-${tag}-${stamp}`, oneDriveDownloadUrl: pdf.url, receivedAt: new Date().toISOString() });
-  const mailId = Number((await one('SELECT id FROM mail_item WHERE user_id=$1 ORDER BY id DESC LIMIT 1', [id])).id);
-  await setScanUrl(mailId, pdf.url);
+  const hasMail = exists && (await one('SELECT COUNT(*)::int AS n FROM mail_item WHERE user_id=$1 AND deleted=false AND scan_file_url IS NOT NULL', [id])).n > 0;
+  if (!hasMail) {
+    await importMail({ userId: id, sourceSlug: 'hmrc', fileName: `user${id}_2026-11-17_HMRC.pdf`, oneDriveFileId: `ui-${tag}-${stamp}`, oneDriveDownloadUrl: pdf.url, receivedAt: new Date().toISOString() });
+    const mailId = Number((await one('SELECT id FROM mail_item WHERE user_id=$1 ORDER BY id DESC LIMIT 1', [id])).id);
+    await setScanUrl(mailId, pdf.url);
+  }
+  if (exists) { out[tag] = email; console.log(tag.padEnd(10), hasMail ? 'already exists, kept as it is' : 'already exists, dummy mail added'); throw SKIP; }
   return { s, id, email };
 }
 async function pay(id, inv = {}) {

@@ -61,7 +61,7 @@ export function report() {
   const w = Math.max(...results.map(r => r.name.length));
   for (const r of results) console.log(`${r.status.padEnd(7)} ${r.id.padEnd(5)} ${r.name.padEnd(w)}  ${r.note}`);
   const count = s => results.filter(r => r.status === s).length;
-  console.log(`\n${count('PASS')} passed, ${count('FAIL')} failed, ${count('PENDING')} pending (not yet implemented)`);
+  console.log(`\n${count('PASS')} passed, ${count('FAIL')} failed, ${count('PENDING')} pending (provider setup or later work)`);
   return count('FAIL') === 0;
 }
 

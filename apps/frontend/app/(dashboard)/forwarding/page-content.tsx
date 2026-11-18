@@ -17,20 +17,8 @@ function forwardingStepIndex(status: string): number {
     }
 }
 import { ArrowLeft, Truck, Clock, CheckCircle, Mail, X } from 'lucide-react';
-import { ForwardingRequestModal } from '@/components/ForwardingRequestModal';
-import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-
-interface MailItem {
-    id: string;
-    subject: string;
-    sender_name: string;
-    created_at: string;
-    tag: string;
-    forwarding_status?: string;
-    gdpr_expired?: boolean;
-}
 
 interface ForwardingRequest {
     id: number;
@@ -47,13 +35,9 @@ interface ForwardingRequest {
 }
 
 export default function ForwardingPage() {
-    const { toast } = useToast();
     const router = useRouter();
-    const [mailItems, setMailItems] = useState<MailItem[]>([]);
     const [forwardingRequests, setForwardingRequests] = useState<ForwardingRequest[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showForwardingModal, setShowForwardingModal] = useState(false);
-    const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
     const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
     const [selectedRequest, setSelectedRequest] = useState<ForwardingRequest | null>(null);
 
@@ -64,18 +48,6 @@ export default function ForwardingPage() {
     const loadData = async () => {
         try {
             setLoading(true);
-
-            // Load mail items (keep logic but don't display)
-            const mailResponse = await fetch('/api/mail', {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-            });
-            if (mailResponse.ok) {
-                const mailData = await mailResponse.json();
-                setMailItems(mailData.items || []);
-            }
 
             // Load forwarding requests - use BFF endpoint
             const forwardingResponse = await fetch('/api/bff/forwarding/requests', {
@@ -92,98 +64,6 @@ export default function ForwardingPage() {
             console.error('Error loading data:', error);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleRequestForwarding = (mailItem: MailItem) => {
-        // Check if GDPR expired
-        if (mailItem.gdpr_expired) {
-            toast({
-                title: "Cannot Forward",
-                description: "This mail item is older than 30 days and cannot be forwarded due to GDPR compliance. You can still download it.",
-                variant: "destructive",
-                durationMs: 5000,
-            });
-            return;
-        }
-
-        setSelectedMailForForwarding(mailItem);
-        setShowForwardingModal(true);
-    };
-
-    const handleForwardingSubmit = async (data: any) => {
-        if (!selectedMailForForwarding) return;
-
-        try {
-            // Use BFF endpoint which handles CSRF tokens automatically
-            const response = await fetch('/api/bff/forwarding/requests', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    mail_item_id: selectedMailForForwarding.id,
-                    ...data
-                })
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                if (result.ok) {
-                    toast({
-                        title: "Forwarding Request Created",
-                        description: "Your request will be reviewed by our team.",
-                        durationMs: 5000,
-                    });
-                    setShowForwardingModal(false);
-                    setSelectedMailForForwarding(null);
-                    loadData(); // Refresh data
-                } else {
-                    toast({
-                        title: "Forwarding Request Failed",
-                        description: result.error || 'Unknown error',
-                        variant: "destructive",
-                        durationMs: 5000,
-                    });
-                }
-            } else {
-                const errorData = await response.json().catch(() => ({}));
-
-                // Handle incomplete forwarding address error
-                if (errorData.error === 'forwarding_address_incomplete' && errorData.fields) {
-                    const missingFields = errorData.fields || [];
-                    const fieldLabels: Record<string, string> = {
-                        'name': 'Full Name',
-                        'address_line_1': 'Address Line 1',
-                        'city': 'City',
-                        'postal_code': 'Postcode',
-                    };
-                    const missingLabels = missingFields.map((f: string) => fieldLabels[f] || f).join(', ');
-
-                    toast({
-                        title: "Incomplete Forwarding Address",
-                        description: `Please add your ${missingLabels} before requesting forwarding. You can update your forwarding address in Account settings.`,
-                        variant: "destructive",
-                        durationMs: 6000,
-                    });
-                } else {
-                    toast({
-                        title: "Request Failed",
-                        description: errorData.message || errorData.error || "Failed to create forwarding request. Please try again.",
-                        variant: "destructive",
-                        durationMs: 5000,
-                    });
-                }
-            }
-        } catch (error) {
-            console.error('Error creating forwarding request:', error);
-            toast({
-                title: "Request Error",
-                description: "Error creating forwarding request. Please try again.",
-                variant: "destructive",
-                durationMs: 5000,
-            });
         }
     };
 
@@ -405,18 +285,6 @@ export default function ForwardingPage() {
                 )}
             </div>
 
-            {/* Forwarding Request Modal */}
-            {showForwardingModal && selectedMailForForwarding && (
-                <ForwardingRequestModal
-                    isOpen={showForwardingModal}
-                    onClose={() => {
-                        setShowForwardingModal(false);
-                        setSelectedMailForForwarding(null);
-                    }}
-                    mailItem={selectedMailForForwarding}
-                    onSubmit={handleForwardingSubmit}
-                />
-            )}
         </div>
     );
 }

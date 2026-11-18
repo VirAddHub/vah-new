@@ -1,7 +1,7 @@
 // The eight-step customer journey, plus the access checks around it.
 // Conditions: database built by `npm run migrate`, rate limits ON, no manual activation, no patched build.
 // Run:  node apps/backend/tests/journey/journey.mjs   (API must be running: npm run local:start)
-// Steps not yet implemented in the product are reported as PENDING with the commit that will deliver them.
+// Steps that need provider setup (e.g. real Stripe test-mode checkout) are reported as PENDING with the reason.
 import { Session, db, step, expect, pending, report, stripeEvent, sendStripe, sendSumsub, sumsubReview, importMail, setScanUrl, startPdfServer, TEST_PDF, stripeFixture } from './lib.mjs';
 
 const stamp = Date.now();

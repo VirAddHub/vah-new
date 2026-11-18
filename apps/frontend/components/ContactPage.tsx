@@ -258,7 +258,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                         {/* Name + Email row */}
                         <div className="contact-name-row">
                             <div>
-                                <label style={labelStyle}>Name</label>
+                                <label htmlFor="name" style={labelStyle}>Name</label>
                                 <input
                                     className="contact-input"
                                     id="name" name="name" type="text" required
@@ -268,7 +268,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 />
                             </div>
                             <div>
-                                <label style={labelStyle}>Email</label>
+                                <label htmlFor="email" style={labelStyle}>Email</label>
                                 <input
                                     className="contact-input"
                                     id="email" name="email" type="email" required
@@ -281,7 +281,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
 
                         {/* Company */}
                         <div style={{ marginTop: 20 }}>
-                            <label style={labelStyle}>Company name</label>
+                            <label htmlFor="company" style={labelStyle}>Company name</label>
                             <input
                                 className="contact-input"
                                 id="company" name="company" type="text"
@@ -293,7 +293,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
 
                         {/* Subject */}
                         <div style={{ marginTop: 20 }}>
-                            <label style={labelStyle}>Subject</label>
+                            <label htmlFor="subject" style={labelStyle}>Subject</label>
                             <input
                                 className="contact-input"
                                 id="subject" name="subject" type="text" required
@@ -305,7 +305,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
 
                         {/* Enquiry type */}
                         <div style={{ marginTop: 20 }}>
-                            <label style={labelStyle}>Enquiry type</label>
+                            <label htmlFor="inquiryType" style={labelStyle}>Enquiry type</label>
                             <select
                                 className="contact-input"
                                 id="inquiryType" name="inquiryType"
@@ -329,7 +329,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
 
                         {/* Description */}
                         <div style={{ marginTop: 20 }}>
-                            <label style={labelStyle}>Description</label>
+                            <label htmlFor="message" style={labelStyle}>Description</label>
                             <textarea
                                 className="contact-input"
                                 id="message" name="message" required rows={5}

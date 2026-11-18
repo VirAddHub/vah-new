@@ -366,7 +366,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         <div className="flex items-center gap-2">
           <label className="text-body-sm font-medium">Status:</label>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger aria-label="Filter by status" className="w-32">
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
@@ -381,7 +381,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         <div className="flex items-center gap-2">
           <label className="text-body-sm font-medium">Plan:</label>
           <Select value={planFilter} onValueChange={setPlanFilter}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger aria-label="Filter by plan" className="w-40">
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
@@ -395,7 +395,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         <div className="flex items-center gap-2">
           <label className="text-body-sm font-medium">KYC:</label>
           <Select value={kycFilter} onValueChange={setKycFilter}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger aria-label="Filter by verification" className="w-32">
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>

@@ -21,14 +21,10 @@ module.exports = {
         },
         extend: {
             fontFamily: {
-                // Default stack: Poppins everywhere (marketing, dashboard, blog, help)
+                // Inter for text, IBM Plex Mono for figures
                 sans: ['var(--font-inter)', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
                 mono: ['var(--font-plex)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
-                playfair: ['var(--font-playfair)', 'Georgia', 'serif'],
-                poppins: ['var(--font-poppins)', 'system-ui', 'sans-serif'],
                 // MIX homepage editorial fonts
-                newsreader: ['var(--font-newsreader)', 'Georgia', 'serif'],
-                dmsans: ['var(--font-dmsans)', 'system-ui', 'sans-serif'],
                 plex: ['var(--font-plex)', 'ui-monospace', 'monospace'],
             },
             screens: {
