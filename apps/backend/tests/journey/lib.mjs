@@ -119,7 +119,7 @@ export function startPdfServer(port = 4011) {
 export function stripeFixture(userId, planId, period = 'monthly') {
   const customer = uid('cus'), subscription = uid('sub');
   const metadata = { userId: String(userId), planId: String(planId), billingPeriod: period };
-  const price = period === 'annual' ? ENV.STRIPE_PRICE_ID_ANNUAL : ENV.STRIPE_PRICE_ID_MONTHLY;
+  const price = period === 'annual' ? (ENV.STRIPE_ANNUAL_PRICE_ID || ENV.STRIPE_PRICE_ID_ANNUAL) : (ENV.STRIPE_MONTHLY_PRICE_ID || ENV.STRIPE_PRICE_ID_MONTHLY);
   const now = Math.floor(Date.now() / 1000), len = period === 'annual' ? 365 * 86400 : 30 * 86400;
   return {
     customer, subscription, metadata,

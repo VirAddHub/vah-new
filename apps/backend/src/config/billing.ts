@@ -14,6 +14,14 @@ export function isStripeEnabled(): boolean {
   return Boolean(process.env.STRIPE_SECRET_KEY?.trim());
 }
 
+function firstSet(...names: string[]): string {
+  for (const n of names) {
+    const v = (process.env[n] || '').trim();
+    if (v) return v;
+  }
+  return '';
+}
+
 export function getStripeConfig(): {
   secretKey: string;
   publishableKey: string;
@@ -25,8 +33,10 @@ export function getStripeConfig(): {
   const secretKey = (process.env.STRIPE_SECRET_KEY || '').trim();
   const publishableKey = (process.env.STRIPE_PUBLISHABLE_KEY || '').trim();
   const webhookSecret = (process.env.STRIPE_WEBHOOK_SECRET || '').trim();
-  const priceIdMonthly = (process.env.STRIPE_PRICE_ID_MONTHLY || '').trim();
-  const priceIdAnnual = (process.env.STRIPE_PRICE_ID_ANNUAL || '').trim();
+  // STRIPE_MONTHLY_PRICE_ID / STRIPE_ANNUAL_PRICE_ID are the names set on Render. The earlier names
+  // (STRIPE_PRICE_ID_MONTHLY / STRIPE_PRICE_ID_ANNUAL) are still read if the new ones are absent.
+  const priceIdMonthly = firstSet('STRIPE_MONTHLY_PRICE_ID', 'STRIPE_PRICE_ID_MONTHLY');
+  const priceIdAnnual = firstSet('STRIPE_ANNUAL_PRICE_ID', 'STRIPE_PRICE_ID_ANNUAL');
   const appUrl = (process.env.APP_URL || process.env.APP_BASE_URL || '').replace(/\/+$/, '');
   return {
     secretKey,
