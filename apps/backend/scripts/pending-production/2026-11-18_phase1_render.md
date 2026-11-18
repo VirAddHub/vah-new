@@ -11,6 +11,7 @@ Running it, merging to `main` and deploying each need your explicit approval.
 | `2026-11-18_phase1_render.sql` | The migration. Re-runs the pre-check, applies the change, verifies it, records it, then commits, all in one transaction | Yes |
 | `2026-11-18_phase1_render_verify.sql` | Full post-migration check | No |
 | `2026-11-18_phase1_render_rollback_check.sql` | Before an app rollback: shows what the previous release would read differently | No |
+| `run-sql.cjs` | Runs any of the files where psql is missing (Render Shell), with the same stop-on-first-error behaviour; uses the service's `DATABASE_URL` | As the file does |
 | `rehearsal/` | How the files were generated (`build_sql.py`) and tested (`rehearse.sh`, `build_render_copy.sh`, `app_smoke.mjs`) | Local only |
 
 The four SQL files are generated from one set of checks (`rehearsal/build_sql.py`). Edit the generator,
@@ -44,7 +45,7 @@ The change only adds or widens. Nothing is renamed or deleted, and no existing r
 - **The migration verifies itself before committing.** If the verification fails, the transaction is rolled back. The checks cover tables, column types, nullability and defaults, constraints, unique rules, indexes and data.
 - **Waits are bounded.** `lock_timeout` is 5 s and `statement_timeout` is 120 s. A blocked lock fails cleanly and nothing is kept.
 
-**Rehearsal** (`rehearsal/rehearse.sh`, on local copies built to match Render column for column), all passed:
+**Rehearsal** (`rehearsal/rehearse.sh`, on local copies built to match Render column for column), all passed, both with psql and with `RUNNER=node` (`run-sql.cjs`):
 
 1. The pre-check passes.
 2. The migration commits.

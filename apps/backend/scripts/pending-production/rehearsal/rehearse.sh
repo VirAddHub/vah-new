@@ -4,7 +4,11 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; PP="$HERE/.."
 B="${PGBASE:-postgres://postgres@127.0.0.1:5433}"
 export PGOPTIONS='-c vah.rehearsal=on'
-run() { psql -X "$B/$1" -f "$PP/$2" >"/tmp/rehearse-$3.log" 2>&1; echo $?; }
+# RUNNER=node uses run-sql.cjs (for hosts without psql, such as a Render Shell) instead of psql.
+run() {
+  if [ "${RUNNER:-psql}" = node ]; then DATABASE_URL="$B/$1" VAH_REHEARSAL=on node "$PP/run-sql.cjs" "$PP/$2" >"/tmp/rehearse-$3.log" 2>&1; echo $?;
+  else psql -X "$B/$1" -f "$PP/$2" >"/tmp/rehearse-$3.log" 2>&1; echo $?; fi
+}
 fp() { psql -X -At "$B/$1" -c "SELECT md5(string_agg(t||'='||h, ' ' ORDER BY t)) FROM (SELECT table_name t, md5(string_agg(column_name||data_type||is_nullable||coalesce(column_default,''), ',' ORDER BY column_name)) h FROM information_schema.columns WHERE table_schema='public' GROUP BY table_name) x" ; }
 idx() { psql -X -At "$B/$1" -c "SELECT md5(string_agg(indexdef, ';' ORDER BY indexdef)) || md5(coalesce((SELECT string_agg(conname||pg_get_constraintdef(oid), ';' ORDER BY conname) FROM pg_constraint WHERE connamespace = 'public'::regnamespace), '')) FROM pg_indexes WHERE schemaname='public'"; }
 rows() { psql -X -At "$B/$1" -c "SELECT (SELECT count(*) FROM business)||'/'||(SELECT count(*) FROM migrations)"; }
@@ -26,7 +30,7 @@ check "5 rollback check runs read-only"                        "$(run vah_local_
 psql -X -q "$B/vah_local_rc_b" -c 'ALTER TABLE "user" ADD COLUMN surprise text'
 S2="$(fp vah_local_rc_b)$(idx vah_local_rc_b)$(rows vah_local_rc_b)"
 check "6 pre-check stops on an unexpected column"              "$(run vah_local_rc_b 2026-11-18_phase1_render_precheck.sql pre-b)" 3
-check "6b migration (run without -v ON_ERROR_STOP) also stops" "$(psql -X "$B/vah_local_rc_b" -f "$PP/2026-11-18_phase1_render.sql" >/tmp/rehearse-mig-b.log 2>&1; echo $?)" 3
+check "6b migration also stops (psql: even without -v ON_ERROR_STOP)" "$(run vah_local_rc_b 2026-11-18_phase1_render.sql mig-b)" 3
 check "6c ...and changed nothing"                              "$(fp vah_local_rc_b)$(idx vah_local_rc_b)$(rows vah_local_rc_b)" "$S2"
 
 # Failure in the middle of the change: another session holds a lock on notification.
