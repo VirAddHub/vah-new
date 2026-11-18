@@ -360,7 +360,7 @@ export async function adminUpdateForwarding(req: Request, res: Response) {
 
             // audit (if table exists)
             await optional('mail_event', () => pool.query(
-                    `INSERT INTO mail_event(mail_item_id, user_id, event, meta_json, created_at)
+                    `INSERT INTO mail_event(mail_item, actor_user, event_type, details, created_at)
          VALUES ($1, $2, $3, $4, $5)`,
                     [cur.rows[0].mail_item_id, admin.id, `forwarding.${nextStatus.toLowerCase()}`, JSON.stringify({ courier, tracking_number, admin_notes }), nowTimestamp]
                 ));

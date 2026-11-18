@@ -508,12 +508,12 @@ router.get('/users/:id', requireAdmin, async (req: Request, res: Response) => {
             SELECT
                 u.id, u.email, u.first_name, u.last_name, u.company_name,
                 u.companies_house_number, u.company_number,
-                u.is_admin, u.is_staff, u.status, u.plan_status, u.plan_id,
+                u.is_admin, u.status, u.plan_status, u.plan_id,
                 u.kyc_status, u.kyc_approved_at, u.kyc_rejection_reason,
                 u.companies_house_verified, u.ch_verification_status,
                 u.subscription_status, u.stripe_customer_id,
                 u.phone, u.forwarding_address, u.created_at, u.updated_at,
-                u.last_active_at, u.last_login_at, u.deleted_at, u.expires_at,
+                u.last_active_at, u.last_login_at, u.deleted_at,
                 (SELECT COALESCE(SUM(t.failures), 0)::int FROM login_throttle t WHERE t.key LIKE 'u:' || u.id || ':%' AND t.locked_until > (extract(epoch from now()) * 1000)::bigint) AS login_attempts,
                 (SELECT MAX(t.locked_until) FROM login_throttle t WHERE t.key LIKE 'u:' || u.id || ':%' AND t.locked_until > (extract(epoch from now()) * 1000)::bigint) AS locked_until
             FROM "user" u
