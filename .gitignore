@@ -167,3 +167,8 @@ quiz-day0-template.html
 
 # Journey tests are tracked
 !apps/backend/tests/journey/*.mjs
+
+# OS and tool caches
+.DS_Store
+.cache_ggshield
+*.tsbuildinfo
