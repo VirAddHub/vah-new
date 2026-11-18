@@ -4,8 +4,8 @@ import { logger } from './logger';
 import { Templates } from './postmark-templates';
 import { modelBuilders, BuildArgs } from './template-models';
 
-// Use CommonJS require for Postmark to avoid import issues
-const postmark = require('postmark');
+// Default import (esModuleInterop) so tests can replace the client with vi.mock('postmark').
+import postmark from 'postmark';
 
 /**
  * Resolves the first name to use in email templates.

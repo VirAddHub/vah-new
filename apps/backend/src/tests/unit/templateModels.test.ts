@@ -1,6 +1,8 @@
+import { vi } from 'vitest';
+// Ported from apps/backend/tests (legacy Jest suite, which could no longer run); see audit/LEGACY-TESTS.md.
 // apps/backend/tests/unit/template-models.spec.ts
-import { modelBuilders } from '../../src/lib/template-models';
-import { Templates } from '../../src/lib/postmark-templates';
+import { modelBuilders } from '../../lib/template-models';
+import { Templates } from '../../lib/postmark-templates';
 
 describe('Template Model Builders - Name Resolution', () => {
   describe('resolveFirstName fallback logic', () => {
@@ -20,8 +22,8 @@ describe('Template Model Builders - Name Resolution', () => {
       Templates.MailScanned,
       Templates.MailForwarded,
       Templates.MailAfterCancellation,
-      Templates.ChVerificationNudge,
-      Templates.ChVerificationReminder,
+      // ChVerificationNudge / ChVerificationReminder are sent as plain emails (mailer.ts), not templates,
+      // so they have no model builder; the original list wrongly included them.
       Templates.QuizDay0,
     ];
 

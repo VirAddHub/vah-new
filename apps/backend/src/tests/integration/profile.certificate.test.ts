@@ -1,3 +1,11 @@
+import { vi } from 'vitest';
+// Ported from apps/backend/tests (legacy Jest suite, which could no longer run); see audit/LEGACY-TESTS.md.
+// Full-service gating (payment + identity + standing) is tested in tests/journey/access-control.mjs;
+// these tests cover the certificate/registered-office rules behind it, so let requests through.
+vi.mock('../../server/services/access', async (orig) => ({
+  ...(await orig<typeof import('../../server/services/access')>()),
+  requireFullService: (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
 /**
  * Identity verification compliance and certificate gating tests.
  * See docs/IDENTITY_VERIFICATION_ENGINEERING_SPEC.md
@@ -5,17 +13,17 @@
 import express from "express";
 import request from "supertest";
 
-const queryMock = jest.fn();
-jest.mock("../src/server/db", () => ({
+const queryMock = vi.fn();
+vi.mock("../../server/db", () => ({
   getPool: () => ({ query: queryMock }),
 }));
 
-import profileRouter from "../src/server/routes/profile";
+import profileRouter from "../../server/routes/profile";
 import {
   computeIdentityCompliance,
   computeIdentityComplianceByUserId,
   type UserRow,
-} from "../src/server/services/compliance";
+} from "../../server/services/compliance";
 
 describe("computeIdentityCompliance", () => {
   beforeEach(() => queryMock.mockReset());

@@ -1,9 +1,18 @@
+import { vi } from 'vitest';
+// Ported from apps/backend/tests (legacy Jest suite, which could no longer run); see audit/LEGACY-TESTS.md.
+// Full-service gating (payment + identity + standing) is tested in tests/journey/access-control.mjs;
+// these tests cover the certificate/registered-office rules behind it, so let requests through.
+vi.mock('../../server/services/entitlement', () => ({ isUserEntitled: async () => ({ entitled: true }) }));
+vi.mock('../../server/services/access', async (orig) => ({
+  ...(await orig<typeof import('../../server/services/access')>()),
+  requireFullService: (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
 import express from "express";
 import request from "supertest";
 
 // Mock DB pool used by the profile router (shared query mock)
-const queryMock = jest.fn();
-jest.mock("../src/server/db", () => {
+const queryMock = vi.fn();
+vi.mock("../../server/db", () => {
   return {
     getPool: () => ({
       query: queryMock,
@@ -11,8 +20,8 @@ jest.mock("../src/server/db", () => {
   };
 });
 
-import profileRouter from "../src/server/routes/profile";
-import { getPool } from "../src/server/db";
+import profileRouter from "../../server/routes/profile";
+import { getPool } from "../../server/db";
 
 describe("GET /api/profile/registered-office-address", () => {
   it("returns 403 KYC_REQUIRED when KYC not approved", async () => {
@@ -50,6 +59,7 @@ describe("GET /api/profile/registered-office-address", () => {
       rows: [
         {
           kyc_status: "verified",
+          user_status: "active",
           ch_verification_status: null,
           companies_house_verified: false,
         },

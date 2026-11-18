@@ -15,6 +15,21 @@ import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
 
+/**
+ * Columns never sent to the browser. PATCH /api/profile used to return RETURNING * as-is,
+ * including the password hash, reset-token hashes and payment-provider IDs (audit finding S1).
+ */
+const PRIVATE_USER_FIELDS = new Set([
+    'password', 'password_hash', 'password_reset_token', 'password_reset_token_hash', 'password_reset_expires',
+    'reset_token_hash', 'reset_token_expires_at', 'reset_token_used_at', 'login_attempts', 'locked_until',
+    'stripe_customer_id', 'stripe_subscription_id', 'gocardless_customer_id', 'gocardless_mandate_id',
+    'sumsub_applicant_id', 'email_verification_token', 'session_token',
+]);
+function publicProfile(row: Record<string, unknown> | undefined) {
+    if (!row) return row;
+    return Object.fromEntries(Object.entries(row).filter(([k]) => !PRIVATE_USER_FIELDS.has(k) && !/token|secret|hash/i.test(k)));
+}
+
 // Allowed file extensions (whitelist approach)
 const ALLOWED_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp'];
 const ALLOWED_MIME_TYPES = [
@@ -525,7 +540,7 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
             }
         }
 
-        return res.json({ ok: true, data: newUser });
+        return res.json({ ok: true, data: publicProfile(newUser) });
     } catch (error: any) {
         logger.error('[PATCH /api/profile] error', { message: error?.message ?? String(error) });
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
@@ -885,7 +900,7 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
             }
         }
 
-        return res.json({ ok: true, data: newUser });
+        return res.json({ ok: true, data: publicProfile(newUser) });
     } catch (error: any) {
         logger.error('[PATCH /api/profile/me] error', { message: error?.message ?? String(error) });
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });

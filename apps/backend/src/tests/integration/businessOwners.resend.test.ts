@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+// Ported from apps/backend/tests (legacy Jest suite, which could no longer run); see audit/LEGACY-TESTS.md.
 /**
  * Business owners resend invite endpoint tests.
  * See docs/IDENTITY_VERIFICATION_ENGINEERING_SPEC.md
@@ -5,18 +7,18 @@
 import express from "express";
 import request from "supertest";
 
-const queryMock = jest.fn();
-jest.mock("../src/server/db", () => ({
+const queryMock = vi.fn();
+vi.mock("../../server/db", () => ({
   getPool: () => ({ query: queryMock }),
 }));
 
-const resendBusinessOwnerInviteMock = jest.fn();
-jest.mock("../src/server/services/businessOwners", () => ({
-  ...jest.requireActual("../src/server/services/businessOwners"),
+const { resendBusinessOwnerInviteMock } = vi.hoisted(() => ({ resendBusinessOwnerInviteMock: vi.fn() }));
+vi.mock("../../server/services/businessOwners", async (orig) => ({
+  ...(await orig<Record<string, unknown>>()),
   resendBusinessOwnerInvite: (ownerId: number) => resendBusinessOwnerInviteMock(ownerId),
 }));
 
-import businessOwnersRouter from "../src/server/routes/businessOwners";
+import businessOwnersRouter from "../../server/routes/businessOwners";
 
 describe("POST /api/business-owners/:id/resend", () => {
   beforeEach(() => {

@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+// Ported from apps/backend/tests (legacy Jest suite, which could no longer run); see audit/LEGACY-TESTS.md.
 /**
  * Owner verification context (GET /api/business-owners/verify) response shape.
  * Ensures token_used, expired, alreadyVerified are explicit for frontend.
@@ -5,12 +7,12 @@
 import express from "express";
 import request from "supertest";
 
-const getOwnerVerificationContextMock = jest.fn();
-jest.mock("../src/server/services/businessOwners", () => ({
+const getOwnerVerificationContextMock = vi.fn();
+vi.mock("../../server/services/businessOwners", () => ({
   getOwnerVerificationContext: (token: string) => getOwnerVerificationContextMock(token),
 }));
 
-import businessOwnersRouter from "../src/server/routes/businessOwners";
+import businessOwnersRouter from "../../server/routes/businessOwners";
 
 describe("GET /api/business-owners/verify", () => {
   beforeEach(() => getOwnerVerificationContextMock.mockReset());

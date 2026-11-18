@@ -1,10 +1,12 @@
+import { vi } from 'vitest';
+// Ported from apps/backend/tests (legacy Jest suite, which could no longer run); see audit/LEGACY-TESTS.md.
 // apps/backend/tests/unit/mailer.templates.spec.ts
-jest.mock('postmark', () => ({
+vi.mock('postmark', () => ({
     __esModule: true,
     default: {
-        ServerClient: jest.fn().mockImplementation(() => ({
-            sendEmailWithTemplate: jest.fn().mockResolvedValue({ MessageID: 'mock-template' }),
-            sendEmail: jest.fn().mockResolvedValue({ MessageID: 'mock-fallback' }),
+        ServerClient: vi.fn().mockImplementation(() => ({
+            sendEmailWithTemplate: vi.fn().mockResolvedValue({ MessageID: 'mock-template' }),
+            sendEmail: vi.fn().mockResolvedValue({ MessageID: 'mock-fallback' }),
         })),
     },
 }));
@@ -13,7 +15,7 @@ const ORIGINAL_ENV = { ...process.env };
 
 describe('template sends (guarded)', () => {
     beforeEach(() => {
-        jest.resetModules();
+        vi.resetModules();
         process.env = {
             ...ORIGINAL_ENV,
             POSTMARK_TOKEN: 'test-token',
@@ -35,37 +37,37 @@ describe('template sends (guarded)', () => {
 
     test('guard prevents send when flag is disabled', async () => {
         process.env.EMAIL_KYC = '0';
-        const { sendKycSubmitted } = await import('../../src/lib/mailer');
+        const { sendKycSubmitted } = await import('../../lib/mailer');
         const res = await sendKycSubmitted({ email: 'u@example.com' });
         expect(res).toBeUndefined();
     });
 
     test('guard prevents send when flag is false', async () => {
         process.env.EMAIL_BILLING = 'false';
-        const { sendPlanCancelled } = await import('../../src/lib/mailer');
+        const { sendPlanCancelled } = await import('../../lib/mailer');
         const res = await sendPlanCancelled({ email: 'u@example.com' });
         expect(res).toBeUndefined();
     });
 
     test('fallback email sent when template fails', async () => {
         // Reset modules to get fresh mocks
-        jest.resetModules();
+        vi.resetModules();
 
         // Create a new mock with specific behavior
-        const mockSendEmailWithTemplate = jest.fn().mockRejectedValueOnce(new Error('Template not found'));
-        const mockSendEmail = jest.fn().mockResolvedValue({ MessageID: 'fallback' });
+        const mockSendEmailWithTemplate = vi.fn().mockRejectedValueOnce(new Error('Template not found'));
+        const mockSendEmail = vi.fn().mockResolvedValue({ MessageID: 'fallback' });
 
-        jest.doMock('postmark', () => ({
+        vi.doMock('postmark', () => ({
             __esModule: true,
             default: {
-                ServerClient: jest.fn().mockImplementation(() => ({
+                ServerClient: vi.fn().mockImplementation(() => ({
                     sendEmailWithTemplate: mockSendEmailWithTemplate,
                     sendEmail: mockSendEmail,
                 })),
             },
         }));
 
-        const { sendPlanCancelled } = await import('../../src/lib/mailer');
+        const { sendPlanCancelled } = await import('../../lib/mailer');
 
         await sendPlanCancelled({ email: 'u@example.com', firstName: 'User' });
 
@@ -83,7 +85,7 @@ describe('template sends (guarded)', () => {
 
     test('no-op when no token provided', async () => {
         process.env.POSTMARK_TOKEN = '';
-        const { sendPlanCancelled } = await import('../../src/lib/mailer');
+        const { sendPlanCancelled } = await import('../../lib/mailer');
         const res = await sendPlanCancelled({ email: 'u@example.com' });
         expect(res).toBeUndefined();
     });
@@ -91,14 +93,14 @@ describe('template sends (guarded)', () => {
     // Auth / Security tests
     test('password reset uses correct alias and cta_url', async () => {
         const postmark = (await import('postmark')).default as any;
-        const { sendPasswordResetEmail } = await import('../../src/lib/mailer');
+        const { sendPasswordResetEmail } = await import('../../lib/mailer');
         await sendPasswordResetEmail({
             email: 'u@example.com',
             firstName: 'User',
             cta_url: 'https://app.example.com/reset?token=abc123'
         });
 
-        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        const client = (postmark.ServerClient as vi.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
             expect.objectContaining({
                 TemplateAlias: 'password-reset-email',
@@ -115,13 +117,13 @@ describe('template sends (guarded)', () => {
 
     test('password reset falls back to "there" when firstName is missing', async () => {
         const postmark = (await import('postmark')).default as any;
-        const { sendPasswordResetEmail } = await import('../../src/lib/mailer');
+        const { sendPasswordResetEmail } = await import('../../lib/mailer');
         await sendPasswordResetEmail({
             email: 'u@example.com',
             cta_url: 'https://app.example.com/reset?token=abc123'
         });
 
-        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        const client = (postmark.ServerClient as vi.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
             expect.objectContaining({
                 TemplateModel: expect.objectContaining({
@@ -134,10 +136,10 @@ describe('template sends (guarded)', () => {
 
     test('password changed confirmation uses correct alias', async () => {
         const postmark = (await import('postmark')).default as any;
-        const { sendPasswordChangedConfirmation } = await import('../../src/lib/mailer');
+        const { sendPasswordChangedConfirmation } = await import('../../lib/mailer');
         await sendPasswordChangedConfirmation({ email: 'u@example.com', firstName: 'User' });
 
-        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        const client = (postmark.ServerClient as vi.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
             expect.objectContaining({
                 TemplateAlias: 'password-changed-confirmation',
@@ -153,14 +155,14 @@ describe('template sends (guarded)', () => {
     // Welcome & onboarding tests
     test('welcome email uses correct alias and cta_url', async () => {
         const postmark = (await import('postmark')).default as any;
-        const { sendWelcomeEmail } = await import('../../src/lib/mailer');
+        const { sendWelcomeEmail } = await import('../../lib/mailer');
         await sendWelcomeEmail({
             email: 'u@example.com',
             firstName: 'User',
             cta_url: 'https://app.example.com/dashboard'
         });
 
-        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        const client = (postmark.ServerClient as vi.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
             expect.objectContaining({
                 TemplateAlias: 'welcome-email',
@@ -177,14 +179,14 @@ describe('template sends (guarded)', () => {
     // Billing & invoices tests
     test('plan cancelled uses correct alias and optional fields', async () => {
         const postmark = (await import('postmark')).default as any;
-        const { sendPlanCancelled } = await import('../../src/lib/mailer');
+        const { sendPlanCancelled } = await import('../../lib/mailer');
         await sendPlanCancelled({
             email: 'u@example.com',
             firstName: 'User',
             end_date: '2024-12-31'
         });
 
-        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        const client = (postmark.ServerClient as vi.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
             expect.objectContaining({
                 TemplateAlias: 'plan-cancelled',
@@ -200,7 +202,7 @@ describe('template sends (guarded)', () => {
 
     test('invoice sent includes invoice_number and amount', async () => {
         const postmark = (await import('postmark')).default as any;
-        const { sendInvoiceSent } = await import('../../src/lib/mailer');
+        const { sendInvoiceSent } = await import('../../lib/mailer');
         await sendInvoiceSent({
             email: 'u@example.com',
             firstName: 'User',
@@ -208,7 +210,7 @@ describe('template sends (guarded)', () => {
             amount: '£29.99'
         });
 
-        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        const client = (postmark.ServerClient as vi.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
             expect.objectContaining({
                 TemplateAlias: 'invoice-sent',
@@ -225,14 +227,14 @@ describe('template sends (guarded)', () => {
 
     test('payment failed uses correct alias and cta_url', async () => {
         const postmark = (await import('postmark')).default as any;
-        const { sendPaymentFailed } = await import('../../src/lib/mailer');
+        const { sendPaymentFailed } = await import('../../lib/mailer');
         await sendPaymentFailed({
             email: 'u@example.com',
             firstName: 'User',
             cta_url: 'https://app.example.com/billing#payment'
         });
 
-        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        const client = (postmark.ServerClient as vi.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
             expect.objectContaining({
                 TemplateAlias: 'payment-failed',
@@ -249,10 +251,10 @@ describe('template sends (guarded)', () => {
     // KYC tests
     test('kyc submitted uses correct alias', async () => {
         const postmark = (await import('postmark')).default as any;
-        const { sendKycSubmitted } = await import('../../src/lib/mailer');
+        const { sendKycSubmitted } = await import('../../lib/mailer');
         await sendKycSubmitted({ email: 'u@example.com', firstName: 'User' });
 
-        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        const client = (postmark.ServerClient as vi.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
             expect.objectContaining({
                 TemplateAlias: 'kyc-submitted',
@@ -267,10 +269,10 @@ describe('template sends (guarded)', () => {
 
     test('kyc approved uses correct alias', async () => {
         const postmark = (await import('postmark')).default as any;
-        const { sendKycApproved } = await import('../../src/lib/mailer');
+        const { sendKycApproved } = await import('../../lib/mailer');
         await sendKycApproved({ email: 'u@example.com', firstName: 'User' });
 
-        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        const client = (postmark.ServerClient as vi.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
             expect.objectContaining({
                 TemplateAlias: 'kyc-approved',
@@ -284,14 +286,14 @@ describe('template sends (guarded)', () => {
 
     test('kyc rejected includes reason', async () => {
         const postmark = (await import('postmark')).default as any;
-        const { sendKycRejected } = await import('../../src/lib/mailer');
+        const { sendKycRejected } = await import('../../lib/mailer');
         await sendKycRejected({
             email: 'u@example.com',
             firstName: 'User',
             reason: 'Document quality insufficient'
         });
 
-        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        const client = (postmark.ServerClient as vi.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
             expect.objectContaining({
                 TemplateAlias: 'kyc-rejected',
@@ -308,14 +310,14 @@ describe('template sends (guarded)', () => {
     // Support tests
     test('support request received includes ticket_id', async () => {
         const postmark = (await import('postmark')).default as any;
-        const { sendSupportRequestReceived } = await import('../../src/lib/mailer');
+        const { sendSupportRequestReceived } = await import('../../lib/mailer');
         await sendSupportRequestReceived({
             email: 'u@example.com',
             firstName: 'User',
             ticket_id: 'TICKET-456'
         });
 
-        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        const client = (postmark.ServerClient as vi.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
             expect.objectContaining({
                 TemplateAlias: 'support-request-received',
@@ -331,14 +333,14 @@ describe('template sends (guarded)', () => {
 
     test('support request closed includes ticket_id', async () => {
         const postmark = (await import('postmark')).default as any;
-        const { sendSupportRequestClosed } = await import('../../src/lib/mailer');
+        const { sendSupportRequestClosed } = await import('../../lib/mailer');
         await sendSupportRequestClosed({
             email: 'u@example.com',
             firstName: 'User',
             ticket_id: 'TICKET-456'
         });
 
-        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        const client = (postmark.ServerClient as vi.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
             expect.objectContaining({
                 TemplateAlias: 'support-request-closed',
@@ -355,14 +357,14 @@ describe('template sends (guarded)', () => {
     // Mail events tests
     test('mail scanned includes subject', async () => {
         const postmark = (await import('postmark')).default as any;
-        const { sendMailScanned } = await import('../../src/lib/mailer');
+        const { sendMailScanned } = await import('../../lib/mailer');
         await sendMailScanned({
             email: 'u@example.com',
             firstName: 'User',
             subject: 'Bank statement received'
         });
 
-        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        const client = (postmark.ServerClient as vi.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
             expect.objectContaining({
                 TemplateAlias: 'mail-scanned',
@@ -378,13 +380,13 @@ describe('template sends (guarded)', () => {
 
     test('mail scanned falls back to "there" when firstName is missing', async () => {
         const postmark = (await import('postmark')).default as any;
-        const { sendMailScanned } = await import('../../src/lib/mailer');
+        const { sendMailScanned } = await import('../../lib/mailer');
         await sendMailScanned({
             email: 'u@example.com',
             subject: 'Bank statement received'
         });
 
-        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        const client = (postmark.ServerClient as vi.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
             expect.objectContaining({
                 TemplateModel: expect.objectContaining({
@@ -397,7 +399,7 @@ describe('template sends (guarded)', () => {
 
     test('mail forwarded includes forwarding details', async () => {
         const postmark = (await import('postmark')).default as any;
-        const { sendMailForwarded } = await import('../../src/lib/mailer');
+        const { sendMailForwarded } = await import('../../lib/mailer');
         await sendMailForwarded({
             email: 'u@example.com',
             firstName: 'User',
@@ -405,7 +407,7 @@ describe('template sends (guarded)', () => {
             forwarded_date: '09/10/2025'
         });
 
-        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        const client = (postmark.ServerClient as vi.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
             expect.objectContaining({
                 TemplateAlias: 'mail-forwarded',
@@ -421,14 +423,14 @@ describe('template sends (guarded)', () => {
 
     test('mail received after cancellation includes subject', async () => {
         const postmark = (await import('postmark')).default as any;
-        const { sendMailReceivedAfterCancellation } = await import('../../src/lib/mailer');
+        const { sendMailReceivedAfterCancellation } = await import('../../lib/mailer');
         await sendMailReceivedAfterCancellation({
             email: 'u@example.com',
             firstName: 'User',
             subject: 'Important document received'
         });
 
-        const client = (postmark.ServerClient as jest.Mock).mock.results[0].value;
+        const client = (postmark.ServerClient as vi.Mock).mock.results[0].value;
         expect(client.sendEmailWithTemplate).toHaveBeenCalledWith(
             expect.objectContaining({
                 TemplateAlias: 'mail-received-after-cancellation',
