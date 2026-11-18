@@ -9,7 +9,8 @@ the production database or any live provider. Every credential in `*.env.example
 npm ci                                     # install dependencies (Node 20 recommended)
 npm run local:db                           # start Postgres 16 in Docker on 127.0.0.1:5433
 npm run local:setup -- --demo-customer     # env files, database built from the migrations, dummy seed data
-npm run local:start                        # API on :4000, site on :3000 (Ctrl+C stops both)
+npm run local:start                        # API :4000, site :3000, dummy scans :4020 (Ctrl+C stops all)
+npm run local:states                       # optional, second terminal: one customer per account state
 ```
 
 No Docker? Any local Postgres works: create nothing by hand, just set `DATABASE_URL` in `local/backend.env`
@@ -21,7 +22,25 @@ to `postgres://<user>:<password>@127.0.0.1:<port>/vah_local` and run `npm run lo
 | Role | Email | Password | Notes |
 |---|---|---|---|
 | Admin | `admin@example.test` | `Local!Admin#2026` | Log in at `/admin/login` |
-| Customer | `demo.customer@example.test` | `Local!Customer#2026` | Only with `--demo-customer`. **Activated directly in the database**: a workaround, because the app cannot yet activate an account after payment (Phase 1 fixes this) |
+| Customer | `demo.customer@example.test` | `Local!Customer#2026` | Only with `--demo-customer`. Seeded straight into the database as paid, identity not yet verified. For realistic accounts use the state accounts below |
+
+`npm run local:states` creates these through the real API (signup, mocked Stripe and Sumsub events, admin
+actions), each with dummy mail. Password for all: `Journey!Passw0rd#1`. Re-running keeps existing ones.
+
+| Email | State |
+|---|---|
+| `ui.unpaid@example.test` | Signed up, not paid |
+| `ui.paid@example.test` | Paid, identity not verified |
+| `ui.full@example.test` | Paid and verified: full service, mail with scans |
+| `ui.owners@example.test` | Paid and verified, other company owners still to verify |
+| `ui.overdue@example.test` | Payment overdue (restricted) |
+| `ui.ending@example.test` | Cancelled at period end, still active |
+| `ui.cancelled@example.test` | Subscription ended (restricted) |
+| `ui.suspended@example.test` | Suspended by admin (restricted) |
+| `ui.restored@example.test` | Suspended then restored: full service |
+| `ui.closed@example.test` | Closed: sign-in refused |
+
+Restricted accounts see only a generic "mail is waiting" notice, never mail details.
 
 ## Commands
 
@@ -40,12 +59,11 @@ The scripts refuse to run if the database host is not `localhost`/`127.0.0.1`, i
 start with `vah_local`, if a live Stripe key (`sk_live_`) is set, if `NODE_ENV=production`, or if a Postmark
 token is present (local runs do not send email). `local/backend.env` and `local/frontend.env` are git-ignored.
 
-## Known limitations at the end of Phase 0
+## Known limitations
 
 - **The database is built from the migrations** (`apps/backend/scripts/baseline/000_baseline.sql` on an empty database, then the forward migrations). The baseline is a reconstruction that has not been compared with production: see `audit/SCHEMA-ASSUMPTIONS.md`.
-- **Rate limits are on.** The current limits are tight (30 auth requests per 15 minutes per IP, 200 per user);
-  heavy clicking can hit them. Uncomment `DISABLE_RATE_LIMIT=1` in `local/backend.env` if needed, and note that
-  any result obtained that way is provisional.
+- **Rate limits and sign-in throttling are on** (see `audit/RATE-LIMITS.md`). Five wrong passwords lock that
+  account for 15 minutes from that browser; the admin Users screen can unlock it.
 - Email, Companies House, address lookup, OneDrive and Sumsub's live widget are not configured. Stripe needs
   your own **test-mode** keys in `local/backend.env` for a real checkout.
 
@@ -54,10 +72,11 @@ token is present (local runs do not send email). `local/backend.env` and `local/
 With the app running (`npm run local:start`), from the project root:
 
 ```bash
-node apps/backend/tests/journey/journey.mjs        # the customer journey, signup to admin dispatch
-node apps/backend/tests/journey/stripe-events.mjs  # duplicates, retries, ordering, renewal, cancellation
-node apps/backend/tests/journey/rate-limits.mjs    # run last: exhausts the failed-login allowance
+npm run test:journey    # journey, stripe-events, admin-ops, access-control, login-throttle, rate-limits
+npm test                # backend unit and integration tests (uses its own vah_unit_test database)
 ```
+
+`rate-limits` runs last because it exhausts the local allowance; restart `local:start` afterwards.
 
 All run on the migration-built database with rate limits on and no manual account activation.
 They are MOCK tests: Stripe and Sumsub events are built and signed locally. A real Stripe

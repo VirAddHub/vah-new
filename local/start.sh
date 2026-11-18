@@ -14,7 +14,9 @@ mkdir -p "$LOCAL_DIR/logs"
 BE=$!
 ( set -a; . "$LOCAL_DIR/frontend.env"; set +a; cd apps/frontend && exec npx next dev -p 3000 ) > "$LOCAL_DIR/logs/frontend.log" 2>&1 &
 FE=$!
-trap 'kill $BE $FE 2>/dev/null || true' EXIT INT TERM
+( set -a; . "$LOCAL_DIR/backend.env"; set +a; exec node "$LOCAL_DIR/scan-server.mjs" ) > "$LOCAL_DIR/logs/scan-server.log" 2>&1 &
+SC=$!
+trap 'kill $BE $FE $SC 2>/dev/null || true' EXIT INT TERM
 for i in $(seq 1 30); do curl -fsS -m 2 http://127.0.0.1:4000/api/healthz >/dev/null 2>&1 && break; sleep 1; done
 curl -fsS -m 2 http://127.0.0.1:4000/api/healthz >/dev/null 2>&1 && echo "API   http://localhost:4000  (log: local/logs/backend.log)" || { echo "API failed to start. See local/logs/backend.log"; exit 1; }
 echo "Site  http://localhost:3000  (log: local/logs/frontend.log; first page load compiles and is slow)"

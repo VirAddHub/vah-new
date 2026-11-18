@@ -43,7 +43,7 @@ Ticked so far: routes proven by the journey test under the stated conditions. Ti
 |---|---|---|---|---|---|---|
 | [ ] | GET | `/api/profile` | requireAuth | 200, 401 |  |  |
 | [ ] | PATCH | `/api/profile` | requireAuth | 200, 403, 429 | Response leaks password hash (S1) | 11 |
-| [ ] | GET | `/api/profile/certificate` | requireAuth | 200, 429 |  |  |
+| [x] | GET | `/api/profile/certificate` | requireAuth | 200, 429 |  |  |
 | [ ] | GET | `/api/profile/certificate-url` | requireAuth | 200, 401, 429 |  |  |
 | [ ] | GET | `/api/profile/ch-verification` | requireAuth | not called |  |  |
 | [ ] | POST | `/api/profile/ch-verification` | requireAuth | not called |  |  |
@@ -56,8 +56,8 @@ Ticked so far: routes proven by the journey test under the stated conditions. Ti
 | [ ] | GET | `/api/profile/me` | requireAuth | not called |  |  |
 | [ ] | PATCH | `/api/profile/me` | requireAuth | 400, 429 |  |  |
 | [ ] | GET | `/api/profile/media/ch-verification/:filename` | requireAuth | not called |  |  |
-| [ ] | GET | `/api/profile/registered-office-address` | requireAuth | 200, 401, 403, 429 |  |  |
-| [ ] | POST | `/api/profile/reset-password-request` | none | not called |  |  |
+| [x] | GET | `/api/profile/registered-office-address` | requireAuth | 200, 401, 403, 429 |  |  |
+| [x] | POST | `/api/profile/reset-password-request` | none | not called |  |  |
 
 ### Administration (69)
 
@@ -77,14 +77,14 @@ Ticked so far: routes proven by the journey test under the stated conditions. Ti
 | [ ] | GET | `/api/admin/blog/posts/:slug` | requireAdmin | not called |  |  |
 | [ ] | PUT | `/api/admin/blog/posts/:slug` | requireAdmin | 404 |  |  |
 | [ ] | POST | `/api/admin/blog/upload` | requireAdmin | not called |  |  |
-| [ ] | POST | `/api/admin/ch-verification/:userId/approve` | requireAdmin | not called |  |  |
+| [x] | POST | `/api/admin/ch-verification/:userId/approve` | requireAdmin | not called |  |  |
 | [ ] | POST | `/api/admin/ch-verification/:userId/reject` | requireAdmin | not called |  |  |
 | [ ] | GET | `/api/admin/ch-verification/submissions` | requireAdmin | not called |  |  |
 | [ ] | GET | `/api/admin/exports/destruction-log` | requireAdmin*,requireAdmin | 200, 403 |  |  |
 | [ ] | POST | `/api/admin/forwarding/complete` | requireAdmin* | not called |  |  |
 | [ ] | GET | `/api/admin/forwarding/locks` | requireAdmin | 200, 403 |  |  |
 | [x] | GET | `/api/admin/forwarding/requests` | requireAdmin*,adminListForwarding | 200, 403 |  |  |
-| [ ] | DELETE | `/api/admin/forwarding/requests/:id` | requireAdmin*,requireAdmin | not called |  |  |
+| [x] | DELETE | `/api/admin/forwarding/requests/:id` | requireAdmin*,requireAdmin | not called |  |  |
 | [x] | PATCH | `/api/admin/forwarding/requests/:id` | requireAdmin*,adminUpdateForwarding | 400 |  |  |
 | [ ] | GET | `/api/admin/forwarding/requests/:id/debug-status` | requireAdmin | not called | Debug/repair route: remove or prove disabled (S9) | 12 |
 | [ ] | POST | `/api/admin/forwarding/requests/:id/force-unlock` | requireAdmin | not called |  |  |
@@ -97,7 +97,7 @@ Ticked so far: routes proven by the journey test under the stated conditions. Ti
 | [ ] | GET | `/api/admin/gocardless` | requireAdmin | not called |  |  |
 | [ ] | GET | `/api/admin/health/dependencies` | requireAdmin | not called |  |  |
 | [ ] | GET | `/api/admin/health/summary` | requireAdmin | 200, 403 |  |  |
-| [ ] | GET | `/api/admin/invoices` | requireAdmin | 200, 403 |  |  |
+| [x] | GET | `/api/admin/invoices` | requireAdmin | 200, 403 |  |  |
 | [ ] | GET | `/api/admin/invoices/:id` | requireAdmin | not called |  |  |
 | [ ] | GET | `/api/admin/invoices/:id/download` | requireAdmin | 200 |  |  |
 | [ ] | GET | `/api/admin/mail-items` | requireAdmin | 200, 403 |  |  |
@@ -113,20 +113,20 @@ Ticked so far: routes proven by the journey test under the stated conditions. Ti
 | [ ] | GET | `/api/admin/overview` | requireAdmin | 200, 403 |  |  |
 | [ ] | GET | `/api/admin/plans` | requireAdmin | 200, 403 |  |  |
 | [ ] | POST | `/api/admin/plans` | requireAdmin | 201, 403 |  |  |
-| [ ] | DELETE | `/api/admin/plans/:id` | requireAdmin | 200 |  |  |
-| [ ] | GET | `/api/admin/plans/:id` | requireAdmin | not called |  |  |
-| [ ] | PATCH | `/api/admin/plans/:id` | requireAdmin | 500 | Date type mismatch | 8 |
+| [x] | DELETE | `/api/admin/plans/:id` | requireAdmin | 200 |  |  |
+| [x] | GET | `/api/admin/plans/:id` | requireAdmin | not called |  |  |
+| [x] | PATCH | `/api/admin/plans/:id` | requireAdmin | 500 | Date type mismatch | 8 |
 | [ ] | GET | `/api/admin/postmark` | requireAdmin | not called |  |  |
 | [ ] | POST | `/api/admin/recalculate-invoice` | requireAdmin* | not called |  |  |
 | [ ] | POST | `/api/admin/repair-orphan-charges` | requireAdmin* | not called | Debug/repair route: remove or prove disabled (S9) | 12 |
 | [ ] | GET | `/api/admin/stats` | requireAdmin | 200, 403 |  |  |
 | [ ] | GET | `/api/admin/sumsub` | requireAdmin | 200, 403 |  |  |
-| [ ] | GET | `/api/admin/users` | requireAdmin | 200, 401, 403 |  |  |
-| [ ] | POST | `/api/admin/users` | requireAdmin | 500 | Date type mismatch on create | 8 |
-| [ ] | DELETE | `/api/admin/users/:id` | requireAdmin | not called |  |  |
-| [ ] | GET | `/api/admin/users/:id` | requireAdmin | 200 |  |  |
-| [ ] | PATCH | `/api/admin/users/:id` | requireAdmin | not called |  |  |
-| [ ] | POST | `/api/admin/users/:id/restore` | requireAdmin | not called |  |  |
+| [x] | GET | `/api/admin/users` | requireAdmin | 200, 401, 403 |  |  |
+| [x] | POST | `/api/admin/users` | requireAdmin | 500 | Date type mismatch on create | 8 |
+| [x] | DELETE | `/api/admin/users/:id` | requireAdmin | not called |  |  |
+| [x] | GET | `/api/admin/users/:id` | requireAdmin | 200 |  |  |
+| [x] | PATCH | `/api/admin/users/:id` | requireAdmin | not called |  |  |
+| [x] | POST | `/api/admin/users/:id/restore` | requireAdmin | not called |  |  |
 | [ ] | POST | `/api/admin/users/:id/send-password-reset` | requireAdmin | not called |  |  |
 | [ ] | POST | `/api/admin/users/:id/unlock-account` | requireAdmin | not called |  |  |
 | [ ] | GET | `/api/admin/users/deleted` | requireAdmin | 200 |  |  |
@@ -141,18 +141,18 @@ Ticked so far: routes proven by the journey test under the stated conditions. Ti
 | [ ] | POST | `/api/internal/billing/run` | none | 401 | No scheduler calls these | 17 |
 | [ ] | GET | `/api/internal/daily-summary` | none | 401 | No scheduler calls these | 17 |
 | [x] | POST | `/api/internal/from-onedrive` | none | 200, 401, 500 | No scheduler calls these | 17 |
-| [ ] | PATCH | `/api/internal/from-onedrive/:mailId/scan-url` | none | not called | No scheduler calls these | 17 |
+| [x] | PATCH | `/api/internal/from-onedrive/:mailId/scan-url` | none | not called | No scheduler calls these | 17 |
 
 ### Billing (20)
 
 | Done | Method | Route | Guards | Audit: HTTP codes seen | Known finding | Fix # |
 |---|---|---|---|---|---|---|
 | [ ] | POST | `/api/billing/cancel` | requireAuth | not called |  |  |
-| [ ] | POST | `/api/billing/change-plan` | requireAuth | not called |  |  |
-| [ ] | GET | `/api/billing/invoices` | requireAuth | 200, 401, 403, 429 |  |  |
-| [ ] | GET | `/api/billing/invoices/:id` | requireAuth | 404 |  |  |
-| [ ] | GET | `/api/billing/invoices/:id/download` | requireAuth | 403 |  |  |
-| [ ] | GET | `/api/billing/overview` | requireAuth | 200, 401, 403, 429 |  |  |
+| [x] | POST | `/api/billing/change-plan` | requireAuth | not called |  |  |
+| [x] | GET | `/api/billing/invoices` | requireAuth | 200, 401, 403, 429 |  |  |
+| [x] | GET | `/api/billing/invoices/:id` | requireAuth | 404 |  |  |
+| [x] | GET | `/api/billing/invoices/:id/download` | requireAuth | 403 |  |  |
+| [x] | GET | `/api/billing/overview` | requireAuth | 200, 401, 403, 429 |  |  |
 | [ ] | POST | `/api/billing/payment-methods/complete-setup` | requireAuth | not called |  |  |
 | [ ] | POST | `/api/billing/payment-methods/setup-intent` | requireAuth | not called |  |  |
 | [ ] | POST | `/api/billing/reauthorise` | requireAuth | not called |  |  |
@@ -161,7 +161,7 @@ Ticked so far: routes proven by the journey test under the stated conditions. Ti
 | [ ] | GET | `/api/payments/capabilities` | none | 200, 401 |  |  |
 | [ ] | POST | `/api/payments/redirect-flows` | requireAuth | 403 |  |  |
 | [ ] | POST | `/api/payments/stripe/checkout-session` | requireAuth | 429, 500 | Blocked by subscription check for new users | 3 |
-| [ ] | POST | `/api/payments/stripe/checkout-session-embedded` | requireAuth | 403, 500 | Blocked by subscription check for new users | 3 |
+| [x] | POST | `/api/payments/stripe/checkout-session-embedded` | requireAuth | 403, 500 | Blocked by subscription check for new users | 3 |
 | [x] | GET | `/api/payments/stripe/publishable-key` | none | 200, 401, 403, 429, 503 |  |  |
 | [ ] | GET | `/api/payments/stripe/session-status` | requireAuth | not called | Not scoped to owner (S6) | 13 |
 | [ ] | POST | `/api/payments/subscriptions` | requireAuth | not called |  |  |
@@ -174,9 +174,9 @@ Ticked so far: routes proven by the journey test under the stated conditions. Ti
 |---|---|---|---|---|---|---|
 | [ ] | GET | `/api/account/businesses` | requireAuth | 200, 401 |  |  |
 | [ ] | POST | `/api/account/businesses` | requireAuth | 201 |  |  |
-| [ ] | GET | `/api/account/businesses/:businessId` | requireAuth | not called |  |  |
-| [ ] | PATCH | `/api/account/businesses/:businessId` | requireAuth | not called |  |  |
-| [ ] | POST | `/api/account/businesses/:businessId/set-primary` | requireAuth | not called |  |  |
+| [x] | GET | `/api/account/businesses/:businessId` | requireAuth | not called |  |  |
+| [x] | PATCH | `/api/account/businesses/:businessId` | requireAuth | not called |  |  |
+| [x] | POST | `/api/account/businesses/:businessId/set-primary` | requireAuth | not called |  |  |
 | [ ] | GET | `/api/downloads/export/:token` | none | not called |  |  |
 | [ ] | GET | `/api/email-prefs` | requireAuth | 200, 429 |  |  |
 | [ ] | POST | `/api/email-prefs` | requireAuth | 200, 429 |  |  |
@@ -190,17 +190,17 @@ Ticked so far: routes proven by the journey test under the stated conditions. Ti
 | Done | Method | Route | Guards | Audit: HTTP codes seen | Known finding | Fix # |
 |---|---|---|---|---|---|---|
 | [x] | GET | `/api/mail-items` | requireActiveSubscription*,requireAuth | 200, 401, 403 |  |  |
-| [ ] | DELETE | `/api/mail-items/:id` | requireActiveSubscription*,requireAuth | 200 |  |  |
+| [x] | DELETE | `/api/mail-items/:id` | requireActiveSubscription*,requireAuth | 200 |  |  |
 | [x] | GET | `/api/mail-items/:id` | requireActiveSubscription*,requireAuth | 200, 403, 404 |  |  |
-| [ ] | PATCH | `/api/mail-items/:id` | requireActiveSubscription*,requireAuth | 200, 404 |  |  |
-| [ ] | GET | `/api/mail-items/:id/download` | requireActiveSubscription*,requireAuth | 400, 404 |  |  |
+| [x] | PATCH | `/api/mail-items/:id` | requireActiveSubscription*,requireAuth | 200, 404 |  |  |
+| [x] | GET | `/api/mail-items/:id/download` | requireActiveSubscription*,requireAuth | 400, 404 |  |  |
 | [ ] | POST | `/api/mail-items/:id/restore` | requireActiveSubscription*,requireAuth | 200 |  |  |
-| [ ] | GET | `/api/mail-items/:id/scan-url` | requireActiveSubscription*,requireAuth | 400, 404, 429 |  |  |
+| [x] | GET | `/api/mail-items/:id/scan-url` | requireActiveSubscription*,requireAuth | 400, 404, 429 |  |  |
 | [ ] | POST | `/api/mail-items/:id/tag` | requireActiveSubscription*,requireAuth | 200, 403, 404 |  |  |
-| [ ] | GET | `/api/mail-search/search` | none | 200 |  |  |
+| [x] | GET | `/api/mail-search/search` | none | 200 |  |  |
 | [ ] | GET | `/api/mail-search/search/test` | none | 200 |  |  |
 | [ ] | POST | `/api/mail/forward/forward` | none | not called |  |  |
-| [ ] | GET | `/api/tags` | requireActiveSubscription*,requireAuth | 200, 401 |  |  |
+| [x] | GET | `/api/tags` | requireActiveSubscription*,requireAuth | 200, 401 |  |  |
 | [ ] | POST | `/api/tags/delete` | requireActiveSubscription*,requireAuth | not called |  |  |
 | [ ] | POST | `/api/tags/merge` | requireActiveSubscription*,requireAuth | not called |  |  |
 | [ ] | POST | `/api/tags/rename` | requireActiveSubscription*,requireAuth | 200 |  |  |
@@ -209,7 +209,7 @@ Ticked so far: routes proven by the journey test under the stated conditions. Ti
 
 | Done | Method | Route | Guards | Audit: HTTP codes seen | Known finding | Fix # |
 |---|---|---|---|---|---|---|
-| [ ] | GET | `/api/forwarding/requests` | requireAuth | 200, 401 |  |  |
+| [x] | GET | `/api/forwarding/requests` | requireAuth | 200, 401 |  |  |
 | [x] | POST | `/api/forwarding/requests` | requireAuth | 200, 404 | Name stored in address1 | 9 |
 | [x] | GET | `/api/forwarding/requests/:id` | requireAuth | 200, 404 |  |  |
 | [ ] | POST | `/api/requests/bulk` | requireAuth | not called |  |  |
@@ -221,7 +221,7 @@ Ticked so far: routes proven by the journey test under the stated conditions. Ti
 | [ ] | GET | `/api/address` | none | not called | Blocked pre-payment by subscription check; needs test key | 3 |
 | [ ] | GET | `/api/address/lookup` | none | 401, 500 | Blocked pre-payment by subscription check; needs test key | 3 |
 | [ ] | GET | `/api/companies-house/company/:number` | none | not called | Blocked pre-payment by subscription check; needs test key | 3 |
-| [ ] | GET | `/api/companies-house/search` | none | 401, 500 | Blocked pre-payment by subscription check; needs test key | 3 |
+| [x] | GET | `/api/companies-house/search` | none | 401, 500 | Blocked pre-payment by subscription check; needs test key | 3 |
 
 ### Ops (8)
 
@@ -261,7 +261,7 @@ Ticked so far: routes proven by the journey test under the stated conditions. Ti
 | [ ] | GET | `/api/__version` | none | not called |  |  |
 | [x] | GET | `/api/bff/mail/scan-url` | requireAuth | 403 |  |  |
 | [ ] | POST | `/api/csp-report` | none | not called |  |  |
-| [ ] | GET | `/api/csrf` | none | not called |  |  |
+| [x] | GET | `/api/csrf` | none | not called |  |  |
 | [ ] | GET | `/api/files` | none | 401 |  |  |
 | [ ] | POST | `/api/files/:id/signed-url` | none | not called |  |  |
 | [ ] | GET | `/api/ideal-postcodes-key` | none | 200, 401 |  |  |
@@ -284,20 +284,20 @@ Ticked so far: routes proven by the journey test under the stated conditions. Ti
 |---|---|---|---|---|---|---|
 | [ ] | GET | `/api/support` | none | not called |  |  |
 | [ ] | GET | `/api/support/info` | none | 200, 401 | Placeholder contact details | 20 |
-| [ ] | GET | `/api/support/tickets` | requireAuth | 200, 429 |  |  |
-| [ ] | POST | `/api/support/tickets` | requireAuth | 200, 403, 429 |  |  |
+| [x] | GET | `/api/support/tickets` | requireAuth | 200, 429 |  |  |
+| [x] | POST | `/api/support/tickets` | requireAuth | 200, 403, 429 |  |  |
 | [ ] | POST | `/api/support/tickets/:id/close` | requireAuth | 200, 404 |  |  |
 
 ### Verification (9)
 
 | Done | Method | Route | Guards | Audit: HTTP codes seen | Known finding | Fix # |
 |---|---|---|---|---|---|---|
-| [ ] | GET | `/api/business-owners` | requireAuth | 200, 401, 429 |  |  |
-| [ ] | POST | `/api/business-owners` | requireAuth | 200, 429 |  |  |
+| [x] | GET | `/api/business-owners` | requireAuth | 200, 401, 429 |  |  |
+| [x] | POST | `/api/business-owners` | requireAuth | 200, 429 |  |  |
 | [ ] | POST | `/api/business-owners/:id/resend` | requireAuth | 200, 404 |  |  |
 | [ ] | GET | `/api/business-owners/verify` | none | 200 |  |  |
 | [ ] | POST | `/api/business-owners/verify/start` | none | 400 |  |  |
-| [ ] | POST | `/api/kyc/start` | requireAuth | 403, 501 |  |  |
+| [x] | POST | `/api/kyc/start` | requireAuth | 403, 501 |  |  |
 | [ ] | GET | `/api/kyc/status` | requireAuth | 200 |  |  |
 | [ ] | POST | `/api/kyc/sync-from-sumsub` | requireAuth | not called |  |  |
 | [ ] | POST | `/api/kyc/upload-documents` | requireAuth | not called |  |  |

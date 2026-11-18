@@ -5,18 +5,21 @@
  * Or: npx jest lib/server/backendOrigin.test.ts
  */
 
-import { getBackendApiBaseUrl, getBackendOrigin } from './backendOrigin';
+import { vi } from 'vitest';
+import type * as BackendOrigin from './backendOrigin';
+// Fresh module per test so the once-only warning flag starts unset.
+let getBackendApiBaseUrl: typeof BackendOrigin.getBackendApiBaseUrl;
+let getBackendOrigin: typeof BackendOrigin.getBackendOrigin;
 
 describe('getBackendOrigin', () => {
   const originalEnv = process.env;
   const originalNodeEnv = process.env.NODE_ENV;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset environment variables before each test
-    jest.resetModules();
+    vi.resetModules();
+    ({ getBackendApiBaseUrl, getBackendOrigin } = await import('./backendOrigin'));
     process.env = { ...originalEnv };
-    // Reset module-level didLog flag by clearing module cache
-    delete require.cache[require.resolve('./backendOrigin')];
   });
 
   afterEach(() => {
@@ -82,7 +85,7 @@ describe('getBackendOrigin', () => {
     process.env.NEXT_PUBLIC_API_URL = 'https://vah-api-staging.onrender.com';
     process.env.NODE_ENV = 'development';
 
-    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation();
     const result = getBackendOrigin();
 
     expect(result).toBe('https://vah-api-staging.onrender.com');
@@ -98,7 +101,7 @@ describe('getBackendOrigin', () => {
     delete process.env.NEXT_PUBLIC_API_URL;
     process.env.NODE_ENV = 'development';
 
-    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation();
     const result = getBackendOrigin();
 
     expect(result).toBe('https://vah-api-staging.onrender.com');
@@ -140,7 +143,7 @@ describe('getBackendOrigin', () => {
     process.env.NEXT_PUBLIC_API_URL = 'http://127.0.0.1:3001';
     process.env.NODE_ENV = 'development';
 
-    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation();
     const result = getBackendOrigin();
     expect(result).toBe('http://127.0.0.1:3001');
     consoleSpy.mockRestore();
