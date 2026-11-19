@@ -4,8 +4,9 @@ import { logger } from './logger';
 import { Templates } from './postmark-templates';
 import { modelBuilders, BuildArgs } from './template-models';
 
-// Default import (esModuleInterop) so tests can replace the client with vi.mock('postmark').
-import postmark from 'postmark';
+// Named import: postmark has no default export, so a default import is undefined at run time
+// (every templated email failed on staging with "reading 'ServerClient'").
+import { ServerClient } from 'postmark';
 
 /**
  * Resolves the first name to use in email templates.
@@ -70,7 +71,7 @@ export function getClient() {
             return _client;
         }
         if (!ENV.POSTMARK_TOKEN) return null; // no-op in local/test if unset
-        _client = new postmark.ServerClient(ENV.POSTMARK_TOKEN);
+        _client = new ServerClient(ENV.POSTMARK_TOKEN);
     }
     return _client;
 }

@@ -22,3 +22,21 @@ try {
 } catch (e) {
     console.warn('[verify-build] cannot list routes/public:', e.message);
 }
+
+// The compiled mailer must build a real Postmark client. A default import of 'postmark' passes
+// type checks and mocked unit tests but is undefined in the compiled CommonJS output, which
+// silently stopped every templated email on staging (19 Nov 2026). Runs without sending anything.
+try {
+    const saved = { token: process.env.POSTMARK_TOKEN, transport: process.env.MAIL_TRANSPORT };
+    process.env.POSTMARK_TOKEN = 'verify-build-not-a-real-token';
+    delete process.env.MAIL_TRANSPORT;
+    const { getClient } = require(path.join(__dirname, '..', 'dist', 'src', 'lib', 'mailer.js'));
+    const client = getClient();
+    if (!client || typeof client.sendEmailWithTemplate !== 'function') throw new Error('getClient() did not return a Postmark client');
+    if (saved.token === undefined) delete process.env.POSTMARK_TOKEN; else process.env.POSTMARK_TOKEN = saved.token;
+    if (saved.transport !== undefined) process.env.MAIL_TRANSPORT = saved.transport;
+    console.log('[verify-build] OK: mailer builds a Postmark client');
+} catch (e) {
+    console.error('[verify-build] MAILER BROKEN:', e && e.message ? e.message : e);
+    process.exit(1);
+}

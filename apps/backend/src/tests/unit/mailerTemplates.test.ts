@@ -1,14 +1,12 @@
 import { vi } from 'vitest';
 // Ported from apps/backend/tests (legacy Jest suite, which could no longer run); see audit/LEGACY-TESTS.md.
 // apps/backend/tests/unit/mailer.templates.spec.ts
+// The real package exports ServerClient by name only (no default export); mock the same shape.
 vi.mock('postmark', () => ({
-    __esModule: true,
-    default: {
-        ServerClient: vi.fn().mockImplementation(() => ({
-            sendEmailWithTemplate: vi.fn().mockResolvedValue({ MessageID: 'mock-template' }),
-            sendEmail: vi.fn().mockResolvedValue({ MessageID: 'mock-fallback' }),
-        })),
-    },
+    ServerClient: vi.fn().mockImplementation(() => ({
+        sendEmailWithTemplate: vi.fn().mockResolvedValue({ MessageID: 'mock-template' }),
+        sendEmail: vi.fn().mockResolvedValue({ MessageID: 'mock-fallback' }),
+    })),
 }));
 
 const ORIGINAL_ENV = { ...process.env };
@@ -58,13 +56,10 @@ describe('template sends (guarded)', () => {
         const mockSendEmail = vi.fn().mockResolvedValue({ MessageID: 'fallback' });
 
         vi.doMock('postmark', () => ({
-            __esModule: true,
-            default: {
-                ServerClient: vi.fn().mockImplementation(() => ({
-                    sendEmailWithTemplate: mockSendEmailWithTemplate,
-                    sendEmail: mockSendEmail,
-                })),
-            },
+            ServerClient: vi.fn().mockImplementation(() => ({
+                sendEmailWithTemplate: mockSendEmailWithTemplate,
+                sendEmail: mockSendEmail,
+            })),
         }));
 
         const { sendPlanCancelled } = await import('../../lib/mailer');
@@ -92,7 +87,7 @@ describe('template sends (guarded)', () => {
 
     // Auth / Security tests
     test('password reset uses correct alias and cta_url', async () => {
-        const postmark = (await import('postmark')).default as any;
+        const postmark = (await import('postmark')) as any;
         const { sendPasswordResetEmail } = await import('../../lib/mailer');
         await sendPasswordResetEmail({
             email: 'u@example.com',
@@ -116,7 +111,7 @@ describe('template sends (guarded)', () => {
     });
 
     test('password reset falls back to "there" when firstName is missing', async () => {
-        const postmark = (await import('postmark')).default as any;
+        const postmark = (await import('postmark')) as any;
         const { sendPasswordResetEmail } = await import('../../lib/mailer');
         await sendPasswordResetEmail({
             email: 'u@example.com',
@@ -135,7 +130,7 @@ describe('template sends (guarded)', () => {
     });
 
     test('password changed confirmation uses correct alias', async () => {
-        const postmark = (await import('postmark')).default as any;
+        const postmark = (await import('postmark')) as any;
         const { sendPasswordChangedConfirmation } = await import('../../lib/mailer');
         await sendPasswordChangedConfirmation({ email: 'u@example.com', firstName: 'User' });
 
@@ -154,7 +149,7 @@ describe('template sends (guarded)', () => {
 
     // Welcome & onboarding tests
     test('welcome email uses correct alias and cta_url', async () => {
-        const postmark = (await import('postmark')).default as any;
+        const postmark = (await import('postmark')) as any;
         const { sendWelcomeEmail } = await import('../../lib/mailer');
         await sendWelcomeEmail({
             email: 'u@example.com',
@@ -178,7 +173,7 @@ describe('template sends (guarded)', () => {
 
     // Billing & invoices tests
     test('plan cancelled uses correct alias and optional fields', async () => {
-        const postmark = (await import('postmark')).default as any;
+        const postmark = (await import('postmark')) as any;
         const { sendPlanCancelled } = await import('../../lib/mailer');
         await sendPlanCancelled({
             email: 'u@example.com',
@@ -201,7 +196,7 @@ describe('template sends (guarded)', () => {
     });
 
     test('invoice sent includes invoice_number and amount', async () => {
-        const postmark = (await import('postmark')).default as any;
+        const postmark = (await import('postmark')) as any;
         const { sendInvoiceSent } = await import('../../lib/mailer');
         await sendInvoiceSent({
             email: 'u@example.com',
@@ -226,7 +221,7 @@ describe('template sends (guarded)', () => {
     });
 
     test('payment failed uses correct alias and cta_url', async () => {
-        const postmark = (await import('postmark')).default as any;
+        const postmark = (await import('postmark')) as any;
         const { sendPaymentFailed } = await import('../../lib/mailer');
         await sendPaymentFailed({
             email: 'u@example.com',
@@ -250,7 +245,7 @@ describe('template sends (guarded)', () => {
 
     // KYC tests
     test('kyc submitted uses correct alias', async () => {
-        const postmark = (await import('postmark')).default as any;
+        const postmark = (await import('postmark')) as any;
         const { sendKycSubmitted } = await import('../../lib/mailer');
         await sendKycSubmitted({ email: 'u@example.com', firstName: 'User' });
 
@@ -268,7 +263,7 @@ describe('template sends (guarded)', () => {
     });
 
     test('kyc approved uses correct alias', async () => {
-        const postmark = (await import('postmark')).default as any;
+        const postmark = (await import('postmark')) as any;
         const { sendKycApproved } = await import('../../lib/mailer');
         await sendKycApproved({ email: 'u@example.com', firstName: 'User' });
 
@@ -285,7 +280,7 @@ describe('template sends (guarded)', () => {
     });
 
     test('kyc rejected includes reason', async () => {
-        const postmark = (await import('postmark')).default as any;
+        const postmark = (await import('postmark')) as any;
         const { sendKycRejected } = await import('../../lib/mailer');
         await sendKycRejected({
             email: 'u@example.com',
@@ -309,7 +304,7 @@ describe('template sends (guarded)', () => {
 
     // Support tests
     test('support request received includes ticket_id', async () => {
-        const postmark = (await import('postmark')).default as any;
+        const postmark = (await import('postmark')) as any;
         const { sendSupportRequestReceived } = await import('../../lib/mailer');
         await sendSupportRequestReceived({
             email: 'u@example.com',
@@ -332,7 +327,7 @@ describe('template sends (guarded)', () => {
     });
 
     test('support request closed includes ticket_id', async () => {
-        const postmark = (await import('postmark')).default as any;
+        const postmark = (await import('postmark')) as any;
         const { sendSupportRequestClosed } = await import('../../lib/mailer');
         await sendSupportRequestClosed({
             email: 'u@example.com',
@@ -356,7 +351,7 @@ describe('template sends (guarded)', () => {
 
     // Mail events tests
     test('mail scanned includes subject', async () => {
-        const postmark = (await import('postmark')).default as any;
+        const postmark = (await import('postmark')) as any;
         const { sendMailScanned } = await import('../../lib/mailer');
         await sendMailScanned({
             email: 'u@example.com',
@@ -379,7 +374,7 @@ describe('template sends (guarded)', () => {
     });
 
     test('mail scanned falls back to "there" when firstName is missing', async () => {
-        const postmark = (await import('postmark')).default as any;
+        const postmark = (await import('postmark')) as any;
         const { sendMailScanned } = await import('../../lib/mailer');
         await sendMailScanned({
             email: 'u@example.com',
@@ -398,7 +393,7 @@ describe('template sends (guarded)', () => {
     });
 
     test('mail forwarded includes forwarding details', async () => {
-        const postmark = (await import('postmark')).default as any;
+        const postmark = (await import('postmark')) as any;
         const { sendMailForwarded } = await import('../../lib/mailer');
         await sendMailForwarded({
             email: 'u@example.com',
@@ -422,7 +417,7 @@ describe('template sends (guarded)', () => {
     });
 
     test('mail received after cancellation includes subject', async () => {
-        const postmark = (await import('postmark')).default as any;
+        const postmark = (await import('postmark')) as any;
         const { sendMailReceivedAfterCancellation } = await import('../../lib/mailer');
         await sendMailReceivedAfterCancellation({
             email: 'u@example.com',
