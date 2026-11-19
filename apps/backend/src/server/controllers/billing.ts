@@ -142,8 +142,14 @@ export async function postChangePlan(_req: Request, res: Response) {
 }
 
 export async function postCancelAtPeriodEnd(req: Request, res: Response) {
-  // Stub: mark cancel_at_period_end in GC and persist
-  res.json({ ok: true, data: { cancels_on: null } });
+  // Cancelling happens in the Stripe billing portal (POST /api/billing/portal); Stripe then sends
+  // customer.subscription.updated and the webhook records cancel_at_period_end. Never report a
+  // cancellation that did not happen.
+  return res.status(501).json({
+    ok: false,
+    error: 'use_billing_portal',
+    message: 'Cancel your plan from the billing portal.',
+  });
 }
 
 /**
