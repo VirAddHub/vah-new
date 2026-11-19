@@ -56,26 +56,42 @@ BEGIN
     problems := problems || format('index subscription_user_unique: %s', coalesce((SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'subscription_user_unique'), 'MISSING'));
   END IF;
 
-  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_invoices_seq_year') THEN
-    problems := problems || 'index idx_invoices_seq_year already exists';
+  IF coalesce((SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_invoices_seq_year'), 'MISSING') <> 'CREATE INDEX idx_invoices_seq_year ON public.invoices_seq USING btree (year)' THEN
+    problems := problems || format('index idx_invoices_seq_year: %s', coalesce((SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_invoices_seq_year'), 'MISSING'));
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_invoices_seq_year_new') THEN
+    problems := problems || text 'index idx_invoices_seq_year_new already exists';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_notification_user_created') THEN
+    problems := problems || text 'index idx_notification_user_created already exists';
+  END IF;
+
+  -- Indexes, constraints and triggers reviewed on 18 Nov 2026: every index definition, constraint and trigger must match exactly.
+  SELECT (SELECT md5(string_agg(md5(indexdef), '' ORDER BY md5(indexdef) COLLATE "C")) FROM pg_indexes WHERE schemaname = 'public') INTO v_def;
+  IF v_def IS DISTINCT FROM 'fc0437965cbb71aa7e0b16e8b8573fbf' THEN
+    problems := problems || format('index definitions differ from the expected set (fingerprint %s, expected fc0437965cbb71aa7e0b16e8b8573fbf)', v_def);
+  END IF;
+  SELECT (SELECT md5(string_agg(h, '' ORDER BY h COLLATE "C")) FROM (SELECT md5(conrelid::regclass::text || ':' || conname || ':' || pg_get_constraintdef(oid)) AS h FROM pg_constraint WHERE connamespace = 'public'::regnamespace AND contype <> 'n') x) INTO v_def;
+  IF v_def IS DISTINCT FROM 'a7de2267504b6f422c1cd0d67855d90d' THEN
+    problems := problems || format('constraints differ from the expected set (fingerprint %s, expected a7de2267504b6f422c1cd0d67855d90d)', v_def);
+  END IF;
+  SELECT (SELECT md5(string_agg(md5(pg_get_triggerdef(oid)), '' ORDER BY 1)) FROM pg_trigger WHERE NOT tgisinternal) INTO v_def;
+  IF v_def IS DISTINCT FROM 'ce480cbc816118c5fc846d98ac56012d' THEN
+    problems := problems || format('triggers differ from the expected set (fingerprint %s, expected ce480cbc816118c5fc846d98ac56012d)', v_def);
   END IF;
 
   IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_invoices_provider_payment_id') THEN
-    problems := problems || 'index idx_invoices_provider_payment_id already exists';
+    problems := problems || text 'index idx_invoices_provider_payment_id already exists';
   END IF;
 
   IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_notification_user_unread') THEN
-    problems := problems || 'index idx_notification_user_unread already exists';
+    problems := problems || text 'index idx_notification_user_unread already exists';
   END IF;
   IF EXISTS (SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid = i.indrelid
               WHERE c.relname = 'invoices_seq' AND i.indisunique AND NOT i.indisprimary) THEN
-    problems := problems || 'invoices_seq already has a unique index other than its primary key';
-  END IF;
-  -- If Render already has idx_notification_user_created it must be the same index this change expects.
-  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_notification_user_created')
-     AND (SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_notification_user_created')
-         <> 'CREATE INDEX idx_notification_user_created ON public.notification USING btree (user_id, created_at DESC)' THEN
-    problems := problems || 'index idx_notification_user_created exists with a different definition';
+    problems := problems || text 'invoices_seq already has a unique index other than its primary key';
   END IF;
   -- Check constraints on subscription: exactly the GoCardless mandate check.
   SELECT count(*) INTO n FROM pg_constraint WHERE conrelid = 'public.subscription'::regclass AND contype = 'c';
@@ -137,8 +153,11 @@ CREATE UNIQUE INDEX idx_invoices_user_period_unique_new ON invoices (user_id, pe
 DROP INDEX idx_invoices_user_period_unique;
 ALTER INDEX idx_invoices_user_period_unique_new RENAME TO idx_invoices_user_period_unique;
 
--- 6. Invoice numbering uses ON CONFLICT (year), which needs this rule.
-CREATE UNIQUE INDEX idx_invoices_seq_year ON invoices_seq (year);
+-- 6. Invoice numbering uses ON CONFLICT (year), which needs a UNIQUE rule. Render has a plain index of the
+--    same name; the unique one is built first under a temporary name, then takes over the name.
+CREATE UNIQUE INDEX idx_invoices_seq_year_new ON invoices_seq (year);
+DROP INDEX idx_invoices_seq_year;
+ALTER INDEX idx_invoices_seq_year_new RENAME TO idx_invoices_seq_year;
 
 -- 7. In-app notifications: meta, read_at and millisecond created_at (what both releases write).
 ALTER TABLE notification ADD COLUMN meta    text;
@@ -149,7 +168,7 @@ UPDATE notification SET created_at = (EXTRACT(EPOCH FROM now()) * 1000)::bigint 
 ALTER TABLE notification ALTER COLUMN created_at SET NOT NULL;
 UPDATE notification SET read = false WHERE read IS NULL;
 ALTER TABLE notification ALTER COLUMN read SET NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_notification_user_created ON notification (user_id, created_at DESC);
+CREATE INDEX idx_notification_user_created ON notification (user_id, created_at DESC);
 CREATE INDEX idx_notification_user_unread ON notification (user_id) WHERE read_at IS NULL;
 
 -- 8. New tables.
@@ -219,6 +238,19 @@ BEGIN
   FOR k IN SELECT jsonb_object_keys(act) LOOP
     IF NOT exp ? k THEN problems := problems || format('unexpected table %s', k); END IF;
   END LOOP;
+  -- Indexes, constraints and triggers after the change: every index definition, constraint and trigger must match exactly.
+  SELECT (SELECT md5(string_agg(md5(indexdef), '' ORDER BY md5(indexdef) COLLATE "C")) FROM pg_indexes WHERE schemaname = 'public') INTO v_def;
+  IF v_def IS DISTINCT FROM '7a28ebea48cb8b26d9adb40082aba483' THEN
+    problems := problems || format('index definitions differ from the expected set (fingerprint %s, expected 7a28ebea48cb8b26d9adb40082aba483)', v_def);
+  END IF;
+  SELECT (SELECT md5(string_agg(h, '' ORDER BY h COLLATE "C")) FROM (SELECT md5(conrelid::regclass::text || ':' || conname || ':' || pg_get_constraintdef(oid)) AS h FROM pg_constraint WHERE connamespace = 'public'::regnamespace AND contype <> 'n') x) INTO v_def;
+  IF v_def IS DISTINCT FROM '27e7e57c8f1d3f75b512341fc55c12a1' THEN
+    problems := problems || format('constraints differ from the expected set (fingerprint %s, expected 27e7e57c8f1d3f75b512341fc55c12a1)', v_def);
+  END IF;
+  SELECT (SELECT md5(string_agg(md5(pg_get_triggerdef(oid)), '' ORDER BY 1)) FROM pg_trigger WHERE NOT tgisinternal) INTO v_def;
+  IF v_def IS DISTINCT FROM 'ce480cbc816118c5fc846d98ac56012d' THEN
+    problems := problems || format('triggers differ from the expected set (fingerprint %s, expected ce480cbc816118c5fc846d98ac56012d)', v_def);
+  END IF;
   -- Columns added or changed: type, nullability and default.
   v_type := NULL; v_null := NULL; v_def := NULL;
   SELECT data_type, is_nullable, column_default INTO v_type, v_null, v_def FROM information_schema.columns
@@ -466,6 +498,12 @@ BEGIN
   IF coalesce((SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_notification_user_created'), 'MISSING') <> 'CREATE INDEX idx_notification_user_created ON public.notification USING btree (user_id, created_at DESC)' THEN
     problems := problems || format('index idx_notification_user_created: %s', coalesce((SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_notification_user_created'), 'MISSING'));
   END IF;
+  IF coalesce((SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_notification_created_at'), 'MISSING') <> 'CREATE INDEX idx_notification_created_at ON public.notification USING btree (created_at DESC)' THEN
+    problems := problems || format('index idx_notification_created_at: %s', coalesce((SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_notification_created_at'), 'MISSING'));
+  END IF;
+  IF coalesce((SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_notification_user_read'), 'MISSING') <> 'CREATE INDEX idx_notification_user_read ON public.notification USING btree (user_id, read)' THEN
+    problems := problems || format('index idx_notification_user_read: %s', coalesce((SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_notification_user_read'), 'MISSING'));
+  END IF;
   IF coalesce((SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_notification_user_unread'), 'MISSING') <> 'CREATE INDEX idx_notification_user_unread ON public.notification USING btree (user_id) WHERE (read_at IS NULL)' THEN
     problems := problems || format('index idx_notification_user_unread: %s', coalesce((SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_notification_user_unread'), 'MISSING'));
   END IF;
@@ -504,16 +542,16 @@ BEGIN
   END LOOP;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = 'public.verification_event'::regclass AND contype = 'c'
                  AND pg_get_constraintdef(oid) = 'CHECK ((subject_type = ANY (ARRAY[''user''::text, ''business_owner''::text])))') THEN
-    problems := problems || 'verification_event subject_type check is missing or different';
+    problems := problems || text 'verification_event subject_type check is missing or different';
   END IF;
   IF EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = 'public.subscription'::regclass AND contype = 'c') THEN
-    problems := problems || 'subscription still has a check constraint (the mandate check blocks Stripe activations)';
+    problems := problems || text 'subscription still has a check constraint (the mandate check blocks Stripe activations)';
   END IF;
   -- Data.
   SELECT count(*) INTO n FROM "user" u WHERE NOT u.is_admin AND u.deleted_at IS NULL AND NOT EXISTS (SELECT 1 FROM business b WHERE b.user_id = u.id);
   IF n > 0 THEN problems := problems || format('%s customer(s) still without a business', n); END IF;
   SELECT count(*) INTO n FROM (SELECT year FROM invoices_seq GROUP BY year HAVING count(*) > 1) d;
-  IF n > 0 THEN problems := problems || 'invoices_seq has duplicated years'; END IF;
+  IF n > 0 THEN problems := problems || text 'invoices_seq has duplicated years'; END IF;
   IF cardinality(problems) > 0 THEN
     RAISE EXCEPTION 'VERIFICATION FAILED: the transaction will be rolled back (% problem(s)):%', cardinality(problems), E'\n  - ' || array_to_string(problems, E'\n  - ');
   END IF;

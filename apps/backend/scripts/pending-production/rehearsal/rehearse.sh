@@ -48,3 +48,12 @@ grep -q 'MIGRATION COMMITTED' /tmp/rehearse-mig-c.log; check "7d ...and no succe
 psql -X -q "$B/vah_local_rc_a" -c "DROP INDEX idx_invoices_seq_year"
 check "8 verify fails when a unique index is missing"          "$(run vah_local_rc_a 2026-11-18_phase1_render_verify.sql ver-bad)" 3
 grep -q 'idx_invoices_seq_year: MISSING' /tmp/rehearse-ver-bad.log; check "8b ...and names it" "$?" 0
+
+# Unexpected index (also exercises the checks whose messages are plain text).
+"$HERE/build_render_copy.sh" vah_local_rc_d >/dev/null
+psql -X -q "$B/vah_local_rc_d" -c "CREATE UNIQUE INDEX surprise_seq_idx ON invoices_seq (year, id)"
+S4="$(fp vah_local_rc_d)$(idx vah_local_rc_d)$(rows vah_local_rc_d)"
+check "9 migration stops on an unexpected index"               "$(run vah_local_rc_d 2026-11-18_phase1_render.sql mig-d)" 3
+grep -q 'invoices_seq already has a unique index' /tmp/rehearse-mig-d.log; check "9b ...names it" "$?" 0
+grep -q 'index definitions differ' /tmp/rehearse-mig-d.log; check "9c ...and reports the index fingerprint" "$?" 0
+check "9d ...and changed nothing"                              "$(fp vah_local_rc_d)$(idx vah_local_rc_d)$(rows vah_local_rc_d)" "$S4"

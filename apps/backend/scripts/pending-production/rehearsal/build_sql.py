@@ -7,12 +7,33 @@ migration and the verification can never drift apart.
 Inputs: render_fingerprint_2026-11-18.txt (column fingerprint of every table on Render, taken read-only on
 18 Nov 2026) and post_fingerprint.txt (the same fingerprint after the migration, from the rehearsal copy).
 """
-import json, pathlib
+import json, pathlib, re
 
 HERE = pathlib.Path(__file__).resolve().parent
 OUT = HERE.parent
 PRE = dict(x.split('=') for x in (HERE / 'render_fingerprint_2026-11-18.txt').read_text().split())
 POST = dict(x.split('=') for x in (HERE / 'post_fingerprint.txt').read_text().split()) if (HERE / 'post_fingerprint.txt').exists() else None
+# Whole-schema fingerprints of index definitions, constraints (NOT NULL entries excluded: PostgreSQL 18 lists them,
+# older versions do not; nullability is covered by the column fingerprint) and triggers. Taken read-only from Render
+# on 18 Nov 2026 (282 indexes, 131 constraints, 1 trigger); the post values come from the rehearsal copy.
+OBJ_PRE = {'idx': 'fc0437965cbb71aa7e0b16e8b8573fbf', 'con': 'a7de2267504b6f422c1cd0d67855d90d', 'trg': 'ce480cbc816118c5fc846d98ac56012d'}
+OBJ_POST = dict(l.split('=') for l in (HERE / 'post_objects.txt').read_text().split()) if (HERE / 'post_objects.txt').exists() else None
+OBJ_SQL = {
+    'idx': """SELECT md5(string_agg(md5(indexdef), '' ORDER BY md5(indexdef) COLLATE "C")) FROM pg_indexes WHERE schemaname = 'public'""",
+    'con': """SELECT md5(string_agg(h, '' ORDER BY h COLLATE "C")) FROM (SELECT md5(conrelid::regclass::text || ':' || conname || ':' || pg_get_constraintdef(oid)) AS h FROM pg_constraint WHERE connamespace = 'public'::regnamespace AND contype <> 'n') x""",
+    'trg': """SELECT md5(string_agg(md5(pg_get_triggerdef(oid)), '' ORDER BY 1)) FROM pg_trigger WHERE NOT tgisinternal""",
+}
+OBJ_LABEL = {'idx': 'index definitions', 'con': 'constraints', 'trg': 'triggers'}
+
+def objects_check(expected: dict, label: str) -> str:
+    out = f"\n  -- {label}: every index definition, constraint and trigger must match exactly."
+    for k in ('idx', 'con', 'trg'):
+        out += f"""
+  SELECT ({OBJ_SQL[k]}) INTO v_def;
+  IF v_def IS DISTINCT FROM '{expected[k]}' THEN
+    problems := problems || format('{OBJ_LABEL[k]} differ from the expected set (fingerprint %s, expected {expected[k]})', v_def);
+  END IF;"""
+    return out
 
 FINGERPRINT_SQL = """SELECT table_name AS t, left(md5(string_agg(column_name||':'||data_type||':'||is_nullable, ',' ORDER BY column_name)), 8) AS h
                  FROM information_schema.columns WHERE table_schema = 'public' GROUP BY table_name"""
@@ -68,6 +89,8 @@ def column_is(table, column, data_type, nullable, default):
   END IF;"""
 
 def wrap(name, body, ok_message, fail_prefix):
+    # A bare string literal appended to text[] would be read as an array literal; `text '...'` makes it one element.
+    body = body.replace("problems := problems || '", "problems := problems || text '")
     return f"""DO ${name}$
 DECLARE
   problems text[] := '{{}}';
@@ -99,18 +122,15 @@ PRE_BODY = f"""
 {index_is('idx_invoices_stripe_invoice_id', 'CREATE UNIQUE INDEX idx_invoices_stripe_invoice_id ON public.invoices USING btree (stripe_invoice_id) WHERE (stripe_invoice_id IS NOT NULL)')}
 {index_is('idx_invoices_gocardless_payment_id', 'CREATE UNIQUE INDEX idx_invoices_gocardless_payment_id ON public.invoices USING btree (gocardless_payment_id) WHERE (gocardless_payment_id IS NOT NULL)')}
 {index_is('subscription_user_unique', 'CREATE UNIQUE INDEX subscription_user_unique ON public.subscription USING btree (user_id)')}
-{index_absent('idx_invoices_seq_year')}
+{index_is('idx_invoices_seq_year', 'CREATE INDEX idx_invoices_seq_year ON public.invoices_seq USING btree (year)')}
+{index_absent('idx_invoices_seq_year_new')}
+{index_absent('idx_notification_user_created')}
+{objects_check(OBJ_PRE, 'Indexes, constraints and triggers reviewed on 18 Nov 2026')}
 {index_absent('idx_invoices_provider_payment_id')}
 {index_absent('idx_notification_user_unread')}
   IF EXISTS (SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid = i.indrelid
               WHERE c.relname = 'invoices_seq' AND i.indisunique AND NOT i.indisprimary) THEN
     problems := problems || 'invoices_seq already has a unique index other than its primary key';
-  END IF;
-  -- If Render already has idx_notification_user_created it must be the same index this change expects.
-  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_notification_user_created')
-     AND (SELECT indexdef FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_notification_user_created')
-         <> 'CREATE INDEX idx_notification_user_created ON public.notification USING btree (user_id, created_at DESC)' THEN
-    problems := problems || 'index idx_notification_user_created exists with a different definition';
   END IF;
   -- Check constraints on subscription: exactly the GoCardless mandate check.
   SELECT count(*) INTO n FROM pg_constraint WHERE conrelid = 'public.subscription'::regclass AND contype = 'c';
@@ -179,6 +199,8 @@ INDEXES = {
     'idx_invoices_seq_year': 'CREATE UNIQUE INDEX idx_invoices_seq_year ON public.invoices_seq USING btree (year)',
     'subscription_user_unique': 'CREATE UNIQUE INDEX subscription_user_unique ON public.subscription USING btree (user_id)',
     'idx_notification_user_created': 'CREATE INDEX idx_notification_user_created ON public.notification USING btree (user_id, created_at DESC)',
+    'idx_notification_created_at': 'CREATE INDEX idx_notification_created_at ON public.notification USING btree (created_at DESC)',
+    'idx_notification_user_read': 'CREATE INDEX idx_notification_user_read ON public.notification USING btree (user_id, read)',
     'idx_notification_user_unread': 'CREATE INDEX idx_notification_user_unread ON public.notification USING btree (user_id) WHERE (read_at IS NULL)',
     'login_throttle_pkey': 'CREATE UNIQUE INDEX login_throttle_pkey ON public.login_throttle USING btree (key)',
     'idx_login_throttle_first_failure_at': 'CREATE INDEX idx_login_throttle_first_failure_at ON public.login_throttle USING btree (first_failure_at)',
@@ -195,6 +217,8 @@ def post_body(check_tracking: bool) -> str:
     body = ''
     if POST:
         body += fingerprint_check(POST, 'Structure after the change')
+    if OBJ_POST:
+        body += objects_check(OBJ_POST, 'Indexes, constraints and triggers after the change')
     body += '\n  -- Columns added or changed: type, nullability and default.'
     body += ''.join(column_is(*c) for c in COLUMNS)
     body += '\n  -- Indexes, including every uniqueness rule the code relies on.'
@@ -284,8 +308,11 @@ CREATE UNIQUE INDEX idx_invoices_user_period_unique_new ON invoices (user_id, pe
 DROP INDEX idx_invoices_user_period_unique;
 ALTER INDEX idx_invoices_user_period_unique_new RENAME TO idx_invoices_user_period_unique;
 
--- 6. Invoice numbering uses ON CONFLICT (year), which needs this rule.
-CREATE UNIQUE INDEX idx_invoices_seq_year ON invoices_seq (year);
+-- 6. Invoice numbering uses ON CONFLICT (year), which needs a UNIQUE rule. Render has a plain index of the
+--    same name; the unique one is built first under a temporary name, then takes over the name.
+CREATE UNIQUE INDEX idx_invoices_seq_year_new ON invoices_seq (year);
+DROP INDEX idx_invoices_seq_year;
+ALTER INDEX idx_invoices_seq_year_new RENAME TO idx_invoices_seq_year;
 
 -- 7. In-app notifications: meta, read_at and millisecond created_at (what both releases write).
 ALTER TABLE notification ADD COLUMN meta    text;
@@ -296,7 +323,7 @@ UPDATE notification SET created_at = (EXTRACT(EPOCH FROM now()) * 1000)::bigint 
 ALTER TABLE notification ALTER COLUMN created_at SET NOT NULL;
 UPDATE notification SET read = false WHERE read IS NULL;
 ALTER TABLE notification ALTER COLUMN read SET NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_notification_user_created ON notification (user_id, created_at DESC);
+CREATE INDEX idx_notification_user_created ON notification (user_id, created_at DESC);
 CREATE INDEX idx_notification_user_unread ON notification (user_id) WHERE read_at IS NULL;
 
 -- 8. New tables.

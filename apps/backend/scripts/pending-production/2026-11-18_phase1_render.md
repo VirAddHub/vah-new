@@ -56,9 +56,11 @@ The change only adds or widens. Nothing is renamed or deleted, and no existing r
 7. When another session holds a lock halfway through, the migration stops with a lock timeout and keeps none of the steps it had already run. No success line is printed.
 8. Verify fails, and names the problem, when a unique index is missing.
 
-**Limit:** the copy is exact for columns (every table matches Render's fingerprint). Indexes and constraints
-were matched for the objects the change touches. Others on Render were not inventoried, but the change
-does not touch them, and the pre-check fails if any it depends on differ.
+**Copy fidelity:** the rehearsal copy is built from Render's own catalogs (`rehearsal/render_schema.sql`, read-only,
+19 Nov): every column with its exact type and default, all 282 index definitions, 131 constraints, 51 foreign keys,
+functions, the trigger and the view. Its fingerprints are identical to Render's. That inventory found a plain
+`idx_invoices_seq_year` index already on Render; the migration now replaces it with the unique one.
+The pre-check compares the whole schema (columns, every index, constraint and trigger) and stops on any difference.
 
 ## Compatibility (tested locally)
 

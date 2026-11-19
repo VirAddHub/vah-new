@@ -1,5 +1,6 @@
 -- Dummy data in the shapes found on Render (counts are smaller). Password for all: Journey!Passw0rd#1
 \set ON_ERROR_STOP on
+INSERT INTO migrations (name) VALUES ('017_fix_activity_status.sql'), ('110_rename_invoice_to_invoices.sql'), ('20251007_fix_missing_schema.sql');
 INSERT INTO plans (name, slug, description, price_pence, interval, currency, features_json, active, vat_inclusive, trial_days, sort, effective_at, created_at, updated_at, amount_pence)
 VALUES ('Virtual Mailbox - Monthly','virtual-mailbox-monthly','London Business Address',999,'month','GBP','[]',true,true,0,1,now()::text,now()::text,now()::text,999),
        ('Virtual Mailbox - Annual','virtual-mailbox-annual','London Business Address',8999,'year','GBP','[]',true,true,0,2,now()::text,now()::text,now()::text,8999)
