@@ -89,7 +89,7 @@ if (cmd === 'start') {
     const existing = await one('SELECT id FROM "user" WHERE lower(email)=$1', [EMAIL]);
     if (existing && st.password) { await login(s, st); return `existing user ${existing.id}`; }
     expect(!existing, 'test account exists but its password is not in /tmp; not touching it');
-    st.password = `Stg-${crypto.randomBytes(12).toString('base64url')}#9a`; save(st);
+    st.password = crypto.randomBytes(18).toString('base64url') + '!A1'; save(st); // generated at run time, kept only in /tmp
     const r = await s.post('/api/auth/signup', {
       first_name: 'Staging', last_name: 'Smoketest', email: EMAIL, password: st.password, phone: '+447700900123',
       company_name: 'Staging Smoke Test Ltd', business_type: 'limited_company', country_of_incorporation: 'GB', company_number: '12345678',

@@ -184,5 +184,19 @@ await step('E18', 'invoice.paid and subscription.created arriving together keep 
   }
 });
 
+await step('E19', 'Upgrade invoice (proration credit first) pays through the end of the new year', async () => {
+  // Seen on staging: the first line of a plan-change invoice is the credit for the old month.
+  const c = await newCustomer(), fx = stripeFixture(c.id, annual.id, 'annual');
+  const month = T + 30 * 86400, year = T + 365 * 86400;
+  const lines = { data: [
+    { amount: -900, period: { start: T, end: month }, price: { id: fx.invoice().lines.data[0].price.id } },
+    { amount: 8999, period: { start: T, end: year }, price: { id: fx.invoice().lines.data[0].price.id } },
+  ] };
+  const r = await sendStripe(stripeEvent('invoice.paid', fx.invoice({ lines, amount_paid: 8099 }), { created: T }));
+  expect(r.status === 200, `invoice.paid ${r.status}`);
+  const sub = await c.sub();
+  expect(Math.abs(Number(sub?.paid_through_ms) - year * 1000) < 1000, `paid through ${new Date(Number(sub?.paid_through_ms)).toISOString()}, expected ${new Date(year * 1000).toISOString()}`);
+});
+
 await pg.end();
 process.exit(report() ? 0 : 1);

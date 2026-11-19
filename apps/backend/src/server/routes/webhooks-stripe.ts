@@ -238,7 +238,12 @@ async function handleSubscriptionChanged(db: Db, event: Stripe.Event, userId: nu
 
 async function handleInvoicePaid(db: Db, event: Stripe.Event, userId: number, after: AfterCommit): Promise<Outcome> {
   const r = refsOf(event); const invoice = r.obj as any;
-  const line = invoice.lines?.data?.[0];
+  // The period paid for is the latest-ending line that charged money. A plan change invoice lists
+  // the proration credit for the old plan first; reading only the first line cut an annual
+  // upgrade's paid-through date to the end of the old month (seen on staging).
+  const lines: any[] = (invoice.lines?.data ?? []).filter((l: any) => l?.period?.end);
+  const charged = lines.filter((l: any) => Number(l.amount ?? 0) > 0);
+  const line = (charged.length ? charged : lines).reduce((a: any, b: any) => (!a || b.period.end > a.period.end ? b : a), null);
   const startS = line?.period?.start ?? invoice.period_start ?? null;
   const endS = line?.period?.end ?? invoice.period_end ?? null;
   const day = (s: number | null) => (s ? new Date(s * 1000) : new Date()).toISOString().slice(0, 10);
