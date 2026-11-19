@@ -172,5 +172,17 @@ await step('E17', 'Two different Stripe invoices for the same period are both re
   expect(r.status === 200, `second invoice ${r.status}`); expect(await count('invoices', c.id) === 2, `${await count('invoices', c.id)} invoices`);
 });
 
+await step('E18', 'invoice.paid and subscription.created arriving together keep the paid-through date', async () => {
+  // Seen on staging with real Stripe sandbox deliveries 70 ms apart.
+  for (let i = 0; i < 5; i++) {
+    const c = await newCustomer(), fx = stripeFixture(c.id, plan.id);
+    const rs = await Promise.all([sendStripe(stripeEvent('invoice.paid', fx.invoice(), { created: T })), sendStripe(stripeEvent('customer.subscription.created', fx.sub('active'), { created: T }))]);
+    expect(rs.every(r => r.status === 200), `statuses ${rs.map(r => r.status)}`);
+    const sub = await c.sub();
+    expect(sub?.status === 'active' && Number(sub.paid_through_ms) > Date.now(), `run ${i}: ${JSON.stringify({ status: sub?.status, paid_through_ms: sub?.paid_through_ms })}`);
+    expect(await count('invoices', c.id) === 1 && await count('subscription', c.id) === 1, 'duplicate rows');
+  }
+});
+
 await pg.end();
 process.exit(report() ? 0 : 1);

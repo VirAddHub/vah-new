@@ -177,7 +177,7 @@ async function applySubscriptionState(db: Db, c: StateChange, after: AfterCommit
        stripe_subscription_id = EXCLUDED.stripe_subscription_id,
        stripe_customer_id = COALESCE(EXCLUDED.stripe_customer_id, subscription.stripe_customer_id),
        customer_id = COALESCE(EXCLUDED.customer_id, subscription.customer_id),
-       paid_through_ms = EXCLUDED.paid_through_ms,
+       paid_through_ms = GREATEST(subscription.paid_through_ms, EXCLUDED.paid_through_ms),
        cancel_at_period_end = EXCLUDED.cancel_at_period_end,
        last_event_created_at = EXCLUDED.last_event_created_at, last_event_id = EXCLUDED.last_event_id,
        updated_at = EXCLUDED.updated_at`,
@@ -374,6 +374,10 @@ router.post('/stripe', async (req: Request, res: Response) => {
           outcome = 'unmatched';
           logger.warn('[stripe] event unmatched', { type: event.type, eventId: redactStripeId(event.id), customerMismatch: who.mismatch });
         } else {
+          // Serialise all events for one customer. Stripe sends e.g. invoice.paid and
+          // customer.subscription.created within milliseconds; processed in parallel, both saw no
+          // subscription row and the second overwrote the first (paid-through date lost on staging).
+          await client.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [`stripe-user:${who.userId}`]);
           outcome = await handler(client, event, who.userId, after);
         }
       } catch (err) {
