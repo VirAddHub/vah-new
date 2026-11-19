@@ -62,7 +62,7 @@ export default function AdminDashboardPage() {
 
             window.stop();
             setTimeout(() => {
-                window.location.replace("/admin/login");
+                window.location.replace("/login");
             }, 200);
         }
     };

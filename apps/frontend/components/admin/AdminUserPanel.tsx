@@ -80,10 +80,11 @@ export function AdminUserPanel({ user, onClose, onOpenStanding }: {
           <header className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
             <div className="min-w-0">
               <Dialog.Title className="truncate text-[20px] font-semibold tracking-[-0.02em] text-ink">{user?.email}</Dialog.Title>
-              <p className="mt-1 flex flex-wrap items-center gap-2 text-[13px] text-graphite">
+              {/* div, not p: Badge renders a div, which is not allowed inside a paragraph. */}
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-[13px] text-graphite">
                 <span className="figure-mono">User #{user?.id}</span>
                 {user?.service_label && <Badge variant="secondary">{user.service_label}</Badge>}
-              </p>
+              </div>
             </div>
             <Dialog.Close asChild>
               <button type="button" aria-label="Close" className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-graphite hover:bg-mist hover:text-ink">

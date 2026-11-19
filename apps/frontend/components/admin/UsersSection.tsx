@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { usePlans } from "../../hooks/usePlans";
 
 const PLAN_STATUS_OPTIONS = [
   { value: 'active', label: 'Active', description: 'User is fully billable and can receive scans.' },
@@ -83,6 +84,8 @@ function statusVariant(label: string | null | undefined, u: { deleted_at?: unkno
 
 export default function UsersSection({ users, loading, error, total, page, pageSize, onPageChange, isValidating, onFiltersChange, onRefreshUsers }: UsersSectionProps) {
   const { toast } = useToast();
+  // Plan ids differ between databases, so the plan filter is built from the real plans.
+  const { plans } = usePlans();
 
   // Search state (raw input)
   const [q, setQ] = useState("");
@@ -353,27 +356,24 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       {/* User stats badges */}
       {stats && (
         <div className="flex flex-wrap gap-3 text-body-sm text-muted-foreground">
-          <span>Total: {stats.total}</span>
-          <span>Active: {stats.active}</span>
+          {/* Account standing only. Payment and verification are shown per customer in the Status column. */}
+          <span>Accounts: {stats.total}</span>
           <span>Suspended: {stats.suspended}</span>
-          <span>Pending: {stats.pending}</span>
-          <span className="text-destructive">Deleted: {stats.deleted}</span>
+          <span>Closed: {stats.deleted}</span>
         </div>
       )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 rounded-lg border border-line p-4">
         <div className="flex items-center gap-2">
-          <label className="text-body-sm font-medium">Status:</label>
+          <label className="text-body-sm font-medium">Account:</label>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger aria-label="Filter by status" className="w-32">
+            <SelectTrigger aria-label="Filter by account standing" className="w-36">
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">All</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
               <SelectItem value="suspended">Suspended</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -386,8 +386,9 @@ export default function UsersSection({ users, loading, error, total, page, pageS
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">All</SelectItem>
-              <SelectItem value="1">Virtual Annual</SelectItem>
-              <SelectItem value="2">Virtual Monthly</SelectItem>
+              {plans.map((p) => (
+                <SelectItem key={p.id} value={String(p.id)}>{p.interval === 'year' ? 'Annual' : 'Monthly'}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -507,22 +508,19 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
         {/* Larger screens: the table scrolls sideways inside its own frame if it is wider than the screen */}
         <div className="hidden overflow-x-auto rounded-lg border border-line md:block focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink" role="region" aria-label="Users table" tabIndex={0}>
-          <Table className="min-w-[860px]">
+          <Table className="min-w-[700px] table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Company</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead className="sticky right-0 bg-mist text-right">Actions</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead className="w-[190px]">Status</TableHead>
+                <TableHead className="w-[120px]">Plan</TableHead>
+                <TableHead className="sticky right-0 w-[200px] bg-mist text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {displayUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                  <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
                     {error ?? "No users found."}
                   </TableCell>
                 </TableRow>
@@ -530,22 +528,20 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 displayUsers.map((u) => {
                   return (
                   <TableRow key={u.id} className={u.deleted_at ? "text-graphite" : ""}>
-                    <TableCell className="font-mono text-body-sm">
-                      {u.id}
-                    </TableCell>
-                    <TableCell>
+                    <TableCell className="align-top">
+                      {/* One column for who the customer is, so status, plan and actions stay visible on laptop screens. */}
                       <button type="button" onClick={() => setPanelUser({ id: u.id, email: u.email, service_label: u.service_label })}
-                        className="text-left font-medium text-ink underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink">
+                        title={u.email}
+                        className="block max-w-full truncate text-left font-medium text-ink underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink">
                         {u.email}
                       </button>
+                      <p className="mt-0.5 truncate text-caption text-graphite">
+                        <span className="figure-mono">#{u.id}</span>
+                        {[u.first_name, u.last_name].filter(Boolean).join(" ") ? <> · {[u.first_name, u.last_name].filter(Boolean).join(" ")}</> : null}
+                        {u.company_name ? <> · {u.company_name}</> : null}
+                      </p>
                     </TableCell>
-                    <TableCell>
-                      {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}
-                    </TableCell>
-                    <TableCell>
-                      {u.company_name || <span className="text-body-sm text-muted-foreground">—</span>}
-                    </TableCell>
-                    <TableCell>
+                    <TableCell className="align-top">
                       <div className="flex flex-col items-start gap-1">
                         <Badge variant={statusVariant(u.service_label, u)} className="whitespace-nowrap">
                           {u.service_label ?? (u.deleted_at ? "Closed" : u.status === "suspended" ? "Suspended" : "Unknown")}
@@ -557,14 +553,13 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="align-top">
                       {u.plan_name ? (
-                        <div className="flex flex-col gap-1">
-                          <span className="text-body-sm font-medium">{u.plan_name}</span>
-                          {(u.plan_price != null && u.plan_price > 0) || u.plan_interval ? (
-                            <span className="text-caption text-muted-foreground">
-                              £{((u.plan_price || 0) / 100).toFixed(2)}/
-                              {u.plan_interval || 'month'}
+                        <div className="flex flex-col">
+                          <span className="text-body-sm font-medium" title={u.plan_name}>{u.plan_interval === 'year' ? 'Annual' : u.plan_interval === 'month' ? 'Monthly' : u.plan_name}</span>
+                          {u.plan_price != null && u.plan_price > 0 ? (
+                            <span className="figure-mono text-caption text-muted-foreground">
+                              £{(u.plan_price / 100).toFixed(2)}/{u.plan_interval === 'year' ? 'yr' : 'mo'}
                             </span>
                           ) : null}
                         </div>
@@ -572,8 +567,8 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                         <span className="text-body-sm text-muted-foreground">No plan</span>
                       )}
                     </TableCell>
-                    <TableCell className="sticky right-0 bg-paper text-right shadow-[-1px_0_0_hsl(var(--line))]">
-                      <div className="flex justify-end gap-2">
+                    <TableCell className="sticky right-0 bg-paper text-right align-top shadow-[-1px_0_0_hsl(var(--line))]">
+                      <div className="flex justify-end gap-1.5">
                         {u.deleted_at ? (
                           <Button
                             variant="outline"
@@ -1046,12 +1041,9 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 <Label htmlFor="cu-company">Company name</Label>
                 <Input id="cu-company" value={createForm.company_name} onChange={(e) => setCreateForm(f => ({ ...f, company_name: e.target.value }))} placeholder="Acme Ltd" />
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="cu-plan">Plan status</Label>
-                <select id="cu-plan" className="w-full border rounded-md px-3 py-2 bg-background text-body-sm" value={createForm.plan_status} onChange={(e) => setCreateForm(f => ({ ...f, plan_status: e.target.value }))}>
-                  {PLAN_STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-              </div>
+              {/* No plan-status choice: access comes from a Stripe payment, so "Active" here would only
+                  have changed a label. New accounts start awaiting payment. */}
+              <p className="text-caption text-muted-foreground">The account starts as awaiting payment. Service begins once they pay at checkout.</p>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setCreateModal(false)} disabled={isMutating}>Cancel</Button>
