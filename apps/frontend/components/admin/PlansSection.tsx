@@ -357,7 +357,15 @@ export default function PlansSection() {
                       setFormData({ ...formData, price_pence: parseInt(e.target.value) || 0 })
                     }
                     placeholder="999"
+                    // Customers are charged the Stripe price; an existing plan's price is changed in Stripe.
+                    disabled={!!editingPlan}
+                    aria-describedby={editingPlan ? "price_pence_note" : undefined}
                   />
+                  {editingPlan && (
+                    <p id="price_pence_note" className="text-caption text-muted-foreground">
+                      Set in Stripe. Customers are charged the Stripe price, so it can&apos;t be changed here.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">

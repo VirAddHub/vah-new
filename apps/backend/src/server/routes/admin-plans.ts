@@ -9,6 +9,7 @@ import { TimestampUtils } from '../../lib/timestamp-utils';
 import { param } from '../../lib/express-params';
 import { safeErrorMessage } from '../../lib/safeError';
 import { logger } from '../../lib/logger';
+import { getBillingProvider } from '../../config/billing';
 
 const router = Router();
 
@@ -236,6 +237,21 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
             const currentPlan = currentPlanResult.rows[0];
             const oldPrice = currentPlan.price_pence;
             const newPrice = price_pence;
+            // price_pence comes back from pg as a string: compare numbers, or every save looks like a
+            // price change (and emails every customer on the plan).
+            const priceChanging = typeof price_pence === 'number' && Number(price_pence) !== Number(oldPrice);
+
+            // With Stripe, customers are charged the Stripe price (STRIPE_MONTHLY_PRICE_ID /
+            // STRIPE_ANNUAL_PRICE_ID), not this number. Changing it here only changed the price shown
+            // on the website (staging, 19 Nov 2026: shown £6.77, charged £9.99). Refuse it.
+            if (priceChanging && getBillingProvider() === 'stripe') {
+                await pool.query('ROLLBACK');
+                return res.status(409).json({
+                    ok: false,
+                    error: 'price_set_in_stripe',
+                    message: 'Prices are charged by Stripe. To change a price, create a new price in Stripe and update the price ID setting; the price shown here follows it.',
+                });
+            }
 
             // Build update query
             const updates: string[] = [];
@@ -314,7 +330,7 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
             const updatedPlan = result.rows[0];
 
             // 1. Log price history if price changed
-            if (typeof price_pence === 'number' && oldPrice !== newPrice) {
+            if (priceChanging) {
                 await pool.query(
                     `INSERT INTO plan_price_history (plan_id, price_pence, currency, effective_at, note)
                      VALUES ($1, $2, $3, $4, $5)`,
@@ -331,7 +347,7 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
             }
 
             // 2. Update subscription records for users on this plan
-            if (typeof price_pence === 'number' && oldPrice !== newPrice) {
+            if (priceChanging) {
                 const affectedUsersResult = await pool.query(
                     'SELECT COUNT(*) as count FROM "user" WHERE plan_id = $1 AND deleted_at IS NULL',
                     [planId]
@@ -361,7 +377,7 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
                 changes: {
                     old_price: oldPrice,
                     new_price: newPrice,
-                    price_changed: typeof price_pence === 'number' && oldPrice !== newPrice,
+                    price_changed: priceChanging,
                     fields_updated: updates.filter(u => !u.includes('updated_at')).length
                 },
                 admin_id: adminId,
@@ -383,7 +399,7 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
 
             // 4. Get affected users for notification (if price changed)
             let affectedUsers: Array<{ id: number, email: string, first_name: string, last_name: string }> = [];
-            if (typeof price_pence === 'number' && oldPrice !== newPrice) {
+            if (priceChanging) {
                 const usersResult = await pool.query(
                     `SELECT id, email, first_name, last_name 
                      FROM "user" 
@@ -434,7 +450,7 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
                 data: {
                     ...updatedPlan,
                     affected_users: affectedUsers.length,
-                    price_changed: typeof price_pence === 'number' && oldPrice !== newPrice,
+                    price_changed: priceChanging,
                     notifications_sent: affectedUsers.length > 0
                 }
             });

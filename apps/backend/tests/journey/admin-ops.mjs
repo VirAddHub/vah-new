@@ -88,19 +88,27 @@ await step('A8', 'Admin delete then restore (existing routes) still work with th
 
 // ---- Transactions --------------------------------------------------------------------------------
 await step('T1', 'Plan edit: a successful change persists', async () => {
-  const r = await admin.patch(`/api/admin/plans/${plan.id}`, { price_pence: 1099 });
+  const before = await one('SELECT description FROM plans WHERE id=$1', [plan.id]);
+  const r = await admin.patch(`/api/admin/plans/${plan.id}`, { description: 'Journey test description' });
   expect(r.status === 200, `edit ${r.status} ${r.text.slice(0, 200)}`);
-  expect(Number((await one('SELECT price_pence FROM plans WHERE id=$1', [plan.id])).price_pence) === 1099, 'price not saved');
-  await admin.patch(`/api/admin/plans/${plan.id}`, { price_pence: Number(plan.price_pence) });
-  expect(Number((await one('SELECT price_pence FROM plans WHERE id=$1', [plan.id])).price_pence) === Number(plan.price_pence), 'price not restored');
+  expect((await one('SELECT description FROM plans WHERE id=$1', [plan.id])).description === 'Journey test description', 'description not saved');
+  await admin.patch(`/api/admin/plans/${plan.id}`, { description: before.description });
+  expect((await one('SELECT description FROM plans WHERE id=$1', [plan.id])).description === before.description, 'description not restored');
+});
+await step('T1b', 'Plan edit: the price cannot be changed here (Stripe charges its own price); saving the same price is fine', async () => {
+  const r = await admin.patch(`/api/admin/plans/${plan.id}`, { price_pence: 1099 });
+  expect(r.status === 409 && r.json?.error === 'price_set_in_stripe', `price change returned ${r.status} ${r.text.slice(0, 160)}`);
+  expect(Number((await one('SELECT price_pence FROM plans WHERE id=$1', [plan.id])).price_pence) === Number(plan.price_pence), 'price changed');
+  const same = await admin.patch(`/api/admin/plans/${plan.id}`, { price_pence: Number(plan.price_pence) });
+  expect(same.status === 200, `saving the unchanged price returned ${same.status}`);
 });
 await step('T2', 'Plan edit: a failed change leaves nothing behind (20 times, to catch pooled-connection leaks)', async () => {
   for (let i = 0; i < 20; i++) {
-    const r = await admin.patch(`/api/admin/plans/${plan.id}`, { price_pence: 2222, slug: 'virtual-mailbox-annual' });   // slug collides -> must fail as a whole
+    const r = await admin.patch(`/api/admin/plans/${plan.id}`, { description: 'Should not be saved', slug: 'virtual-mailbox-annual' });   // slug collides -> must fail as a whole
     expect(r.status >= 400, `attempt ${i + 1} returned ${r.status}`);
   }
-  const p = await one('SELECT price_pence, slug FROM plans WHERE id=$1', [plan.id]);
-  expect(Number(p.price_pence) === Number(plan.price_pence) && p.slug === 'virtual-mailbox-monthly', `plan left as ${JSON.stringify(p)}`);
+  const p = await one('SELECT description, slug FROM plans WHERE id=$1', [plan.id]);
+  expect(p.description !== 'Should not be saved' && p.slug === 'virtual-mailbox-monthly', `plan left as ${JSON.stringify(p)}`);
   const idle = await one(`SELECT COUNT(*)::int n FROM pg_stat_activity WHERE datname = current_database() AND state = 'idle in transaction'`);
   expect(Number(idle.n) === 0, `${idle.n} connections left inside an open transaction`);
 });
