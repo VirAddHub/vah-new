@@ -27,7 +27,9 @@ const STAGING_DB = 'vah_postgres_40zq';
 if (process.env.VAH_STAGING_SMOKE !== '1') { console.error('REFUSING: set VAH_STAGING_SMOKE=1'); process.exit(2); }
 if (!String(process.env.STRIPE_SECRET_KEY || '').startsWith('sk_test_')) { console.error('REFUSING: Stripe key is not a test-mode key'); process.exit(2); }
 
-const pg = new Client({ connectionString: process.env.DATABASE_URL, ssl: /render\.com/.test(process.env.DATABASE_URL || '') ? { rejectUnauthorized: false } : undefined });
+// Same TLS settings as the API itself (dist build of src/lib/pgSslConfig.ts).
+const { getPgSslOption } = require('../../dist/src/lib/pgSslConfig.js');
+const pg = new Client({ connectionString: process.env.DATABASE_URL, ssl: getPgSslOption() });
 await pg.connect();
 const dbName = (await pg.query('SELECT current_database() AS d')).rows[0].d;
 if (dbName !== STAGING_DB) { console.error(`REFUSING: database is ${dbName}`); process.exit(2); }
