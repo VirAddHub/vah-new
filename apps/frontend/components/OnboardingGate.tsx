@@ -1,57 +1,62 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-
-const PAYMENT_REQUIRED_REDIRECT = '/account/billing';
-
-const ALLOWED_WHILE_UNPAID = [
-  '/account/billing',
-  '/account/support',
-  '/account/verification',
-];
+import { useAccess, NEXT_STEP_PATH } from '@/hooks/useAccess';
 
 /**
- * Wraps dashboard routes. If the user is authenticated but has not completed
- * payment (plan_status is not "active"), they are redirected to billing.
- * Admin users bypass the gate entirely.
+ * Pages a signed-in customer can always use to finish onboarding or fix a problem.
+ * Everything else under the dashboard is the service itself (mail, scans, forwarding, the
+ * registered address and certificate) and needs full service. The backend enforces the same rule
+ * on every route; this gate only decides what to show.
  */
+const ONBOARDING_PATHS = [
+  '/account/billing',
+  '/account/verification',
+  '/account/support',
+  '/account/settings',
+  '/account/businesses',
+  '/account/confirm-email',
+  '/business-owners',
+];
+
+const isOnboardingPath = (pathname: string) =>
+  pathname === '/account' || ONBOARDING_PATHS.some(p => pathname === p || pathname.startsWith(`${p}/`));
+
 export function OnboardingGate({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, isLoading, isAdmin } = useAuth();
-  const pathname = usePathname();
+  const { access, unauthenticated, isLoading, error, refresh } = useAccess();
+  const pathname = usePathname() || '';
   const router = useRouter();
-  const [checked, setChecked] = useState(false);
+
+  const restricted = !!access && !access.isAdmin && access.level !== 'full';
+  const blockedHere = restricted && !isOnboardingPath(pathname);
+  const target = access ? NEXT_STEP_PATH[access.next] : '/login';
 
   useEffect(() => {
     if (isLoading) return;
-
-    if (!isAuthenticated || !user) {
-      setChecked(true);
+    if (unauthenticated || access?.level === 'none') {
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
       return;
     }
+    if (blockedHere) router.replace(target);
+  }, [isLoading, unauthenticated, access?.level, blockedHere, target, pathname, router]);
 
-    if (isAdmin) {
-      setChecked(true);
-      return;
-    }
-
-    const planStatus = (user as any).plan_status;
-    const isPaid = planStatus === 'active';
-
-    if (!isPaid && !ALLOWED_WHILE_UNPAID.some(p => pathname.startsWith(p))) {
-      router.replace(PAYMENT_REQUIRED_REDIRECT);
-      return;
-    }
-
-    setChecked(true);
-  }, [isLoading, isAuthenticated, user, isAdmin, pathname, router]);
-
-  if (isLoading || !checked) {
+  if (error && !access) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center" role="alert">
+        <p className="text-body text-foreground">We could not load your account. Please try again.</p>
+        <button type="button" onClick={() => void refresh()} className="h-11 rounded-full bg-foreground px-6 text-body-sm font-medium text-background">
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  if (isLoading || !access || unauthenticated || access.level === 'none' || blockedHere) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center" role="status" aria-label="Loading your account">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden />
       </div>
     );
   }

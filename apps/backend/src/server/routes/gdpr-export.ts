@@ -125,7 +125,7 @@ async function runGdprExport(jobId: number): Promise<void> {
     const userResult = await pool.query(
       `SELECT id, email, first_name, last_name, created_at,
               sumsub_applicant_id, sumsub_review_status,
-              gocardless_customer_id, gocardless_mandate_id,
+              stripe_customer_id,
               email_pref_marketing, email_pref_product, email_pref_security,
               email_unsubscribed_at, email_bounced_at
        FROM "user" WHERE id = $1`,

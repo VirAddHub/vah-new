@@ -47,7 +47,7 @@ export function usePlans(): UsePlansReturn {
             setLoading(true);
             setError(null);
 
-            const response = await apiClient.get('/api/plans', {
+            const response = await apiClient.get('/api/bff/plans', {
                 headers: {
                     'Cache-Control': 'no-cache',
                     'Pragma': 'no-cache'

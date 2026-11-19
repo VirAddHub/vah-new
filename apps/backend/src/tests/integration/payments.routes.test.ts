@@ -32,8 +32,9 @@ describe('Payments routes', () => {
     expect(res.status).toBe(401);
   });
 
-  it('GET /api/payments/stripe/publishable-key → 200 or 401', async () => {
+  // Public by design: the signup payment step needs it before the customer has a subscription.
+  it('GET /api/payments/stripe/publishable-key → 200, or 503 when Stripe is not configured', async () => {
     const res = await request(app).get('/api/payments/stripe/publishable-key');
-    expect([200, 401]).toContain(res.status);
+    expect([200, 503]).toContain(res.status);
   });
 });

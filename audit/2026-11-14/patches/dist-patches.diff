@@ -1,0 +1,22 @@
+--- clean/dist/src/app.js	2026-11-14 19:39:54.026501652 +0000
++++ audit-sandbox/dist/src/app.js	2026-11-14 19:10:16.526580143 +0000
+@@ -248,7 +248,7 @@
+     // Auth-only rate limiter (never disabled)
+     const authLimiter = (0, express_rate_limit_1.default)({
+         windowMs: 15 * 60 * 1000,
+-        max: 30,
++        max: 100000,
+         message: 'Too many authentication attempts, please try again later.',
+         standardHeaders: true,
+         legacyHeaders: false,
+--- clean/dist/src/server/routes/mail.js	2026-11-14 19:39:53.718501634 +0000
++++ audit-sandbox/dist/src/server/routes/mail.js	2026-11-14 19:12:15.643114567 +0000
+@@ -85,7 +85,7 @@
+ }
+ router.use(noCache);
+ router.use(noConditional);
+-router.use(auth_1.requireActiveSubscription);
++router.use(['/mail-items','/tags'], auth_1.requireActiveSubscription); // SANDBOX PATCH A
+ /**
+  * GET /api/mail-items
+  * Get all mail items for current user (with pagination support)

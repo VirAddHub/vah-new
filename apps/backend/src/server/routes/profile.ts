@@ -2,6 +2,7 @@
 // User profile API endpoints
 
 import { Router, Request, Response } from "express";
+import { requireFullService } from "../services/access";
 import { getPool } from '../db';
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
@@ -13,6 +14,21 @@ import { param } from '../../lib/express-params';
 import { safeErrorMessage } from '../../lib/safeError';
 
 const router = Router();
+
+/**
+ * Columns never sent to the browser. PATCH /api/profile used to return RETURNING * as-is,
+ * including the password hash, reset-token hashes and payment-provider IDs (audit finding S1).
+ */
+const PRIVATE_USER_FIELDS = new Set([
+    'password', 'password_hash', 'password_reset_token', 'password_reset_token_hash', 'password_reset_expires',
+    'reset_token_hash', 'reset_token_expires_at', 'reset_token_used_at', 'login_attempts', 'locked_until',
+    'stripe_customer_id', 'stripe_subscription_id', 'gocardless_customer_id', 'gocardless_mandate_id',
+    'sumsub_applicant_id', 'email_verification_token', 'session_token',
+]);
+function publicProfile(row: Record<string, unknown> | undefined) {
+    if (!row) return row;
+    return Object.fromEntries(Object.entries(row).filter(([k]) => !PRIVATE_USER_FIELDS.has(k) && !/token|secret|hash/i.test(k)));
+}
 
 // Allowed file extensions (whitelist approach)
 const ALLOWED_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp'];
@@ -343,10 +359,8 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
         'state',
         'postal_code',
         'country',
-        // Payment/mandate fields (webhook/admin only)
-        'gocardless_mandate_id',
-        'gocardless_customer_id',
-        'gocardless_redirect_flow_id',
+        // Payment fields (Stripe events / admin only)
+        'stripe_customer_id',
         'subscription_status',
         'plan_id',
         'plan_status',
@@ -381,11 +395,11 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
                 message: 'Registered office address cannot be changed here.'
             });
         }
-        if (deniedFields.some(f => ['gocardless_mandate_id', 'gocardless_customer_id', 'gocardless_redirect_flow_id', 'subscription_status', 'plan_id', 'plan_status'].includes(f))) {
+        if (deniedFields.some(f => ['stripe_customer_id', 'subscription_status', 'plan_id', 'plan_status'].includes(f))) {
             return res.status(400).json({
                 ok: false,
                 error: 'payment_fields_immutable',
-                message: 'Payment and mandate fields cannot be changed via profile endpoint.'
+                message: 'Payment fields cannot be changed via profile endpoint.'
             });
         }
         return res.status(400).json({
@@ -526,7 +540,7 @@ router.patch("/", requireAuth, async (req: Request, res: Response) => {
             }
         }
 
-        return res.json({ ok: true, data: newUser });
+        return res.json({ ok: true, data: publicProfile(newUser) });
     } catch (error: any) {
         logger.error('[PATCH /api/profile] error', { message: error?.message ?? String(error) });
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
@@ -666,7 +680,7 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
 
     const DENIED_FIELDS = [
         'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country',
-        'gocardless_mandate_id', 'gocardless_customer_id', 'gocardless_redirect_flow_id',
+        'stripe_customer_id',
         'subscription_status', 'plan_id', 'plan_status',
         'kyc_status', 'kyc_verified_at', 'kyc_verified_at_ms', 'companies_house_verified',
         'id', 'created_at', 'updated_at', 'last_login_at', 'is_admin', 'role', 'status',
@@ -684,11 +698,11 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
                 message: 'Registered office address cannot be changed here.'
             });
         }
-        if (deniedFields.some(f => ['gocardless_mandate_id', 'gocardless_customer_id', 'gocardless_redirect_flow_id', 'subscription_status', 'plan_id', 'plan_status'].includes(f))) {
+        if (deniedFields.some(f => ['stripe_customer_id', 'subscription_status', 'plan_id', 'plan_status'].includes(f))) {
             return res.status(400).json({
                 ok: false,
                 error: 'payment_fields_immutable',
-                message: 'Payment and mandate fields cannot be changed via profile endpoint.'
+                message: 'Payment fields cannot be changed via profile endpoint.'
             });
         }
         return res.status(400).json({
@@ -886,7 +900,7 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
             }
         }
 
-        return res.json({ ok: true, data: newUser });
+        return res.json({ ok: true, data: publicProfile(newUser) });
     } catch (error: any) {
         logger.error('[PATCH /api/profile/me] error', { message: error?.message ?? String(error) });
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });
@@ -897,7 +911,7 @@ router.patch("/me", requireAuth, async (req: Request, res: Response) => {
  * GET /api/profile/registered-office-address
  * Get the registered office address (gated: billing active + KYC approved + user active)
  */
-router.get("/registered-office-address", requireAuth, async (req: Request, res: Response) => {
+router.get("/registered-office-address", requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
 
@@ -974,7 +988,7 @@ router.get("/registered-office-address", requireAuth, async (req: Request, res: 
  * Return certificate download URL if eligible; 403 with machine-readable reason if not.
  * Spec: primary_user_not_verified | owners_pending | company_number_missing
  */
-router.get("/certificate-url", requireAuth, async (req: Request, res: Response) => {
+router.get("/certificate-url", requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
     try {
@@ -1031,7 +1045,7 @@ router.get("/certificate-url", requireAuth, async (req: Request, res: Response) 
  * GET /api/profile/certificate
  * Generate and download proof of address certificate
  */
-router.get("/certificate", requireAuth, async (req: Request, res: Response) => {
+router.get("/certificate", requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
 

@@ -16,12 +16,11 @@ import { isCorsOriginAllowed } from './lib/corsAllowlist';
 import { safeHttpAccessLog } from './lib/accessLog';
 
 // Health routes (no DB dependencies)
-import { health } from './server/routes/health';
+import { health, healthAdmin } from './server/routes/health';
 
 // --- routes that need raw body (webhooks)
 import { postmarkWebhook } from './server/routes/webhooks-postmark';
 import onedriveWebhook from './server/routes/webhooks-onedrive';
-import gocardlessWebhook from './server/routes/webhooks-gocardless';
 import stripeWebhook from './server/routes/webhooks-stripe';
 import sumsubWebhook from './server/routes/webhooks-sumsub';
 import { Router } from 'express';
@@ -62,7 +61,6 @@ import internalBillingRouter from './server/routes/internal-billing';
 import internalDailySummaryRouter from './server/routes/internal-daily-summary';
 import { errorHandler } from './server/middleware/errorHandler';
 
-import paymentsStubRouter from './server/routes/payments-stub';
 import kycRouter from './server/routes/kyc';
 import forwardingRouter from './server/routes/forwarding';
 import emailPrefsRouterNew from './server/routes/email-prefs';
@@ -86,10 +84,14 @@ import blogRouter from './server/routes/blog';
 import debugRouterLegacy from './server/routes/debug';
 import mailSearchRouter from './server/routes/mail-search';
 import metricsRouter from './server/routes/metrics';
+import accessRouter from './server/routes/access';
+import adminAccountStandingRouter from './server/routes/admin-account-standing';
 import notificationsRouter from './server/routes/notifications';
 
 import { ensureCsrfToken, requireCsrfToken, getOrCreateCsrfToken } from './middleware/csrf';
 import { authenticateJWT } from './middleware/auth';
+import { requireFullService } from './server/services/access';
+import { clientKey } from './server/lib/clientKey';
 
 type MaybeDefault<T> = { default?: T } | T;
 // handle CJS/ESM default interop safely
@@ -141,12 +143,24 @@ export function createApp() {
     app.use('/api', health);
 
     // ---- Webhooks BEFORE CORS ----
+    // Machine-to-machine endpoints (provider callbacks, mail-import worker): authenticated by signatures
+    // or shared secrets, not sessions, so they get one generous limit per source instead of the visitor limits.
+    const MACHINE_PATHS = /^\/api\/(webhooks|webhooks-onedrive|internal)\b/;
+    const machineLimiter = rateLimit({
+        windowMs: 60 * 1000,
+        max: 600,
+        message: 'Too many requests.',
+        standardHeaders: true,
+        legacyHeaders: false,
+        keyGenerator: (req) => clientKey(req),
+    });
+    app.use((req, res, next) => (MACHINE_PATHS.test(req.originalUrl || req.url) ? machineLimiter(req, res, next) : next()));
+
     app.post('/api/webhooks/postmark', express.raw({ type: 'application/json' }), postmarkWebhook);
     app.post('/api/webhooks-postmark', (_req, res) => res.redirect(308, '/api/webhooks/postmark'));
 
-    // Webhooks: GoCardless + Stripe (raw body required for signature verification)
+    // Webhooks: Stripe (raw body required for signature verification)
     const webhooksRouter = Router();
-    webhooksRouter.use(gocardlessWebhook);
     webhooksRouter.use(stripeWebhook);
 
     // Sumsub webhook — raw Buffer for signature verification
@@ -156,7 +170,7 @@ export function createApp() {
         '/api/webhooks',
         express.raw({ type: 'application/json' }),
         ((req: Request & { rawBody?: string }, _res: Response, next: NextFunction) => {
-            if (req.path === '/gocardless' || req.path === '/stripe') {
+            if (req.path === '/stripe') {
                 req.rawBody = req.body?.toString?.('utf8') ?? '';
             }
             next();
@@ -189,6 +203,9 @@ export function createApp() {
         origin: (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
             const isProd = process.env.NODE_ENV === 'production';
             if (!origin) {
+                // No Origin header = server-to-server request (curl, cron, BFF SSR).
+                // CORS is not an authentication mechanism — real protection is via
+                // JWT auth, webhook signatures, CSRF tokens, and internal secrets.
                 return cb(null, true);
             }
             if (isCorsOriginAllowed(origin, isProd)) {
@@ -235,23 +252,60 @@ export function createApp() {
         message: 'Too many requests from this IP, please try again later.',
         standardHeaders: true,
         legacyHeaders: false,
-        keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
+        keyGenerator: (req) => clientKey(req),
         skip: (req) => {
             const ua = (req.headers['user-agent'] || '').toString();
-            if (req.path === '/api/healthz') return true;
+            const url = req.originalUrl || req.url;
+            if (/^\/api\/healthz\b/.test(url)) return true;
             if (ua.startsWith('Render/1.0')) return true;
+            // Provider callbacks and the mail-import worker have their own limiter (machineLimiter).
+            if (MACHINE_PATHS.test(url)) return true;
+            // Signed-in traffic is limited per account by authenticatedUserLimiter (after auth). A forged
+            // or expired session cookie gains nothing: that limiter then falls back to the visitor key.
+            if (/(?:^|;\s*)vah_session=/.test(String(req.headers.cookie || ''))) return true;
             return false;
         },
     });
+    // Machine-to-machine endpoints: authenticated by signatures or shared secrets, not sessions.
 
-    // Auth-only rate limiter (never disabled)
+    // Visitor key: see server/lib/clientKey.ts (signed visitor address from the website, else req.ip).
+
+    // Auth rate limiter (never disabled): 30 FAILED attempts per 15 minutes per client. Successful
+    // requests are not counted and the session check, CSRF token and logout are exempt, so normal
+    // use cannot lock a customer out while password guessing is still stopped.
     const authLimiter = rateLimit({
         windowMs: 15 * 60 * 1000,
         max: 30,
         message: 'Too many authentication attempts, please try again later.',
         standardHeaders: true,
         legacyHeaders: false,
-        keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
+        skipSuccessfulRequests: true,
+        skip: (req) => req.method === 'GET' || /^\/(whoami|logout|csrf)\b/.test(req.path),
+        keyGenerator: clientKey,
+    });
+    // Account creation: 60 per hour per client, counted whether or not it succeeds.
+    const signupLimiter = rateLimit({
+        windowMs: 60 * 60 * 1000,
+        max: 60,
+        message: 'Too many sign-up attempts, please try again later.',
+        standardHeaders: true,
+        legacyHeaders: false,
+        keyGenerator: clientKey,
+    });
+
+    // Per-user rate limiter for authenticated routes — keyed by user ID when available, falls back to IP
+    const authenticatedUserLimiter = rateLimit({
+        windowMs: 15 * 60 * 1000,
+        // One pass through the dashboard makes ~40 requests; the admin dashboard polls several panels.
+        max: (req: Request) => ((req as Request & { user?: { is_admin?: boolean } }).user?.is_admin ? 1500 : 600),
+        message: 'Too many requests for this user, please try again later.',
+        standardHeaders: true,
+        legacyHeaders: false,
+        keyGenerator: (req) => {
+            const userId = (req as Request & { user?: { id?: string } }).user?.id;
+            return userId ? `user:${userId}` : clientKey(req);
+        },
+        skip: (req) => MACHINE_PATHS.test(req.originalUrl || req.url),
     });
 
     const disableLimiterRaw = String(process.env.DISABLE_RATE_LIMIT ?? '').trim();
@@ -311,11 +365,16 @@ export function createApp() {
     app.use('/api', authenticateJWT);
     logger.info('[middleware] JWT authentication middleware mounted');
 
+    // Per-user rate limiter — applied after auth so user ID is available; never disabled
+    app.use('/api', authenticatedUserLimiter);
+    logger.info('[middleware] Per-user rate limiter mounted');
+
     // CSRF protection for state-changing requests (after auth, before routes)
     app.use('/api', requireCsrfToken);
     logger.info('[middleware] CSRF protection middleware mounted');
 
     // Auth rate limiter (never disabled)
+    app.use('/api/auth/signup', signupLimiter);
     app.use('/api/auth', authLimiter);
 
     // CSP report endpoint
@@ -363,6 +422,8 @@ export function createApp() {
         }
         next();
     });
+    app.use('/api', healthAdmin); // admin-only diagnostics (needs the session middleware above)
+    app.use('/api/access', accessRouter);
     app.use('/api', mailRouter);
     logger.info('[mount] /api (mail routes) mounted');
     app.use('/api/billing', billingRouter);
@@ -376,7 +437,6 @@ export function createApp() {
     logger.info('[mount] /api/payments mounted');
 
     if (process.env.NODE_ENV !== 'production') {
-        app.use('/api/payments', paymentsStubRouter);
         logger.info('[mount] /api/payments (stubs) mounted (non-production only)');
     } else {
         logger.info('[mount] /api/payments (stubs) disabled (production)');
@@ -386,6 +446,7 @@ export function createApp() {
     logger.info('[mount] /api (forwarding routes) mounted');
     app.use('/api/email-prefs', emailPrefsRouterNew);
     logger.info('[mount] /api/email-prefs (new) mounted');
+    app.use('/api/admin', adminAccountStandingRouter);
     app.use('/api/admin', adminUsersRouter);
     logger.info('[mount] /api/admin (users) mounted');
     app.use('/api/admin', adminForwardingRouter);
@@ -442,7 +503,7 @@ export function createApp() {
     app.use('/api/quiz', quizRouter);
     logger.info('[mount] /api/quiz mounted');
 
-    app.use('/api/bff', bffMailScanRouter);
+    app.use('/api/bff', requireFullService, bffMailScanRouter);
     logger.info('[mount] /api/bff (mail scan) mounted');
 
     if (process.env.NODE_ENV !== 'production') {
@@ -484,19 +545,26 @@ export function createApp() {
     app.use('/api/downloads', downloadsRouter);
     logger.info('[mount] /api/downloads mounted (TS handler)');
 
-    app.use('/api/files', filesRouter);
+    app.use('/api/files', requireFullService, filesRouter);
     logger.info('[mount] /api/files mounted (TS handler)');
 
     app.use('/api/gdpr-export', gdprExportRouter);
     logger.info('[mount] /api/gdpr-export mounted (TS handler)');
 
-    app.use('/api/mail/forward', mailForwardRouter);
+    app.use('/api/mail/forward', requireFullService, mailForwardRouter);
     logger.info('[mount] /api/mail/forward mounted (TS handler)');
 
-    app.use('/api/mail-search', mailSearchRouter);
+    app.use('/api/mail-search', requireFullService, mailSearchRouter);
     logger.info('[mount] /api/mail-search mounted (TS handler)');
 
-    app.use('/api/metrics', metricsRouter);
+    // Metrics are operational data: admins, or a scraper presenting METRICS_TOKEN as a bearer token.
+    app.use('/api/metrics', (req: Request, res: Response, next: NextFunction) => {
+        const token = (process.env.METRICS_TOKEN || '').trim();
+        const bearer = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+        if ((req as any).user?.is_admin) return next();
+        if (token && bearer && bearer.length === token.length && require('crypto').timingSafeEqual(Buffer.from(bearer), Buffer.from(token))) return next();
+        return res.status((req as any).user?.id ? 403 : 401).json({ ok: false, error: (req as any).user?.id ? 'forbidden' : 'unauthenticated' });
+    }, metricsRouter);
     logger.info('[mount] /api/metrics mounted (TS handler)');
 
     app.use('/api/notifications', notificationsRouter);

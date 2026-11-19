@@ -4,6 +4,8 @@ import { useMemo } from 'react';
 import { useBillingOverview, useInvoices } from '@/hooks/useDashboardData';
 import { InvoiceRow, SubscriptionSummary } from '@/lib/account/types';
 import dynamic from 'next/dynamic';
+import { useAccess } from '@/hooks/useAccess';
+import { CompletePaymentCard } from '@/components/account/CompletePaymentCard';
 
 const AccountBillingCard = dynamic(() => import('@/components/account/AccountBillingCard').then(mod => ({ default: mod.AccountBillingCard })), { ssr: false });
 const InvoicesCard = dynamic(() => import('@/components/account/InvoicesCard').then(mod => ({ default: mod.InvoicesCard })), { ssr: false });
@@ -19,6 +21,9 @@ export default function AccountBillingPage() {
     } = useInvoices();
 
     const o = overview?.data;
+    const { access } = useAccess();
+    // No subscription yet, or it has ended: offer payment. Overdue subscriptions are fixed in the Stripe portal instead.
+    const needsNewSubscription = !!access && !access.isAdmin && !access.payment.entitled && access.payment.state !== 'past_due';
 
     const invoicesFetchFailed = Boolean(invoicesSwrError);
     const invoicesApiNotOk =
@@ -55,7 +60,11 @@ export default function AccountBillingPage() {
             plan_name: o?.plan || 'Digital Mailbox Plan',
             price_label: priceLabel,
             billing_period: billingPeriod,
-            status: status
+            status: status,
+            paid_through_label: o?.subscription?.paid_through_ms
+                ? new Date(Number(o.subscription.paid_through_ms)).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+                : null,
+            cancel_at_period_end: o?.subscription?.cancel_at_period_end === true,
         };
     }, [o]);
 
@@ -127,22 +136,25 @@ export default function AccountBillingPage() {
     return (
         <div className="w-full">
             <div className="mb-5 sm:mb-6 md:mb-8">
-                <h1 className="text-h1 text-foreground mb-2 sm:mb-4">
+                <h1 className="page-title">
                     Billing
                 </h1>
-                <p className="text-body-sm text-muted-foreground sm:text-body">
+                <p className="page-lede">
                     View your subscription and invoices.
                 </p>
             </div>
 
             <div className="flex w-full min-w-0 flex-col gap-8 sm:gap-10">
-                <AccountBillingCard
+                {needsNewSubscription && (
+                    <CompletePaymentCard heading={access?.payment.state === 'cancelled' ? 'Restart your subscription' : 'Complete your payment'} />
+                )}
+                {!needsNewSubscription && <AccountBillingCard
                     subscription={subscription}
                     onRefresh={async () => {
                         await mutateOverview();
                         await mutateInvoices();
                     }}
-                />
+                />}
                 <InvoicesCard
                     isLoading={invoicesSectionLoading}
                     loadError={invoicesLoadError}

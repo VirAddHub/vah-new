@@ -174,12 +174,12 @@ export default function ForwardingHealthCard() {
   if (error) {
     return (
       <Card className="p-5">
-        <div className="text-center text-red-600">
+        <div className="text-center text-destructive">
           <h3 className="text-h3 font-semibold mb-2">Forwarding Health</h3>
           <p>Failed to load metrics: {error}</p>
           <button 
             onClick={fetchMetrics}
-            className="mt-2 px-3 py-1 bg-blue-500 text-primary-foreground rounded text-body-sm hover:bg-blue-600"
+            className="mt-2 px-3 py-1 bg-ink text-primary-foreground rounded text-body-sm hover:bg-ink"
           >
             Retry
           </button>
@@ -265,7 +265,7 @@ export default function ForwardingHealthCard() {
             {adv.webhooks.length === 0 && <span className="text-caption opacity-60">n/a</span>}
             {adv.webhooks.map(w => {
               const tone = w.age > 7200 ? "bg-destructive/10 border-destructive/20 text-destructive"
-                         : w.age > 1800 ? "bg-amber-50 border-amber-200 text-amber-700"
+                         : w.age > 1800 ? "bg-mist border-line text-ink"
                          : "bg-primary/10 border-primary/20 text-primary";
               return (
                 <div key={w.provider} className={`flex items-center justify-between rounded-lg border px-3 py-2 ${tone}`}>
@@ -312,7 +312,7 @@ export default function ForwardingHealthCard() {
 
 function KPI({ title, value, tone="ok" }:{ title:string; value:number; tone?: "ok"|"warn"|"good" }) {
   const cls = tone === "good" ? "text-primary bg-primary/10 border-primary/20"
-            : tone === "warn" ? "text-amber-700 bg-amber-50 border-amber-200"
+            : tone === "warn" ? "text-ink bg-mist border-line"
             : "text-muted-foreground bg-muted border-border";
   return (
     <Card className={`p-4 border ${cls}`}>
@@ -364,7 +364,7 @@ function LatencyRow({ label, ms }: { label:string; ms:number|null }) {
   const text = ms === null ? "n/a" : (ms >= 1000 ? `${Math.round(ms/100)/10}s` : `${Math.round(ms)}ms`);
   const tone = ms === null ? "bg-muted border-border text-muted-foreground"
             : ms > 2*60*60*1000 ? "bg-destructive/10 border-destructive/20 text-destructive" // >2h
-            : ms > 15*60*1000 ? "bg-amber-50 border-amber-200 text-amber-700"
+            : ms > 15*60*1000 ? "bg-mist border-line text-ink"
             : "bg-primary/10 border-primary/20 text-primary";
   return (
     <div className={`rounded-lg border px-3 py-2 ${tone}`}>

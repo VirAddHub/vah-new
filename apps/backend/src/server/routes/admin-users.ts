@@ -1,18 +1,37 @@
 // src/server/routes/admin-users.ts
 // Admin user management endpoints
 
+import { getAccess } from '../services/access';
+import { clientKey } from '../lib/clientKey';
+import { clearAccount } from '../services/loginThrottle';
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { TimestampUtils } from '../../lib/timestamp-utils';
 import { toDateOrNull, nowMs } from '../helpers/time';
 import { param } from '../../lib/express-params';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import { sendTemplateEmail, buildAppUrl } from '../../lib/mailer';
 import { Templates } from '../../lib/postmark-templates';
 import { logger } from '../../lib/logger';
 
 const router = Router();
+
+/** Closed, Suspended, Awaiting payment, Payment overdue, Subscription ended, Awaiting verification, Owners to verify, Active. */
+function serviceLabel(a: Awaited<ReturnType<typeof getAccess>>): string | null {
+    if (!a) return null;
+    if (a.standing === 'closed') return 'Closed';
+    if (a.standing === 'suspended') return 'Suspended';
+    const m = a.missing;
+    if (m.includes('payment_overdue')) return 'Payment overdue';
+    if (m.includes('subscription_cancelled')) return 'Subscription ended';
+    if (m.includes('payment_required')) return 'Awaiting payment';
+    if (m.includes('identity_rejected')) return 'Verification failed';
+    if (m.includes('identity_in_review')) return 'Verification in review';
+    if (m.includes('identity_required')) return 'Awaiting verification';
+    if (m.includes('owners_required')) return 'Owners to verify';
+    return a.payment.cancelAtPeriodEnd ? 'Active (ends at period end)' : 'Active';
+}
 
 // Admin users rate limiter - very generous for admin dashboard usage
 const adminUsersLimiter = rateLimit({
@@ -22,7 +41,7 @@ const adminUsersLimiter = rateLimit({
     legacyHeaders: false,
     keyGenerator: (req) => {
         const u = (req as any).user;
-        return u?.id ? `admin-users:${u.id}` : ipKeyGenerator(req.ip ?? '');
+        return u?.id ? `admin-users:${u.id}` : clientKey(req);
     },
     handler: (_req, res) => {
         res.setHeader("Retry-After", "10");
@@ -76,8 +95,8 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
                 u.updated_at,
                 u.last_active_at,
                 u.last_login_at,
-                u.login_attempts,
-                u.locked_until,
+                (SELECT COALESCE(SUM(t.failures), 0)::int FROM login_throttle t WHERE t.key LIKE 'u:' || u.id || ':%' AND t.locked_until > (extract(epoch from now()) * 1000)::bigint) AS login_attempts,
+                (SELECT MAX(t.locked_until) FROM login_throttle t WHERE t.key LIKE 'u:' || u.id || ':%' AND t.locked_until > (extract(epoch from now()) * 1000)::bigint) AS locked_until,
                 COALESCE(p_sub.name, p.name, p_cadence.name, s.plan_name) as plan_name,
                 COALESCE(
                     p_sub.interval,
@@ -229,9 +248,15 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
         const countResult = await pool.query(countQuery, countParams);
         const total = parseInt(countResult.rows[0].count);
 
+        // One plain service label per row, from the same access decision the API enforces.
+        const items = await Promise.all(result.rows.map(async (row: any) => {
+            if (row.is_admin) return { ...row, service_label: 'Administrator' };
+            try { return { ...row, service_label: serviceLabel(await getAccess(Number(row.id))) }; }
+            catch { return { ...row, service_label: null }; }
+        }));
         return res.json({
             ok: true,
-            items: result.rows,
+            items,
             total,
             page: pageNum,
             pageSize: limitNum,
@@ -483,14 +508,14 @@ router.get('/users/:id', requireAdmin, async (req: Request, res: Response) => {
             SELECT
                 u.id, u.email, u.first_name, u.last_name, u.company_name,
                 u.companies_house_number, u.company_number,
-                u.is_admin, u.is_staff, u.status, u.plan_status, u.plan_id,
+                u.is_admin, u.status, u.plan_status, u.plan_id,
                 u.kyc_status, u.kyc_approved_at, u.kyc_rejection_reason,
                 u.companies_house_verified, u.ch_verification_status,
                 u.subscription_status, u.stripe_customer_id,
-                u.gocardless_customer_id, u.gocardless_mandate_id,
                 u.phone, u.forwarding_address, u.created_at, u.updated_at,
-                u.last_active_at, u.last_login_at, u.deleted_at, u.expires_at,
-                u.login_attempts, u.locked_until
+                u.last_active_at, u.last_login_at, u.deleted_at,
+                (SELECT COALESCE(SUM(t.failures), 0)::int FROM login_throttle t WHERE t.key LIKE 'u:' || u.id || ':%' AND t.locked_until > (extract(epoch from now()) * 1000)::bigint) AS login_attempts,
+                (SELECT MAX(t.locked_until) FROM login_throttle t WHERE t.key LIKE 'u:' || u.id || ':%' AND t.locked_until > (extract(epoch from now()) * 1000)::bigint) AS locked_until
             FROM "user" u
             WHERE u.id = $1
         `, [userId]);
@@ -548,6 +573,17 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         let paramIndex = 1;
 
         if (typeof email === 'string') {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return res.status(400).json({ ok: false, error: 'invalid_email' });
+            }
+            const dupCheck = await pool.query(
+                'SELECT 1 FROM "user" WHERE lower(email) = lower($1) AND id != $2',
+                [email, userId]
+            );
+            if (dupCheck.rows.length > 0) {
+                return res.status(409).json({ ok: false, error: 'email_taken' });
+            }
             updates.push(`email = $${paramIndex++}`);
             values.push(email);
         }
@@ -606,10 +642,14 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
             updates.push(`plan_status = $${paramIndex++}`);
             values.push(plan_status);
         }
-        // Allow admin to update main status field
+        // Account standing is changed only through the audited suspend / restore / close actions
+        // (admin-account-standing.ts), which require a reason. It used to accept any text here.
         if (typeof status === 'string') {
-            updates.push(`status = $${paramIndex++}`);
-            values.push(status);
+            return res.status(400).json({
+                ok: false,
+                error: 'use_standing_actions',
+                message: 'Account status is changed with the Suspend, Restore or Close actions, which record a reason.',
+            });
         }
         if (typeof kyc_status === 'string') {
             updates.push(`kyc_status = $${paramIndex++}`);
@@ -759,7 +799,6 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
             await pool.query(`DELETE FROM mail_item WHERE user_id = $1`, [userId]);
 
             // Delete redirect flows
-            await pool.query(`DELETE FROM gc_redirect_flow WHERE user_id = $1`, [userId]);
 
             // Delete admin audit entries for this user
             await pool.query(`DELETE FROM admin_audit WHERE target_id = $1 AND target_type = 'user'`, [userId]);
@@ -955,17 +994,27 @@ router.post('/users', requireAdmin, async (req: Request, res: Response) => {
             : crypto.randomBytes(20).toString('hex');
         const passwordHash = await bcrypt.hash(rawPassword, 10);
 
+        // Same shape as signup: the password column is "password", timestamps are milliseconds,
+        // status is account standing ('active'), and the primary business is created in the same
+        // statement. Payment state always starts unpaid: an admin cannot grant paid access here.
+        // (This insert used a password_hash column and NOW() for a millisecond column, and failed.)
         const result = await pool.query(
-            `INSERT INTO "user"
-               (email, first_name, last_name, company_name, plan_status, password_hash, status, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, 'pending', NOW(), $7)
-             RETURNING id, email, first_name, last_name, company_name, plan_status, status, created_at`,
+            `WITH new_user AS (
+               INSERT INTO "user"
+                 (email, first_name, last_name, company_name, plan_status, password, status, is_admin, role, is_sole_controller, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, 'pending_payment', $5, 'active', false, 'user', true, $6, $6)
+               RETURNING id, email, first_name, last_name, company_name, plan_status, status, created_at
+             ), new_business AS (
+               INSERT INTO business (user_id, company_name, status, is_primary, monthly_price_pence, created_at, updated_at)
+               SELECT id, COALESCE(NULLIF(TRIM(company_name), ''), NULLIF(TRIM(CONCAT(first_name, ' ', last_name)), ''), email), 'active', true, 999, $6, $6
+               FROM new_user
+             )
+             SELECT * FROM new_user`,
             [
                 email.toLowerCase().trim(),
                 first_name || null,
                 last_name || null,
                 company_name || null,
-                plan_status || 'pending_payment',
                 passwordHash,
                 nowMs(),
             ]
@@ -1094,6 +1143,7 @@ router.post('/users/:id/unlock-account', requireAdmin, async (req: Request, res:
             'UPDATE "user" SET login_attempts = 0, locked_until = NULL, updated_at = $1 WHERE id = $2',
             [Date.now(), userId]
         );
+        await clearAccount(userId);
 
         await pool.query(
             `INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)

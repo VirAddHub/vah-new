@@ -149,15 +149,6 @@ export function collectProductionEnvIssues(): ProductionEnvCheckResult {
     }
   }
 
-  const gcToken = trim('GC_ACCESS_TOKEN') || trim('GOCARDLESS_ACCESS_TOKEN');
-  if (gcToken) {
-    const gcWh = trim('GC_WEBHOOK_SECRET') || trim('GOCARDLESS_WEBHOOK_SECRET');
-    if (!gcWh || gcWh.length < 8) {
-      fatal.push(
-        'GC_WEBHOOK_SECRET or GOCARDLESS_WEBHOOK_SECRET must be set (min 8 characters) when a GoCardless access token is configured (webhook handler accepts either).'
-      );
-    }
-  }
 
   // --- OneDrive mail import webhook (only if Graph/OneDrive import looks configured) ---
   const odImportLikely = Boolean(trim('GRAPH_CLIENT_ID') || trim('ONEDRIVE_DRIVE_ID'));
@@ -225,7 +216,7 @@ export function collectProductionEnvIssues(): ProductionEnvCheckResult {
 
   // --- Outbound email ---
   if (!trim('POSTMARK_TOKEN')) {
-    warnings.push('POSTMARK_TOKEN is unset — transactional email will not send.');
+    fatal.push('POSTMARK_TOKEN must be set in production — transactional email (welcome, cancellation, KYC) will not send without it.');
   }
 
   // --- Ops self-test: optional secret gate ---

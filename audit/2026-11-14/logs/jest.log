@@ -1,0 +1,724 @@
+npm warn config ignoring workspace config at /home/claude/vah/apps/backend/.npmrc
+FAIL tests/unit/mailer.templates.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/api.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL src/services/billing/__tests__/invoiceService.test.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/stripe-webhook.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/compliance-certificate.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/unit/template-models.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/forwarding-status.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL src/services/mailer.test.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/mail.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/app.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/owner-verify-context.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/system.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/admin.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/business-owners-resend.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/mail_user.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/e2e/contact.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/auth-signup.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/registered-office-address.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/reports_webhooks.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/account.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/billing.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/integration/deletedRoutes.regression.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/auth.smoke.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/mail_admin.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/support.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/api-response-format.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/kyc_support.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/payments.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/kyc_idempotency.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/export.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/security_rbac.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/e2e/help.sla.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/invoice-download.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/mail-items.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/export-jobs.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/email-prefs.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/fts.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/search.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/root.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/rate_limit.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/not_found.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/reset-password-request.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/backfill-expiry.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/reset-password.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/_param_.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/mark-read.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/mail-audit.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/forward.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/start.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/csrf.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+Summary of all failing tests
+FAIL tests/unit/mailer.templates.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/api.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL src/services/billing/__tests__/invoiceService.test.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/stripe-webhook.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/compliance-certificate.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/unit/template-models.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/forwarding-status.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL src/services/mailer.test.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/mail.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/app.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/owner-verify-context.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/system.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/admin.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/business-owners-resend.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/mail_user.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/e2e/contact.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/auth-signup.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/registered-office-address.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/reports_webhooks.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/account.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/billing.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/integration/deletedRoutes.regression.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/auth.smoke.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/mail_admin.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/support.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/api-response-format.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/kyc_support.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/payments.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/kyc_idempotency.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/export.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/security_rbac.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/e2e/help.sla.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/invoice-download.spec.ts
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/mail-items.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/export-jobs.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/email-prefs.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/fts.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/search.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/root.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/rate_limit.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/not_found.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/reset-password-request.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/backfill-expiry.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/reset-password.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/_param_.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/mark-read.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/mail-audit.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/forward.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/start.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+FAIL tests/smoke/csrf.spec.js
+  ● Test suite failed to run
+
+    TypeError: this._moduleMocker.clearMocksOnScope is not a function
+
+      at Runtime.resetModules (../../node_modules/jest/node_modules/jest-runtime/build/index.js:3784:28)
+
+
+Test Suites: 51 failed, 51 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        0.421 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?
+EXIT 1

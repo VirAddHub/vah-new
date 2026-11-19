@@ -578,8 +578,8 @@ export default function CollaborativeForwardingBoard({
     return (
       <Card
         key={request.id}
-        className={`mb-3 transition-all duration-200 ${lockedByOther ? 'opacity-60 border-orange-200 bg-orange-50' :
-            lockedByMe ? 'border-blue-200 bg-blue-50' :
+        className={`mb-3 transition-all duration-200 ${lockedByOther ? 'opacity-60 border-line bg-mist' :
+            lockedByMe ? 'border-line bg-mist' :
               isDone ? 'border-primary/20 bg-primary/5' :
                 'border-border hover:shadow-md hover:border-primary/20'
           }`}
@@ -634,13 +634,13 @@ export default function CollaborativeForwardingBoard({
                   <div className="flex items-center gap-1">
                     {lockedByMe ? (
                       <>
-                        <Lock className="h-3 w-3 text-blue-600" />
-                        <span className="text-blue-600">You are editing</span>
+                        <Lock className="h-3 w-3 text-ink" />
+                        <span className="text-ink">You are editing</span>
                       </>
                     ) : (
                       <>
-                        <User className="h-3 w-3 text-orange-600" />
-                        <span className="text-orange-600">{lockInfo.admin_name} is editing</span>
+                        <User className="h-3 w-3 text-ink" />
+                        <span className="text-ink">{lockInfo.admin_name} is editing</span>
                       </>
                     )}
                   </div>
@@ -703,6 +703,8 @@ export default function CollaborativeForwardingBoard({
                       deleteRequest(request.id);
                     }}
                     disabled={isDeleting}
+                    aria-label="Delete forwarding request"
+                    title="Delete forwarding request"
                     className="text-destructive border-destructive/20 hover:bg-destructive/10 hover:border-destructive/30"
                   >
                     {isDeleting ? (
@@ -734,14 +736,14 @@ export default function CollaborativeForwardingBoard({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h2 className="text-h3 font-bold">Forwarding Requests</h2>
           <p className="text-muted-foreground">
             Updates every 2 minutes • {currentAdmin?.name} is online
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -750,13 +752,14 @@ export default function CollaborativeForwardingBoard({
           >
             {loading ? 'Refreshing...' : 'Refresh'}
           </Button>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <div className="relative min-w-0 flex-1 sm:flex-none">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" aria-hidden />
             <Input
+              aria-label="Search forwarding requests"
               placeholder="Search requests..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 w-64"
+              className="pl-10 w-full sm:w-64"
             />
           </div>
         </div>

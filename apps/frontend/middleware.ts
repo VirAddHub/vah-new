@@ -106,8 +106,9 @@ function applySecurityHeaders(response: NextResponse, _request: NextRequest) {
       // connect-src: Stripe API + telemetry endpoints required by Stripe.js for 3DS, fraud, error reporting.
       "connect-src 'self' https://api.stripe.com https://errors.stripe.com https://m.stripe.network https://m.stripe.com https://api.sumsub.com https://api.virtualaddresshub.co.uk",
 
-      // frame-src: Stripe Embedded Checkout and payment iframes; Sumsub liveness iframes.
-      "frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://in.sumsub.com",
+      // frame-src: Stripe Embedded Checkout and payment iframes; Sumsub liveness iframes; blob: for the
+      // scan preview, which the page builds from a same-origin download (object-src stays 'none').
+      "frame-src blob: https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://in.sumsub.com",
 
       // worker-src: Stripe.js spawns blob: web workers for fraud detection and 3DS.
       "worker-src 'self' blob:",

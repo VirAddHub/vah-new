@@ -79,7 +79,6 @@ export function postmarkWebhook(req: Request, res: Response) {
         }
 
         // Postmark expects 204 with no body
-        res.setHeader('x-build', (process.env.RENDER_GIT_COMMIT || 'local') + ':' + (process.env.NODE_ENV || 'dev'));
         return res.status(204).end();
     } catch (err) {
         return res.status(400).json({ ok: false, error: 'Invalid JSON' });

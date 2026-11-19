@@ -1,18 +1,14 @@
 'use client';
 
 import { useMemo, useEffect, useState } from "react";
-import { Button } from "./ui/button";
-import { Loader2 } from "lucide-react";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 type BlogPost = {
     id: number | string;
     slug: string;
     title: string;
     excerpt: string;
-    // Placeholder date labels for display only
-    dateLong: string; // e.g., "DD Month YYYY"
-    dateShort: string; // e.g., "DD Mon"
+    dateLong: string;
+    dateShort: string;
     readTime: string;
     category: string;
     imageUrl: string;
@@ -20,271 +16,425 @@ type BlogPost = {
 
 interface BlogPageProps {
     onNavigate?: (page: string, data?: any) => void;
+    initialPosts?: BlogPost[];
 }
 
-function MobileBlogCard({ post, onNavigate }: { post: BlogPost; onNavigate?: (page: string, data?: any) => void }) {
-    const title = post.title?.trim() || "Untitled post";
-    const excerpt = post.excerpt?.trim();
-    const category = post.category?.trim() || "Blog";
-    const hasImage = !!post.imageUrl;
-
-    return (
-        <article
-            role="button"
-            tabIndex={0}
-            onClick={() => onNavigate?.("blog-post", { slug: post.slug })}
-            onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onNavigate?.("blog-post", { slug: post.slug });
-                }
-            }}
-            className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs"
-        >
-            <div className="relative aspect-[16/9] w-full bg-muted">
-                {hasImage ? (
-                    <ImageWithFallback
-                        src={post.imageUrl}
-                        alt={title}
-                        className="object-cover w-full h-full"
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                        quality={75}
-                    />
-                ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-body-sm text-muted-foreground" aria-hidden="true">
-                        No preview image
-                    </div>
-                )}
-            </div>
-            <div className="p-4">
-                <div className="mb-2 flex flex-wrap gap-2">
-                    <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-caption font-medium text-foreground">
-                        {category}
-                    </span>
-                </div>
-                <h2 className="text-h3 text-foreground line-clamp-2">
-                    {title}
-                </h2>
-                {excerpt ? (
-                    <p className="mt-2 text-body-sm text-muted-foreground line-clamp-3">
-                        {excerpt}
-                    </p>
-                ) : null}
-                <div className="mt-3 text-caption text-muted-foreground">
-                    {post.dateShort && post.readTime ? `${post.dateShort} · ${post.readTime}` : post.dateLong || post.dateShort || ""}
-                </div>
-            </div>
-        </article>
-    );
-}
-
-export function BlogPage({ onNavigate }: BlogPageProps) {
-    const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-    const [loading, setLoading] = useState(true);
+export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
+    const [blogPosts, setBlogPosts] = useState<BlogPost[]>(initialPosts ?? []);
+    const [loading, setLoading] = useState(!initialPosts);
     const [error, setError] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
-    // Fetch blog posts via BFF (same-origin) to avoid CORS and ensure posts load on frontend
     useEffect(() => {
+        // If initialPosts were provided by the server, skip client fetch
+        if (initialPosts && initialPosts.length >= 0) return;
+
         const fetchBlogPosts = async () => {
             try {
                 const response = await fetch('/api/bff/blog/list');
-
                 const contentType = response.headers.get("content-type") || "";
                 if (!contentType.toLowerCase().includes("application/json")) {
-                    const text = await response.text().catch(() => "");
-                    console.error('[BlogPage] Non-JSON response:', response.status, contentType, text.slice(0, 200));
-                    setError('Failed to load blog posts');
+                    setError('Failed to load posts');
                     setLoading(false);
                     return;
                 }
-
-                let data: any;
-                try {
-                    data = await response.json();
-                } catch (err) {
-                    const text = await response.text().catch(() => "");
-                    console.error('[BlogPage] JSON parse error:', response.status, text.slice(0, 200));
-                    setError('Failed to load blog posts');
-                    setLoading(false);
-                    return;
-                }
-
+                const data = await response.json();
                 if (data.ok) {
                     setBlogPosts(data.data);
                 } else {
-                    setError('Failed to load blog posts');
+                    setError('Failed to load posts');
                 }
             } catch (err) {
-                console.error('Error fetching blog posts:', err);
-                setError('Failed to load blog posts');
+                setError('Failed to load posts');
             } finally {
                 setLoading(false);
             }
         };
-
         fetchBlogPosts();
     }, []);
 
-    // Generate structured data for SEO based on fetched posts
+    const filteredPosts = useMemo(() => {
+        if (!searchQuery.trim()) return blogPosts;
+        const q = searchQuery.toLowerCase();
+        return blogPosts.filter(p =>
+            p.title?.toLowerCase().includes(q) ||
+            p.excerpt?.toLowerCase().includes(q) ||
+            p.category?.toLowerCase().includes(q)
+        );
+    }, [blogPosts, searchQuery]);
+
+    const featuredPost = filteredPosts[0] ?? null;
+    const gridPosts = filteredPosts.slice(1);
+
     const blogStructuredData = useMemo(() => ({
         "@context": "https://schema.org",
         "@type": "Blog",
-        "name": "VirtualAddressHub Business Blog",
-        "description": "Expert insights on virtual business addresses, UK company formation, HMRC compliance, and mail forwarding services.",
-        "url": "https://virtualaddresshub.com/blog",
-        "publisher": {
-            "@type": "Organization",
-            "name": "VirtualAddressHub",
-            "url": "https://virtualaddresshub.com"
-        },
+        "name": "VirtualAddressHub — The Bulletin",
+        "description": "Honest writing about running a UK business.",
+        "url": "https://virtualaddresshub.co.uk/blog",
+        "publisher": { "@type": "Organization", "name": "VirtualAddressHub" },
         "blogPost": blogPosts.map(post => ({
             "@type": "BlogPosting",
             "headline": post.title,
             "description": post.excerpt,
-            "url": `https://virtualaddresshub.com/blog/${post.slug}`,
+            "url": `https://virtualaddresshub.co.uk/blog/${post.slug}`,
             "datePublished": post.dateLong,
-            "author": {
-                "@type": "Organization",
-                "name": "VirtualAddressHub"
-            }
         }))
     }), [blogPosts]);
 
-    const gridPosts = useMemo(() => {
-        return blogPosts;
-    }, [blogPosts]);
-
     return (
-        <div className="bg-background">
-            {/* Hero Section — mobile-first, reduced top/bottom space */}
-            <section className="bg-background">
-                <div className="mx-auto max-w-6xl px-6 pt-10 pb-8 sm:pt-14 sm:pb-10 lg:px-8">
-                    <div className="max-w-2xl">
-                        <h1 className="text-h1 sm:text-display tracking-tight text-foreground">
-                            Insights &amp; Resources for Modern Businesses
-                        </h1>
-                        <p className="mt-4 text-body sm:text-body-lg text-muted-foreground">
-                            Expert advice, industry insights, and success stories to help you grow your business.
-                        </p>
-                    </div>
-                    {/* Search Bar - desktop/tablet only */}
-                    <div className="hidden lg:flex justify-center mt-6">
-                        <div className="flex items-center gap-16 bg-muted rounded-full px-8 py-3.5 w-full max-w-2xl">
-                            <input
-                                type="text"
-                                placeholder="Search articles…"
-                                className="flex-1 bg-transparent border-none outline-none text-body text-muted-foreground placeholder:text-muted-foreground"
-                            />
-                            <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center cursor-pointer">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M14 14L11.1 11.1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+        <div style={{ fontFamily: "'Inter', sans-serif", backgroundColor: '#FFFFFF', minHeight: '100vh' }}>
+            <style>{`
+                .blog-search-input {
+                    flex: 1;
+                    border: none;
+                    background: transparent;
+                    outline: none;
+                    font-family: 'Inter', sans-serif;
+                    font-size: 16px;
+                    font-style: normal;
+                    color: #0A0A0A;
+                }
+                .blog-search-input::placeholder {
+                    color: #6B6B6B;
+                    font-style: normal;
+                }
+                .featured-post-link {
+                    display: grid;
+                    grid-template-columns: 1fr 1.2fr;
+                    gap: 48px;
+                    padding: 40px 0;
+                    border-top: 1px solid #E5E5E5;
+                    border-bottom: 1px solid #E5E5E5;
+                    margin-bottom: 56px;
+                    text-decoration: none;
+                    cursor: pointer;
+                    align-items: center;
+                }
+                .featured-post-link:hover .blog-read-link {
+                    opacity: 0.7;
+                }
+                .featured-post-link:hover .featured-title {
+                    color: #0A0A0A;
+                }
+                .featured-title { transition: color 0.15s; }
+                .blog-grid-item {
+                    padding: 36px 0;
+                    text-decoration: none;
+                    cursor: pointer;
+                    display: block;
+                }
+                .blog-grid-item:hover .blog-grid-title {
+                    color: #0A0A0A;
+                }
+                .blog-grid-title { transition: color 0.15s; }
+                .blog-read-link {
+                    font-family: 'Inter', sans-serif;
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: #0A0A0A;
+                    border-bottom: 1px solid #0A0A0A;
+                    padding-bottom: 2px;
+                    text-decoration: none;
+                    display: inline-block;
+                    transition: opacity 0.15s;
+                }
+                @media (max-width: 768px) {
+                    .featured-post-link {
+                        grid-template-columns: 1fr !important;
+                        gap: 24px !important;
+                    }
+                    .blog-post-grid {
+                        grid-template-columns: 1fr !important;
+                    }
+                    .blog-post-grid .blog-grid-item {
+                        border-right: none !important;
+                        padding-left: 0 !important;
+                        padding-right: 0 !important;
+                        border-top: 1px solid #E5E5E5 !important;
+                    }
+                    .blog-post-grid .blog-grid-item:first-child {
+                        border-top: none !important;
+                    }
+                }
+            `}</style>
 
-            {/* Loading State */}
-            {loading && (
-                <div className="container mx-auto px-4 py-12">
-                    <div className="flex items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <span className="ml-2 text-muted-foreground">Loading blog posts...</span>
-                    </div>
-                </div>
-            )}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(blogStructuredData) }}
+            />
 
-            {/* Error State */}
-            {error && !loading && (
-                <div className="container mx-auto px-4 py-12">
-                    <div className="text-center">
-                        <p className="text-muted-foreground mb-4">{error}</p>
-                        <Button
-                            onClick={() => window.location.reload()}
-                            variant="outline"
-                        >
-                            Try Again
-                        </Button>
-                    </div>
-                </div>
-            )}
+            {/* Page header */}
+            <div style={{ maxWidth: '1100px', margin: '0 auto', padding: 'clamp(40px,6vw,72px) clamp(20px,5vw,56px) 0' }}>
+                <h1 style={{
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: 'clamp(32px,6vw,68px)',
+                    fontWeight: 600,
+                    color: '#0A0A0A',
+                    margin: '0 0 18px',
+                    letterSpacing: '-0.025em',
+                    lineHeight: 1.05,
+                }}>
+                    Helpful notes for{' '}
+                    <em style={{ fontStyle: 'normal', color: '#6B6B6B' }}>running a UK business.</em>
+                </h1>
 
-            <div className="mx-auto max-w-6xl px-6 pb-14 sm:pb-16 lg:px-8">
-                <div className="mx-auto">
-                    {/* Mobile Blog List (< lg) */}
-                    {!loading && !error && gridPosts.length > 0 && (
-                        <div className="lg:hidden mt-8 space-y-4">
-                            {gridPosts.map((post) => (
-                                <MobileBlogCard key={post.id} post={post} onNavigate={onNavigate} />
-                            ))}
-                        </div>
-                    )}
-                    {/* Desktop Blog Grid (lg+) */}
-                    {!loading && !error && gridPosts.length > 0 && (
-                        <div className="hidden lg:block">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-10 justify-center mt-8 sm:mt-10">
-                                {gridPosts.map((post) => (
-                                    <div
-                                        key={post.id}
-                                        className="flex flex-col gap-3.5 w-full cursor-pointer"
-                                        onClick={() => onNavigate?.('blog-post', { slug: post.slug })}
-                                    >
-                                        <div className="relative w-full aspect-[5/3] rounded-2xl overflow-hidden bg-muted">
-                                            {post.imageUrl?.trim() ? (
-                                                <ImageWithFallback
-                                                    src={post.imageUrl}
-                                                    alt={post.title || "Blog post"}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="absolute inset-0 flex items-center justify-center text-body-sm text-muted-foreground">
-                                                    No preview image
-                                                </div>
-                                            )}
-                                        </div>
-                                        {/* Content */}
-                                        <div className="flex flex-col gap-2.5">
-                                            {/* Category Tags */}
-                                            <div className="flex items-center gap-2">
-                                                <div className="bg-muted rounded-full px-2.5 py-1 inline-flex items-center justify-center">
-                                                    <span className="text-caption text-muted-foreground">
-                                                        {post.category || 'Success Stories'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            {/* Title */}
-                                            <h3 className="text-h2 font-medium text-foreground line-clamp-2">
-                                                {post.title || 'Untitled post'}
-                                            </h3>
-                                            {/* Description */}
-                                            {post.excerpt ? (
-                                                <p className="text-body-lg text-muted-foreground line-clamp-3">
-                                                    {post.excerpt}
-                                                </p>
-                                            ) : null}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    {!loading && !error && gridPosts.length === 0 && (
-                        <div className="text-center text-muted-foreground">
-                            No posts found.
-                        </div>
-                    )}
+                <p style={{
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: 'clamp(14px,2vw,19px)',
+                    color: '#404040',
+                    margin: '0 0 36px',
+                    maxWidth: '620px',
+                    lineHeight: 1.55,
+                    fontWeight: 400,
+                }}>
+                    Simple, practical advice, honest lessons and things we wish we'd known earlier — written for founders, freelancers and small business owners.
+                </p>
+
+                {/* Search bar */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '16px',
+                    background: '#FFFFFF',
+                    border: '1px solid #E5E5E5',
+                    padding: '14px 20px',
+                    borderRadius: '4px',
+                    marginBottom: '56px',
+                    maxWidth: '640px',
+                }}>
+                    <span style={{
+                        fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+                        fontSize: '11px',
+                        color: '#6B6B6B',
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        flexShrink: 0,
+                    }}>Search</span>
+                    <input
+                        className="blog-search-input"
+                        placeholder="Search the bulletin…"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                    />
+                    <span style={{
+                        fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+                        fontSize: '11px',
+                        color: '#6B6B6B',
+                        flexShrink: 0,
+                    }}>⏎</span>
                 </div>
             </div>
 
-            {/* Structured Data for SEO */}
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(blogStructuredData)
-                }}
-            />
+            {/* Posts section */}
+            <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 clamp(20px,5vw,56px) clamp(60px,8vw,110px)' }}>
+
+                {/* Loading */}
+                {loading && (
+                    <div style={{ padding: '60px 0', textAlign: 'center', color: '#6B6B6B', fontFamily: "'Inter', sans-serif", fontSize: '14px' }}>
+                        Loading posts…
+                    </div>
+                )}
+
+                {/* Error */}
+                {error && !loading && (
+                    <div style={{ padding: '60px 0', textAlign: 'center' }}>
+                        <p style={{ color: '#6B6B6B', fontFamily: "'Inter', sans-serif", fontSize: '14px', marginBottom: '16px' }}>{error}</p>
+                        <button
+                            onClick={() => window.location.reload()}
+                            style={{
+                                background: 'none', border: '1px solid #E5E5E5', borderRadius: '4px',
+                                padding: '8px 16px', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+                                fontSize: '13px', color: '#404040',
+                            }}
+                        >
+                            Try again
+                        </button>
+                    </div>
+                )}
+
+                {/* Empty */}
+                {!loading && !error && filteredPosts.length === 0 && (
+                    <div style={{ padding: '60px 0', textAlign: 'center', color: '#6B6B6B', fontFamily: "'Inter', sans-serif", fontSize: '14px' }}>
+                        {searchQuery ? `No posts matching "${searchQuery}"` : 'No posts yet.'}
+                    </div>
+                )}
+
+                {/* Featured post */}
+                {!loading && !error && featuredPost && (
+                    <div
+                        className="featured-post-link"
+                        onClick={() => onNavigate?.('blog-post', { slug: featuredPost.slug })}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={e => { if (e.key === 'Enter') onNavigate?.('blog-post', { slug: featuredPost.slug }); }}
+                    >
+                        {/* Cover */}
+                        <div style={{
+                            aspectRatio: '4/3',
+                            background: '#F5F5F5',
+                            backgroundImage: `repeating-linear-gradient(45deg, #E5E5E540 0 1px, transparent 1px 16px)`,
+                            display: 'grid',
+                            placeItems: 'center',
+                            position: 'relative',
+                            border: '1px solid #E5E5E5',
+                            overflow: 'hidden',
+                            borderRadius: '2px',
+                        }}>
+                            {featuredPost.imageUrl ? (
+                                <img
+                                    src={featuredPost.imageUrl}
+                                    alt={featuredPost.title}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }}
+                                />
+                            ) : (
+                                <div style={{
+                                    fontFamily: "'IBM Plex Mono', monospace",
+                                    fontSize: '11px',
+                                    color: '#6B6B6B',
+                                    letterSpacing: '0.1em',
+                                    textAlign: 'center',
+                                    padding: '24px',
+                                    lineHeight: 1.7,
+                                }}>
+                                    [ COVER · drop in<br />a typographic<br />illustration ]
+                                </div>
+                            )}
+                            {/* Featured badge */}
+                            <div style={{
+                                position: 'absolute', top: '16px', left: '16px',
+                                background: '#B42318', color: '#FFFFFF',
+                                padding: '4px 12px',
+                                fontFamily: "'IBM Plex Mono', monospace",
+                                fontSize: '10px',
+                                letterSpacing: '0.15em',
+                                textTransform: 'uppercase',
+                            }}>Featured</div>
+                        </div>
+
+                        {/* Copy */}
+                        <div>
+                            <div style={{
+                                display: 'flex',
+                                gap: '12px',
+                                fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+                                fontSize: '11px',
+                                color: '#6B6B6B',
+                                letterSpacing: '0.1em',
+                                textTransform: 'uppercase',
+                                marginBottom: '18px',
+                                flexWrap: 'wrap',
+                            }}>
+                                <span style={{ color: '#0A0A0A', fontWeight: 500 }}>{featuredPost.category}</span>
+                                <span>·</span>
+                                <span>{featuredPost.dateLong}</span>
+                                <span>·</span>
+                                <span>{featuredPost.readTime}</span>
+                            </div>
+
+                            <h2 className="featured-title" style={{
+                                fontFamily: "'Inter', sans-serif",
+                                fontSize: 'clamp(24px,3.5vw,42px)',
+                                color: '#0A0A0A',
+                                margin: '0 0 16px',
+                                letterSpacing: '-0.02em',
+                                fontWeight: 600,
+                                lineHeight: 1.1,
+                            }}>
+                                {featuredPost.title}
+                            </h2>
+
+                            {featuredPost.excerpt && (
+                                <p style={{
+                                    fontFamily: "'Inter', sans-serif",
+                                    fontSize: 'clamp(14px,1.8vw,17px)',
+                                    color: '#404040',
+                                    lineHeight: 1.6,
+                                    margin: '0 0 24px',
+                                    fontWeight: 400,
+                                }}>
+                                    {featuredPost.excerpt}
+                                </p>
+                            )}
+
+                            <span className="blog-read-link">Read article →</span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Grid */}
+                {!loading && !error && gridPosts.length > 0 && (
+                    <div className="blog-post-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 0 }}>
+                        {gridPosts.map((post, i) => (
+                            <div
+                                key={post.id}
+                                className="blog-grid-item"
+                                onClick={() => onNavigate?.('blog-post', { slug: post.slug })}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={e => { if (e.key === 'Enter') onNavigate?.('blog-post', { slug: post.slug }); }}
+                                style={{
+                                    borderTop: i >= 2 ? '1px solid #E5E5E5' : 'none',
+                                    borderRight: i % 2 === 0 ? '1px solid #E5E5E5' : 'none',
+                                    paddingRight: i % 2 === 0 ? '36px' : '0',
+                                    paddingLeft: i % 2 === 1 ? '36px' : '0',
+                                }}
+                            >
+                                <div style={{
+                                    display: 'flex',
+                                    gap: '10px',
+                                    fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+                                    fontSize: '11px',
+                                    color: '#6B6B6B',
+                                    letterSpacing: '0.1em',
+                                    textTransform: 'uppercase',
+                                    marginBottom: '14px',
+                                    flexWrap: 'wrap',
+                                }}>
+                                    <span style={{ color: '#0A0A0A', fontWeight: 500 }}>{post.category}</span>
+                                    <span>·</span>
+                                    <span>{post.dateLong}</span>
+                                </div>
+
+                                <h3 className="blog-grid-title" style={{
+                                    fontFamily: "'Inter', sans-serif",
+                                    fontSize: 'clamp(18px,2.2vw,24px)',
+                                    color: '#0A0A0A',
+                                    margin: '0 0 10px',
+                                    letterSpacing: '-0.015em',
+                                    fontWeight: 600,
+                                    lineHeight: 1.2,
+                                }}>
+                                    {post.title}
+                                </h3>
+
+                                {post.excerpt && (
+                                    <p style={{
+                                        fontFamily: "'Inter', sans-serif",
+                                        fontSize: 'clamp(13px,1.5vw,15px)',
+                                        color: '#404040',
+                                        lineHeight: 1.6,
+                                        margin: '0 0 14px',
+                                        fontWeight: 400,
+                                    }}>
+                                        {post.excerpt}
+                                    </p>
+                                )}
+
+                                <span style={{
+                                    fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+                                    fontSize: '11px',
+                                    color: '#6B6B6B',
+                                    letterSpacing: '0.1em',
+                                    textTransform: 'uppercase',
+                                }}>
+                                    {post.readTime}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

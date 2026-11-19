@@ -4,7 +4,7 @@ title = "VAH gitleaks config"
 # Ignore env example placeholders, test fixtures, etc.
 regexes = [
   'CHANGE_ME_AFTER_FIRST_LOGIN',
-  'your_(postmark|gocardless|sumsub|address|companies)_.*_here',
+  'your_(postmark|stripe|sumsub|address|companies)_.*_here',
   'postgresql://user:pass@host:port/dbname',
 ]
 paths = [

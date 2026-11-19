@@ -1,0 +1,16 @@
+Intermittent journey failure: step 8.1 'Admin sees the request in the queue' (17 Nov 2026)
+
+Reproduction: restart API, run admin-ops.mjs, access-control.mjs, then journey.mjs. Before the fix: failed 5 of 6 runs; after: 0 of 5.
+Cause: GET /api/admin/forwarding/requests served a 2-second per-admin cached response (admin-forwarding.ts requestCache).
+access-control.mjs (X7) read the queue as the same admin moments earlier, so journey 8.1 received the old list without its new request.
+Fix: cache removed; response is Cache-Control: no-store.
+
+Evidence from a failing run (before the fix):
+FAIL    8.1   Admin sees the request in the queue   request not in the admin queue
+[evidence] 8.1 Admin sees the request in the queue
+  2026-11-17T20:27:03.337Z GET /api/csrf -> 200
+  2026-11-17T20:27:03.407Z POST /api/auth/login -> 200 (request 4618e0a1-dd81-41ba-b77c-5938bd305531) admin user 1
+  2026-11-17T20:27:03.412Z GET /api/admin/forwarding/requests -> 200 (request 304c593a-38f7-4bbd-9496-14bc47929fba)
+      body began with request id 14 (user 185, created by access-control.mjs); the journey's new request was absent.
+  Step 8.2 then read the same queue item directly and passed, showing the request existed in the database.
+Runs before the fix (same sequence): 5 of 6 failed at 8.1. Runs after: 5 of 5 passed.

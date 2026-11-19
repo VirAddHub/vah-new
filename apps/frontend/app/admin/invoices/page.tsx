@@ -280,7 +280,7 @@ export default function AdminInvoicesPage() {
         activePage="invoices"
       />
 
-      <main id="main-content" role="main" className="p-6">
+      <main id="main-content" role="main" className="p-4 sm:p-6 lg:ml-56 lg:p-8">
         <div className="max-w-6xl mx-auto space-y-6">
           <div>
             <h1 className="text-h2 font-bold">Invoices</h1>
@@ -363,7 +363,7 @@ export default function AdminInvoicesPage() {
                 </div>
               </div>
 
-              {error ? <div className="text-body-sm text-red-600">{error}</div> : null}
+              {error ? <div className="text-body-sm text-destructive">{error}</div> : null}
             </CardContent>
           </Card>
 

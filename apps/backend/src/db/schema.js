@@ -53,11 +53,10 @@ CREATE TABLE IF NOT EXISTS payment (
   id SERIAL PRIMARY KEY,
   created_at BIGINT NOT NULL,
   user_id INT REFERENCES "user"(id) ON DELETE CASCADE,
-  gocardless_customer_id TEXT,
+  stripe_customer_id TEXT,
   subscription_id TEXT,
   status TEXT,
-  invoice_url TEXT,
-  mandate_id TEXT
+  invoice_url TEXT
 );
 
 CREATE TABLE IF NOT EXISTS activity_log (

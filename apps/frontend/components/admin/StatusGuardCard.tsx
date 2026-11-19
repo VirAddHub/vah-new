@@ -94,15 +94,15 @@ export default function StatusGuardCard() {
 
   const getStatusIcon = (enabled: boolean) => {
     return enabled ? (
-      <CheckCircle className="h-4 w-4 text-green-500" />
+      <CheckCircle className="h-4 w-4 text-success" />
     ) : (
-      <XCircle className="h-4 w-4 text-red-500" />
+      <XCircle className="h-4 w-4 text-destructive" />
     );
   };
 
   const getStatusBadge = (enabled: boolean) => {
     return enabled ? (
-      <Badge variant="default" className="bg-green-100 text-green-800">
+      <Badge variant="default" className="bg-success/[0.06] text-success">
         Active
       </Badge>
     ) : (
@@ -141,7 +141,7 @@ export default function StatusGuardCard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-8 text-red-600">
+          <div className="flex items-center justify-center py-8 text-destructive">
             <AlertTriangle className="h-6 w-6" />
             <span className="ml-2">Error: {error}</span>
           </div>
@@ -202,19 +202,19 @@ export default function StatusGuardCard() {
             <h4 className="font-medium mb-2">Last 24h Activity</h4>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-h2 font-bold text-blue-600">
+                <div className="text-h2 font-bold text-ink">
                   {metricsHealth.metrics.totalStatusTransitions}
                 </div>
                 <div className="text-caption text-muted-foreground">Transitions</div>
               </div>
               <div>
-                <div className="text-h2 font-bold text-red-600">
+                <div className="text-h2 font-bold text-destructive">
                   {metricsHealth.metrics.totalIllegalAttempts}
                 </div>
                 <div className="text-caption text-muted-foreground">Illegal Attempts</div>
               </div>
               <div>
-                <div className="text-h2 font-bold text-orange-600">
+                <div className="text-h2 font-bold text-ink">
                   {metricsHealth.metrics.totalApiErrors}
                 </div>
                 <div className="text-caption text-muted-foreground">API Errors</div>
@@ -255,7 +255,7 @@ export default function StatusGuardCard() {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 {metricsHealth.indicators.hasRecentActivity ? (
-                  <CheckCircle className="h-3 w-3 text-green-500" />
+                  <CheckCircle className="h-3 w-3 text-success" />
                 ) : (
                   <XCircle className="h-3 w-3 text-muted-foreground" />
                 )}
@@ -263,17 +263,17 @@ export default function StatusGuardCard() {
               </div>
               <div className="flex items-center gap-2">
                 {metricsHealth.indicators.hasIllegalAttempts ? (
-                  <AlertTriangle className="h-3 w-3 text-red-500" />
+                  <AlertTriangle className="h-3 w-3 text-destructive" />
                 ) : (
-                  <CheckCircle className="h-3 w-3 text-green-500" />
+                  <CheckCircle className="h-3 w-3 text-success" />
                 )}
                 <span className="text-caption">No Illegal Attempts</span>
               </div>
               <div className="flex items-center gap-2">
                 {metricsHealth.indicators.hasApiErrors ? (
-                  <AlertTriangle className="h-3 w-3 text-orange-500" />
+                  <AlertTriangle className="h-3 w-3 text-ink" />
                 ) : (
-                  <CheckCircle className="h-3 w-3 text-green-500" />
+                  <CheckCircle className="h-3 w-3 text-success" />
                 )}
                 <span className="text-caption">No API Errors</span>
               </div>

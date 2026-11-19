@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
+import Link from 'next/link';
+import { useAccess } from '@/hooks/useAccess';
+import { sidebarStatusFor } from '@/components/account/AccessNotice';
 import { useToast } from '@/components/ui/use-toast';
 import {
   getCertificateBlockMeta,
@@ -47,6 +50,8 @@ export function CertificateDownload({
     const quiet = variant === 'quiet';
     const [isCertBusy, setIsCertBusy] = useState(false);
     const { toast } = useToast();
+    const { access } = useAccess();
+    const setupStatus = access && !access.isAdmin ? sidebarStatusFor(access) : null;
 
     const userProfile = profile && typeof profile === 'object' && 'data' in profile && profile.data != null
         ? (profile as { data: Record<string, unknown> }).data
@@ -61,9 +66,9 @@ export function CertificateDownload({
     );
     const hasCompanyNumber = String(companyNumber ?? '').trim().length > 0;
 
-    const canDownload = compliance
+    const canDownload = !setupStatus && (compliance
         ? Boolean(compliance.canDownloadProofOfAddressCertificate)
-        : (isKycApproved && hasCompanyNumber);
+        : (isKycApproved && hasCompanyNumber));
 
     const handleDownloadCertification = async () => {
         if (isCertBusy || !canDownload) return;
@@ -154,6 +159,14 @@ export function CertificateDownload({
                             {isCertBusy ? 'Preparing…' : 'Download certificate'}
                         </Button>
                     </>
+                ) : setupStatus ? (
+                    <Link
+                        href={setupStatus.href}
+                        className="block rounded-xl border border-border bg-muted/40 p-3 hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-foreground"
+                    >
+                        <p className="text-caption font-semibold leading-tight text-foreground">{setupStatus.title}</p>
+                        <p className="mt-0.5 text-caption leading-tight text-muted-foreground">{setupStatus.detail}</p>
+                    </Link>
                 ) : (() => {
                     const reason = compliance
                         ? getCertificateBlockReasonFromCompliance(compliance)
@@ -163,22 +176,22 @@ export function CertificateDownload({
                         <div
                             className={
                                 quiet
-                                    ? 'rounded-md border border-amber-200/70 bg-amber-50/80 p-2.5'
-                                    : 'rounded-md border border-amber-200 bg-amber-50 p-3'
+                                    ? 'rounded-md border border-line/70 bg-mist/80 p-2.5'
+                                    : 'rounded-md border border-line bg-mist p-3'
                             }
                         >
                             <div className="flex items-start gap-2">
                                 <AlertCircle
-                                    className={`mt-0.5 flex-shrink-0 text-amber-900 ${quiet ? 'h-3.5 w-3.5' : 'h-4 w-4'}`}
+                                    className={`mt-0.5 flex-shrink-0 text-ink ${quiet ? 'h-3.5 w-3.5' : 'h-4 w-4'}`}
                                 />
                                 <div className="flex flex-col gap-0.5">
                                     <p
-                                        className={`font-medium leading-tight text-amber-900 ${quiet ? 'text-[0.6875rem]' : 'text-caption'}`}
+                                        className={`font-medium leading-tight text-ink ${quiet ? 'text-[0.6875rem]' : 'text-caption'}`}
                                     >
                                         {meta.title}
                                     </p>
                                     <p
-                                        className={`leading-tight text-amber-900/80 ${quiet ? 'text-[0.6875rem]' : 'text-caption'}`}
+                                        className={`leading-tight text-ink/80 ${quiet ? 'text-[0.6875rem]' : 'text-caption'}`}
                                     >
                                         {meta.description}
                                     </p>

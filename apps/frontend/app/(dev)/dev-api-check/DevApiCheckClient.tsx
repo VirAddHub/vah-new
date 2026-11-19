@@ -64,7 +64,7 @@ export function DevApiCheckClient() {
                 {loading && <p>Loading…</p>}
 
                 {error && (
-                    <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded mb-4">
+                    <div className="bg-destructive/[0.06] border border-destructive/25 text-destructive p-4 rounded mb-4">
                         <strong>Error:</strong> {error}
                     </div>
                 )}

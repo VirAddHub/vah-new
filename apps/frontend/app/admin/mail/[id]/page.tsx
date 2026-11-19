@@ -264,8 +264,8 @@ export default function AdminMailDetailPage() {
                     <div className="md:col-span-2">
                       <p className="text-body-sm text-muted-foreground">Physical Destruction Date</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <p className="font-medium text-green-600">
+                        <CheckCircle className="h-4 w-4 text-success" />
+                        <p className="font-medium text-success">
                           {dateFmt.format(destructionDate!)}
                         </p>
                       </div>

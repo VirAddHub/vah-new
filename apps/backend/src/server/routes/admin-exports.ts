@@ -1,12 +1,13 @@
 // apps/backend/src/server/routes/admin-exports.ts
 // Admin export endpoints (CSV downloads for compliance/audit)
 
+import { clientKey } from '../lib/clientKey';
 import { Router, Request, Response } from 'express';
 import { logger } from '../../lib/logger';
 import { stringify } from 'csv-stringify/sync';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
 
@@ -18,7 +19,7 @@ const adminExportsLimiter = rateLimit({
     legacyHeaders: false,
     keyGenerator: (req) => {
         const u = (req as any).user;
-        return u?.id ? `admin-exports:${u.id}` : ipKeyGenerator(req.ip ?? '');
+        return u?.id ? `admin-exports:${u.id}` : clientKey(req);
     },
     handler: (_req, res) => {
         res.setHeader("Retry-After", "60");

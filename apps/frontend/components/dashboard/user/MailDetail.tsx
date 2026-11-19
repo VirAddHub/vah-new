@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
-import { FileText, X, ArrowLeft, Archive, ArchiveRestore } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, Archive, ArchiveRestore, Download, FileText, Send, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { StatusSteps } from '@/components/ui/status-steps';
 import { pdfEmbedUrl } from '@/lib/pdfEmbedUrl';
 import { getMailItemPrimaryLabel } from '@/lib/mailItemDates';
 import type { MailItem } from './types';
@@ -23,159 +24,138 @@ interface MailDetailProps {
   miniViewerError: string | null;
   mailTypeIcon: (item: MailItem) => React.ComponentType<{ className?: string }>;
   mailStatusMeta: (item: MailItem) => StatusMeta;
-  /** Kept for call-site compatibility */
   formatTime: (d?: string | number) => string;
 }
 
-export function MailDetail({
-  item,
-  onBack,
-  onView,
-  onForward,
-  onArchive,
-  onUnarchive,
-  forwardInlineNotice,
-  onDismissForwardNotice,
-  miniViewerLoading,
-  miniViewerUrl,
-  miniViewerError,
-  mailTypeIcon: _mailTypeIcon,
-  mailStatusMeta: _mailStatusMeta,
-  formatTime: _formatTime,
-}: MailDetailProps) {
-  void _mailTypeIcon;
-  void _mailStatusMeta;
-  void _formatTime;
+export function receivedDate(item: MailItem): string {
+  const raw = item.received_at_ms ?? item.received_date ?? item.received_at ?? item.created_at;
+  if (raw == null || raw === '') return '—';
+  const n = Number(raw);
+  const d = Number.isFinite(n) && String(raw).length >= 12 ? new Date(n) : new Date(String(raw));
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
 
+/** Where the item is in its life: received, scanned, then forwarding if requested. */
+function lifecycle(item: MailItem): { steps: string[]; current: number } {
+  const f = String((item.forwarding_status as string) ?? '').toLowerCase();
+  const scanned = Boolean(item.scanned_at || item.file_url) || String(item.status ?? '').toLowerCase().includes('scan');
+  if (f) {
+    const steps = ['Received', 'Forwarding requested', 'In progress', 'Dispatched'];
+    const current = /dispatch|deliver|complete|forwarded/.test(f) ? 3 : /process|progress|review/.test(f) ? 2 : 1;
+    return { steps, current };
+  }
+  return { steps: ['Received', 'Scanned'], current: scanned ? 1 : 0 };
+}
+
+export function MailDetail({
+  item, onBack, onView, onForward, onArchive, onUnarchive, forwardInlineNotice, onDismissForwardNotice,
+  miniViewerLoading, miniViewerUrl, miniViewerError,
+}: MailDetailProps) {
   const headline = getMailItemPrimaryLabel(item);
   const previewSrc = miniViewerUrl ? pdfEmbedUrl(miniViewerUrl) : null;
+  const life = lifecycle(item);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  async function download() {
+    setDownloading(true); setDownloadError(null);
+    try {
+      const res = await fetch(`/api/bff/mail/scan-url?mailItemId=${encodeURIComponent(String(item.id))}`, { credentials: 'include' });
+      if (!res.ok || !(res.headers.get('content-type') || '').includes('pdf')) throw new Error('download_failed');
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement('a');
+      a.href = url; a.download = `${headline.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'mail'}-${item.id}.pdf`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch {
+      setDownloadError('We could not download this scan. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   return (
-    <div className="bg-background w-full min-w-0">
-      <div className="flex flex-col gap-5 md:gap-8">
-        {/* Back to Inbox - touch-friendly on mobile */}
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-150 text-body-sm font-normal w-fit min-h-[44px] py-2 -ml-1 pr-2 rounded-lg touch-manipulation -mb-1"
-          aria-label="Back to inbox"
-        >
-          <ArrowLeft className="h-4 w-4 shrink-0" strokeWidth={2} />
-          Back to Inbox
-        </button>
+    <div className="w-full min-w-0 bg-paper">
+      <button type="button" onClick={onBack}
+        className="-ml-2 mb-4 inline-flex h-11 items-center gap-2 rounded-full px-2 text-[14px] text-graphite hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink">
+        <ArrowLeft className="h-4 w-4" aria-hidden /> Back to inbox
+      </button>
 
-        <h1 className="text-h3 md:text-h2 font-semibold text-foreground leading-tight break-words">
-          {headline}
-        </h1>
-
-        {/* Action buttons - stack on mobile, comfortable height */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full min-w-0">
-          <Button
-            type="button"
-            onClick={onView}
-            className="h-11 sm:h-10 px-5 transition-all duration-150 w-full sm:w-auto sm:flex-none touch-manipulation"
-          >
-            View Scan
-          </Button>
-
-          {item.deleted && onUnarchive ? (
-            <Button
-              type="button"
-              onClick={onUnarchive}
-              variant="outline"
-              className="h-11 sm:h-10 px-5 transition-all duration-150 w-full sm:w-auto sm:flex-none touch-manipulation"
-            >
-              <ArchiveRestore className="h-4 w-4 mr-2" strokeWidth={2} />
-              Unarchive
-            </Button>
-          ) : !item.deleted && onArchive ? (
-            <Button
-              type="button"
-              onClick={onArchive}
-              variant="outline"
-              className="h-11 sm:h-10 px-5 transition-all duration-150 w-full sm:w-auto sm:flex-none touch-manipulation"
-            >
-              <Archive className="h-4 w-4 mr-2" strokeWidth={2} />
-              Archive
-            </Button>
-          ) : null}
-
-          <div className="relative w-full min-w-0 sm:w-auto sm:flex-none">
-            <Button
-              type="button"
-              onClick={onForward}
-              variant="outline"
-              className="h-11 sm:h-10 px-5 transition-all duration-150 w-full sm:w-auto touch-manipulation"
-            >
-              Request Forwarding
-            </Button>
-
-            {forwardInlineNotice && (
-              <div
-                role="alert"
-                className="absolute top-full left-0 right-0 sm:left-auto sm:right-auto sm:w-[min(420px,90vw)] mt-3 z-20 rounded-xl border border-border bg-card shadow-lg p-4 transition-opacity duration-150"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="text-body-sm font-semibold text-foreground">Cannot Forward Mail</div>
-                  <button
-                    type="button"
-                    onClick={onDismissForwardNotice}
-                    className="shrink-0 rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150"
-                    aria-label="Dismiss"
-                  >
-                    <X className="h-4 w-4" strokeWidth={2} />
-                  </button>
-                </div>
-                <div className="mt-2 text-body-sm text-muted-foreground leading-relaxed">{forwardInlineNotice}</div>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
+        {/* Scan */}
+        <section aria-label="Scan" className="order-2 min-w-0 lg:order-1">
+          <div className="overflow-hidden rounded-lg border border-line bg-mist">
+            {miniViewerLoading ? (
+              <div className="flex min-h-[420px] flex-col items-center justify-center py-16 lg:min-h-[min(80dvh,980px)]" role="status">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-ink" aria-hidden />
+                <p className="mt-4 text-[14px] text-graphite">Loading the scan…</p>
+              </div>
+            ) : previewSrc ? (
+              <div className="relative h-[min(75dvh,980px)] min-h-[420px] w-full bg-paper">
+                {/* iframe, not <object>: the site's CSP blocks plugin content (object-src 'none') */}
+                <iframe title="Scan of this letter" src={previewSrc} className="absolute inset-0 h-full w-full border-0" />
+              </div>
+            ) : (
+              <div className="flex min-h-[320px] flex-col items-center justify-center px-6 py-16 text-center">
+                <FileText className="h-10 w-10 text-slate" strokeWidth={1.5} aria-hidden />
+                <p className="mt-4 text-[15px] font-medium text-ink">{miniViewerError ? 'Preview unavailable' : 'No preview yet'}</p>
+                <p className="mt-1 text-[14px] text-graphite">Use “Open scan” or “Download” to see the document.</p>
               </div>
             )}
           </div>
-        </div>
+        </section>
 
-        {/* PDF viewer: bleed to screen edges on small viewports; FitH fragment + overflow-x for stubborn viewers */}
-        <div className="min-w-0 -mx-4 w-[calc(100%+2rem)] max-w-[100vw] border-y border-border bg-muted/50 py-4 sm:mx-0 sm:w-full sm:max-w-none sm:rounded-xl sm:border sm:px-4 md:p-6 md:rounded-lg">
-          {miniViewerLoading ? (
-            <div className="flex flex-col items-center justify-center min-h-[min(82dvh,1040px)] py-12 md:py-16">
-              <div className="mx-auto h-10 w-10 rounded-full border-2 border-border border-t-primary animate-spin" />
-              <p className="mt-6 text-body font-medium text-foreground">
-                Loading preview…
-              </p>
-              <p className="mt-2 text-body-sm text-muted-foreground">
-                Fetching your scanned document
-              </p>
-            </div>
-          ) : previewSrc ? (
-            <div
-              className="relative mx-auto w-full min-h-[560px] h-[min(82dvh,1040px)] overflow-x-auto overflow-y-hidden rounded-none bg-background sm:rounded-md [-webkit-overflow-scrolling:touch]"
-            >
-              <object
-                data={previewSrc}
-                type="application/pdf"
-                className="absolute inset-0 h-full w-full min-h-[560px] rounded-none sm:rounded-md"
-                aria-label="Mail scan PDF preview"
-              >
-                <iframe
-                  title="Mail Scan Preview"
-                  src={previewSrc}
-                  className="absolute inset-0 h-full w-full min-h-[560px] rounded-none border-0 sm:rounded-md"
-                />
-              </object>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center min-h-[min(82dvh,1040px)] py-12 md:py-16 text-center">
-              <FileText className="h-12 w-12 mx-auto text-muted-foreground" strokeWidth={1.5} />
-              <p className="mt-6 text-body font-medium text-foreground">
-                {miniViewerError ? 'Preview unavailable' : 'No preview available'}
-              </p>
-              <p className="mt-2 text-body-sm text-muted-foreground">
-                {miniViewerError ? 'Click "View Scan" to open full document' : 'Click "View Scan" to view the document'}
-              </p>
+        {/* Details and actions */}
+        <aside className="order-1 min-w-0 lg:order-2">
+          <h1 className="break-words text-[24px] font-semibold leading-tight tracking-[-0.03em] text-ink">{headline}</h1>
+          <dl className="mt-4 divide-y divide-line border-y border-line text-[14px]">
+            <div className="flex justify-between gap-4 py-2.5"><dt className="text-graphite">Received</dt><dd className="figure-mono text-ink">{receivedDate(item)}</dd></div>
+            <div className="flex justify-between gap-4 py-2.5"><dt className="text-graphite">Reference</dt><dd className="figure-mono text-ink">#{item.id}</dd></div>
+            {item.tag && <div className="flex justify-between gap-4 py-2.5"><dt className="text-graphite">Tag</dt><dd className="text-ink">{item.tag}</dd></div>}
+            {item.deleted && <div className="flex justify-between gap-4 py-2.5"><dt className="text-graphite">Location</dt><dd className="text-ink">Archived</dd></div>}
+          </dl>
+
+          <div className="mt-5">
+            <p className="mb-3 text-[12px] font-medium uppercase tracking-[0.08em] text-slate">Status</p>
+            <StatusSteps steps={life.steps} current={life.current} label="Status of this item" orientation="vertical" />
+          </div>
+
+          <div className="mt-6 grid gap-2">
+            <Button type="button" onClick={download} loading={downloading} fullWidth>
+              {!downloading && <Download className="h-4 w-4" aria-hidden />} Download
+            </Button>
+            <Button type="button" variant="outline" onClick={onView} fullWidth>
+              <FileText className="h-4 w-4" aria-hidden /> Open scan
+            </Button>
+            <Button type="button" variant="outline" onClick={onForward} fullWidth>
+              <Send className="h-4 w-4" aria-hidden /> Request forwarding
+            </Button>
+            {item.deleted && onUnarchive ? (
+              <Button type="button" variant="ghost" onClick={onUnarchive} fullWidth>
+                <ArchiveRestore className="h-4 w-4" aria-hidden /> Move back to inbox
+              </Button>
+            ) : !item.deleted && onArchive ? (
+              <Button type="button" variant="ghost" onClick={onArchive} fullWidth>
+                <Archive className="h-4 w-4" aria-hidden /> Archive
+              </Button>
+            ) : null}
+          </div>
+
+          {downloadError && <p role="alert" className="mt-3 text-[14px] text-destructive">{downloadError}</p>}
+          {forwardInlineNotice && (
+            <div role="alert" className="mt-4 rounded-md border border-line bg-mist p-4">
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-[14px] font-medium text-ink">Cannot forward this item</p>
+                <button type="button" onClick={onDismissForwardNotice} aria-label="Dismiss"
+                  className="-m-2 inline-flex h-9 w-9 items-center justify-center rounded-full text-graphite hover:bg-paper hover:text-ink">
+                  <X className="h-4 w-4" aria-hidden />
+                </button>
+              </div>
+              <p className="mt-1 text-[14px] text-graphite">{forwardInlineNotice}</p>
             </div>
           )}
-        </div>
+        </aside>
       </div>
     </div>
   );
 }
-
-

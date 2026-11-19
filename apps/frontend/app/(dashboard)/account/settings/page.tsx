@@ -11,7 +11,7 @@ export default function AccountSettingsPage() {
             <div className="mb-5 sm:mb-6 md:mb-8">
                 <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2">
                     <Settings className="w-6 h-6 sm:w-8 sm:h-8 text-primary shrink-0" strokeWidth={2} />
-                    <h1 className="text-h3 sm:text-h2 lg:text-h1 font-semibold text-foreground leading-tight tracking-tight">
+                    <h1 className="page-title">
                         Settings
                     </h1>
                 </div>

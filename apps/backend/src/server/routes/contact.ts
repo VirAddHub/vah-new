@@ -1,6 +1,7 @@
 // src/server/routes/contact.ts
 // Contact form API endpoint
 
+import { clientKey } from '../lib/clientKey';
 import { Router, Request, Response } from 'express';
 import { logger } from '../../lib/logger';
 import rateLimit from 'express-rate-limit';
@@ -19,6 +20,7 @@ const contactLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
+    keyGenerator: clientKey,
 });
 
 // Validation schema
@@ -45,6 +47,17 @@ router.post('/', contactLimiter, async (req: Request, res: Response) => {
                 ok: false, 
                 error: 'Missing required fields: name, email, subject, message' 
             });
+        }
+
+        // Max length validation
+        if (name.length > 200) {
+            return res.status(400).json({ ok: false, error: 'name must be 200 characters or fewer' });
+        }
+        if (subject.length > 200) {
+            return res.status(400).json({ ok: false, error: 'subject must be 200 characters or fewer' });
+        }
+        if (message.length > 5000) {
+            return res.status(400).json({ ok: false, error: 'message must be 5000 characters or fewer' });
         }
 
         // Email validation

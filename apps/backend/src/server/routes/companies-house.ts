@@ -2,12 +2,27 @@
 // Companies House API proxy endpoints with performance optimizations
 
 import { Router, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
+import { clientKey } from '../lib/clientKey';
 import fetch from 'node-fetch';
 import { performance } from 'node:perf_hooks';
 import { param } from '../../lib/express-params';
 import { logger } from '../../lib/logger';
 
 const router = Router();
+
+// Companies House allows 600 requests per 5 minutes for the whole key, shared by every visitor.
+// Search-as-you-type makes a request per pause in typing, so allow a generous amount per visitor
+// but stop any one source from using up the shared allowance. Results are cached for 5 minutes.
+const companiesHouseLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000,
+    max: 60,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: clientKey,
+    message: { ok: false, error: 'rate_limited', message: 'Too many company searches. Please wait a few minutes.' },
+});
+router.use(companiesHouseLimiter);
 
 const COMPANIES_HOUSE_API_KEY = process.env.COMPANIES_HOUSE_API_KEY;
 const COMPANIES_HOUSE_BASE_URL = 'https://api.company-information.service.gov.uk';
@@ -155,7 +170,7 @@ router.get('/search', async (req: Request, res: Response) => {
 router.get('/company/:number', async (req: Request, res: Response) => {
     const companyNumber = param(req, 'number');
 
-    if (!companyNumber || !companyNumber.trim()) {
+    if (!companyNumber || !/^[A-Za-z0-9]{6,10}$/.test(companyNumber.trim())) {
         return res.status(400).json({
             ok: false,
             error: 'company_number_required',
@@ -173,7 +188,7 @@ router.get('/company/:number', async (req: Request, res: Response) => {
 
     try {
         const response = await fetch(
-            `${COMPANIES_HOUSE_BASE_URL}/company/${companyNumber}`,
+            `${COMPANIES_HOUSE_BASE_URL}/company/${encodeURIComponent(companyNumber.trim().toUpperCase())}`,
             {
                 headers: {
                     'Authorization': `Basic ${Buffer.from(COMPANIES_HOUSE_API_KEY + ':').toString('base64')}`

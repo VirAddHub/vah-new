@@ -1,0 +1,906 @@
+[
+ {
+  "url": "/",
+  "status": 200,
+  "finalUrl": "/",
+  "title": "VirtualAddressHub - Professional London Business Address & Mail Forwarding",
+  "h1": [
+   "Your business deserves a professional address."
+  ],
+  "desc": "Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 3,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 2,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/",
+   "/pricing",
+   "/about",
+   "/blog",
+   "/help",
+   "/login",
+   "/signup",
+   "/contact",
+   "/?section=how",
+   "/privacy",
+   "/terms",
+   "/kyc",
+   "mailto:hello@virtualaddresshub.co.uk"
+  ],
+  "buttons": [
+   "Open menu",
+   "Get your address",
+   "See how it works",
+   "Monthly",
+   "AnnualSave 25%",
+   "Get started",
+   "Get your address"
+  ],
+  "textLen": 3627,
+  "bodyStart": "Skip to main content Pricing About Blog Help Log in Get started A LONDON ADDRESS. A WORLD OF POSSIBILITY. Your business deserves a professional address. A Central London address for your business. Yo",
+  "overflowX": false,
+  "axe": [
+   {
+    "id": "color-contrast",
+    "impact": "serious",
+    "n": 17
+   }
+  ],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "404 /icons/icon-192.png",
+   "401 /api/bff/auth/whoami",
+   "404 /favicon.ico"
+  ]
+ },
+ {
+  "url": "/pricing",
+  "status": 200,
+  "finalUrl": "/pricing",
+  "title": "VirtualAddressHub - Professional London Business Address & Mail Forwarding",
+  "h1": [
+   "One plan. Everything in it."
+  ],
+  "desc": "Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 2,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/",
+   "/pricing",
+   "/about",
+   "/blog",
+   "/help",
+   "/login",
+   "/signup",
+   "/?section=how",
+   "/privacy",
+   "/terms",
+   "/kyc",
+   "mailto:hello@virtualaddresshub.co.uk",
+   "/contact"
+  ],
+  "buttons": [
+   "Open menu",
+   "Monthly",
+   "Annual · save 25%",
+   "Get started →"
+  ],
+  "textLen": 1089,
+  "bodyStart": "Skip to main content Pricing About Blog Help Log in Get started One plan. Everything in it. No tiers, no unnecessary add-ons, no surprise charges. The whole service is the whole service. VIRTUAL MAI",
+  "overflowX": false,
+  "axe": [],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "401 /api/bff/auth/whoami"
+  ]
+ },
+ {
+  "url": "/about",
+  "status": 200,
+  "finalUrl": "/about",
+  "title": "About Us | VirtualAddressHub",
+  "h1": [
+   "A simpler way to be a London business."
+  ],
+  "desc": "VirtualAddressHub offers a professional Central London business address, simple pricing, and online mail management for founders and growing UK businesses.",
+  "canonical": "https://virtualaddresshub.com/about",
+  "robots": "index, follow",
+  "og": true,
+  "jsonld": 2,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 2,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/",
+   "/pricing",
+   "/about",
+   "/blog",
+   "/help",
+   "/login",
+   "/signup",
+   "/contact",
+   "/?section=how",
+   "/privacy",
+   "/terms",
+   "/kyc",
+   "mailto:hello@virtualaddresshub.co.uk"
+  ],
+  "buttons": [
+   "Open menu"
+  ],
+  "textLen": 1134,
+  "bodyStart": "Skip to main content Pricing About Blog Help Log in Get started A simpler way to be a London business. V irtualAddressHub gives modern businesses a simple way to establish a professional Central Lond",
+  "overflowX": false,
+  "axe": [],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "401 /api/bff/auth/whoami"
+  ]
+ },
+ {
+  "url": "/contact",
+  "status": 200,
+  "finalUrl": "/contact",
+  "title": "Contact Us | VirtualAddressHub",
+  "h1": [
+   "Get in touch."
+  ],
+  "desc": "Get in touch with VirtualAddressHub for support, questions, or inquiries about our virtual business address services. We're here to help.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 2,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/",
+   "/pricing",
+   "/about",
+   "/blog",
+   "/help",
+   "/login",
+   "/signup",
+   "mailto:support@virtualaddresshub.co.uk",
+   "https://wa.me/447000000000",
+   "/?section=how",
+   "/privacy",
+   "/terms",
+   "/kyc",
+   "mailto:hello@virtualaddresshub.co.uk",
+   "/contact"
+  ],
+  "buttons": [
+   "Open menu",
+   "Send enquiry →"
+  ],
+  "textLen": 1046,
+  "bodyStart": "Skip to main content Pricing About Blog Help Log in Get started Get in touch. Questions about the service, your account, compliance, billing — anything. A real human in London writes back, same worki",
+  "overflowX": false,
+  "axe": [
+   {
+    "id": "color-contrast",
+    "impact": "serious",
+    "n": 7
+   },
+   {
+    "id": "select-name",
+    "impact": "critical",
+    "n": 1
+   }
+  ],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "401 /api/bff/auth/whoami"
+  ]
+ },
+ {
+  "url": "/help",
+  "status": 200,
+  "finalUrl": "/help",
+  "title": "Help Centre & FAQs | VirtualAddressHub",
+  "h1": [
+   "Got questions? We've got answers."
+  ],
+  "desc": "Get answers to frequently asked questions about virtual business addresses, mail forwarding, pricing, compliance, and more. Fast answers and friendly support.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 2,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 2,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/",
+   "/pricing",
+   "/about",
+   "/blog",
+   "/help",
+   "/login",
+   "/signup",
+   "/?section=how",
+   "/privacy",
+   "/terms",
+   "/kyc",
+   "mailto:hello@virtualaddresshub.co.uk",
+   "/contact"
+  ],
+  "buttons": [
+   "Open menu",
+   "the contact page is.",
+   "Understanding Your Virtual Add",
+   "Mail Handling & Management",
+   "Pricing & Billing",
+   "Managing your account",
+   "Mail & troubleshooting",
+   "International customers",
+   "Compliance & Security",
+   "Who We Support",
+   "Getting Started",
+   "01\nWhat exactly is a Virtual A",
+   "02\nCan I use your address as m",
+   "03\nWhat can I use the address ",
+   "04\nIs this a real, staffed off",
+   "05\nCan I just use Royal Mail t",
+   "06\nWhat's the difference betwe",
+   "07\nWhat happens to my mail if ",
+   "Contact us →"
+  ],
+  "textLen": 1247,
+  "bodyStart": "Skip to main content Pricing About Blog Help Log in Get started Got questions? We've got answers. Everything we get asked about, in plain English. If your question isn't here, the contact page is. U",
+  "overflowX": false,
+  "axe": [
+   {
+    "id": "color-contrast",
+    "impact": "serious",
+    "n": 17
+   }
+  ],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "401 /api/bff/auth/whoami"
+  ]
+ },
+ {
+  "url": "/blog",
+  "status": 200,
+  "finalUrl": "/blog",
+  "title": "VirtualAddressHub - Professional London Business Address & Mail Forwarding",
+  "h1": [
+   "Helpful notes for running a UK business."
+  ],
+  "desc": "Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 2,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 2,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/",
+   "/pricing",
+   "/about",
+   "/blog",
+   "/help",
+   "/login",
+   "/signup",
+   "/?section=how",
+   "/privacy",
+   "/terms",
+   "/kyc",
+   "mailto:hello@virtualaddresshub.co.uk",
+   "/contact"
+  ],
+  "buttons": [
+   "Open menu"
+  ],
+  "textLen": 562,
+  "bodyStart": "Skip to main content Pricing About Blog Help Log in Get started Helpful notes for running a UK business. Simple, practical advice, honest lessons and things we wish we'd known earlier — written for f",
+  "overflowX": false,
+  "axe": [
+   {
+    "id": "color-contrast",
+    "impact": "serious",
+    "n": 1
+   }
+  ],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "404 /icons/icon-192.png",
+   "401 /api/bff/auth/whoami"
+  ]
+ },
+ {
+  "url": "/privacy",
+  "status": 200,
+  "finalUrl": "/privacy",
+  "title": "Privacy Policy | VirtualAddressHub",
+  "h1": [
+   "Privacy Policy"
+  ],
+  "desc": "Learn how VirtualAddressHub protects your privacy and handles your personal data. GDPR compliant privacy policy for our virtual business address services.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 2,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/",
+   "/pricing",
+   "/about",
+   "/blog",
+   "/help",
+   "/login",
+   "/signup",
+   "https://ico.org.uk/",
+   "/?section=how",
+   "/privacy",
+   "/terms",
+   "/kyc",
+   "mailto:hello@virtualaddresshub.co.uk",
+   "/contact"
+  ],
+  "buttons": [
+   "Open menu"
+  ],
+  "textLen": 4231,
+  "bodyStart": "Skip to main content Pricing About Blog Help Log in Get started Privacy Policy Last updated: [INSERT DATE] At VirtualAddressHub, your privacy matters. We only collect the information required to pro",
+  "overflowX": false,
+  "axe": [],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "401 /api/bff/auth/whoami"
+  ]
+ },
+ {
+  "url": "/terms",
+  "status": 200,
+  "finalUrl": "/terms",
+  "title": "Terms of Service | VirtualAddressHub",
+  "h1": [
+   "Terms of Service"
+  ],
+  "desc": "Read our terms of service for virtual business address services, mail forwarding, and compliance support. Understand your rights and responsibilities.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 2,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/",
+   "/pricing",
+   "/about",
+   "/blog",
+   "/help",
+   "/login",
+   "/signup",
+   "/?section=how",
+   "/privacy",
+   "/terms",
+   "/kyc",
+   "mailto:hello@virtualaddresshub.co.uk",
+   "/contact"
+  ],
+  "buttons": [
+   "Open menu"
+  ],
+  "textLen": 4150,
+  "bodyStart": "Skip to main content Pricing About Blog Help Log in Get started Terms of Service Last updated: [INSERT DATE] Clear, fair terms for using VirtualAddressHub. By creating an account, you agree to the ",
+  "overflowX": false,
+  "axe": [],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "401 /api/bff/auth/whoami"
+  ]
+ },
+ {
+  "url": "/kyc",
+  "status": 200,
+  "finalUrl": "/kyc",
+  "title": "KYC Policy | VirtualAddressHub",
+  "h1": [
+   "KYC Verification Policy"
+  ],
+  "desc": "Learn about our Know Your Customer (KYC) verification process. Understand what documents you need and how we ensure compliance with UK regulations.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 2,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/",
+   "/pricing",
+   "/about",
+   "/blog",
+   "/help",
+   "/login",
+   "/signup",
+   "/?section=how",
+   "/privacy",
+   "/terms",
+   "/kyc",
+   "mailto:hello@virtualaddresshub.co.uk",
+   "/contact"
+  ],
+  "buttons": [
+   "Open menu"
+  ],
+  "textLen": 2718,
+  "bodyStart": "Skip to main content Pricing About Blog Help Log in Get started KYC Verification Policy Last updated: [INSERT DATE] VirtualAddressHub is required by UK law to verify the identity of customers before",
+  "overflowX": false,
+  "axe": [],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "401 /api/bff/auth/whoami"
+  ]
+ },
+ {
+  "url": "/compliance-check",
+  "status": 200,
+  "finalUrl": "/compliance-check",
+  "title": "Free Business Address Compliance Check | VirtualAddressHub",
+  "h1": [
+   "Is Your Business Address Fully HMRC-Compliant?"
+  ],
+  "desc": "Take our 3-minute quiz to see if your business address meets UK Companies House and HMRC rules under the Economic Crime Act. Instant score and recommendations.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 2,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/",
+   "/pricing",
+   "/about",
+   "/blog",
+   "/help",
+   "/login",
+   "/signup",
+   "/?section=how",
+   "/privacy",
+   "/terms",
+   "/kyc",
+   "mailto:hello@virtualaddresshub.co.uk",
+   "/contact"
+  ],
+  "buttons": [
+   "Open menu"
+  ],
+  "textLen": 1105,
+  "bodyStart": "Skip to main content Pricing About Blog Help Log in Get started Free 3-minute quiz Is Your Business Address Fully HMRC-Compliant? Find out if your registered or trading address meets the latest UK Co",
+  "overflowX": false,
+  "axe": [
+   {
+    "id": "color-contrast",
+    "impact": "serious",
+    "n": 1
+   }
+  ],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "401 /api/bff/auth/whoami"
+  ]
+ },
+ {
+  "url": "/signup",
+  "status": 200,
+  "finalUrl": "/signup",
+  "title": "Sign Up | VirtualAddressHub",
+  "h1": [
+   "Get Started"
+  ],
+  "desc": "Create your VirtualAddressHub account and get a professional London business address. Start your free trial today.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 2,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/",
+   "/pricing",
+   "/about",
+   "/blog",
+   "/help",
+   "/login",
+   "/signup",
+   "/?section=how",
+   "/privacy",
+   "/terms",
+   "/kyc",
+   "mailto:hello@virtualaddresshub.co.uk",
+   "/contact"
+  ],
+  "buttons": [
+   "Open menu",
+   "Back",
+   "Monthly",
+   "Annual",
+   "Show password",
+   "Registered company",
+   "Not registered yet",
+   "Continue to Payment"
+  ],
+  "textLen": 1676,
+  "bodyStart": "Skip to main content Pricing About Blog Help Log in Get started Back 1 2 Get Started Choose your plan and tell us about yourself and your company. All fields marked with * are required. Billing Mont",
+  "overflowX": false,
+  "axe": [],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "failedRequests": [
+   "401 /api/bff/auth/whoami",
+   "404 /icons/icon-192.png"
+  ]
+ },
+ {
+  "url": "/login",
+  "status": 200,
+  "finalUrl": "/login",
+  "title": "Login | VirtualAddressHub",
+  "h1": [
+   "Log in."
+  ],
+  "desc": "Sign in to your VirtualAddressHub account.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 1,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/",
+   "/reset-password",
+   "/signup"
+  ],
+  "buttons": [
+   "Log in →"
+  ],
+  "textLen": 314,
+  "bodyStart": "Skip to main content Log in. Pick up where you left off in your mailbox. EMAIL PASSWORD Forgot it? Log in → Don't have an account yet? Start one → HMRC AML · XRML00000123456 ICO · ZA123456 © 2026 Vi",
+  "overflowX": false,
+  "axe": [
+   {
+    "id": "color-contrast",
+    "impact": "serious",
+    "n": 5
+   }
+  ],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "404 /icons/icon-192.png",
+   "401 /api/bff/auth/whoami"
+  ]
+ },
+ {
+  "url": "/reset-password",
+  "status": 200,
+  "finalUrl": "/reset-password",
+  "title": "VirtualAddressHub - Professional London Business Address & Mail Forwarding",
+  "h1": [
+   "Reset Your Password"
+  ],
+  "desc": "Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 0,
+  "brokenImgs": [],
+  "links": [
+   "#main-content"
+  ],
+  "buttons": [
+   "←\nBack",
+   "Send Reset Link",
+   "Sign up here",
+   "Contact Support",
+   "Terms of Service",
+   "Privacy Policy"
+  ],
+  "textLen": 297,
+  "bodyStart": "Skip to main content ← Back Reset Your Password Enter your email address and we'll send you instructions to reset your password Email Address Send Reset Link Don't have an account?Sign up here Hav",
+  "overflowX": false,
+  "axe": [],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "401 /api/bff/auth/whoami"
+  ]
+ },
+ {
+  "url": "/plans",
+  "status": 200,
+  "finalUrl": "/plans",
+  "title": "VirtualAddressHub - Professional London Business Address & Mail Forwarding",
+  "h1": [],
+  "desc": "Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 0,
+  "brokenImgs": [],
+  "links": [
+   "#main-content"
+  ],
+  "buttons": [],
+  "textLen": 1270,
+  "bodyStart": "Skip to main content Virtual Mailbox - Monthly £9.99 Use as Registered Office & Director's Service Address (Companies House + HMRC) Professional London business address for banking, invoices & websi",
+  "overflowX": false,
+  "axe": [],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "404 /icons/icon-192.png",
+   "401 /api/bff/auth/whoami"
+  ]
+ },
+ {
+  "url": "/docs/api",
+  "status": 200,
+  "finalUrl": "/docs/api",
+  "title": "VirtualAddressHub - Professional London Business Address & Mail Forwarding",
+  "h1": [],
+  "desc": "Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 0,
+  "brokenImgs": [],
+  "links": [
+   "#main-content"
+  ],
+  "buttons": [],
+  "textLen": 20,
+  "bodyStart": "Skip to main content",
+  "overflowX": false,
+  "axe": [],
+  "consoleErrors": [
+   "Framing 'http://localhost:3000/api-docs/index.html' violates the following Content Security Policy directive: \"frame-src https://js.stripe.com https://hooks.str",
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "401 /api/bff/auth/whoami"
+  ]
+ },
+ {
+  "url": "/verify-owner",
+  "status": 200,
+  "finalUrl": "/verify-owner",
+  "title": "VirtualAddressHub - Professional London Business Address & Mail Forwarding",
+  "h1": [],
+  "desc": "Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 0,
+  "brokenImgs": [],
+  "links": [
+   "#main-content"
+  ],
+  "buttons": [],
+  "textLen": 254,
+  "bodyStart": "Skip to main content Invalid link We couldn’t verify your link. Invalid verification link. Please check your email and try again. This link may be invalid or have already been used. Please contact ",
+  "overflowX": false,
+  "axe": [
+   {
+    "id": "color-contrast",
+    "impact": "serious",
+    "n": 1
+   }
+  ],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "401 /api/bff/auth/whoami"
+  ]
+ },
+ {
+  "url": "/verify-email-change",
+  "status": 200,
+  "finalUrl": "/verify-email-change",
+  "title": "VirtualAddressHub - Professional London Business Address & Mail Forwarding",
+  "h1": [],
+  "desc": "Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 2,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/",
+   "/pricing",
+   "/about",
+   "/blog",
+   "/help",
+   "/login",
+   "/signup",
+   "/?section=how",
+   "/privacy",
+   "/terms",
+   "/kyc",
+   "mailto:hello@virtualaddresshub.co.uk",
+   "/contact"
+  ],
+  "buttons": [
+   "Open menu",
+   "Resend confirmation email"
+  ],
+  "textLen": 589,
+  "bodyStart": "Skip to main content Pricing About Blog Help Log in Get started Verification Failed We couldn't verify your email change. This confirmation link is invalid. Please check your email and try again. T",
+  "overflowX": false,
+  "axe": [
+   {
+    "id": "color-contrast",
+    "impact": "serious",
+    "n": 1
+   }
+  ],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "401 /api/bff/auth/whoami"
+  ]
+ },
+ {
+  "url": "/nonexistent-page",
+  "status": 404,
+  "finalUrl": "/nonexistent-page",
+  "title": "VirtualAddressHub - Professional London Business Address & Mail Forwarding",
+  "h1": [
+   "We couldn't find that page"
+  ],
+  "desc": "Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "noindex",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 2,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/",
+   "/pricing",
+   "/about",
+   "/blog",
+   "/help",
+   "/login",
+   "/signup",
+   "/?section=how",
+   "/privacy",
+   "/terms",
+   "/kyc",
+   "mailto:hello@virtualaddresshub.co.uk",
+   "/contact"
+  ],
+  "buttons": [
+   "Open menu",
+   "Go to Home",
+   "Browse Help",
+   "Contact Support",
+   "Go back"
+  ],
+  "textLen": 643,
+  "bodyStart": "Skip to main content Pricing About Blog Help Log in Get started 404 We couldn't find that page The link may be broken, or the page may have been moved. Here are a few helpful links. Try the followin",
+  "overflowX": false,
+  "axe": [],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "failedRequests": [
+   "404 /nonexistent-page",
+   "401 /api/bff/auth/whoami"
+  ]
+ }
+]

@@ -5,7 +5,6 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { parseJsonSafe } from '@/lib/http';
 import { formatBlogDate } from '@/lib/blog-date-formatter';
-import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import Link from 'next/link';
 
 type BlogPost = {
@@ -41,46 +40,26 @@ async function resolveAppBaseUrl(): Promise<string> {
     const h = await headers();
     const host = h.get('x-forwarded-host') || h.get('host');
     const proto = h.get('x-forwarded-proto') || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
-    if (host) {
-      return `${proto === 'https' ? 'https' : 'http'}://${host}`;
-    }
+    if (host) return `${proto === 'https' ? 'https' : 'http'}://${host}`;
   } catch (_) {}
-  const envUrl =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.APP_BASE_URL ||
-    process.env.VERCEL_URL;
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_BASE_URL || process.env.VERCEL_URL;
   if (!envUrl) return FALLBACK_ORIGIN;
-  if (envUrl.startsWith('http')) return envUrl;
-  return `https://${envUrl}`;
+  return envUrl.startsWith('http') ? envUrl : `https://${envUrl}`;
 }
 
 async function getPost(slug: string): Promise<BlogPost | null> {
   try {
     const base = await resolveAppBaseUrl();
-    const url = `${base}/api/bff/blog/detail?slug=${encodeURIComponent(slug)}`;
-    const res = await fetch(url, {
+    const res = await fetch(`${base}/api/bff/blog/detail?slug=${encodeURIComponent(slug)}`, {
       cache: 'no-store',
       headers: { accept: 'application/json' },
     });
-
-    if (!res.ok) {
-      return null;
-    }
-
+    if (!res.ok) return null;
     let json: any;
-    try {
-      json = await parseJsonSafe(res);
-    } catch (err: any) {
-      console.error('[BlogPostPage] Blog request failed with non-JSON response:', err);
-      return null;
-    }
-
+    try { json = await parseJsonSafe(res); } catch { return null; }
     if (!json?.ok || !json?.data) return null;
     return json.data as BlogPost;
-  } catch (error) {
-    console.error('[BlogPostPage] Failed to fetch post', error);
-    return null;
-  }
+  } catch { return null; }
 }
 
 async function getRelatedPosts(currentSlug: string): Promise<BlogPostListItem[]> {
@@ -90,310 +69,254 @@ async function getRelatedPosts(currentSlug: string): Promise<BlogPostListItem[]>
       cache: 'no-store',
       headers: { accept: 'application/json' },
     });
-
-    if (!res.ok) {
-      return [];
-    }
-
+    if (!res.ok) return [];
     let json: any;
-    try {
-      json = await parseJsonSafe(res);
-    } catch (err: any) {
-      console.error('[BlogPostPage] Failed to fetch related posts:', err);
-      return [];
-    }
-
+    try { json = await parseJsonSafe(res); } catch { return []; }
     if (!json?.ok || !json?.data) return [];
-
-    return (json.data as BlogPostListItem[])
-      .filter((post) => post.slug !== currentSlug)
-      .slice(0, 3);
-  } catch (error) {
-    console.error('[BlogPostPage] Failed to fetch related posts', error);
-    return [];
-  }
+    return (json.data as BlogPostListItem[]).filter(p => p.slug !== currentSlug).slice(0, 3);
+  } catch { return []; }
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPost(slug);
-  if (!post) {
-    return {
-      title: 'Post Not Found | VirtualAddressHub Blog',
-    };
-  }
-
-  const description =
-    post.description || post.excerpt || 'Read this article on the VirtualAddressHub blog.';
-
+  if (!post) return { title: 'Post Not Found | VirtualAddressHub Blog' };
+  const description = post.description || post.excerpt || 'Read this article on the VirtualAddressHub blog.';
   return {
     title: `${post.title} | VirtualAddressHub Blog`,
     description,
-    openGraph: {
-      title: post.title,
-      description,
-      url: `https://virtualaddresshub.com/blog/${slug}`,
-    },
+    openGraph: { title: post.title, description, url: `https://virtualaddresshub.co.uk/blog/${slug}` },
   };
 }
 
-function ArticleMeta({
-  dateLabel,
-  categoryLabel,
-  readTime,
-}: {
-  dateLabel: string;
-  categoryLabel: string | null;
-  readTime?: string;
-}) {
-  const parts: string[] = [];
-  if (dateLabel) parts.push(dateLabel);
-  if (categoryLabel) parts.push(categoryLabel);
-  if (readTime?.trim()) parts.push(readTime.trim());
-
-  if (parts.length === 0) return null;
-
-  return (
-    <p className="text-caption text-muted-foreground">{parts.join(' · ')}</p>
-  );
-}
-
-export default async function BlogPostPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const post = await getPost(slug);
   const relatedPosts = await getRelatedPosts(slug);
 
-  if (!post) {
-    return notFound();
-  }
+  if (!post) return notFound();
 
   const hasHtml = typeof post.html === 'string' && post.html.trim().length > 0;
   const dateLabel = formatBlogDate(post.dateLong || post.date || post.updated);
-  const categoryLabel =
-    post.tags && post.tags.length > 0 ? post.tags[0] : null;
+  const categoryLabel = post.tags && post.tags.length > 0 ? post.tags[0] : null;
+
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": post.title,
+    "description": post.description || post.excerpt,
+    "url": `https://virtualaddresshub.co.uk/blog/${slug}`,
+    "datePublished": post.date,
+    "dateModified": post.updated || post.date,
+    "author": { "@type": "Person", "name": post.authorName || "Liban Adan" },
+    "publisher": { "@type": "Organization", "name": "VirtualAddressHub" },
+    "image": post.cover,
+    "articleSection": categoryLabel || "General",
+  };
 
   return (
-    <div className="bg-background">
-      <article className="mx-auto w-full max-w-3xl px-4 pb-16 pt-8 sm:px-6 lg:px-8 lg:pb-24 lg:pt-12">
-        <Link
-          href="/blog"
-          className="mb-8 inline-flex items-center gap-2 text-caption font-medium text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Back to blog
+    <div style={{ fontFamily: "'Inter', sans-serif", backgroundColor: '#FFFFFF', minHeight: '100vh' }}>
+      <style>{`
+        .post-body { font-family: 'Inter', sans-serif; font-size: clamp(15px, 2vw, 17px); color: #404040; line-height: 1.8; }
+        .post-body h1, .post-body h2, .post-body h3, .post-body h4 {
+          font-family: 'Inter', sans-serif; color: #0A0A0A; font-weight: 600;
+          letter-spacing: -0.02em; margin: 1.8em 0 0.6em; line-height: 1.2;
+        }
+        .post-body h1 { font-size: clamp(22px,3vw,30px); }
+        .post-body h2 { font-size: clamp(19px,2.5vw,25px); }
+        .post-body h3 { font-size: clamp(16px,2vw,20px); }
+        .post-body p { margin: 0 0 1.3em; }
+        .post-body ul, .post-body ol { padding-left: 22px; margin: 0 0 1.3em; }
+        .post-body li { margin-bottom: 6px; }
+        .post-body strong { color: #0A0A0A; font-weight: 600; }
+        .post-body a { color: #0A0A0A; text-decoration: underline; }
+        .post-body a:hover { opacity: 0.75; }
+        .post-body blockquote {
+          border-left: 3px solid #0A0A0A; margin: 1.5em 0;
+          padding: 4px 0 4px 20px; color: #6B6B6B; font-style: normal;
+        }
+        .post-body code {
+          background: #F5F5F5; padding: 2px 6px; border-radius: 3px;
+          font-family: 'IBM Plex Mono', monospace; font-size: 0.88em; color: #0A0A0A;
+        }
+        .post-body pre {
+          background: #0A0A0A; color: #FFFFFF; padding: 20px; border-radius: 6px;
+          overflow-x: auto; margin: 1.5em 0;
+        }
+        .post-body pre code { background: none; padding: 0; color: inherit; }
+        .post-body hr { border: none; border-top: 1px solid #E5E5E5; margin: 2.5em 0; }
+        .post-body img { max-width: 100%; border-radius: 4px; margin: 1em 0; border: 1px solid #E5E5E5; }
+        .back-link {
+          display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+          font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; color: #0A0A0A;
+          transition: opacity 0.15s; margin-bottom: 40px;
+        }
+        .back-link:hover { opacity: 0.7; }
+        .related-card {
+          display: flex; flex-direction: column; text-decoration: none;
+          border: 1px solid #E5E5E5; border-radius: 4px; overflow: hidden;
+          background: #FFFFFF; transition: border-color 0.15s;
+        }
+        .related-card:hover { border-color: #0A0A0A; }
+        .related-card:hover .related-title { color: #0A0A0A; }
+        .related-title { transition: color 0.15s; }
+      `}</style>
+
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+
+      <article style={{ maxWidth: '720px', margin: '0 auto', padding: 'clamp(32px,5vw,64px) clamp(20px,5vw,40px) clamp(60px,8vw,100px)' }}>
+
+        {/* Back link */}
+        <Link href="/blog" className="back-link">
+          <span style={{ fontSize: '16px' }}>←</span>
+          <span>Back to blog</span>
         </Link>
 
-        <header className="mb-10 border-b border-border pb-10">
-          <ArticleMeta dateLabel={dateLabel} categoryLabel={categoryLabel} readTime={post.readTime} />
-          <h1 className="mt-4 text-pretty text-h1 font-semibold tracking-tight text-foreground lg:text-[2rem] lg:leading-tight">
-            {post.title}
-          </h1>
-          {post.excerpt || post.description ? (
-            <p className="mt-4 max-w-2xl text-body-lg leading-relaxed text-muted-foreground">
-              {post.excerpt || post.description}
-            </p>
-          ) : null}
-        </header>
-
-        {post.cover ? (
-          <div className="mb-10 overflow-hidden rounded-xl border border-border bg-muted/30">
-            <div className="relative aspect-[2/1] w-full max-h-[min(56vh,420px)] sm:max-h-[480px]">
-              <ImageWithFallback
-                src={post.cover}
-                alt={post.title}
-                className="h-full w-full object-cover"
-              />
-            </div>
-          </div>
-        ) : null}
-
-        <div className="blog-article-body max-w-[65ch]">
-          {hasHtml ? (
-            <div
-              className="blog-article-html"
-              dangerouslySetInnerHTML={{ __html: post.html as string }}
-              suppressHydrationWarning
-            />
-          ) : (
-            <div className="space-y-1">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  h2: ({ children, ...props }) => (
-                    <h2
-                      className="mb-3 mt-10 text-xl font-semibold tracking-tight text-foreground first:mt-0 sm:text-2xl"
-                      {...props}
-                    >
-                      {children}
-                    </h2>
-                  ),
-                  h3: ({ children, ...props }) => (
-                    <h3
-                      className="mb-2 mt-8 text-lg font-semibold tracking-tight text-foreground sm:text-xl"
-                      {...props}
-                    >
-                      {children}
-                    </h3>
-                  ),
-                  p: ({ children, ...props }) => (
-                    <p
-                      className="mb-6 text-[1.0625rem] leading-[1.75] text-foreground/90 last:mb-0"
-                      {...props}
-                    >
-                      {children}
-                    </p>
-                  ),
-                  ul: ({ children, ...props }) => (
-                    <ul className="mb-6 list-disc space-y-2 pl-5 text-[1.0625rem] leading-relaxed text-foreground/90 marker:text-muted-foreground" {...props}>
-                      {children}
-                    </ul>
-                  ),
-                  ol: ({ children, ...props }) => (
-                    <ol className="mb-6 list-decimal space-y-2 pl-5 text-[1.0625rem] leading-relaxed text-foreground/90 marker:text-muted-foreground" {...props}>
-                      {children}
-                    </ol>
-                  ),
-                  li: ({ children, ...props }) => (
-                    <li className="pl-1" {...props}>
-                      {children}
-                    </li>
-                  ),
-                  a: ({ children, ...props }) => (
-                    <a className="font-medium text-primary underline underline-offset-4 hover:text-primary/90" {...props}>
-                      {children}
-                    </a>
-                  ),
-                  strong: ({ children, ...props }) => (
-                    <strong className="font-semibold text-foreground" {...props}>
-                      {children}
-                    </strong>
-                  ),
-                  blockquote: ({ children, ...props }) => (
-                    <blockquote
-                      className="my-6 border-l-2 border-primary/40 pl-4 text-foreground/85 italic"
-                      {...props}
-                    >
-                      {children}
-                    </blockquote>
-                  ),
-                  code: ({ className, children, ...props }) => {
-                    const isBlock = className?.includes('language-');
-                    if (isBlock) {
-                      return (
-                        <code className={className} {...props}>
-                          {children}
-                        </code>
-                      );
-                    }
-                    return (
-                      <code
-                        className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.9em] text-foreground"
-                        {...props}
-                      >
-                        {children}
-                      </code>
-                    );
-                  },
-                  pre: ({ children, ...props }) => (
-                    <pre
-                      className="mb-6 overflow-x-auto rounded-lg border border-border bg-muted/50 p-4 text-sm"
-                      {...props}
-                    >
-                      {children}
-                    </pre>
-                  ),
-                  img: ({ alt, className, ...props }) => (
-                    // eslint-disable-next-line @next/next/no-img-element -- markdown images are external/unknown URLs
-                    <img
-                      {...props}
-                      alt={alt ?? ''}
-                      className={`my-8 w-full max-w-full rounded-lg border border-border ${className ?? ''}`}
-                    />
-                  ),
-                }}
-              >
-                {post.content ?? ''}
-              </ReactMarkdown>
-            </div>
+        {/* Meta row */}
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center',
+          fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
+          fontSize: '11px', color: '#6B6B6B',
+          letterSpacing: '0.1em', textTransform: 'uppercase',
+          marginBottom: '18px',
+        }}>
+          {categoryLabel && (
+            <>
+              <span style={{ color: '#0A0A0A', fontWeight: 500 }}>{categoryLabel}</span>
+              <span>·</span>
+            </>
           )}
+          {dateLabel && <span>{dateLabel}</span>}
+          {post.readTime && <><span>·</span><span>{post.readTime}</span></>}
+        </div>
+
+        {/* Title */}
+        <h1 style={{
+          fontFamily: "'Inter', sans-serif",
+          fontSize: 'clamp(26px,4vw,44px)',
+          fontWeight: 600,
+          color: '#0A0A0A',
+          margin: '0 0 18px',
+          letterSpacing: '-0.025em',
+          lineHeight: 1.1,
+        }}>
+          {post.title}
+        </h1>
+
+        {/* Description */}
+        {(post.description || post.excerpt) && (
+          <p style={{
+            fontFamily: "'Inter', sans-serif",
+            fontSize: 'clamp(15px,2vw,18px)',
+            color: '#6B6B6B',
+            margin: '0 0 32px',
+            lineHeight: 1.55,
+            fontWeight: 400,
+          }}>
+            {post.description || post.excerpt}
+          </p>
+        )}
+
+        {/* Cover image */}
+        {post.cover && (
+          <div style={{ margin: '0 0 40px', borderRadius: '4px', overflow: 'hidden', border: '1px solid #E5E5E5' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={post.cover} alt={post.title} style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
+          </div>
+        )}
+
+        {/* Divider */}
+        <div style={{ borderTop: '1px solid #E5E5E5', marginBottom: '40px' }} />
+
+        {/* Body */}
+        <div className="post-body">
+          {hasHtml ? (
+            <div dangerouslySetInnerHTML={{ __html: post.html as string }} suppressHydrationWarning />
+          ) : (
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                h2: ({ children, ...props }) => <h2 {...props}>{children}</h2>,
+                h3: ({ children, ...props }) => <h3 {...props}>{children}</h3>,
+                p:  ({ children, ...props }) => <p {...props}>{children}</p>,
+                ul: ({ children, ...props }) => <ul {...props}>{children}</ul>,
+                ol: ({ children, ...props }) => <ol {...props}>{children}</ol>,
+                li: ({ children, ...props }) => <li {...props}>{children}</li>,
+                a:  ({ children, ...props }) => <a {...props}>{children}</a>,
+                strong: ({ children, ...props }) => <strong {...props}>{children}</strong>,
+                blockquote: ({ children, ...props }) => <blockquote {...props}>{children}</blockquote>,
+                code: ({ className, children, ...props }) => <code className={className} {...props}>{children}</code>,
+                pre: ({ children, ...props }) => <pre {...props}>{children}</pre>,
+                img: ({ alt, ...props }) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img {...props} alt={alt ?? ''} />
+                ),
+              }}
+            >
+              {post.content ?? ''}
+            </ReactMarkdown>
+          )}
+        </div>
+
+        {/* Back link bottom */}
+        <div style={{ borderTop: '1px solid #E5E5E5', marginTop: '56px', paddingTop: '28px' }}>
+          <Link href="/blog" className="back-link" style={{ margin: 0 }}>
+            <span style={{ fontSize: '16px' }}>←</span>
+            <span>Back to blog</span>
+          </Link>
         </div>
       </article>
 
-      {relatedPosts.length > 0 ? (
-        <section
-          className="border-t border-border bg-muted/20 px-4 py-14 sm:px-6 lg:px-8 lg:py-20"
-          aria-labelledby="related-heading"
-        >
-          <div className="mx-auto max-w-3xl lg:max-w-5xl">
-            <h2 id="related-heading" className="text-h2 font-semibold tracking-tight text-foreground">
-              Related articles
-            </h2>
-            <p className="mt-2 text-body-sm text-muted-foreground">More from the blog</p>
-            <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+      {/* Related posts */}
+      {relatedPosts.length > 0 && (
+        <section style={{ borderTop: '1px solid #E5E5E5', backgroundColor: '#F5F5F5', padding: 'clamp(40px,6vw,72px) clamp(20px,5vw,40px)' }}>
+          <div style={{ maxWidth: '720px', margin: '0 auto' }}>
+            <h2 style={{
+              fontFamily: "'Inter', sans-serif", fontSize: 'clamp(18px,2.5vw,22px)',
+              fontWeight: 600, color: '#0A0A0A', margin: '0 0 8px', letterSpacing: '-0.01em',
+            }}>More from the blog</h2>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: '#6B6B6B', margin: '0 0 28px' }}>
+              Keep reading
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
               {relatedPosts.map((related) => (
-                <li key={related.slug}>
-                  <Link
-                    href={`/blog/${related.slug}`}
-                    className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-primary/25 hover:bg-card/80"
-                  >
-                    <div className="relative aspect-[16/10] w-full bg-muted">
-                      {related.imageUrl?.trim() ? (
-                        <ImageWithFallback
-                          src={related.imageUrl}
-                          alt={related.title}
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-caption text-muted-foreground">
-                          No cover
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-1 flex-col gap-2 p-4">
-                      {related.category ? (
-                        <span className="w-fit rounded-full bg-muted px-2.5 py-0.5 text-caption text-muted-foreground">
-                          {related.category}
-                        </span>
-                      ) : null}
-                      <h3 className="text-body-lg font-semibold leading-snug text-foreground group-hover:text-primary">
-                        {related.title}
-                      </h3>
-                      <p className="line-clamp-2 flex-1 text-body-sm leading-relaxed text-muted-foreground">
-                        {related.excerpt}
-                      </p>
-                    </div>
-                  </Link>
-                </li>
+                <Link key={related.slug} href={`/blog/${related.slug}`} className="related-card">
+                  {related.imageUrl?.trim() && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={related.imageUrl} alt={related.title} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
+                  )}
+                  <div style={{ padding: '14px 16px 18px' }}>
+                    {related.category && (
+                      <span style={{
+                        fontFamily: "'IBM Plex Mono', monospace", fontSize: '10px',
+                        color: '#0A0A0A', letterSpacing: '0.1em', textTransform: 'uppercase',
+                        display: 'block', marginBottom: '6px',
+                      }}>{related.category}</span>
+                    )}
+                    <h3 className="related-title" style={{
+                      fontFamily: "'Inter', sans-serif", fontSize: '14px',
+                      fontWeight: 600, color: '#0A0A0A', margin: '0 0 6px', lineHeight: 1.3,
+                    }}>{related.title}</h3>
+                    {related.excerpt && (
+                      <p style={{
+                        fontFamily: "'Inter', sans-serif", fontSize: '12px',
+                        color: '#6B6B6B', margin: 0, lineHeight: 1.5,
+                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                      }}>{related.excerpt}</p>
+                    )}
+                  </div>
+                </Link>
               ))}
-            </ul>
+            </div>
           </div>
         </section>
-      ) : null}
+      )}
 
-      <div className="border-t border-border px-4 py-10 sm:px-6 lg:px-8">
-        <p className="mx-auto max-w-3xl text-center text-body-sm text-muted-foreground">
+      {/* CTA strip */}
+      <div style={{ borderTop: '1px solid #E5E5E5', padding: '32px clamp(20px,5vw,40px)', textAlign: 'center', backgroundColor: '#FFFFFF' }}>
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', color: '#6B6B6B', margin: 0 }}>
           Running a UK business?{' '}
-          <Link href="/signup" className="font-medium text-primary underline underline-offset-4 hover:text-primary/90">
+          <Link href="/signup" style={{ color: '#0A0A0A', fontWeight: 500, textDecoration: 'underline' }}>
             Get a London business address
           </Link>
         </p>

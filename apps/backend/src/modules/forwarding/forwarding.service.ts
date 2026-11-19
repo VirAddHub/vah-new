@@ -29,7 +29,9 @@ export type CreateForwardingResult = {
 
 export async function createForwardingRequest(input: CreateForwardingInput): Promise<CreateForwardingResult> {
     const { userId, mailItemId, to, reason, method, idemKey = `srv-${crypto.randomUUID()}` } = input;
-    const pool = getPool();
+    // One dedicated connection for the whole transaction (BEGIN/COMMIT through the pool can land
+    // on different connections and silently lose the work).
+    const pool = await getPool().connect();
 
     return await pool.query('BEGIN').then(async () => {
         try {
@@ -214,5 +216,5 @@ export async function createForwardingRequest(input: CreateForwardingInput): Pro
             await pool.query('ROLLBACK');
             throw error;
         }
-    });
+    }).finally(() => pool.release());
 }

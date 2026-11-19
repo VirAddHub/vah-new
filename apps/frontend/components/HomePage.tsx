@@ -1,536 +1,141 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowDown, ArrowRight, ArrowUpRight, Building2, Check, ChevronDown, FileText, Inbox, LockKeyhole, Mail, MapPin, ScanLine, Send, ShieldCheck } from 'lucide-react';
 import { usePricing } from '@/hooks/usePlans';
-import { formatMonthly, formatAnnual } from '@/lib/formatPrice';
+import { formatPrice } from '@/lib/formatPrice';
+import styles from './marketing.module.css';
 
 interface HomePageProps {
-  onNavigate?: (page: string, data?: any) => void;
+  onNavigate?: (page: string, data?: { initialBilling: 'monthly' | 'annual' }) => void;
 }
 
-// ─── Before card ───────────────────────────────────────────────────────────
-function MixBeforeCard() {
-  return (
-    <div className="bg-mix-paper-deep border border-dashed border-mix-rule p-5 sm:p-7 relative">
-      <div className="flex items-center justify-between mb-3 font-plex text-[10px] sm:text-[11px] text-mix-muted tracking-[0.12em] uppercase">
-        <span>— Previously —</span>
-        <span>Visible to anyone</span>
-      </div>
-      <div className="font-newsreader text-[20px] sm:text-[24px] text-mix-ink2 leading-[1.35]">
-        Your home address
-      </div>
-      <div className="mt-3 pt-3 border-t border-dotted border-mix-rule font-newsreader text-[13px] sm:text-[14px] text-mix-muted">
-        On the public Companies House register. For anyone to find.
-      </div>
-    </div>
-  );
-}
-
-// ─── After card ────────────────────────────────────────────────────────────
-function MixAfterCard() {
-  const features = ['Companies House', 'HMRC', "Director's address", 'Digital mail access'];
-  return (
-    <div
-      className="bg-mix-paper-light relative border border-mix-rule p-5 sm:p-8"
-      style={{ boxShadow: '0 24px 50px -28px rgba(60,40,10,0.35)' }}
-    >
-      <div
-        className="absolute -top-3 right-4 sm:right-6 bg-mix-stamp text-mix-paper-light px-2.5 py-1 font-plex text-[9px] sm:text-[10px] tracking-[0.15em] uppercase"
-        style={{ transform: 'rotate(2deg)' }}
-      >
-        Apply online
-      </div>
-
-      <div className="flex items-center justify-between mb-3 font-plex text-[10px] sm:text-[11px] tracking-[0.12em] uppercase">
-        <span className="text-mix-green">— From now on —</span>
-        <span className="text-mix-muted">Central London</span>
-      </div>
-
-      <div className="font-newsreader text-[20px] sm:text-[24px] text-mix-ink leading-[1.4]">
-        Your Business, Ltd.<br />
-        <span className="text-mix-green text-[18px] sm:text-[22px]">Central London business address</span>
-      </div>
-
-      <div className="mt-4 pt-3 border-t border-dotted border-mix-rule grid grid-cols-2 gap-x-3 gap-y-1.5 font-dmsans text-[12px] sm:text-[13px] text-mix-ink2">
-        {features.map((t) => (
-          <div key={t} className="flex gap-1.5">
-            <span className="text-mix-green font-newsreader">✓</span> {t}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Hero ──────────────────────────────────────────────────────────────────
-function MixHero({ onNavigate }: { onNavigate?: (p: string, d?: any) => void }) {
-  return (
-    <section className="bg-mix-paper px-6 sm:px-10 lg:px-14 py-12 sm:py-16 lg:py-20 grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-16 items-center relative overflow-hidden">
-      <div>
-        <h1
-          className="font-newsreader text-mix-ink m-0 leading-[1.05] tracking-[-0.025em] font-normal"
-          style={{ fontSize: 'clamp(30px, 4.5vw, 58px)' }}
-        >
-          Virtual business address<br />
-          <span className="text-mix-green">in Central London.</span>
-        </h1>
-
-        <p
-          className="font-newsreader text-mix-ink2 font-light leading-[1.72] mt-5 max-w-[500px]"
-          style={{ fontSize: 'clamp(15px, 1.4vw, 17px)' }}
-        >
-          Get a Central London virtual business address for Companies House, HMRC, director service address use, invoices and business post — without renting an office or using your home address.
-        </p>
-
-        <div className="flex items-center gap-5 mt-8 flex-wrap">
-          <button
-            onClick={() => onNavigate?.('signup', { initialBilling: 'monthly' })}
-            className="inline-flex items-center gap-2 bg-mix-green text-mix-paper-light px-6 py-3.5 sm:px-7 sm:py-4 rounded font-dmsans font-medium text-[14px] sm:text-[15px] hover:bg-mix-green-deep transition-colors"
-          >
-            Claim your address
-            <span className="font-newsreader">→</span>
-          </button>
-        </div>
-
-        <div className="mt-7">
-          <div className="font-newsreader text-[22px] sm:text-[26px] text-mix-green leading-none tracking-[-0.02em]">
-            One simple price: £9.99/month.
-          </div>
-          <div className="font-dmsans text-[13px] sm:text-[14px] text-mix-ink2 mt-2 leading-[1.7]">
-            No setup fee. No joining fee. No hidden extras.<br />
-            Everything included in your plan.
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <MixBeforeCard />
-        <div className="font-newsreader text-[28px] sm:text-[32px] text-mix-green text-center leading-none py-1">↓</div>
-        <MixAfterCard />
-      </div>
-    </section>
-  );
-}
-
-// ─── Use one address for ────────────────────────────────────────────────────
-const USE_FOR_FEATURES = [
-  'Companies House use',
-  'HMRC correspondence',
-  "Director's service address",
-  'Secure digital mail access',
+const benefits = [
+  { icon: MapPin, title: 'A London address. Your business.', text: 'A professional address for your registered office, director’s service address and business correspondence.' },
+  { icon: ShieldCheck, title: 'Keep home for home.', text: 'Give your business its own address, separate from where you live and spend your time.' },
+  { icon: ScanLine, title: 'Your post, wherever you are.', text: 'View scanned mail, download documents and request forwarding from your online dashboard.' },
 ];
 
-function MixUseFor() {
-  return (
-    <section id="uses" className="bg-mix-paper-deep px-6 sm:px-10 lg:px-14 py-14 sm:py-20 lg:py-24">
-      <div className="max-w-[780px] mx-auto text-center">
-
-        <h2
-          className="font-newsreader text-mix-ink m-0 font-normal leading-[1.15] tracking-[-0.025em]"
-          style={{ fontSize: 'clamp(28px, 4vw, 50px)' }}
-        >
-          One Central London address for{' '}
-          <span className="text-mix-green">Companies House</span>,{' '}
-          <span className="text-mix-green">HMRC</span>{' '}
-          and <span className="text-mix-green">business mail</span>.
-        </h2>
-
-        {/* Divider */}
-        <div className="w-14 mx-auto mt-7 mb-7" style={{ height: '1px', background: '#D7CDB6' }} />
-
-        <p className="font-dmsans text-[15px] sm:text-[16px] text-mix-ink2 leading-[1.8]">
-          Protect your home address and manage official business post online with a professional UK address built for company founders, directors, freelancers and overseas entrepreneurs.
-        </p>
-        <p className="font-dmsans text-[15px] sm:text-[16px] text-mix-ink2 leading-[1.8] mt-4">
-          Use it as your registered office address, director&apos;s service address, HMRC correspondence address and everyday business address.
-        </p>
-
-        {/* Dot rows */}
-        <div className="mt-9 flex flex-wrap justify-center gap-x-8 gap-y-3">
-          {USE_FOR_FEATURES.map((f) => (
-            <div key={f} className="flex items-center gap-2">
-              <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: '#1F4934' }} />
-              <span className="font-dmsans text-[13px] sm:text-[14px] text-mix-ink2">{f}</span>
-            </div>
-          ))}
-        </div>
-
-      </div>
-    </section>
-  );
-}
-
-// ─── How it works ──────────────────────────────────────────────────────────
-const HOW_STEPS = [
-  {
-    n: '1',
-    t: 'Apply online',
-    d: 'Create your account and complete a quick identity check.',
-  },
-  {
-    n: '2',
-    t: 'Start using your address',
-    d: 'Once approved, use your Central London address for Companies House, HMRC, invoices and business correspondence.',
-  },
-  {
-    n: '3',
-    t: 'Manage your mail online',
-    d: 'Your business mail is scanned and uploaded securely to your online dashboard.',
-  },
+const steps = [
+  { title: 'Choose your plan', text: 'Create your account and choose monthly or annual billing.' },
+  { title: 'Verify your identity', text: 'Complete the online identity and business checks needed to activate your address.' },
+  { title: 'Make yourself at home', text: 'Once approved, start using your London address and manage your post online.' },
 ];
 
-function MixHow() {
-  return (
-    <section id="how" className="bg-mix-paper px-6 sm:px-10 lg:px-14 py-12 sm:py-16 lg:py-20">
-      <div className="text-center mb-8 sm:mb-12">
-        <h2
-          className="font-newsreader text-mix-ink m-0 tracking-[-0.02em] font-normal leading-none"
-          style={{ fontSize: 'clamp(26px, 3.5vw, 44px)' }}
-        >
-          Get your virtual business address{' '}
-          <span className="text-mix-green">in three steps.</span>
-        </h2>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 max-w-[1080px] mx-auto">
-        {HOW_STEPS.map((s) => (
-          <div key={s.n} className="bg-mix-paper-deep border border-mix-rule p-7 sm:p-10">
-            <div className="font-newsreader text-[40px] sm:text-[52px] text-mix-green leading-none mb-4">{s.n}.</div>
-            <h3 className="font-newsreader text-[18px] sm:text-[21px] text-mix-ink m-0 font-medium">{s.t}</h3>
-            <p className="font-newsreader text-[14px] sm:text-[16px] text-mix-ink2 leading-[1.65] mt-3">{s.d}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-
-// ─── One plan + pricing ────────────────────────────────────────────────────
-const PLAN_FEATURES = [
-  ['Registered Office address',      'Use our address as your official registered office with Companies House.'],
-  ["Director's Service Address",     'Keep your personal address off the public register — use ours instead.'],
-  ['Professional business address',  'For your website, invoices, contracts and client communications.'],
-  ['Same-day mail scanning',         'Mail received before our daily cut-off is scanned and uploaded the same working day.'],
-  ['Secure online dashboard',        'View, download and organise your mail in one place, from anywhere.'],
-  ['UK based support',               'Our team is available Monday to Friday, 9am–6pm.'],
-  ['Privacy protection',             'Your home address stays your home address.'],
-] as const;
-
-const TORN_PAPER_CLIP =
-  'polygon(0 0, 100% 0, 100% calc(100% - 16px), 96% 100%, 92% calc(100% - 12px), 88% 100%, 84% calc(100% - 14px), 80% 100%, 76% calc(100% - 12px), 72% 100%, 68% calc(100% - 14px), 64% 100%, 60% calc(100% - 12px), 56% 100%, 52% calc(100% - 14px), 48% 100%, 44% calc(100% - 12px), 40% 100%, 36% calc(100% - 14px), 32% 100%, 28% calc(100% - 12px), 24% 100%, 20% calc(100% - 14px), 16% 100%, 12% calc(100% - 12px), 8% 100%, 4% calc(100% - 14px), 0 100%)';
-
-const CARD_FEATURES = [
-  'Registered Office address',
-  "Director's Service Address",
-  'Professional business address',
-  'Same-day mail scanning',
-  'Secure online dashboard',
+const features = ['Central London business address', 'Registered office address', 'Director’s service address', 'Digital mail scanning', 'Secure online mail dashboard'];
+const faqs = [
+  ['What can I use the address for?', 'Once your account is approved and activated, you can use the address for your registered office, director’s service address, HMRC correspondence, invoices and business post.'],
+  ['How do I receive my mail?', 'Your business mail is scanned and uploaded to your dashboard. You can view, download and organise your documents online, or request physical forwarding where available.'],
+  ['When can I start using my address?', 'After you sign up, complete the required identity and business checks. Your address is ready to use once your account has been approved and activated.'],
+  ['Do I need to verify my identity?', 'Yes. You will be guided through online identity verification during onboarding. Depending on your business, you may also need to provide company and business-owner information.'],
+  ['Can I request the original document?', 'You can request forwarding for eligible mail from your dashboard. Check the available options and any applicable charges before submitting your request.'],
+  ['Can I pay annually?', 'Yes. Choose monthly or annual billing when you sign up. The price for each option is shown above; your selected billing period is carried through to registration.'],
 ];
 
-function MixPlan({ onNavigate }: { onNavigate?: (p: string, d?: any) => void }) {
-  const [annual, setAnnual] = useState(false);
-  const { monthlyPrice, annualPrice } = usePricing();
-
-  const displayPrice = annual ? formatAnnual(annualPrice) : formatMonthly(monthlyPrice);
-  const cadence = annual ? '/ year' : '/ month';
-
+function DashboardPreview() {
   return (
-    <section id="pricing" className="bg-mix-paper px-6 sm:px-10 lg:px-14 py-12 sm:py-16 lg:py-20">
-      <div className="max-w-[1180px] mx-auto">
-
-        {/* Heading */}
-        <div className="mb-8 sm:mb-12">
-          <h2
-            className="font-newsreader text-mix-ink m-0 tracking-[-0.02em] font-normal leading-[1.05]"
-            style={{ fontSize: 'clamp(26px, 3vw, 42px)' }}
-          >
-            One plan. £9.99/month.<br />
-            <span className="text-mix-green">Everything included.</span>
-          </h2>
-          <p className="font-dmsans text-[14px] sm:text-[15px] text-mix-ink2 leading-[1.6] mt-4 max-w-[520px] font-medium">
-            No tiers. No confusing packages. No surprise add-ons.
-          </p>
+    <figure className={styles.preview} aria-label="Illustrative mail dashboard with sample documents">
+      <div className={styles.previewBackdrop} aria-hidden="true" />
+      <div className={styles.dashboard}>
+        <div className={styles.dashboardTop}>
+          <span className={styles.previewBrand}><Building2 size={18} /> Your business, connected.</span>
+          <span className={styles.avatar}>JD</span>
         </div>
-
-        {/* Two-col: feature list left, pricing card right */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-10 lg:gap-16 items-start">
-
-          {/* Feature list */}
-          <div>
-            {PLAN_FEATURES.map(([t, d], i) => (
-              <div
-                key={t}
-                className="grid py-4 sm:py-5 gap-x-1"
-                style={{
-                  gridTemplateColumns: '32px 1fr',
-                  borderTop: i === 0 ? 'none' : '1px solid #D7CDB6',
-                }}
-              >
-                <div className="font-plex text-[11px] text-mix-muted pt-1.5">0{i + 1}</div>
-                <div>
-                  <h3 className="font-newsreader text-[16px] sm:text-[18px] text-mix-ink m-0 font-medium">{t}</h3>
-                  <p className="font-newsreader text-[14px] sm:text-[15px] text-mix-ink2 mt-1.5 leading-[1.65] m-0">{d}</p>
-                </div>
-              </div>
+        <div className={styles.dashboardBody}>
+          <div className={styles.previewRail} aria-hidden="true"><span><Inbox size={18} /></span><FileText size={18} /><Send size={18} /><Building2 size={18} /></div>
+          <div className={styles.previewContent}>
+            <div className={styles.previewHeading}><div><span className={styles.smallLabel}>YOUR WORKSPACE</span><h3>Good morning, Jamie.</h3></div><span className={styles.avatarSmall}>J</span></div>
+            <div className={styles.addressCard}><MapPin size={19} /><div><span>Your business address</span><strong>Central London, United Kingdom</strong></div><span className={styles.status}>Active</span></div>
+            <div className={styles.inboxHeading}><strong>Your mail</strong><span>3 documents</span></div>
+            {[
+              ['Companies House', 'Company correspondence', 'New'],
+              ['HMRC', 'Business correspondence', 'New'],
+              ['Business post', 'Scanned document', 'Read'],
+            ].map(([sender, subject, status]) => (
+              <div className={styles.mailRow} key={sender}><span className={styles.mailIcon}><FileText size={17} /></span><div><strong>{sender}</strong><span>{subject}</span></div><span className={status === 'New' ? styles.newBadge : styles.readBadge}>{status}</span></div>
             ))}
-
-            {/* Inline CTA */}
-            <div className="mt-8 pt-8 border-t border-mix-rule">
-              <p className="font-newsreader text-[15px] sm:text-[16px] text-mix-ink2 mb-4">
-                Ready to protect your home address?
-              </p>
-              <button
-                onClick={() => onNavigate?.('signup', { initialBilling: 'monthly' })}
-                className="inline-flex items-center gap-2 bg-mix-green text-mix-paper-light px-5 py-3 rounded font-dmsans font-medium text-[13px] sm:text-[14px] hover:bg-mix-green-deep transition-colors"
-              >
-                Get started today
-                <span className="font-newsreader">→</span>
-              </button>
-            </div>
+            <div className={styles.previewBottom}><LockKeyhole size={12} /> All your business post. One secure place.</div>
           </div>
-
-          {/* Pricing card — sticky on desktop */}
-          <div className="lg:sticky lg:top-24">
-            <div
-              className="bg-mix-paper-deep text-mix-ink font-plex text-[13px] px-5 sm:px-8 pt-7 pb-12 relative"
-              style={{ clipPath: TORN_PAPER_CLIP }}
-            >
-              {/* Toggle */}
-              <div className="flex p-[3px] mb-5 border border-mix-rule" style={{ background: '#D7CDB6' }}>
-                {[
-                  { label: 'Monthly',           val: false },
-                  { label: 'Annual · save 17%', val: true  },
-                ].map(({ label, val }) => (
-                  <button
-                    key={label}
-                    onClick={() => setAnnual(val)}
-                    className="flex-1 py-2.5 px-2 sm:px-3.5 border-none cursor-pointer font-plex text-[10px] sm:text-[11px] font-medium tracking-[0.06em] sm:tracking-[0.08em] uppercase transition-all duration-200"
-                    style={{
-                      background: annual === val ? '#1F4934' : 'transparent',
-                      color: annual === val ? '#FBF6E9' : '#3D362C',
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Price */}
-              <div className="flex items-baseline gap-2 mt-1 mb-6">
-                <span
-                  className="font-newsreader text-mix-ink leading-none tracking-[-0.03em]"
-                  style={{ fontSize: 'clamp(48px, 8vw, 72px)' }}
-                >
-                  {displayPrice}
-                </span>
-                <span className="font-newsreader text-[15px] sm:text-[18px] text-mix-muted">{cadence}</span>
-              </div>
-
-              {/* Feature rows */}
-              {CARD_FEATURES.map((t) => (
-                <div key={t} className="flex justify-between py-2 border-b border-dotted border-mix-rule text-[12px] sm:text-[13px]">
-                  <span className="text-mix-ink2">{t}</span>
-                  <span className="text-mix-green shrink-0 ml-2">✓</span>
-                </div>
-              ))}
-
-              {/* No setup fee note */}
-              <div className="mt-4 font-plex text-[11px] text-mix-muted text-center tracking-[0.05em]">
-                No setup fee. Cancel anytime.
-              </div>
-
-              {/* CTA */}
-              <button
-                onClick={() => onNavigate?.('signup', { initialBilling: annual ? 'annual' : 'monthly' })}
-                className="block w-full text-center mt-4 bg-mix-ink text-mix-paper-light py-3.5 font-dmsans text-[13px] sm:text-[14px] tracking-[0.02em] hover:opacity-90 transition-opacity"
-              >
-                Sign up — start today
-              </button>
-            </div>
-          </div>
-
         </div>
       </div>
-    </section>
+      <div className={styles.floatingNote}><span><Check size={18} /></span><div><strong>A little more peace of mind.</strong><p>Your business has its own address.</p></div></div>
+      <figcaption>Illustrative dashboard · sample information</figcaption>
+    </figure>
   );
 }
 
-// ─── Who it's for ──────────────────────────────────────────────────────────
-const FOR_WHOM = [
-  { label: 'Starting out',  t: 'Company founders',       d: 'Use a professional address from day one.' },
-  { label: 'Privacy',       t: 'Directors',              d: 'Keep your personal address off public records.' },
-  { label: 'Remote',        t: 'Remote businesses',      d: 'Run your company without renting office space.' },
-  { label: 'UK presence',   t: 'Overseas entrepreneurs', d: 'Create a professional UK business presence.' },
-] as const;
-
-function MixForWhom() {
-  return (
-    <section id="who" className="bg-mix-paper px-6 sm:px-10 lg:px-14 py-12 sm:py-16 lg:py-20">
-      <div className="max-w-[860px] mx-auto">
-        <h2
-          className="font-newsreader text-mix-ink m-0 tracking-[-0.02em] font-normal leading-[1.05] mb-8 sm:mb-12"
-          style={{ fontSize: 'clamp(26px, 3vw, 42px)' }}
-        >
-          Built for <span className="text-mix-green">modern UK businesses.</span>
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          {FOR_WHOM.map(({ label, t, d }) => (
-            <div
-              key={t}
-              className="bg-mix-paper-deep border border-mix-rule p-6 sm:p-8"
-              style={{ borderTop: '2px solid rgba(31, 73, 52, 0.35)' }}
-            >
-              <div className="font-plex text-[10px] sm:text-[11px] tracking-[0.14em] uppercase mb-3" style={{ color: '#1F4934' }}>
-                {label}
-              </div>
-              <h3 className="font-newsreader text-[17px] sm:text-[19px] text-mix-ink m-0 font-medium">{t}</h3>
-              <p className="font-newsreader text-[14px] sm:text-[15px] text-mix-ink2 mt-2 leading-[1.6] m-0">{d}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── FAQ ────────────────────────────────────────────────────────────────────
-const FAQ_ITEMS = [
-  [
-    'Can I use this address for Companies House?',
-    "Yes. Our Central London address is accepted as a registered office address for company registration at Companies House.",
-  ],
-  [
-    'Can I use the address for HMRC?',
-    "Yes. You can use the address for all HMRC correspondence, including tax registration and VAT registration.",
-  ],
-  [
-    "Can I use this as a director's service address?",
-    "Yes. The address can be used as a director's service address, keeping your personal address off the public Companies House register.",
-  ],
-  [
-    'What happens to my business post?',
-    'Business mail is opened, scanned front and back, and uploaded securely to your dashboard. You can view, download, archive or request forwarding where available.',
-  ],
-  [
-    'When can I start using the address?',
-    'You can apply online in minutes. Once your identity check is approved, your address is activated and ready to use.',
-  ],
-  [
-    'Do I need to complete an identity check?',
-    'Yes. As a registered anti-money laundering supervised business, we are required to verify the identity of all customers before activating an address. This is a quick online process.',
-  ],
-  [
-    'Can I cancel anytime?',
-    'Yes. There are no long contracts. You can cancel your plan anytime from your account or by contacting support.',
-  ],
-] as const;
-
-function MixFAQ() {
-  const [openIdx, setOpenIdx] = useState<number>(0);
-
-  return (
-    <section id="faq" className="bg-mix-paper-deep px-6 sm:px-10 lg:px-14 py-12 sm:py-16 lg:py-20">
-      <div className="max-w-[980px] mx-auto">
-        <div className="text-center mb-8 sm:mb-12">
-          <h2
-            className="font-newsreader text-mix-ink m-0 tracking-[-0.025em] font-normal leading-[1.05]"
-            style={{ fontSize: 'clamp(26px, 3.5vw, 46px)' }}
-          >
-            The <span className="text-mix-green">honest</span> questions.
-          </h2>
-          <p className="font-newsreader text-[14px] sm:text-[16px] text-mix-ink2 mt-3">
-            And the honest answers.
-          </p>
-        </div>
-
-        <div>
-          {FAQ_ITEMS.map(([q, a], i) => (
-            <div key={i} className="border-t border-mix-rule">
-              <button
-                onClick={() => setOpenIdx(openIdx === i ? -1 : i)}
-                className="bg-transparent border-none cursor-pointer py-4 sm:py-5 w-full flex items-baseline gap-3 sm:gap-6 text-left"
-              >
-                <div className="hidden sm:block font-plex text-[12px] text-mix-muted tracking-[0.1em] shrink-0 pt-1 w-10">
-                  {String(i + 1).padStart(2, '0')}
-                </div>
-                <div className="flex-1 font-newsreader text-[16px] sm:text-[20px] text-mix-ink font-medium tracking-[-0.015em] leading-[1.3]">
-                  {q}
-                </div>
-                <div
-                  className="font-newsreader text-[22px] sm:text-[26px] text-mix-green leading-none shrink-0 transition-transform duration-[250ms]"
-                  style={{
-                    transform: openIdx === i ? 'rotate(45deg)' : 'none',
-                    transformOrigin: 'center',
-                  }}
-                >
-                  +
-                </div>
-              </button>
-
-              {openIdx === i && (
-                <div className="pb-5 sm:pb-6 sm:pl-16">
-                  <p className="font-newsreader text-[14px] sm:text-[16px] leading-[1.75] sm:leading-[1.65] text-mix-ink2 m-0">
-                    {a}
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
-          <div className="border-t border-mix-rule" />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Final CTA ──────────────────────────────────────────────────────────────
-function MixCTA({ onNavigate }: { onNavigate?: (p: string, d?: any) => void }) {
-  return (
-    <section className="bg-mix-paper px-6 sm:px-10 lg:px-14 py-12 sm:py-16 lg:py-24 text-center">
-      <div className="font-plex text-[11px] sm:text-[12px] text-mix-muted tracking-[0.15em] uppercase">
-        Ready when you are
-      </div>
-      <h2
-        className="font-newsreader text-mix-ink m-0 mt-4 tracking-[-0.025em] font-normal leading-[1.05]"
-        style={{ fontSize: 'clamp(24px, 4vw, 52px)' }}
-      >
-        Get started with a compliant<br />
-        <span className="text-mix-stamp">Central London business address</span><br />
-        today.
-      </h2>
-      <p
-        className="font-newsreader text-mix-ink2 mt-5 leading-[1.5]"
-        style={{ fontSize: 'clamp(14px, 1.4vw, 16px)' }}
-      >
-        £9.99/month. Cancel anytime. No tiers.
-      </p>
-      <button
-        onClick={() => onNavigate?.('signup', { initialBilling: 'monthly' })}
-        className="inline-flex items-center gap-2.5 bg-mix-green text-mix-paper-light px-7 py-4 sm:px-9 sm:py-5 rounded font-dmsans font-medium text-[14px] sm:text-[15px] mt-8 hover:bg-mix-green-deep transition-colors"
-      >
-        Claim your address
-        <span className="font-newsreader">→</span>
-      </button>
-    </section>
-  );
-}
-
-// ─── Main page ──────────────────────────────────────────────────────────────
 export function HomePage({ onNavigate }: HomePageProps) {
+  const router = useRouter();
+  const [annual, setAnnual] = useState(false);
+  const { monthlyPrice, annualPrice, monthlySavingsPct } = usePricing();
+
+  // Query-based section links leave the existing hash router's page names intact.
+  useEffect(() => {
+    const section = new URLSearchParams(window.location.search).get('section');
+    if (section && ['how', 'pricing', 'mail', 'faq'].includes(section)) {
+      document.getElementById(section)?.scrollIntoView();
+    }
+  }, []);
+
+  const startSignup = (billing: 'monthly' | 'annual' = 'monthly') => {
+    if (onNavigate) onNavigate('signup', { initialBilling: billing });
+    else router.push(`/signup?billing=${billing}`);
+  };
+
   return (
-    <main
-      id="main-content"
-      role="main"
-      className="bg-mix-paper text-mix-ink font-dmsans"
-    >
-      <MixHero onNavigate={onNavigate} />
-      <MixUseFor />
-      <MixHow />
-      <MixPlan onNavigate={onNavigate} />
-      <MixForWhom />
-      <MixFAQ />
-      <MixCTA onNavigate={onNavigate} />
-    </main>
+    <div className={styles.home}>
+      <section className={`${styles.container} ${styles.hero}`}>
+        <div className={styles.heroCopy}>
+          <div className={styles.eyebrow}><span /> A LONDON ADDRESS. A WORLD OF POSSIBILITY.</div>
+          <h1>Your business deserves a <span>professional address.</span></h1>
+          <p>A Central London address for your business. Your post, managed online. More freedom to work from wherever you call home.</p>
+          <div className={styles.heroActions}>
+            <button className={styles.primaryButton} onClick={() => startSignup()}>Get your address <ArrowUpRight size={18} /></button>
+            <button className={styles.textButton} onClick={() => document.getElementById('how')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })}>See how it works <ArrowDown size={16} /></button>
+          </div>
+          <div className={styles.heroPrice}>From <strong>{formatPrice(monthlyPrice)}/month</strong><span>Monthly and annual plans</span></div>
+        </div>
+        <DashboardPreview />
+      </section>
+
+      <div className={styles.benefitStrip}><div className={styles.container}>{['Registered office address', 'Director’s service address', 'Digital mail access', 'UK business presence'].map(item => <span key={item}><Check size={15} />{item}</span>)}</div></div>
+
+      <section className={`${styles.container} ${styles.section}`}>
+        <div className={styles.sectionIntro}><div><span className={styles.eyebrow}>SMALL DETAILS. BIG DIFFERENCE.</span><h2>A proper home for<br />your business.</h2></div><p>Build your business on your terms.<br />We’ll take care of the address and the post.</p></div>
+        <div className={styles.benefitGrid}>{benefits.map(({ icon: Icon, title, text }) => <article className={styles.benefitCard} key={title}><span className={styles.featureIcon}><Icon size={23} strokeWidth={1.5} /></span><h3>{title}</h3><p>{text}</p></article>)}</div>
+      </section>
+
+      <section id="mail" className={styles.softSection}>
+        <div className={`${styles.container} ${styles.mailSection}`}>
+          <div className={styles.documentScene} aria-label="Illustrative scanned mail document">
+            <div className={styles.documentToolbar}><span><FileText size={16} /> Your mail, digitised.</span><span>PDF</span></div>
+            <div className={styles.documentPaper}><div className={styles.paperMark}><Building2 size={26} /><span>BUSINESS<br />CORRESPONDENCE</span></div><span className={styles.sampleTag}>SAMPLE DOCUMENT</span><div className={styles.paperTitle}>Good things are<br />coming your way.</div><div className={styles.paperLines} aria-hidden="true"><i /><i /><i /><i /><i /></div><div className={styles.paperSignature}>Your business. Your next chapter.</div></div>
+            <span className={styles.documentCaption}><LockKeyhole size={14} /> Available securely in your dashboard</span>
+          </div>
+          <div className={styles.mailCopy}><span className={styles.eyebrow}>LESS PAPERWORK. MORE POSSIBILITY.</span><h2>Your post.<br />Minus the postcode.</h2><p>Being away from the office shouldn’t mean being out of the loop. Keep your business correspondence close, wherever work takes you.</p><ul className={styles.featureList}><li><Check size={17} /><span>Read and download your scanned mail online.</span></li><li><Check size={17} /><span>Keep everything organised with tags and archives.</span></li><li><Check size={17} /><span>Request the original when you need it.</span></li></ul><Link href="/help" className={styles.textButton}>Explore mail management <ArrowRight size={17} /></Link></div>
+        </div>
+      </section>
+
+      <section id="how" className={`${styles.container} ${styles.section}`}>
+        <div className={styles.centerIntro}><span className={styles.eyebrow}>A SIMPLE START</span><h2>Your next chapter starts here.</h2><p>From sign-up to your first piece of post, we’ll guide you through.</p></div>
+        <div className={styles.steps}>{steps.map((step, index) => <article key={step.title}><div className={styles.stepNumber}>0{index + 1}<span /></div><h3>{step.title}</h3><p>{step.text}</p></article>)}</div>
+      </section>
+
+      <section id="pricing" className={styles.pricingSection}><div className={`${styles.container} ${styles.pricingGrid}`}>
+        <div className={styles.pricingCopy}><span className={styles.eyebrow}>ONE ADDRESS. EVERYTHING CONNECTED.</span><h2>A small step.<br />A more professional<br />presence.</h2><p>The address your business needs, with the tools to manage your mail. Choose the billing period that works for you.</p><Link href="/contact" className={styles.textButton}>Have a question? Let’s talk <ArrowUpRight size={17} /></Link></div>
+        <div className={styles.priceCard}><div className={styles.planHeading}><span className={styles.planIcon}><Building2 size={22} /></span><div><h3>Your London address</h3><p>For your business and what comes next.</p></div></div>
+          <div className={styles.billingToggle} role="group" aria-label="Billing period"><button aria-pressed={!annual} onClick={() => setAnnual(false)}>Monthly</button><button aria-pressed={annual} onClick={() => setAnnual(true)}>Annual{monthlySavingsPct > 0 && <span>Save {monthlySavingsPct}%</span>}</button></div>
+          <div className={styles.priceLine} aria-live="polite" aria-atomic="true"><strong>{formatPrice(annual ? annualPrice : monthlyPrice)}</strong><span>/ {annual ? 'year' : 'month'}</span></div><p className={styles.billingNote}>{annual ? 'Billed annually' : 'Billed monthly'} · One plan, two ways to pay</p>
+          <ul className={styles.featureList}>{features.map(feature => <li key={feature}><Check size={17} /><span>{feature}</span></li>)}</ul>
+          <button className={styles.primaryButton} onClick={() => startSignup(annual ? 'annual' : 'monthly')}>Get started <ArrowUpRight size={18} /></button><p className={styles.priceFootnote}>Address activated after verification and approval.<br />Physical forwarding may incur additional charges.</p>
+        </div>
+      </div></section>
+
+      <section id="faq" className={`${styles.container} ${styles.section} ${styles.faqSection}`}><div><span className={styles.eyebrow}>GOOD QUESTIONS</span><h2>A little clarity<br />before you start.</h2><p>Anything else on your mind?</p><Link className={styles.textButton} href="/contact">Talk to our team <ArrowUpRight size={17} /></Link></div><div className={styles.faqList}>{faqs.map(([question, answer]) => <details key={question}><summary>{question}<ChevronDown size={18} /></summary><p>{answer}</p></details>)}</div></section>
+
+      <section className={styles.finalSection}><div className={styles.container}><div className={styles.finalIcon}><Mail size={27} strokeWidth={1.5} /></div><span className={styles.eyebrow}>YOUR BUSINESS BELONGS HERE</span><h2>A London address.<br />Your next big move.</h2><p>Make room for what’s next. We’ll handle the post.</p><button className={styles.primaryButton} onClick={() => startSignup()}>Get your address <ArrowUpRight size={18} /></button></div></section>
+    </div>
   );
 }

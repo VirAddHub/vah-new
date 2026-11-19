@@ -12,7 +12,7 @@ interface OwnersCardProps {
 export function OwnersCard({ owners }: OwnersCardProps) {
   const getStatusBadge = (owner: BusinessOwner) => {
     if (owner.status === 'verified') {
-      return <Badge className="bg-green-600">Verified</Badge>;
+      return <Badge variant="success">Verified</Badge>;
     } else if (owner.requires_verification) {
       return <Badge variant="destructive">Verification required</Badge>;
     } else {

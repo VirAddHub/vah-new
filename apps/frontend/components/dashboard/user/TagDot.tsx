@@ -5,11 +5,11 @@ import { cn } from '@/lib/utils';
 
 // Deterministic tag color system - same tag always gets same color
 const TAG_COLORS: Record<string, string> = {
-  bank: 'bg-blue-500',
-  hmrc: 'bg-purple-500',
-  companies_house: 'bg-green-500',
-  companieshouse: 'bg-green-500',
-  insurance: 'bg-amber-500',
+  bank: 'bg-ink',
+  hmrc: 'bg-ink',
+  companies_house: 'bg-success',
+  companieshouse: 'bg-success',
+  insurance: 'bg-ink',
   utilities: 'bg-cyan-500',
   other: 'bg-muted',
   default: 'bg-muted-foreground',

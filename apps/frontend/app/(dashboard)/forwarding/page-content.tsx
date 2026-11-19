@@ -4,21 +4,21 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { StatusSteps } from '@/components/ui/status-steps';
+
+const FORWARDING_STEPS = ['Requested', 'In progress', 'Dispatched', 'Delivered'];
+function forwardingStepIndex(status: string): number {
+    switch (status) {
+        case 'Requested': return 0;
+        case 'Reviewed': case 'Processing': return 1;
+        case 'Dispatched': return 2;
+        case 'Delivered': return 3;
+        default: return 0;
+    }
+}
 import { ArrowLeft, Truck, Clock, CheckCircle, Mail, X } from 'lucide-react';
-import { ForwardingRequestModal } from '@/components/ForwardingRequestModal';
-import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-
-interface MailItem {
-    id: string;
-    subject: string;
-    sender_name: string;
-    created_at: string;
-    tag: string;
-    forwarding_status?: string;
-    gdpr_expired?: boolean;
-}
 
 interface ForwardingRequest {
     id: number;
@@ -35,13 +35,9 @@ interface ForwardingRequest {
 }
 
 export default function ForwardingPage() {
-    const { toast } = useToast();
     const router = useRouter();
-    const [mailItems, setMailItems] = useState<MailItem[]>([]);
     const [forwardingRequests, setForwardingRequests] = useState<ForwardingRequest[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showForwardingModal, setShowForwardingModal] = useState(false);
-    const [selectedMailForForwarding, setSelectedMailForForwarding] = useState<MailItem | null>(null);
     const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
     const [selectedRequest, setSelectedRequest] = useState<ForwardingRequest | null>(null);
 
@@ -52,18 +48,6 @@ export default function ForwardingPage() {
     const loadData = async () => {
         try {
             setLoading(true);
-
-            // Load mail items (keep logic but don't display)
-            const mailResponse = await fetch('/api/mail', {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-            });
-            if (mailResponse.ok) {
-                const mailData = await mailResponse.json();
-                setMailItems(mailData.items || []);
-            }
 
             // Load forwarding requests - use BFF endpoint
             const forwardingResponse = await fetch('/api/bff/forwarding/requests', {
@@ -83,119 +67,15 @@ export default function ForwardingPage() {
         }
     };
 
-    const handleRequestForwarding = (mailItem: MailItem) => {
-        // Check if GDPR expired
-        if (mailItem.gdpr_expired) {
-            toast({
-                title: "Cannot Forward",
-                description: "This mail item is older than 30 days and cannot be forwarded due to GDPR compliance. You can still download it.",
-                variant: "destructive",
-                durationMs: 5000,
-            });
-            return;
-        }
-
-        setSelectedMailForForwarding(mailItem);
-        setShowForwardingModal(true);
-    };
-
-    const handleForwardingSubmit = async (data: any) => {
-        if (!selectedMailForForwarding) return;
-
-        try {
-            // Use BFF endpoint which handles CSRF tokens automatically
-            const response = await fetch('/api/bff/forwarding/requests', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    mail_item_id: selectedMailForForwarding.id,
-                    ...data
-                })
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                if (result.ok) {
-                    toast({
-                        title: "Forwarding Request Created",
-                        description: "Your request will be reviewed by our team.",
-                        durationMs: 5000,
-                    });
-                    setShowForwardingModal(false);
-                    setSelectedMailForForwarding(null);
-                    loadData(); // Refresh data
-                } else {
-                    toast({
-                        title: "Forwarding Request Failed",
-                        description: result.error || 'Unknown error',
-                        variant: "destructive",
-                        durationMs: 5000,
-                    });
-                }
-            } else {
-                const errorData = await response.json().catch(() => ({}));
-
-                // Handle incomplete forwarding address error
-                if (errorData.error === 'forwarding_address_incomplete' && errorData.fields) {
-                    const missingFields = errorData.fields || [];
-                    const fieldLabels: Record<string, string> = {
-                        'name': 'Full Name',
-                        'address_line_1': 'Address Line 1',
-                        'city': 'City',
-                        'postal_code': 'Postcode',
-                    };
-                    const missingLabels = missingFields.map((f: string) => fieldLabels[f] || f).join(', ');
-
-                    toast({
-                        title: "Incomplete Forwarding Address",
-                        description: `Please add your ${missingLabels} before requesting forwarding. You can update your forwarding address in Account settings.`,
-                        variant: "destructive",
-                        durationMs: 6000,
-                    });
-                } else {
-                    toast({
-                        title: "Request Failed",
-                        description: errorData.message || errorData.error || "Failed to create forwarding request. Please try again.",
-                        variant: "destructive",
-                        durationMs: 5000,
-                    });
-                }
-            }
-        } catch (error) {
-            console.error('Error creating forwarding request:', error);
-            toast({
-                title: "Request Error",
-                description: "Error creating forwarding request. Please try again.",
-                variant: "destructive",
-                durationMs: 5000,
-            });
-        }
-    };
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'Requested': return 'bg-warning/10 text-warning-foreground';
-            case 'Reviewed': return 'bg-primary/10 text-primary-foreground';
-            case 'Processing': return 'bg-primary/10 text-primary-foreground';
-            case 'Dispatched': return 'bg-warning/10 text-warning-foreground';
-            case 'Delivered': return 'bg-success/10 text-success-foreground';
-            case 'Cancelled': return 'bg-destructive/10 text-destructive-foreground';
-            default: return 'bg-muted text-muted-foreground';
-        }
-    };
-
     const getStatusIcon = (status: string) => {
         switch (status) {
-            case 'Requested': return <Clock className="h-4 w-4" />;
-            case 'Reviewed': return <CheckCircle className="h-4 w-4" />;
-            case 'Processing': return <Truck className="h-4 w-4" />;
-            case 'Dispatched': return <Truck className="h-4 w-4" />;
-            case 'Delivered': return <CheckCircle className="h-4 w-4" />;
-            case 'Cancelled': return <Mail className="h-4 w-4" />;
-            default: return <Clock className="h-4 w-4" />;
+            case 'Requested': return <Clock className="h-3.5 w-3.5" aria-hidden />;
+            case 'Reviewed': return <CheckCircle className="h-3.5 w-3.5" aria-hidden />;
+            case 'Processing': return <Truck className="h-3.5 w-3.5" aria-hidden />;
+            case 'Dispatched': return <Truck className="h-3.5 w-3.5" aria-hidden />;
+            case 'Delivered': return <CheckCircle className="h-3.5 w-3.5" aria-hidden />;
+            case 'Cancelled': return <Mail className="h-3.5 w-3.5" aria-hidden />;
+            default: return <Clock className="h-3.5 w-3.5" aria-hidden />;
         }
     };
 
@@ -227,8 +107,8 @@ export default function ForwardingPage() {
         <div className="w-full h-[calc(100vh-8rem)] flex flex-col">
             {/* Header */}
             <div className="mb-6 pt-2 px-6">
-                <h1 className="text-h2 text-foreground mb-1">Forwarding Requests</h1>
-                <p className="text-body-sm text-muted-foreground">Track the status of your physical mail forwarding requests</p>
+                <h1 className="page-title">Forwarding Requests</h1>
+                <p className="page-lede">Track the status of your physical mail forwarding requests</p>
             </div>
 
             {/* Two Column Layout: List on Left, Details on Right */}
@@ -276,11 +156,9 @@ export default function ForwardingPage() {
                                                     <h3 className="text-body font-medium text-foreground">
                                                         Request #{request.id}
                                                     </h3>
-                                                    <Badge className={getStatusColor(request.status)}>
-                                                        <span className="flex items-center gap-1.5">
-                                                            {getStatusIcon(request.status)}
-                                                            {request.status}
-                                                        </span>
+                                                    <Badge variant={request.status === 'Cancelled' ? 'destructive' : request.status === 'Delivered' ? 'success' : 'default'}>
+                                                        {getStatusIcon(request.status)}
+                                                        {request.status}
                                                     </Badge>
                                                 </div>
                                                 
@@ -326,12 +204,16 @@ export default function ForwardingPage() {
                             {/* Status */}
                             <div>
                                 <h3 className="text-label text-muted-foreground mb-2 uppercase tracking-wide">Status</h3>
-                                <Badge className={getStatusColor(selectedRequest.status)}>
-                                    <span className="flex items-center gap-1.5">
-                                        {getStatusIcon(selectedRequest.status)}
-                                        {selectedRequest.status}
-                                    </span>
-                                </Badge>
+                                {selectedRequest.status === 'Cancelled' ? (
+                                    <Badge variant="destructive">{getStatusIcon('Cancelled')} Cancelled</Badge>
+                                ) : (
+                                    <StatusSteps
+                                        label="Forwarding progress"
+                                        steps={FORWARDING_STEPS}
+                                        current={forwardingStepIndex(selectedRequest.status)}
+                                        orientation="vertical"
+                                    />
+                                )}
                             </div>
 
                             {/* Recipient Information */}
@@ -403,18 +285,6 @@ export default function ForwardingPage() {
                 )}
             </div>
 
-            {/* Forwarding Request Modal */}
-            {showForwardingModal && selectedMailForForwarding && (
-                <ForwardingRequestModal
-                    isOpen={showForwardingModal}
-                    onClose={() => {
-                        setShowForwardingModal(false);
-                        setSelectedMailForForwarding(null);
-                    }}
-                    mailItem={selectedMailForForwarding}
-                    onSubmit={handleForwardingSubmit}
-                />
-            )}
         </div>
     );
 }

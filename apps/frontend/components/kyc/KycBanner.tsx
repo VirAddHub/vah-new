@@ -167,14 +167,14 @@ export function KycBanner({ kycStatus }: KycBannerProps) {
 
     return (
         <>
-            <div className="rounded-xl p-4 border border-amber-500 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-400 mb-6">
+            <div className="rounded-xl p-4 border border-line bg-mist dark:bg-amber-900/20 dark:border-line mb-6">
                 <div className="flex items-start gap-3">
-                    <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                    <AlertTriangle className="h-5 w-5 text-ink dark:text-ink flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                        <div className="font-semibold text-amber-900 dark:text-amber-100 mb-1">
+                        <div className="font-semibold text-ink dark:text-amber-100 mb-1">
                             Identity Verification Required
                         </div>
-                        <div className="text-body-sm text-amber-800 dark:text-amber-200 mb-3">
+                        <div className="text-body-sm text-ink dark:text-amber-200 mb-3">
                             You must complete identity verification (KYC) to fully activate your London address
                             and access all features. This is required for UK anti-money laundering (AML) compliance.
                             {kycStatus === "rejected" && (
@@ -186,7 +186,7 @@ export function KycBanner({ kycStatus }: KycBannerProps) {
                         <Button
                             onClick={startKyc}
                             disabled={starting}
-                            className="bg-amber-600 hover:bg-amber-700 text-primary-foreground"
+                            className="bg-ink hover:bg-ink text-primary-foreground"
                         >
                             {starting ? "Starting..." : buttonText}
                         </Button>

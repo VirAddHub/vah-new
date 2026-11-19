@@ -23,19 +23,7 @@ const KYCPolicyPage = dynamic(() => import('./KYCPolicyPage').then((m) => ({ def
 const HelpPage = dynamic(() => import('./HelpPage').then((m) => ({ default: m.HelpPage })), { ssr: false });
 const ContactPage = dynamic(() => import('./ContactPage'), { ssr: false });
 const SignupPage = dynamic(() => import('./SignupPage').then((m) => ({ default: m.SignupPage })), { ssr: false });
-const BillingDashboard = dynamic(() =>
-  import('./BillingDashboard').then((m) => ({ default: m.BillingDashboard })),
-  { ssr: false }
-);
-const KYCDashboard = dynamic(() => import('./KYCDashboard').then((m) => ({ default: m.KYCDashboard })), {
-  ssr: false,
-});
-const ProfilePage = dynamic(() => import('./ProfilePage').then((m) => ({ default: m.ProfilePage })), {
-  ssr: false,
-});
 
-// Lazy load AccountPage to avoid circular dependencies
-const AccountPage = dynamic(() => import('../app/(dashboard)/account/page'), { ssr: false });
 import { MarketingNavigation } from './MarketingNavigation';
 import { Footer } from './Footer';
 import { ThemeProvider } from "./ui/theme";
@@ -47,14 +35,26 @@ interface AppProps {
   initialPricing?: InitialPricing | null;
 }
 
+/** Views that used to render inside this page and now have their own routes. */
+const MOVED_VIEWS: Record<string, string> = {
+  login: '/login',
+  dashboard: '/mail',
+  billing: '/account/billing',
+  account: '/account',
+  profile: '/account/settings',
+  settings: '/account/settings',
+  admin: '/admin/dashboard',
+};
+
 export function App({ initialPricing = null }: AppProps) {
   const { currentPage, navigate, goBack } = useNavigation();
   const [signupData, setSignupData] = useState<any>(null);
 
-  // Redirect to actual Next.js login route when navigating to 'login'
+  // Old in-page views that now live at real routes (login, and the signed-in area).
   useEffect(() => {
-    if (currentPage === 'login') {
-      window.location.href = '/login';
+    const moved = MOVED_VIEWS[currentPage];
+    if (moved) {
+      window.location.href = moved;
     }
   }, [currentPage]);
 
@@ -102,46 +102,13 @@ export function App({ initialPricing = null }: AppProps) {
       case 'signup':
         return <SignupPage onNavigate={navigate} initialBilling={signupData?.initialBilling} />;
       case 'dashboard':
-        return (
-          <div className="min-h-screen bg-background flex items-center justify-center">
-            <div className="text-center">
-              <h1 className="text-h2 font-bold mb-4">Dashboard</h1>
-              <p className="text-muted-foreground mb-4">User dashboard coming soon</p>
-              <button
-                onClick={() => navigate('home')}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-200"
-              >
-                Back to Home
-              </button>
-            </div>
-          </div>
-        );
       case 'billing':
-        return <BillingDashboard onNavigate={navigate} />;
       case 'account':
-        return <AccountPage />;
-      case 'kyc':
-        return <KYCDashboard onNavigate={navigate} />;
       case 'profile':
-        return <ProfilePage onNavigate={navigate} onGoBack={goBack} />;
       case 'settings':
-        return <ProfilePage onNavigate={navigate} onGoBack={goBack} />;
       case 'admin':
-        // Placeholder for admin page
-        return (
-          <div className="min-h-screen bg-background flex items-center justify-center">
-            <div className="text-center">
-              <h1 className="text-h2 font-bold mb-4">Admin Portal</h1>
-              <p className="text-muted-foreground mb-4">Admin functionality coming soon</p>
-              <button
-                onClick={() => navigate('home')}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-200"
-              >
-                Back to Home
-              </button>
-            </div>
-          </div>
-        );
+        // Moved to real routes; the effect above redirects.
+        return null;
       default:
         return (
           <div className="min-h-screen bg-background flex items-center justify-center">
@@ -176,7 +143,7 @@ export function App({ initialPricing = null }: AppProps) {
 
         <div className="min-h-screen flex flex-col">
           <MarketingNavigation onNavigate={navigate} />
-          <main className="flex-1">
+          <main id="main-content" className="flex-1">
             {renderPage()}
           </main>
           {!isDashboardPage && <Footer onNavigate={navigate} />}

@@ -9,9 +9,6 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { getToken } from '@/lib/token-manager';
 
-// API configuration
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://vah-api-staging.onrender.com';
-
 interface BlogPostForm {
     slug: string;
     title: string;
@@ -60,7 +57,7 @@ ${formData.content}`;
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
             if (token) headers.Authorization = `Bearer ${token}`;
 
-            const response = await fetch(`${API_BASE}/api/admin/blog/posts`, {
+            const response = await fetch('/api/bff/admin/blog/posts/create', {
                 method: 'POST',
                 headers,
                 credentials: 'include',
@@ -245,8 +242,8 @@ This is the content of my blog post. You can use **markdown** formatting.
 
                         {message && (
                             <div className={`p-3 rounded-md ${message.startsWith('✅')
-                                ? 'bg-green-50 text-green-800 border border-green-200'
-                                : 'bg-red-50 text-red-800 border border-red-200'
+                                ? 'bg-success/[0.06] text-success border border-success/25'
+                                : 'bg-destructive/[0.06] text-destructive border border-destructive/25'
                                 }`}>
                                 {message}
                             </div>

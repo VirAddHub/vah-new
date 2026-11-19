@@ -1,4 +1,5 @@
 // apps/backend/src/server/routes/profile/reset-password-request.ts
+import { clientKey } from '../../lib/clientKey';
 import { Router } from 'express';
 import { z } from 'zod';
 import crypto from 'crypto';
@@ -8,7 +9,7 @@ import { sendTemplateEmail } from '../../../lib/mailer';
 import { Templates } from '../../../lib/postmark-templates';
 import { APP_BASE_URL } from '../../../config/env';
 import { withTimeout } from '../../../lib/withTimeout';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import { BCRYPT_ROUNDS } from '../../../config/auth';
 import { logger } from '../../../lib/logger';
 
@@ -20,7 +21,7 @@ const limiter = rateLimit({
   max: 5, // 5 requests per window
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => ipKeyGenerator(req.ip ?? ''),
+  keyGenerator: (req) => clientKey(req),
 });
 
 const Body = z.object({

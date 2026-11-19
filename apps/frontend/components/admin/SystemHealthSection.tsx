@@ -25,14 +25,14 @@ export function SystemHealthSection() {
             
             // Check each service health endpoint
             const serviceChecks = await Promise.allSettled([
-                fetch('/api/admin/service-status/gocardless', { credentials: 'include' }),
+                fetch('/api/admin/service-status/stripe', { credentials: 'include' }),
                 fetch('/api/admin/service-status/sumsub', { credentials: 'include' }),
                 fetch('/api/admin/service-status/postmark', { credentials: 'include' }),
                 fetch('/api/admin/service-status/onedrive', { credentials: 'include' })
             ]);
 
             const serviceData = await Promise.all(serviceChecks.map(async (result, index): Promise<ServiceHealth> => {
-                const serviceNames = ['Payment Gateway', 'KYC Verification (Sumsub)', 'Email Notifications', 'Mail Processing API'];
+                const serviceNames = ['Payments (Stripe)', 'KYC Verification (Sumsub)', 'Email Notifications', 'Mail Processing API'];
                 
                 if (result.status === 'fulfilled' && result.value.ok) {
                     const data: any = await result.value.json().catch(() => ({}));
@@ -72,11 +72,11 @@ export function SystemHealthSection() {
     const getStatusIcon = (status: string) => {
         switch (status) {
             case 'healthy':
-                return <CheckCircle className="h-4 w-4 text-green-500" />;
+                return <CheckCircle className="h-4 w-4 text-success" />;
             case 'degraded':
-                return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+                return <AlertTriangle className="h-4 w-4 text-ink" />;
             case 'down':
-                return <AlertTriangle className="h-4 w-4 text-red-500" />;
+                return <AlertTriangle className="h-4 w-4 text-destructive" />;
             default:
                 return <Server className="h-4 w-4 text-muted-foreground" />;
         }
@@ -85,20 +85,20 @@ export function SystemHealthSection() {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'healthy':
-                return <Badge variant="outline" className="border-green-500 text-green-700">Healthy</Badge>;
+                return <Badge variant="outline" className="border-success/25 text-success">Healthy</Badge>;
             case 'degraded':
-                return <Badge variant="outline" className="border-yellow-500 text-yellow-700">Degraded</Badge>;
+                return <Badge variant="outline" className="border-line text-ink">Degraded</Badge>;
             case 'down':
-                return <Badge variant="outline" className="border-red-500 text-red-700">Down</Badge>;
+                return <Badge variant="outline" className="border-destructive/25 text-destructive">Down</Badge>;
             default:
                 return <Badge variant="outline">Unknown</Badge>;
         }
     };
 
     const getUptimeColor = (uptime: number) => {
-        if (uptime >= 99.5) return "text-green-600";
-        if (uptime >= 95) return "text-yellow-600";
-        return "text-red-600";
+        if (uptime >= 99.5) return "text-success";
+        if (uptime >= 95) return "text-ink";
+        return "text-destructive";
     };
 
     return (
@@ -168,16 +168,16 @@ export function SystemHealthSection() {
                 <CardContent>
                     <div className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center gap-3">
-                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <CheckCircle className="h-4 w-4 text-success" />
                             <div>
                                 <h3 className="font-semibold">PostgreSQL Database</h3>
                                 <p className="text-body-sm text-muted-foreground">Primary data storage and query processing</p>
                             </div>
                         </div>
                         <div className="text-right">
-                            <div className="text-body-lg font-bold text-green-600">97.82%</div>
+                            <div className="text-body-lg font-bold text-success">97.82%</div>
                             <div className="text-caption text-muted-foreground">Uptime</div>
-                            <Badge variant="outline" className="border-green-500 text-green-700">Healthy</Badge>
+                            <Badge variant="outline" className="border-success/25 text-success">Healthy</Badge>
                         </div>
                     </div>
                 </CardContent>

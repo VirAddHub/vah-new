@@ -1,12 +1,13 @@
 // src/server/routes/admin-forwarding.ts
 // Admin forwarding request management endpoints
 
+import { clientKey } from '../lib/clientKey';
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import { requireAdmin } from '../../middleware/require-admin';
 import { adminListForwarding, adminUpdateForwarding } from '../../modules/forwarding/forwarding.admin.controller';
-import { getPool } from '../db';
+import { getPool, connectForRequest } from '../db';
 import { sendMailForwarded } from '../../lib/mailer';
 import { parseForwardingStatus, FWD_LABEL } from '@vah/shared';
 import { safeErrorMessage } from '../../lib/safeError';
@@ -14,21 +15,11 @@ import { logger } from '../../lib/logger';
 
 const router = Router();
 
-// Request deduplication cache to prevent multiple identical requests
-const requestCache = new Map<string, { timestamp: number; response: any }>();
-const CACHE_TTL = 2000; // 2 seconds
-
-// Function to clear cache for a specific admin user
-export function clearAdminForwardingCache(adminId: number) {
-    const keysToDelete: string[] = [];
-    for (const [key] of requestCache) {
-        if (key.startsWith(`${adminId}-`)) {
-            keysToDelete.push(key);
-        }
-    }
-    keysToDelete.forEach(key => requestCache.delete(key));
-    logger.info(`[admin-forwarding] Cleared ${keysToDelete.length} cached responses for admin ${adminId}`);
-}
+// The queue used to be served from a 2-second per-admin response cache. It returned a stale list
+// right after a customer created a request or another admin changed one (found as an intermittent
+// journey-test failure: step 8.1, the new request missing from the queue). The query is cheap and the
+// dashboard polls every two minutes, so the cache is gone; this stays for existing callers.
+export function clearAdminForwardingCache(_adminId: number) { /* no cache to clear */ }
 
 // Rate limiting by admin user ID, not IP - admin-friendly limits
 const adminForwardingLimiter = rateLimit({
@@ -38,7 +29,7 @@ const adminForwardingLimiter = rateLimit({
     legacyHeaders: false,
     keyGenerator: (req) => {
         const u = (req as any).user;
-        return u?.id ? `admin:${u.id}` : ipKeyGenerator(req.ip ?? '');
+        return u?.id ? `admin:${u.id}` : clientKey(req);
     },
     handler: (_req, res) => {
         res.setHeader("Retry-After", "30");
@@ -120,48 +111,8 @@ router.get('/forwarding/stats', adminForwardingLimiter, async (req: Request, res
 // GET /api/admin/forwarding/requests?status=Requested&q=...&limit=50&offset=0
 router.get('/forwarding/requests',
     adminForwardingLimiter,
-    (req, res, next) => {
-        logger.debug('[admin-forwarding] GET /forwarding/requests called');
-        logger.debug('[admin-forwarding] User:', { userId: req.user?.id });
-
-        // Request deduplication - check if we have a recent identical request
-        const cacheKey = `${req.user?.id}-${req.url}`;
-        const now = Date.now();
-        const cached = requestCache.get(cacheKey);
-
-        if (cached && (now - cached.timestamp) < CACHE_TTL) {
-            logger.debug('[admin-forwarding] Returning cached response for deduplication');
-            return res.json(cached.response);
-        }
-
-        // Add cache headers
-        res.setHeader("Cache-Control", "private, max-age=5");
-        next();
-    },
-    async (req, res, next) => {
-        // Wrap the original handler to cache the response
-        const originalSend = res.json;
-        const cacheKey = `${req.user?.id}-${req.url}`;
-
-        res.json = function (data: any) {
-            const now = Date.now();
-
-            // Cache the response for deduplication
-            requestCache.set(cacheKey, {
-                timestamp: now,
-                response: data
-            });
-
-            // Clean up old cache entries
-            for (const [key, value] of requestCache.entries()) {
-                if (now - value.timestamp > CACHE_TTL) {
-                    requestCache.delete(key);
-                }
-            }
-
-            return originalSend.call(this, data);
-        };
-
+    (_req, res, next) => {
+        res.setHeader('Cache-Control', 'no-store');
         next();
     },
     adminListForwarding
@@ -192,7 +143,8 @@ router.post('/forwarding/complete', async (req: Request, res: Response) => {
     }
 
     const { mail_id, forwarded_date } = parse.data;
-    const pool = getPool();
+    // One connection for the whole transaction (see connectForRequest).
+    const pool = await connectForRequest(res);
 
     try {
         // Start transaction

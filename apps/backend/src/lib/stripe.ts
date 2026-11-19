@@ -1,5 +1,5 @@
 /**
- * Stripe client and helpers for billing (test mode in parallel with GoCardless).
+ * Stripe client and helpers for billing.
  * Do not log secrets or full payloads containing PII.
  */
 

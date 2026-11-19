@@ -129,12 +129,12 @@ export default function PDFViewerModal({
                     {error && (
                         <div className="absolute inset-0 grid place-items-center px-4 transition-opacity duration-150">
                             <div className="text-center max-w-md">
-                                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
-                                    <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-destructive/[0.06] flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                                     </svg>
                                 </div>
-                                <p className="text-body-sm text-red-600 font-medium">{String(error)}</p>
+                                <p className="text-body-sm text-destructive font-medium">{String(error)}</p>
                                 {error === SCAN_CHECKPOINT_MESSAGE && mailItemId && (
                                     <Button
                                         variant="outline"
@@ -151,17 +151,12 @@ export default function PDFViewerModal({
                     )}
                     {!loading && !error && viewerUrl && (
                         <div className="h-full w-full overflow-x-auto overflow-y-hidden rounded-lg border border-border shadow-inner transition-opacity duration-150 [-webkit-overflow-scrolling:touch]">
-                            <object
-                                data={pdfEmbedUrl(viewerUrl)}
-                                type="application/pdf"
-                                className="h-full min-h-full w-full min-w-full"
-                            >
-                                <iframe
-                                    title="PDF preview"
-                                    src={pdfEmbedUrl(viewerUrl)}
-                                    className="h-full min-h-full w-full min-w-full border-0"
-                                />
-                            </object>
+                            {/* iframe, not <object>: the site's CSP blocks plugin content (object-src 'none') */}
+                            <iframe
+                                title="Scan of this letter"
+                                src={pdfEmbedUrl(viewerUrl)}
+                                className="h-full min-h-full w-full min-w-full border-0"
+                            />
                         </div>
                     )}
                 </div>

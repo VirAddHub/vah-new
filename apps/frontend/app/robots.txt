@@ -1,0 +1,28 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://virtualaddresshub.com/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+
+# Block admin and API routes
+Disallow: /admin/
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /_next/
+Disallow: /login/
+Disallow: /signup/
+Disallow: /reset-password/
+
+# Allow important pages
+Allow: /
+Allow: /about
+Allow: /contact
+Allow: /help
+Allow: /blog/
+Allow: /pricing
+Allow: /terms
+Allow: /privacy
+Allow: /kyc-policy

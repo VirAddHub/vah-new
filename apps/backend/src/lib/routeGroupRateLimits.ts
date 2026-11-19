@@ -7,15 +7,16 @@
  * Do not use for provider webhooks (`/api/webhooks*`, `/api/webhooks-postmark`, etc.) — those
  * are mounted before the global limiter and/or must not be throttled like browser traffic.
  */
+import { clientKey } from '../server/lib/clientKey';
 import type { Request } from "express";
-import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import rateLimit from 'express-rate-limit';
 
 const FIFTEEN_MIN_MS = 15 * 60 * 1000;
 
 function userOrIpKey(prefix: string) {
   return (req: Request) => {
     const u = req.user?.id;
-    return u != null ? `${prefix}:${String(u)}` : ipKeyGenerator(req.ip ?? "");
+    return u != null ? `${prefix}:${String(u)}` : clientKey(req);
   };
 }
 

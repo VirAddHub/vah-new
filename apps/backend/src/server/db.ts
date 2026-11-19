@@ -23,3 +23,21 @@ export async function ensureSchema(): Promise<void> {
 export async function closePool(): Promise<void> {
     await closeSharedPool();
 }
+
+
+/**
+ * A dedicated connection for one HTTP request's transaction, released automatically when the
+ * response finishes or the client disconnects.
+ *
+ * BEGIN / COMMIT / ROLLBACK must all travel on the SAME connection. Sending them through the pool
+ * (`getPool().query('BEGIN')`) lets each statement use a different connection, so work can be left
+ * uncommitted, committed without its siblings, or never rolled back.
+ */
+export async function connectForRequest(res: { once: (event: string, cb: () => void) => unknown }) {
+    const client = await getPool().connect();
+    let released = false;
+    const release = () => { if (!released) { released = true; client.release(); } };
+    res.once('finish', release);
+    res.once('close', release);
+    return client;
+}

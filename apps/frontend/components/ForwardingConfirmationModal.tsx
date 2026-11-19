@@ -124,7 +124,7 @@ export function ForwardingConfirmationModal({
                             <p><strong>Document:</strong> {formatSubjectForDisplay(mailItem?.subject || mailItem?.description || "No subject")}</p>
                             <p><strong>Source:</strong> {formatSenderForDisplay(mailItem?.sender_name || "Unknown sender")}</p>
                             {isGovernmentMail && (
-                                <Badge variant="outline" className="text-caption border-green-500 text-green-700 bg-green-50">
+                                <Badge variant="outline" className="text-caption border-success/25 text-success bg-success/[0.06]">
                                     Official Mail - Free Forwarding
                                 </Badge>
                             )}
@@ -207,7 +207,7 @@ export function ForwardingConfirmationModal({
                                                             <span className="font-medium">Pay Now via Stripe</span>
                                                         </div>
                                                         <p className="text-body-sm text-muted-foreground">
-                                                            £2.00 will be charged immediately via direct debit
+                                                            A £2.00 forwarding fee applies and will be added to your account
                                                         </p>
                                                     </div>
                                                 </div>

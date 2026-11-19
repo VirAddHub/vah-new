@@ -10,8 +10,9 @@ type BillingSubscription = {
   status: string | null;
   cadence: string;
   next_charge_at: number | string | null;
-  mandate_id: string | null;
   customer_id: string | null;
+  paid_through_ms: number | null;
+  cancel_at_period_end: boolean;
 };
 
 type BillingLatestInvoice = {
@@ -36,10 +37,7 @@ export interface BillingOverviewData {
   grace_period: { days_left: number; retry_count: number; grace_until: number } | null;
   next_charge_at: number | string | null;
   next_billing_date: string | null;
-  mandate_status: 'active' | 'missing';
-  has_mandate: boolean;
-  has_redirect_flow: boolean;
-  redirect_flow_id: string | null;
+  has_payment_method: boolean;
   current_price_pence: number;
   latest_invoice_amount_pence: number;
   pending_forwarding_fees_pence: number;
@@ -151,7 +149,6 @@ export async function getBillingOverviewData(
 
   const userResult = await pool.query(`
     SELECT plan_id, plan_status, payment_failed_at, payment_retry_count, payment_grace_until, account_suspended_at,
-           gocardless_mandate_id, gocardless_redirect_flow_id,
            stripe_customer_id
     FROM "user" WHERE id=$1
   `, [userId]);
@@ -276,8 +273,9 @@ export async function getBillingOverviewData(
       status: sub.status || null,
       cadence: sub.cadence || sub.plan_interval || 'monthly',
       next_charge_at: sub.next_charge_at || null,
-      mandate_id: sub.mandate_id || null,
-      customer_id: sub.customer_id || null,
+      customer_id: sub.stripe_customer_id || sub.customer_id || null,
+      paid_through_ms: sub.paid_through_ms != null ? Number(sub.paid_through_ms) : null,
+      cancel_at_period_end: sub.cancel_at_period_end === true,
     } : null,
     latest_invoice: latestInvoice ? {
       id: latestInvoice.id,
@@ -309,10 +307,7 @@ export async function getBillingOverviewData(
       if (periodEnd && typeof periodEnd === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(periodEnd)) return periodEnd;
       return null;
     })(),
-    mandate_status: sub?.mandate_id ? 'active' : 'missing',
-    has_mandate: !!(user?.gocardless_mandate_id || user?.stripe_customer_id),
-    has_redirect_flow: !!user?.gocardless_redirect_flow_id,
-    redirect_flow_id: user?.gocardless_redirect_flow_id ?? null,
+    has_payment_method: !!user?.stripe_customer_id,
     current_price_pence: (resolvedPlan?.price_pence && resolvedPlan.price_pence > 0)
       ? resolvedPlan.price_pence
       : (sub?.price_pence && sub.price_pence > 0)

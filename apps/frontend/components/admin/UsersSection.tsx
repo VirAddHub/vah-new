@@ -1,5 +1,7 @@
 "use client";
 
+import { AccountStandingDialog } from './AccountStandingDialog';
+import { AdminUserPanel } from './AdminUserPanel';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { adminApi } from "../../lib/apiClient";
 import { Button } from "../ui/button";
@@ -26,9 +28,9 @@ const PLAN_STATUS_OPTIONS = [
 
 const PLAN_STATUS_STYLES: Record<string, string> = {
   active: 'bg-primary/10 text-primary',
-  pending_payment: 'bg-amber-50 text-amber-800',
+  pending_payment: 'bg-mist text-ink',
   cancelled: 'bg-destructive/10 text-destructive',
-  trialing: 'bg-sky-50 text-sky-700',
+  trialing: 'bg-mist text-ink',
 };
 
 const formatPlanStatus = (value?: string) => {
@@ -49,6 +51,7 @@ type AdminUser = {
   plan_price?: number;
   plan_interval?: string;
   kyc_status?: string;
+  service_label?: string | null;
   deleted_at?: string;
   locked_until?: string | number | null;
 };
@@ -69,6 +72,13 @@ interface UsersSectionProps {
     kyc_status: string;
   }) => void;
   onRefreshUsers?: () => void;
+}
+
+function statusVariant(label: string | null | undefined, u: { deleted_at?: unknown; status?: string }) {
+  if (!label) return u.deleted_at || u.status === 'suspended' ? 'destructive' as const : 'secondary' as const;
+  if (label.startsWith('Active') || label === 'Administrator') return 'success' as const;
+  if (label === 'Closed' || label === 'Suspended' || label === 'Payment overdue' || label === 'Verification failed') return 'destructive' as const;
+  return 'secondary' as const;
 }
 
 export default function UsersSection({ users, loading, error, total, page, pageSize, onPageChange, isValidating, onFiltersChange, onRefreshUsers }: UsersSectionProps) {
@@ -126,6 +136,9 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   // Password reset sending state
   const [resetSendingId, setResetSendingId] = useState<string | number | null>(null);
 
+  // Account standing dialog (suspend / restore / close)
+  const [standingUser, setStandingUser] = useState<null | { id: string | number; email: string }>(null);
+  const [panelUser, setPanelUser] = useState<null | { id: string | number; email: string; service_label?: string | null }>(null);
   // Account unlock state
   const [unlockingId, setUnlockingId] = useState<string | number | null>(null);
 
@@ -349,11 +362,11 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       )}
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-4 p-4 bg-muted/50 rounded-lg">
+      <div className="flex flex-wrap gap-3 rounded-lg border border-line p-4">
         <div className="flex items-center gap-2">
           <label className="text-body-sm font-medium">Status:</label>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger aria-label="Filter by status" className="w-32">
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
@@ -368,7 +381,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         <div className="flex items-center gap-2">
           <label className="text-body-sm font-medium">Plan:</label>
           <Select value={planFilter} onValueChange={setPlanFilter}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger aria-label="Filter by plan" className="w-40">
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
@@ -382,7 +395,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         <div className="flex items-center gap-2">
           <label className="text-body-sm font-medium">KYC:</label>
           <Select value={kycFilter} onValueChange={setKycFilter}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger aria-label="Filter by verification" className="w-32">
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
@@ -411,14 +424,14 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-h4 font-semibold">Users</h2>
           <p className="text-body-sm text-muted-foreground">
             {showDeleted ? `Showing ${users.length + deletedUsers.length} users (${users.length} active + ${deletedUsers.length} deleted)` : `Total: ${users.length}`}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
           <Button
             variant="primary"
             size="sm"
@@ -442,7 +455,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
             placeholder="Search ID, name or email…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="w-60"
+            className="w-full sm:w-60"
           />
         </div>
       </div>
@@ -466,8 +479,35 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
       {/* Users table */}
       <div className="relative">
-        <div className="border rounded-md">
-          <Table>
+        {/* Small screens: one card per customer, every action reachable without sideways scrolling */}
+        <ul className="space-y-3 md:hidden" aria-label="Users">
+          {displayUsers.length === 0 ? (
+            <li className="rounded-lg border border-line p-6 text-center text-[14px] text-graphite">{error ?? "No users found."}</li>
+          ) : displayUsers.map((u) => (
+            <li key={u.id} className="rounded-lg border border-line p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-[15px] font-medium text-ink">{u.email}</p>
+                  <p className="mt-0.5 text-[13px] text-graphite">
+                    <span className="figure-mono">#{u.id}</span>
+                    {u.company_name ? ` · ${u.company_name}` : ''}
+                  </p>
+                </div>
+                <Badge variant={statusVariant(u.service_label, u)} className="shrink-0 whitespace-nowrap">
+                  {u.service_label ?? (u.deleted_at ? "Closed" : u.status === "suspended" ? "Suspended" : "Unknown")}
+                </Badge>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => setPanelUser({ id: u.id, email: u.email, service_label: u.service_label })}>Details</Button>
+                <Button size="sm" variant="outline" onClick={() => setStandingUser({ id: u.id, email: u.email })}>Standing…</Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        {/* Larger screens: the table scrolls sideways inside its own frame if it is wider than the screen */}
+        <div className="hidden overflow-x-auto rounded-lg border border-line md:block focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink" role="region" aria-label="Users table" tabIndex={0}>
+          <Table className="min-w-[860px]">
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
@@ -476,32 +516,28 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 <TableHead>Company</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
-                <TableHead>Plan status</TableHead>
-                <TableHead>KYC</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="sticky right-0 bg-mist text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {displayUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-muted-foreground">
+                  <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
                     {error ?? "No users found."}
                   </TableCell>
                 </TableRow>
               ) : (
                 displayUsers.map((u) => {
-                  const planStatusValue = u.plan_status ?? 'pending_payment';
-                  const planStatusClass = PLAN_STATUS_STYLES[planStatusValue] ?? 'bg-muted text-muted-foreground';
                   return (
-                  <TableRow key={u.id} className={u.deleted_at ? "opacity-60 bg-destructive/10" : ""}>
+                  <TableRow key={u.id} className={u.deleted_at ? "text-graphite" : ""}>
                     <TableCell className="font-mono text-body-sm">
                       {u.id}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span>{u.email}</span>
-                        {u.deleted_at && <Badge variant="destructive" className="text-caption">Deleted</Badge>}
-                      </div>
+                      <button type="button" onClick={() => setPanelUser({ id: u.id, email: u.email, service_label: u.service_label })}
+                        className="text-left font-medium text-ink underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink">
+                        {u.email}
+                      </button>
                     </TableCell>
                     <TableCell>
                       {[u.first_name, u.last_name].filter(Boolean).join(" ") || "—"}
@@ -510,13 +546,13 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                       {u.company_name || <span className="text-body-sm text-muted-foreground">—</span>}
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <Badge variant={u.status === "active" ? "default" : u.status === "suspended" ? "destructive" : "secondary"}>
-                          {u.status || "active"}
+                      <div className="flex flex-col items-start gap-1">
+                        <Badge variant={statusVariant(u.service_label, u)} className="whitespace-nowrap">
+                          {u.service_label ?? (u.deleted_at ? "Closed" : u.status === "suspended" ? "Suspended" : "Unknown")}
                         </Badge>
                         {u.locked_until && Number(u.locked_until) > Date.now() && (
-                          <span className="inline-flex items-center text-caption text-amber-700 font-medium">
-                            🔒 Locked until {new Date(Number(u.locked_until)).toLocaleString()}
+                          <span className="text-caption text-graphite">
+                            Sign-in blocked until {new Date(Number(u.locked_until)).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         )}
                       </div>
@@ -536,24 +572,16 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                         <span className="text-body-sm text-muted-foreground">No plan</span>
                       )}
                     </TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-caption font-medium ${planStatusClass}`}>
-                        {formatPlanStatus(planStatusValue)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{u.kyc_status || "pending"}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
+                    <TableCell className="sticky right-0 bg-paper text-right shadow-[-1px_0_0_hsl(var(--line))]">
+                      <div className="flex justify-end gap-2">
                         {u.deleted_at ? (
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setRestoreModal({ id: u.id })}
+                            onClick={() => setStandingUser({ id: u.id, email: u.email })}
                             disabled={isMutating}
                           >
-                            Restore
+                            Standing…
                           </Button>
                         ) : (
                           <>
@@ -564,14 +592,6 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                               disabled={isMutating}
                             >
                               Edit
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setPlanStatusModal({ id: u.id, email: u.email, plan_status: u.plan_status })}
-                              disabled={isMutating}
-                            >
-                              Plan status
                             </Button>
                             <Button
                               variant="outline"
@@ -629,18 +649,18 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                                     disabled={unlockingId === u.id}
                                   >
                                     <div className="w-full">
-                                      <div className="font-medium text-foreground">{unlockingId === u.id ? 'Unlocking…' : '🔓 Unlock account'}</div>
-                                      <div className="text-caption text-muted-foreground mt-0.5">Clear login lockout immediately</div>
+                                      <div className="font-medium text-foreground">{unlockingId === u.id ? 'Clearing…' : 'Clear sign-in block'}</div>
+                                      <div className="text-caption text-muted-foreground mt-0.5">Lets new devices sign in again after too many wrong passwords</div>
                                     </div>
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem
-                                  onClick={() => setDeleteModal({ id: u.id, email: u.email, permanent: false })}
+                                  onClick={() => setStandingUser({ id: u.id, email: u.email })}
                                   className="cursor-pointer"
                                 >
                                   <div className="w-full">
-                                    <div className="font-medium text-foreground">Soft delete</div>
-                                    <div className="text-caption text-muted-foreground mt-0.5">Can be restored later</div>
+                                    <div className="font-medium text-foreground">Suspend, restore or close…</div>
+                                    <div className="text-caption text-muted-foreground mt-0.5">Requires a reason; recorded in the audit trail</div>
                                   </div>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
@@ -705,7 +725,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       {/* Delete confirmation modal */}
       {deleteModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className={`bg-card border-2 rounded-2xl p-6 w-full max-w-md ${deleteModal.permanent ? 'border-destructive/30' : 'border-yellow-200'}`}>
+          <div className={`bg-card border-2 rounded-2xl p-6 w-full max-w-md ${deleteModal.permanent ? 'border-destructive/30' : 'border-line'}`}>
             <h3 className={`font-semibold text-body-lg mb-2 ${deleteModal.permanent ? 'text-destructive' : ''}`}>
               {deleteModal.permanent ? '⚠️ Permanent Delete User' : 'Delete User'}
             </h3>
@@ -727,11 +747,11 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                   </ul>
                 </div>
               ) : (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-body-sm text-yellow-900">
+                <div className="bg-mist border border-line rounded-lg p-4">
+                  <p className="text-body-sm text-ink">
                     This will <strong>soft-delete</strong> user <span className="font-mono">{deleteModal.email}</span>.
                   </p>
-                  <p className="text-caption text-yellow-800 mt-1">
+                  <p className="text-caption text-ink mt-1">
                     The user can be restored later. Their data will be hidden but not permanently removed.
                   </p>
                 </div>
@@ -819,6 +839,18 @@ export default function UsersSection({ users, loading, error, total, page, pageS
           </div>
         </div>
       )}
+
+      <AdminUserPanel
+        user={panelUser}
+        onClose={() => setPanelUser(null)}
+        onOpenStanding={(x) => { setPanelUser(null); setStandingUser(x); }}
+      />
+
+      <AccountStandingDialog
+        user={standingUser}
+        onClose={() => setStandingUser(null)}
+        onChanged={async () => { if (onRefreshUsers) await onRefreshUsers(); }}
+      />
 
       {/* Plan status modal */}
       {planStatusModal && (

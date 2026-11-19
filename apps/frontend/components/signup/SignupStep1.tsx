@@ -146,7 +146,7 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
                                 </div>
                                 {billing === 'annual' && (
                                     <p className="text-body-sm text-muted-foreground mt-1">
-                                        ≈ £{getMonthlyEquivalent()}/month • 2 months free
+                                        ≈ £{getMonthlyEquivalent()}/month billed annually
                                     </p>
                                 )}
                                 <p className="text-body-sm text-muted-foreground mt-1">

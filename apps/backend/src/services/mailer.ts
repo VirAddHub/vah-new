@@ -1,4 +1,4 @@
-const postmark = require("postmark");
+import { ServerClient } from "postmark";
 import { ENV } from "../env";
 import { logger } from '../lib/logger';
 import { buildAppUrl } from "../lib/mailer";
@@ -16,7 +16,7 @@ let _client: any | null = null;
 function getClient(): any | null {
     if (!_client && PM_TOKEN) {
         try {
-            _client = new postmark.ServerClient(PM_TOKEN);
+            _client = new ServerClient(PM_TOKEN);
         } catch (err) {
             logger.warn("[mailer] Failed to initialize Postmark client:", err);
             return null;

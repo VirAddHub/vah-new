@@ -1,7 +1,7 @@
 // app/layout.tsx
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import { playfair, poppins, newsreader, dmsans, plex } from '@/lib/fonts';
+import { inter, plex } from '@/lib/fonts';
 import { ToastRoot } from '@/components/ToastRoot';
 import { SWRProvider } from '@/components/SWRProvider';
 import { Providers } from '@/components/Providers';
@@ -9,13 +9,13 @@ import { WebVitalsProvider } from '@/components/WebVitalsProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 /**
- * Global typography: Poppins as default (`font-sans` → `--font-poppins`). Playfair variable on `<html>` for optional display headings (`next/font`, display: swap).
+ * Typography: Inter for text (`font-sans`), IBM Plex Mono for figures (`font-mono`), both via next/font.
  */
 
 export const metadata: Metadata = {
     metadataBase: new URL('https://virtualaddresshub.com'),
     title: 'VirtualAddressHub - Professional London Business Address & Mail Forwarding',
-    description: 'Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.',
+    description: 'Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services.',
     keywords: [
         'virtual business address',
         'London business address',
@@ -89,7 +89,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="en" className={`${playfair.variable} ${poppins.variable} ${newsreader.variable} ${dmsans.variable} ${plex.variable}`} suppressHydrationWarning>
+        <html lang="en" className={`${inter.variable} ${plex.variable}`} suppressHydrationWarning>
             <head>
                 <meta name="format-detection" content="telephone=no" />
                 <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -105,26 +105,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             "url": "https://virtualaddresshub.com",
                             "logo": "https://virtualaddresshub.com/images/logo.svg",
                             "description": "Professional London business address service with secure digital mail forwarding and virtual office solutions.",
-                            "foundingDate": "2024",
-                            "address": {
-                                "@type": "PostalAddress",
-                                "streetAddress": "123 Business Street",
-                                "addressLocality": "London",
-                                "addressRegion": "England",
-                                "postalCode": "SW1A 1AA",
-                                "addressCountry": "GB"
-                            },
                             "contactPoint": {
                                 "@type": "ContactPoint",
-                                "telephone": "+44-20-1234-5678",
+                                "email": "support@virtualaddresshub.co.uk",
                                 "contactType": "customer service",
                                 "areaServed": "GB",
                                 "availableLanguage": "English"
                             },
-                            "sameAs": [
-                                "https://twitter.com/VirtualAddressHub",
-                                "https://linkedin.com/company/virtualaddresshub"
-                            ],
                             "service": [
                                 {
                                     "@type": "Service",

@@ -196,7 +196,7 @@ export function ChVerificationCard() {
       <CardContent className="space-y-4">
         {feedback && (
           <Alert variant={feedback.type === 'error' ? 'destructive' : 'default'}>
-            {feedback.type === 'error' ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4 text-green-600" />}
+            {feedback.type === 'error' ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4 text-success" />}
             <AlertTitle>{feedback.type === 'error' ? 'Upload failed' : 'Upload received'}</AlertTitle>
             <AlertDescription>{feedback.message}</AlertDescription>
           </Alert>
@@ -311,7 +311,7 @@ function renderStatusAlert({
 }) {
   if (statusCode === 'submitted') {
     return (
-      <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+      <Alert className="border-line bg-mist text-ink">
         <Clock className="h-4 w-4" />
         <AlertTitle>Proof received</AlertTitle>
         <AlertDescription>

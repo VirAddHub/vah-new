@@ -157,3 +157,18 @@ apps/frontend/out/
 
 # Local template file
 quiz-day0-template.html
+
+# Audit evidence and checklists are kept in the repo (dummy data only)
+!audit/
+!audit/**
+
+# Local environment scripts are tracked (local/*.env stays ignored)
+!local/*.sh
+
+# Journey tests are tracked
+!apps/backend/tests/journey/*.mjs
+
+# OS and tool caches
+.DS_Store
+.cache_ggshield
+*.tsbuildinfo

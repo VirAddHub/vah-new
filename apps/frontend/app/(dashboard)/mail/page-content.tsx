@@ -8,7 +8,7 @@ import { Building2, FileText, Landmark, Search, ChevronDown, ChevronRight, Archi
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useDashboardView } from '@/contexts/DashboardViewContext';
-import { MailDetail } from '@/components/dashboard/user/MailDetail';
+import { MailDetail, receivedDate } from '@/components/dashboard/user/MailDetail';
 import PDFViewerModal from '@/components/PDFViewerModal';
 import { ForwardingRequestModal } from '@/components/ForwardingRequestModal';
 import { useToast } from '@/components/ui/use-toast';
@@ -350,7 +350,7 @@ export default function MailInboxPage() {
         const isNew = !item.is_read && !isForwarded;
         if (isForwarded) return { label: 'Forwarded', badgeClass: 'bg-primary text-white border-transparent' };
         if (isScanned) return { label: 'Scanned', badgeClass: 'bg-muted text-foreground border-transparent' };
-        if (isNew) return { label: 'New', badgeClass: 'bg-blue-600 text-white border-transparent' };
+        if (isNew) return { label: 'New', badgeClass: 'bg-ink text-white border-transparent' };
         return { label: 'Received', badgeClass: 'bg-muted text-foreground border-transparent' };
     }, []);
 
@@ -405,88 +405,57 @@ export default function MailInboxPage() {
         <div className="w-full min-w-0">
             {!selectedMailDetail && (
                 <>
-                    {/* Page title */}
-                    <div className="mb-4 md:mb-6">
-                        <h1 className="text-2xl font-semibold text-foreground tracking-tight">Mail</h1>
+                    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+                        <div>
+                            <h1 className="page-title">Mail</h1>
+                            <p className="page-lede">Scans of the post received at your address.</p>
+                        </div>
+                        <div className="relative w-full sm:w-72">
+                            <label htmlFor="mail-search" className="sr-only">Search mail</label>
+                            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate" strokeWidth={2} aria-hidden />
+                            <Input id="mail-search" type="search" placeholder="Search mail" value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)} className="pl-10" />
+                        </div>
                     </div>
 
-                    {/* Search */}
-                    <div className="relative w-full mb-4">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none shrink-0" strokeWidth={2} />
-                        <Input
-                            type="text"
-                            placeholder="Search mail..."
-                            value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
-                            className="pl-10 h-10 rounded-lg border-border bg-card text-sm placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary border transition-colors md:w-80"
-                        />
-                    </div>
-
-                    {/* Status filter — segmented control */}
-                    <div className="mb-4">
-                        <div className="flex border border-border rounded-[3px] overflow-hidden w-fit">
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                        <div role="tablist" aria-label="Which mail to show" className="flex max-w-full overflow-x-auto rounded-full border border-line p-1 [scrollbar-width:none]">
                             {STATUS_OPTIONS.map(({ key, label }) => (
-                                <button
-                                    key={key}
-                                    type="button"
+                                <button key={key} type="button" role="tab" aria-selected={statusFilter === key}
                                     onClick={() => setStatusFilter(key)}
-                                    className={cn(
-                                        'px-4 py-2 text-sm font-medium border-r border-border last:border-r-0 transition-colors whitespace-nowrap',
-                                        statusFilter === key
-                                            ? 'bg-muted text-foreground'
-                                            : 'bg-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-                                    )}
-                                >
+                                    className={cn('inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 text-[14px] font-medium transition-colors duration-150',
+                                        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink',
+                                        statusFilter === key ? 'bg-ink text-paper' : 'text-graphite hover:text-ink')}>
                                     {label}
-                                    {statusCounts[key] > 0 && (
-                                        <span className="ml-1 opacity-60 tabular-nums text-[10px]">{statusCounts[key]}</span>
-                                    )}
+                                    {statusCounts[key] > 0 && <span className="figure-mono text-[12px] opacity-70">{statusCounts[key]}</span>}
                                 </button>
                             ))}
                         </div>
-                    </div>
-
-                    {/* Tag + Sort row */}
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3">
-                        {/* Tag dropdown */}
                         <div className="flex items-center gap-2">
-                            <span className="text-caption text-muted-foreground shrink-0">Tag</span>
+                            <label className="sr-only" htmlFor="mail-tag">Tag</label>
                             <div className="relative">
-                                <select
-                                    value={selectedTagFilter ?? ''}
-                                    onChange={e => setSelectedTagFilter(e.target.value || null)}
-                                    className="h-9 pl-3 pr-7 text-sm rounded-lg border border-border bg-card text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                                >
+                                <select id="mail-tag" value={selectedTagFilter ?? ''} onChange={e => setSelectedTagFilter(e.target.value || null)}
+                                    className="h-10 cursor-pointer appearance-none rounded-full border border-ink/15 bg-paper pl-4 pr-9 text-[14px] text-ink hover:border-ink/30 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink">
                                     <option value="">All tags</option>
                                     <option value="untagged">Untagged</option>
-                                    {availableTags.map(t => (
-                                        <option key={t} value={t}>{getTagLabel(t)}</option>
-                                    ))}
+                                    {availableTags.map(t => <option key={t} value={t}>{getTagLabel(t)}</option>)}
                                 </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" strokeWidth={2} />
+                                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-graphite" aria-hidden />
                             </div>
-                        </div>
-
-                        {/* Sort dropdown */}
-                        <div className="flex items-center gap-2">
-                            <span className="text-caption text-muted-foreground shrink-0">Sort</span>
+                            <label className="sr-only" htmlFor="mail-sort">Sort</label>
                             <div className="relative">
-                                <select
-                                    value={sortOrder}
-                                    onChange={e => setSortOrder(e.target.value as SortOrder)}
-                                    className="h-9 pl-3 pr-7 text-sm rounded-lg border border-border bg-card text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                                >
+                                <select id="mail-sort" value={sortOrder} onChange={e => setSortOrder(e.target.value as SortOrder)}
+                                    className="h-10 cursor-pointer appearance-none rounded-full border border-ink/15 bg-paper pl-4 pr-9 text-[14px] text-ink hover:border-ink/30 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink">
                                     <option value="newest">Newest first</option>
                                     <option value="oldest">Oldest first</option>
                                 </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" strokeWidth={2} />
+                                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-graphite" aria-hidden />
                             </div>
                         </div>
                     </div>
 
-                    {/* Item count */}
-                    <p className="text-sm text-muted-foreground mb-3 py-1 tabular-nums">
-                        {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
+                    <p className="mb-2 text-[13px] text-slate" aria-live="polite">
+                        {mailLoading ? 'Loading…' : `${filteredItems.length} ${filteredItems.length === 1 ? 'item' : 'items'}`}
                     </p>
                 </>
             )}
@@ -520,103 +489,77 @@ export default function MailInboxPage() {
                     </div>
                 </div>
             ) : (
-                <div className="w-full border border-border rounded-[3px] overflow-hidden">
+                <div className="w-full overflow-hidden rounded-lg border border-line">
                     {mailLoading ? (
-                        <div className="py-12 md:py-16 text-center">
-                            <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-primary border-r-transparent mb-3" />
-                            <p className="text-body-sm text-muted-foreground">Loading mail...</p>
-                        </div>
+                        <ul aria-label="Loading mail" className="divide-y divide-line">
+                            {[0, 1, 2, 3].map(i => (
+                                <li key={i} className="flex items-center gap-4 px-4 py-4 md:px-5">
+                                    <span className="h-4 w-4 animate-pulse rounded bg-mist" />
+                                    <span className="h-4 flex-1 animate-pulse rounded bg-mist" />
+                                    <span className="h-4 w-20 animate-pulse rounded bg-mist" />
+                                </li>
+                            ))}
+                        </ul>
                     ) : mailError ? (
-                        <div className="py-12 md:py-16 text-center">
-                            <Mail className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 text-muted-foreground" strokeWidth={1.5} />
-                            <p className="text-body-sm font-medium text-foreground mb-0.5">Failed to load mail</p>
-                            <p className="text-caption text-muted-foreground">Please refresh the page to try again</p>
+                        <div className="px-6 py-14 text-center" role="alert">
+                            <Mail className="mx-auto h-8 w-8 text-slate" strokeWidth={1.5} aria-hidden />
+                            <p className="mt-3 text-[15px] font-medium text-ink">We could not load your mail</p>
+                            <p className="mt-1 text-[14px] text-graphite">Check your connection and try again.</p>
+                            <button type="button" onClick={() => window.location.reload()}
+                                className="mt-5 inline-flex h-10 items-center rounded-full border border-ink/15 px-5 text-[14px] font-medium text-ink hover:border-ink">Try again</button>
                         </div>
                     ) : filteredItems.length === 0 ? (
-                        <div className="py-12 md:py-16 text-center">
-                            <Mail className="h-10 w-10 md:h-12 md:w-12 mx-auto mb-3 text-muted-foreground" strokeWidth={1.5} />
-                            <p className="text-body-sm font-medium text-foreground mb-0.5">No mail items</p>
-                            <p className="text-caption text-muted-foreground">
+                        <div className="px-6 py-14 text-center">
+                            <Mail className="mx-auto h-8 w-8 text-slate" strokeWidth={1.5} aria-hidden />
+                            <p className="mt-3 text-[15px] font-medium text-ink">
+                                {searchQuery || selectedTagFilter || statusFilter !== 'all' ? 'Nothing matches these filters' : 'No mail yet'}
+                            </p>
+                            <p className="mt-1 text-[14px] text-graphite">
                                 {searchQuery || selectedTagFilter || statusFilter !== 'all'
-                                    ? 'Try adjusting your filters'
-                                    : 'Your mail will appear here when it arrives'}
+                                    ? 'Try a different search, tag or view.'
+                                    : 'When post arrives at your address, its scan appears here.'}
                             </p>
                         </div>
                     ) : (
-                        filteredItems.map(item => {
-                            const Icon = getMailIcon(item);
-                            const rowLabel = getMailItemPrimaryLabel(item);
-                            const isRead = item.is_read ?? true;
-                            const isUnread = !isRead;
-
-                            return (
-                                <div
-                                    key={item.id}
-                                    onClick={() => handleMailClick(item)}
-                                    role="button"
-                                    tabIndex={0}
-                                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleMailClick(item); } }}
-                                    className={cn(
-                                        'group flex flex-col md:flex-row md:items-center gap-2 md:gap-4',
-                                        'border-b border-border px-4 py-3 md:px-6 md:py-3.5',
-                                        'bg-card hover:bg-muted/50 transition-colors',
-                                        'cursor-pointer touch-manipulation min-w-0'
-                                    )}
-                                >
-                                    {/* Mobile row */}
-                                    <div className="flex items-center gap-2.5 w-full min-w-0 md:hidden">
-                                        <Icon className="h-4 w-4 text-muted-foreground opacity-50 shrink-0" strokeWidth={1.5} />
-                                        {isUnread && <span className="h-2 w-2 rounded-full bg-[#1a6b3c] shrink-0" aria-label="Unread" />}
-                                        <p className={cn('flex-1 min-w-0 text-sm leading-tight truncate', isUnread ? 'font-medium text-foreground' : 'font-normal text-neutral-600')}>
-                                            {rowLabel}
-                                        </p>
-                                        <div className="shrink-0" onClick={e => e.stopPropagation()}>
-                                            <CreatableTagSelect
-                                                compact
-                                                value={item.tag ?? null}
-                                                availableTags={availableTags}
-                                                onValueChange={newTag => handleTagUpdate(item, newTag)}
-                                                getTagLabel={getTagLabel}
-                                                className="w-auto"
-                                            />
+                        <ul className="divide-y divide-line">
+                            {filteredItems.map(item => {
+                                const Icon = getMailIcon(item);
+                                const rowLabel = getMailItemPrimaryLabel(item);
+                                const isUnread = !(item.is_read ?? true);
+                                return (
+                                    <li key={item.id} className="group relative flex items-center gap-3 px-4 py-3.5 hover:bg-mist focus-within:bg-mist md:gap-4 md:px-5">
+                                        <Icon className="h-4 w-4 shrink-0 text-graphite" strokeWidth={1.5} aria-hidden />
+                                        <span className={cn('h-2 w-2 shrink-0 rounded-full', isUnread ? 'bg-ink' : 'bg-transparent')} aria-hidden />
+                                        <button type="button" onClick={() => handleMailClick(item)}
+                                            className="min-w-0 flex-1 text-left after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-ink">
+                                            <span className={cn('block truncate text-[15px]', isUnread ? 'font-semibold text-ink' : 'text-graphite')}>
+                                                {rowLabel}{isUnread && <span className="sr-only"> (unread)</span>}
+                                            </span>
+                                            <span className="figure-mono mt-0.5 block text-[12px] text-slate md:hidden">{receivedDate(item)}</span>
+                                        </button>
+                                        <div className="relative z-10 shrink-0">
+                                            <CreatableTagSelect compact value={item.tag ?? null} availableTags={availableTags}
+                                                onValueChange={newTag => handleTagUpdate(item, newTag)} getTagLabel={getTagLabel} className="w-auto" />
                                         </div>
-                                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0 opacity-40" strokeWidth={1.5} />
-                                    </div>
-
-                                    {/* Desktop row */}
-                                    <div className="hidden md:flex items-center gap-3 flex-1 min-w-0">
-                                        <Icon className="h-4 w-4 text-muted-foreground opacity-50 shrink-0" strokeWidth={1.5} />
-                                        {isUnread && <span className="h-2 w-2 rounded-full bg-[#1a6b3c] shrink-0" aria-label="Unread" />}
-                                        <p className={cn('flex-1 min-w-0 text-sm leading-tight truncate', isUnread ? 'font-medium text-foreground' : 'font-normal text-neutral-600')}>
-                                            {rowLabel}
-                                        </p>
-                                    </div>
-
-                                    {/* Desktop hover-reveal actions */}
-                                    <div className="hidden md:flex items-center gap-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
-                                        <CreatableTagSelect
-                                            compact
-                                            value={item.tag ?? null}
-                                            availableTags={availableTags}
-                                            onValueChange={newTag => handleTagUpdate(item, newTag)}
-                                            getTagLabel={getTagLabel}
-                                            triggerClassName="rounded-[3px] bg-transparent border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground h-auto"
-                                        />
-                                        {item.deleted ? (
-                                            <button type="button" onClick={e => handleUnarchive(item, e)} className="inline-flex items-center gap-1.5 border border-border rounded-[3px] px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-                                                <ArchiveRestore className="h-3.5 w-3.5" strokeWidth={1.5} />
-                                                Unarchive
-                                            </button>
-                                        ) : (
-                                            <button type="button" onClick={e => handleArchive(item, e)} className="inline-flex items-center gap-1.5 border border-border rounded-[3px] px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-                                                <Archive className="h-3.5 w-3.5" strokeWidth={1.5} />
-                                                Archive
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })
+                                        <span className="figure-mono hidden w-28 shrink-0 text-right text-[13px] text-graphite md:block">{receivedDate(item)}</span>
+                                        <div className="relative z-10 hidden shrink-0 md:block">
+                                            {item.deleted ? (
+                                                <button type="button" onClick={e => handleUnarchive(item, e)} aria-label={`Move ${rowLabel} back to inbox`}
+                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-graphite opacity-0 hover:bg-paper hover:text-ink focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100">
+                                                    <ArchiveRestore className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                                                </button>
+                                            ) : (
+                                                <button type="button" onClick={e => handleArchive(item, e)} aria-label={`Archive ${rowLabel}`}
+                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-graphite opacity-0 hover:bg-paper hover:text-ink focus-visible:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100">
+                                                    <Archive className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                                                </button>
+                                            )}
+                                        </div>
+                                        <ChevronRight className="h-4 w-4 shrink-0 text-slate md:hidden" aria-hidden />
+                                    </li>
+                                );
+                            })}
+                        </ul>
                     )}
                 </div>
             )}

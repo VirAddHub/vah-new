@@ -95,7 +95,6 @@ export const legacyAliasMap = {
     // Public endpoints (keep as-is)
     "/scans/:token": { status: "canonical", aliasOf: null },
     "/webhooks-postmark": { status: "canonical", aliasOf: null },
-    "/webhooks-gocardless": { status: "canonical", aliasOf: null },
     "/webhooks-sumsub": { status: "canonical", aliasOf: null },
 } as const;
 

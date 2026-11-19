@@ -1,3 +1,4 @@
+import { trustedVisitorIp } from '../server/lib/clientKey';
 import type { Request, Response, NextFunction } from "express";
 import crypto from "crypto";
 import type { Logger } from "winston";
@@ -75,6 +76,8 @@ export function safeHttpAccessLog(logger: Logger) {
                 durationMs: Math.round(durationMs * 1000) / 1000,
                 contentLength: Number.isFinite(contentLength as number) ? contentLength : undefined,
                 ip: req.ip || undefined,
+                // Whether the website vouched for the visitor's address (rate limits then apply per visitor).
+                visitorSigned: trustedVisitorIp(req) != null,
             });
         });
 

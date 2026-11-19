@@ -112,7 +112,7 @@ function VerifyEmailChangeContent() {
               <Loader2 className="h-12 w-12 text-primary animate-spin" />
             )}
             {status === 'success' && (
-              <CheckCircle2 className="h-12 w-12 text-green-500" />
+              <CheckCircle2 className="h-12 w-12 text-success" />
             )}
             {(status === 'error' || status === 'invalid') && (
               <XCircle className="h-12 w-12 text-destructive" />
@@ -136,8 +136,8 @@ function VerifyEmailChangeContent() {
 
           {status === 'success' && (
             <div className="space-y-3">
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                <p className="text-body-sm text-green-800 dark:text-green-200">
+              <div className="bg-success/[0.06] dark:bg-green-900/20 border border-success/25 dark:border-green-800 rounded-lg p-4">
+                <p className="text-body-sm text-success dark:text-green-200">
                   Your email address has been updated. You have been logged out for security. Please log in with your new email address.
                 </p>
               </div>
@@ -161,11 +161,11 @@ function VerifyEmailChangeContent() {
               </div>
               
               {resendSent ? (
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                  <p className="text-body-sm text-green-800 dark:text-green-200">
+                <div className="bg-success/[0.06] dark:bg-green-900/20 border border-success/25 dark:border-green-800 rounded-lg p-4">
+                  <p className="text-body-sm text-success dark:text-green-200">
                     Sent — check your inbox.
                   </p>
-                  <p className="text-caption text-green-700 dark:text-green-300 mt-2">
+                  <p className="text-caption text-success dark:text-green-300 mt-2">
                     If you still can't find it, reply to this email.
                   </p>
                 </div>

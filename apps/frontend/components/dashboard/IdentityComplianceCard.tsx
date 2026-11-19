@@ -185,15 +185,15 @@ export function IdentityComplianceCard({
     // If fully compliant, show success card (after hooks)
     if (compliance.canUseRegisteredOfficeAddress) {
         return (
-            <Card className="border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-400">
+            <Card className="border-success/25 bg-success/[0.06] dark:bg-green-900/20 dark:border-success/25">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-green-900 dark:text-green-100">
-                        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <CardTitle className="flex items-center gap-2 text-success dark:text-green-100">
+                        <CheckCircle className="h-5 w-5 text-success dark:text-green-400" />
                         Identity Checks Complete
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-body-sm text-green-800 dark:text-green-200">
+                    <p className="text-body-sm text-success dark:text-green-200">
                         You can now use your VirtualAddressHub registered office address.
                     </p>
                 </CardContent>
@@ -210,26 +210,26 @@ export function IdentityComplianceCard({
 
     return (
         <>
-            <Card className="border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-400">
+            <Card className="border-line bg-mist dark:bg-amber-900/20 dark:border-line">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-amber-900 dark:text-amber-100">
-                        <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    <CardTitle className="flex items-center gap-2 text-ink dark:text-amber-100">
+                        <AlertCircle className="h-5 w-5 text-ink dark:text-ink" />
                         Complete Your Identity Checks
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p className="text-body-sm text-amber-800 dark:text-amber-200">
+                    <p className="text-body-sm text-ink dark:text-amber-200">
                         To use your registered office address, you need to complete identity verification (KYC).
                     </p>
 
                     {/* KYC */}
-                    <div className="flex items-start gap-3 p-3 bg-card dark:bg-muted rounded-lg border border-amber-200 dark:border-amber-700">
+                    <div className="flex items-start gap-3 p-3 bg-card dark:bg-muted rounded-lg border border-line dark:border-amber-700">
                         <div className="flex-shrink-0 mt-0.5">
                             {compliance.isKycApproved ? (
-                                <CheckCircle className="h-5 w-5 text-green-600" />
+                                <CheckCircle className="h-5 w-5 text-success" />
                             ) : (
                                 <div className="h-5 w-5 rounded-full border-2 border-amber-600 flex items-center justify-center">
-                                    <span className="text-caption font-semibold text-amber-600">1</span>
+                                    <span className="text-caption font-semibold text-ink">1</span>
                                 </div>
                             )}
                         </div>
@@ -238,14 +238,14 @@ export function IdentityComplianceCard({
                                 Identity Check (KYC)
                             </div>
                             {compliance.isKycApproved ? (
-                                <p className="text-body-sm text-green-700 dark:text-green-300">✓ Completed</p>
+                                <p className="text-body-sm text-success dark:text-green-300">✓ Completed</p>
                             ) : (
                                 <>
                                     <p className="text-body-sm text-muted-foreground mb-2">
                                         Complete identity verification with Sumsub. This is required for UK AML compliance.
                                     </p>
                                     {error && (
-                                        <p className="mt-1 mb-2 text-caption text-red-600 dark:text-red-400">
+                                        <p className="mt-1 mb-2 text-caption text-destructive dark:text-red-400">
                                             {error}
                                         </p>
                                     )}
@@ -253,7 +253,7 @@ export function IdentityComplianceCard({
                                         onClick={startKyc}
                                         disabled={startingKyc}
                                         size="sm"
-                                        className="bg-amber-600 hover:bg-amber-700 !text-white [&_svg]:!text-white"
+                                        className="bg-ink hover:bg-ink !text-white [&_svg]:!text-white"
                                     >
                                         {startingKyc ? (
                                             <>

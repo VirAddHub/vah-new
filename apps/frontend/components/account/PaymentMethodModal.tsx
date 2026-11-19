@@ -141,7 +141,7 @@ export function PaymentMethodModal({
           )}
 
           {stripeError && (
-            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-caption text-red-700">
+            <div className="rounded-md border border-destructive/25 bg-destructive/[0.06] px-3 py-2 text-caption text-destructive">
               {stripeError}
             </div>
           )}

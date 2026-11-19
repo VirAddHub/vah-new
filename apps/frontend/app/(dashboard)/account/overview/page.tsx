@@ -1,5 +1,6 @@
 'use client';
 
+import { useAccess } from '@/hooks/useAccess';
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -42,6 +43,7 @@ export default function AccountOverviewPage() {
     const complianceVs = bootstrapOk
         ? ((boot!.data.compliance as { verificationState?: string } | undefined)?.verificationState ?? null)
         : null;
+    const { access } = useAccess();
     const bootstrapPending = bootLoading && boot === undefined;
 
     // Build account summary
@@ -79,18 +81,13 @@ export default function AccountOverviewPage() {
             }
         }
 
-        // KYC: prefer compliance.verificationState from bootstrap (same source as nav); avoid defaulting to pending before load
+        // Identity: the same access decision the API enforces (verification.primaryApproved).
         let kycUi: 'loading' | 'verified' | 'pending' = 'loading';
-        if (bootstrapOk) {
-            if (complianceVs === 'verified' || complianceVs === 'pending_others') {
-                kycUi = 'verified';
-            } else if (complianceVs === 'action_required') {
-                kycUi = 'pending';
-            } else {
-                const kycStatus = profile?.kyc_status || user?.kyc_status || 'pending';
-                const isKycApproved = kycStatus === 'approved' || kycStatus === 'verified';
-                kycUi = isKycApproved ? 'verified' : 'pending';
-            }
+        if (access) {
+            kycUi = access.verification.primaryApproved ? 'verified' : 'pending';
+        } else if (bootstrapOk) {
+            const kycStatus = profile?.kyc_status || user?.kyc_status || 'pending';
+            kycUi = kycStatus === 'approved' || kycStatus === 'verified' ? 'verified' : 'pending';
         } else if (!bootLoading) {
             kycUi = 'pending';
         }
@@ -130,16 +127,16 @@ export default function AccountOverviewPage() {
             identityAndCompanyVerified,
             businessAddress,
         };
-    }, [accountData, o, profile, user, bootstrapOk, complianceVs, bootLoading, boot]);
+    }, [accountData, o, profile, user, bootstrapOk, bootLoading, boot, access]);
 
     return (
         <div className="w-full">
             {/* Page Header */}
             <div className="mb-4 sm:mb-5">
-                <h1 className="text-h3 sm:text-h2 font-semibold text-foreground mb-1 leading-tight tracking-tight">
+                <h1 className="page-title">
                     Account Overview
                 </h1>
-                <p className="text-body-sm text-muted-foreground leading-snug">
+                <p className="page-lede">
                     View your account status and quick actions
                 </p>
             </div>
@@ -233,17 +230,17 @@ export default function AccountOverviewPage() {
                             </h2>
                             <div className="flex flex-wrap items-center gap-2">
                                 {accountSummary.status === 'active' ? (
-                                    <Badge className="bg-green-100 text-green-800 border-0 px-2 py-0.5 text-caption font-medium">
+                                    <Badge variant="success">
                                         <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" strokeWidth={2} />
                                         Active
                                     </Badge>
                                 ) : accountSummary.status === 'action_required' ? (
-                                    <Badge className="bg-yellow-100 text-yellow-800 border-0 px-2 py-0.5 text-caption font-medium">
+                                    <Badge variant="default">
                                         <AlertCircle className="w-3.5 h-3.5 mr-1.5" strokeWidth={2} />
                                         Action Required
                                     </Badge>
                                 ) : (
-                                    <Badge className="bg-muted text-muted-foreground border-0 px-2 py-0.5 text-caption font-medium">
+                                    <Badge variant="secondary">
                                         {accountSummary.status === 'cancelled' ? 'Cancelled' : 'Unknown'}
                                     </Badge>
                                 )}
@@ -259,21 +256,20 @@ export default function AccountOverviewPage() {
                                     <div className="flex flex-wrap items-center gap-2">
                                         {bootstrapPending || accountSummary.kycStatus === 'loading' ? (
                                             <div className="h-7 w-24 animate-pulse rounded-md bg-muted" aria-hidden />
-                                        ) : accountSummary.identityAndCompanyVerified ? (
-                                            <Badge className="bg-green-100 text-green-800 border-0 px-2 py-0.5 text-caption font-medium">
-                                                <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" strokeWidth={2} />
+                                        ) : accountSummary.kycStatus === 'verified' ? (
+                                            <Badge variant="success">
+                                                <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
                                                 Verified
                                             </Badge>
                                         ) : (
-                                            <Badge className="bg-yellow-100 text-yellow-800 border-0 px-2 py-0.5 text-caption font-medium">
-                                                <AlertCircle className="w-3.5 h-3.5 mr-1.5" strokeWidth={2} />
-                                                Pending
+                                            <Badge variant="secondary">
+                                                <AlertCircle className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                                                Not yet verified
                                             </Badge>
                                         )}
                                     </div>
                                 </div>
-                                {!accountSummary.identityAndCompanyVerified &&
-                                    accountSummary.kycStatus !== 'loading' &&
+                                {accountSummary.kycStatus === 'pending' &&
                                     !bootstrapPending && (
                                         <Button
                                             onClick={() => router.push('/account/verification')}

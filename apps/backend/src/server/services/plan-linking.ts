@@ -2,11 +2,9 @@ import { TimestampUtils } from "../../lib/timestamp-utils";
 
 type PlanRow = { id: number; name: string; slug: string; interval: string };
 
+/** A default plan is only ever assumed outside production (local and test). */
 function isSandboxEnv(): boolean {
-  const env = String(process.env.GC_ENVIRONMENT ?? process.env.GOCARDLESS_ENV ?? "live")
-    .trim()
-    .toLowerCase();
-  return env === "sandbox";
+  return process.env.NODE_ENV !== "production";
 }
 
 async function resolveDefaultPlan(
@@ -98,7 +96,7 @@ export async function ensureUserPlanLinked(opts: {
       const plan = r.rows[0] as PlanRow;
       const now = Date.now();
       const updatedAt = TimestampUtils.forTableField("user", "updated_at") ?? now;
-      // NOTE: plan_status is only updated via GoCardless webhooks when subscription.status transitions to 'active'
+      // NOTE: plan_status is only updated via Stripe events when subscription.status transitions to 'active'
       await pool.query(
         `
         UPDATE "user"
@@ -123,7 +121,7 @@ export async function ensureUserPlanLinked(opts: {
   const now = Date.now();
   const updatedAt = TimestampUtils.forTableField("user", "updated_at") ?? now;
 
-  // NOTE: plan_status is only updated via GoCardless webhooks when subscription.status transitions to 'active'
+  // NOTE: plan_status is only updated via Stripe events when subscription.status transitions to 'active'
   await pool.query(
     `
     UPDATE "user"

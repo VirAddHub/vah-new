@@ -23,7 +23,7 @@ const INVOICE_BASE_DIR = process.env.INVOICES_DIR
 export interface InvoiceRow {
   id: number;
   user_id: number;
-  gocardless_payment_id: string | null;
+  provider_payment_id: string | null;
   period_start: string | Date;
   period_end: string | Date;
   amount_pence: number;
@@ -36,7 +36,7 @@ export interface InvoiceRow {
 
 export interface CreateInvoiceOptions {
   userId: number;
-  gocardlessPaymentId?: string | null; // Optional: null/undefined when invoice is 'issued', set when 'paid'
+  providerPaymentId?: string | null; // Optional: null/undefined when invoice is 'issued', set when 'paid'
   amountPence: number;
   currency: string;
   periodStart: Date;
@@ -56,10 +56,10 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
   // Check if invoice already exists
   // Priority: 1) by payment ID (if provided), 2) by period (if no payment ID)
   let existing: { rows: InvoiceRow[] } = { rows: [] };
-  if (opts.gocardlessPaymentId) {
+  if (opts.providerPaymentId) {
     existing = await pool.query<InvoiceRow>(
-      `SELECT * FROM invoices WHERE gocardless_payment_id = $1`,
-      [opts.gocardlessPaymentId]
+      `SELECT * FROM invoices WHERE provider_payment_id = $1`,
+      [opts.providerPaymentId]
     );
 
     if (existing.rows.length > 0) {
@@ -218,13 +218,13 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
   const invoiceTotalPence = opts.amountPence + chargesTotalPence;
 
   // Insert invoice record
-  // Status: 'paid' if gocardlessPaymentId provided, 'issued' otherwise
-  const status = opts.gocardlessPaymentId ? 'paid' : 'issued';
+  // Status: 'paid' if a payment reference is provided, 'issued' otherwise
+  const status = opts.providerPaymentId ? 'paid' : 'issued';
   const result = await pool.query<InvoiceRow>(
     `
     INSERT INTO invoices (
       user_id,
-      gocardless_payment_id,
+      provider_payment_id,
       period_start,
       period_end,
       amount_pence,
@@ -238,7 +238,7 @@ export async function createInvoiceForPayment(opts: CreateInvoiceOptions): Promi
     `,
     [
       opts.userId,
-      opts.gocardlessPaymentId || null,
+      opts.providerPaymentId || null,
       periodStartStr,
       periodEndStr,
       invoiceTotalPence, // Updated to include charges
@@ -714,7 +714,7 @@ export async function listInvoicesForUser(userId: number): Promise<InvoiceRow[]>
     `
     SELECT id,
            user_id,
-           gocardless_payment_id,
+           provider_payment_id,
            period_start,
            period_end,
            amount_pence,
@@ -782,55 +782,6 @@ export async function getBillingPeriodForUser(userId: number): Promise<{ periodS
   };
 }
 
-/**
- * Find user ID from GoCardless payment ID
- */
-export async function findUserIdForPayment(
-  pool: Pool,
-  gocardlessPaymentId: string,
-  paymentLinks?: { mandate?: string; customer?: string; [k: string]: unknown }
-): Promise<number | null> {
-  try {
-    // Option 1: Check if we already have an invoice for this payment
-    const invoiceResult = await pool.query(
-      `SELECT user_id FROM invoices WHERE gocardless_payment_id = $1 LIMIT 1`,
-      [gocardlessPaymentId]
-    );
-
-    if (invoiceResult.rows.length > 0) {
-      return invoiceResult.rows[0].user_id;
-    }
-
-    // Option 2: Look up via subscription table using mandate/customer from payment
-    if (paymentLinks?.mandate) {
-      const mandateResult = await pool.query(
-        `SELECT user_id FROM subscription WHERE mandate_id = $1 LIMIT 1`,
-        [paymentLinks.mandate]
-      );
-
-      if (mandateResult.rows.length > 0) {
-        return mandateResult.rows[0].user_id;
-      }
-    }
-
-    // Option 3: Look up via customer ID
-    if (paymentLinks?.customer) {
-      const customerResult = await pool.query(
-        `SELECT id FROM "user" WHERE gocardless_customer_id = $1 LIMIT 1`,
-        [paymentLinks.customer]
-      );
-
-      if (customerResult.rows.length > 0) {
-        return customerResult.rows[0].id;
-      }
-    }
-
-    return null;
-  } catch (error: unknown) {
-    logger.warn('[invoices] find_user_for_payment_failed', { message: (error as any)?.message ?? String(error) });
-    return null;
-  }
-}
 
 /**
  * Format billing period as "1–31 January 2026"

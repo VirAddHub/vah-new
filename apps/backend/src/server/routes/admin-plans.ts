@@ -2,7 +2,7 @@
 // Admin plans management endpoints
 
 import { Router, Request, Response } from 'express';
-import { getPool } from '../db';
+import { getPool, connectForRequest } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { pricingService } from '../services/pricing';
 import { TimestampUtils } from '../../lib/timestamp-utils';
@@ -196,7 +196,8 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
 
     const planId = parseInt(param(req, 'id'), 10);
     const adminId = req.user?.id;
-    const pool = getPool();
+    // One connection for the whole transaction (see connectForRequest).
+    const pool = await connectForRequest(res);
 
     if (!planId) {
         return res.status(400).json({ ok: false, error: 'invalid_id' });

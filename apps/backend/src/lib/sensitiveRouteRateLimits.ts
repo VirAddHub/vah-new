@@ -3,7 +3,8 @@
  * Keeps Stripe checkout session creation (expensive + provider API) under one per-user bucket
  * whether the client calls /api/stripe-checkout/* or /api/payments/redirect-flows.
  */
-import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import { clientKey } from '../server/lib/clientKey';
+import rateLimit from 'express-rate-limit';
 
 const FIFTEEN_MIN_MS = 15 * 60 * 1000;
 
@@ -14,7 +15,7 @@ export const stripeCheckoutCreateLimiter = rateLimit({
     legacyHeaders: false,
     keyGenerator: (req) => {
         const u = (req as { user?: { id?: number } }).user;
-        return u?.id != null ? `stripe-checkout-create:${u.id}` : ipKeyGenerator(req.ip ?? "");
+        return u?.id != null ? `stripe-checkout-create:${u.id}` : clientKey(req);
     },
     handler: (_req, res) => {
         res.setHeader("Retry-After", "900");

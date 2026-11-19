@@ -110,12 +110,13 @@ export function requireCsrfToken(req: Request, res: Response, next: NextFunction
   // Note: /api/admin routes are intentionally NOT excluded — admin mutations must pass CSRF
   // checks the same as any other authenticated browser session.
 
-  // Skip CSRF for auth endpoints (login/signup/password reset/logout) so BFF/browser flows work
-  // without a prior CSRF header (login); logout often omits X-CSRF-Token in the same way.
-  // Note: these are still protected by rate limiting; session cookie still required for logout.
+  // Skip CSRF for auth endpoints (login/signup/password reset) so BFF/browser flows work
+  // without a prior CSRF header (login).
+  // Note: /api/auth/logout is intentionally NOT excluded when a session cookie is present —
+  // the early-exit above (line ~89) already skips CSRF when there is no session cookie,
+  // so unauthenticated logout calls still pass through. Authenticated logout is CSRF-protected.
   if (
     fullPath === '/api/auth/login' ||
-    fullPath === '/api/auth/logout' ||
     fullPath === '/api/auth/signup' ||
     fullPath === '/api/auth/reset-password/confirm' ||
     fullPath === '/api/profile/reset-password-request' ||

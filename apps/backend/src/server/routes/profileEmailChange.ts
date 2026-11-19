@@ -367,7 +367,7 @@ router.get('/confirm-email-change', async (req: Request, res: Response) => {
  * Always returns success (no enumeration)
  */
 router.post('/email-change/resend', async (req: Request, res: Response) => {
-    const { token } = req.body;
+    const { token } = req.body ?? {};
 
     if (!token || typeof token !== 'string') {
         // Return success to prevent enumeration

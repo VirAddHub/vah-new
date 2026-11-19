@@ -6,8 +6,9 @@
  * GET  /session-status             – poll session status after completion
  */
 
+import { clientKey } from '../lib/clientKey';
 import { Router, Request, Response } from 'express';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import { getPool } from '../db';
 import { getStripe, getStripePriceId, redactStripeId } from '../../lib/stripe';
 import { getStripeConfig } from '../../config/billing';
@@ -110,7 +111,7 @@ const stripeSessionStatusLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => {
     const u = (req as { user?: { id?: number } }).user;
-    return u?.id != null ? `stripe-session-status:${u.id}` : ipKeyGenerator(req.ip ?? '');
+    return u?.id != null ? `stripe-session-status:${u.id}` : clientKey(req);
   },
   handler: (_req, res) => {
     res.setHeader('Retry-After', '900');

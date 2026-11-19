@@ -22,19 +22,19 @@ maybe('PATCH /api/profile - Safety Guarantees', () => {
     });
   });
 
-  it('should reject updates to payment/mandate fields', async () => {
+  it('should reject updates to payment fields', async () => {
     const res = await api()
       .patch('/api/profile')
       .set(auth())
       .send({
-        gocardless_mandate_id: 'MD123'
+        stripe_customer_id: 'cus_123'
       });
 
     expect(res.status).toBe(400);
     expect(res.body).toEqual({
       ok: false,
       error: 'payment_fields_immutable',
-      message: 'Payment and mandate fields cannot be changed via profile endpoint.'
+      message: 'Payment fields cannot be changed via profile endpoint.'
     });
   });
 
@@ -98,7 +98,7 @@ maybe('PATCH /api/profile - Safety Guarantees', () => {
       .set(auth())
       .send({
         address_line1: '123 Test',
-        gocardless_mandate_id: 'MD123',
+        stripe_customer_id: 'cus_123',
         email: 'test@example.com'
       });
 

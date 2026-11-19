@@ -23,14 +23,6 @@ const router = Router();
 router.get('/search', async (req: Request, res: Response) => {
     let userId = Number(req.user?.id || 0);
 
-    // Dev overrides
-    if (!userId && process.env.NODE_ENV !== 'production') {
-        const hdr = Number(req.header('x-dev-user-id') || 0);
-        if (hdr) userId = hdr;
-        const qid = Number(req.query.userId || 0);
-        if (!userId && qid) userId = qid;
-    }
-
     if (!userId) {
         return res.status(401).json({ ok: false, error: 'unauthenticated' });
     }

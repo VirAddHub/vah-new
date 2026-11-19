@@ -1,13 +1,14 @@
 // src/server/routes/mail.ts
 // Mail items API endpoints for users
 
+import { streamPdfFromUrl } from '../../controllers/pdfProxy';
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { selectPaged } from '../db-helpers';
 import { extractDrivePathFromSharePointUrl, streamSharePointFileByPath } from '../../services/sharepoint';
 import { logger } from '../../lib/logger';
 import { safeErrorMessage } from '../../lib/safeError';
-import { requireActiveSubscription } from '../../middleware/auth';
+import { requireFullService } from '../services/access';
 import { param } from '../../lib/express-params';
 
 const router = Router();
@@ -95,16 +96,20 @@ function noConditional(req: Request, res: Response, next: Function) {
     next();
 }
 
-router.use(noCache);
-router.use(noConditional);
-router.use(requireActiveSubscription);
+// Cache headers apply only to this router's own paths. This router is mounted at /api, so a
+// router-wide middleware would run for every later-mounted /api route as well: the subscription
+// check used to sit here and blocked checkout, verification, support and contact for anyone
+// without an active subscription. It is now applied per route below.
+const MAIL_ROUTER_PATHS = /^\/(mail-items|tags)(\/|$)/;
+router.use((req, res, next) => (MAIL_ROUTER_PATHS.test(req.path) ? noCache(req, res, next) : next()));
+router.use((req, res, next) => (MAIL_ROUTER_PATHS.test(req.path) ? noConditional(req, res, next) : next()));
 
 /**
  * GET /api/mail-items
  * Get all mail items for current user (with pagination support)
  * Query params: ?page=1&pageSize=20&includeArchived=true
  */
-router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
+router.get('/mail-items', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 20;
@@ -165,7 +170,7 @@ router.get('/mail-items', requireAuth, async (req: Request, res: Response) => {
  * GET /api/mail-items/:id
  * Get specific mail item
  */
-router.get('/mail-items/:id', requireAuth, async (req: Request, res: Response) => {
+router.get('/mail-items/:id', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(param(req, 'id'), 10);
     const pool = getPool();
@@ -209,7 +214,7 @@ router.get('/mail-items/:id', requireAuth, async (req: Request, res: Response) =
  * PATCH /api/mail-items/:id
  * Update mail item (user can update is_read, subject, and tag)
  */
-router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response) => {
+router.patch('/mail-items/:id', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(param(req, 'id'), 10);
     const { is_read, subject, tag } = req.body;
@@ -297,7 +302,7 @@ router.patch('/mail-items/:id', requireAuth, async (req: Request, res: Response)
  * POST /api/mail-items/:id/tag
  * Add or update tag for mail item
  */
-router.post('/mail-items/:id/tag', requireAuth, async (req: Request, res: Response) => {
+router.post('/mail-items/:id/tag', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(param(req, 'id'), 10);
     const { tag } = req.body;
@@ -341,7 +346,7 @@ router.post('/mail-items/:id/tag', requireAuth, async (req: Request, res: Respon
  * DELETE /api/mail-items/:id
  * Archive mail item (soft delete)
  */
-router.delete('/mail-items/:id', requireAuth, async (req: Request, res: Response) => {
+router.delete('/mail-items/:id', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(param(req, 'id'), 10);
     const pool = getPool();
@@ -378,7 +383,7 @@ router.delete('/mail-items/:id', requireAuth, async (req: Request, res: Response
  * POST /api/mail-items/:id/restore
  * Restore archived mail item
  */
-router.post('/mail-items/:id/restore', requireAuth, async (req: Request, res: Response) => {
+router.post('/mail-items/:id/restore', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const mailId = parseInt(param(req, 'id'), 10);
     const pool = getPool();
@@ -415,7 +420,7 @@ router.post('/mail-items/:id/restore', requireAuth, async (req: Request, res: Re
  * GET /api/mail-items/:id/scan-url
  * Get download URL for mail scan
  */
-router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Response) => {
+router.get('/mail-items/:id/scan-url', requireAuth, requireFullService, async (req: Request, res: Response) => {
     try {
         const id = param(req, 'id');
         const userId = req.user!.id;
@@ -473,7 +478,7 @@ router.get('/mail-items/:id/scan-url', requireAuth, async (req: Request, res: Re
  * Query params:
  * - disposition=inline: Set Content-Disposition to inline (default: attachment)
  */
-router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Response) => {
+router.get('/mail-items/:id/download', requireAuth, requireFullService, async (req: Request, res: Response) => {
     try {
         const userId = req.user!.id;
         const mailId = Number(param(req, 'id'));
@@ -490,6 +495,19 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
         }
 
         logger.debug('[mail] download requested', { mailItemId: mailId, disposition });
+
+        // Scans normally live in SharePoint and are fetched through Microsoft Graph. A scan stored at a
+        // plain web address (local development and tests, or a host listed in SCAN_DIRECT_HOSTS) is
+        // streamed directly, so the website's scan view works the same way everywhere.
+        const scanHost = (() => { try { return new URL(result.url).hostname.toLowerCase(); } catch { return ''; } })();
+        if (!scanHost.endsWith('.sharepoint.com')) {
+            const directHosts = String(process.env.SCAN_DIRECT_HOSTS || '').split(',').map(h => h.trim().toLowerCase()).filter(Boolean);
+            if (process.env.NODE_ENV !== 'production' || directHosts.includes(scanHost)) {
+                return streamPdfFromUrl(res, result.url, `mail-${mailId}.pdf`, disposition === 'attachment' ? 'attachment' : 'inline');
+            }
+            logger.warn('[mail] scan at an unsupported location', { mailItemId: mailId });
+            return res.status(502).json({ ok: false, error: 'scan_location_unsupported' });
+        }
 
         // Extract SharePoint drive path from URL
         const drivePath = extractDrivePathFromSharePointUrl(result.url);
@@ -514,7 +532,7 @@ router.get('/mail-items/:id/download', requireAuth, async (req: Request, res: Re
  * POST /api/tags/rename
  * Atomically rename a tag across all user's mail items
  */
-router.post('/tags/rename', requireAuth, async (req: Request, res: Response) => {
+router.post('/tags/rename', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { from, to } = req.body;
     const pool = getPool();
@@ -560,7 +578,7 @@ router.post('/tags/rename', requireAuth, async (req: Request, res: Response) => 
  * POST /api/tags/merge
  * Atomically merge one tag into another across all user's mail items
  */
-router.post('/tags/merge', requireAuth, async (req: Request, res: Response) => {
+router.post('/tags/merge', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { source, target } = req.body;
     const pool = getPool();
@@ -606,7 +624,7 @@ router.post('/tags/merge', requireAuth, async (req: Request, res: Response) => {
  * GET /api/tags
  * Get list of all tags used by user (distinct, sorted)
  */
-router.get('/tags', requireAuth, async (req: Request, res: Response) => {
+router.get('/tags', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
 
@@ -632,7 +650,7 @@ router.get('/tags', requireAuth, async (req: Request, res: Response) => {
  * POST /api/tags/delete
  * Delete a tag from all active mail items (archived mail keeps its tag)
  */
-router.post('/tags/delete', requireAuth, async (req: Request, res: Response) => {
+router.post('/tags/delete', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const { tag } = req.body;
     const pool = getPool();

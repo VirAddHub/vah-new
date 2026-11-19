@@ -4,6 +4,7 @@ export const revalidate = 0;
 
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendOrigin } from "@/lib/server/backendOrigin";
+import { clientIpHeaders } from "@/lib/server/clientIpHeaders";
 
 export async function proxy(req: NextRequest, targetPath: string) {
   let normalizedOrigin: string;
@@ -40,6 +41,9 @@ export async function proxy(req: NextRequest, targetPath: string) {
   const ct = req.headers.get('content-type'); if (ct) headers.set('content-type', ct);
   const auth = req.headers.get('authorization'); if (auth) headers.set('authorization', auth);
   headers.set('x-forwarded-host', url.host);
+  // Tell the API which visitor this is, signed so the API can trust it for rate limiting.
+  // Without BFF_SHARED_SECRET nothing is sent and the API falls back to the connection address.
+  for (const [k, v] of Object.entries(clientIpHeaders(req))) headers.set(k, v);
   headers.set('x-forwarded-proto', url.protocol.replace(':', ''));
 
   // CSRF: Double-submit cookie pattern
@@ -74,7 +78,7 @@ export async function proxy(req: NextRequest, targetPath: string) {
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : 'Unknown error';
     console.error('[proxy:fetch-throw]', { target, error: errorMessage });
-    return NextResponse.json({ message: 'Upstream fetch failed', target }, { status: 502, headers: { 'x-proxy-target': target } });
+    return NextResponse.json({ message: 'Upstream fetch failed' }, { status: 502 });
   }
 
   if (!r.ok) {
@@ -84,7 +88,6 @@ export async function proxy(req: NextRequest, targetPath: string) {
   }
 
   const resp = new NextResponse(r.body, { status: r.status, statusText: r.statusText });
-  resp.headers.set('x-proxy-target', target); // shows up in response headers
 
   // pass headers & multiple Set-Cookie
   const setCookies: string[] = [];

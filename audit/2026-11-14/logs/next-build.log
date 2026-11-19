@@ -1,0 +1,119 @@
+npm warn config ignoring workspace config at /home/claude/vah/apps/frontend/.npmrc
+ ⚠ You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+   ▲ Next.js 15.5.18
+   - Experiments (use with caution):
+     · optimizePackageImports
+
+   Creating an optimized production build ...
+Failed to fetch font `Inter`: https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `Newsreader`: https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `DM Sans`: https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `Playfair Display`: https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `IBM Plex Mono`: https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `Poppins`: https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 1/3...
+Failed to fetch font `IBM Plex Mono`: https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `Newsreader`: https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `Inter`: https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `Playfair Display`: https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `DM Sans`: https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `Poppins`: https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 2/3...
+Failed to fetch font `Inter`: https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+Failed to fetch font `IBM Plex Mono`: https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+Failed to fetch font `Newsreader`: https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+Failed to fetch font `Playfair Display`: https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+Failed to fetch font `DM Sans`: https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+Failed to fetch font `Poppins`: https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap
+Please check your network connection.
+
+Retrying 3/3...
+[Error: Failed to fetch font `Inter`: https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap
+Please check your network connection.]
+[Error: Failed to fetch font `IBM Plex Mono`: https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap
+Please check your network connection.]
+[Error: Failed to fetch font `Newsreader`: https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap
+Please check your network connection.]
+[Error: Failed to fetch font `DM Sans`: https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap
+Please check your network connection.]
+[Error: Failed to fetch font `Playfair Display`: https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap
+Please check your network connection.]
+[Error: Failed to fetch font `Poppins`: https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap
+Please check your network connection.]
+Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Failed to compile.
+
+lib/fonts.ts
+`next/font` error:
+Failed to fetch `DM Sans` from Google Fonts.
+
+lib/fonts.ts
+`next/font` error:
+Failed to fetch `IBM Plex Mono` from Google Fonts.
+
+lib/fonts.ts
+`next/font` error:
+Failed to fetch `Inter` from Google Fonts.
+
+lib/fonts.ts
+`next/font` error:
+Failed to fetch `Newsreader` from Google Fonts.
+
+lib/fonts.ts
+`next/font` error:
+Failed to fetch `Playfair Display` from Google Fonts.
+
+
+> Build failed because of webpack errors
+exit 1

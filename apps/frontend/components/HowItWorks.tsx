@@ -30,7 +30,7 @@ export default function HowItWorks() {
                 <div className="mb-10 text-center sm:mb-12 lg:mb-14">
                     <h2
                         id="how-it-works-heading"
-                        className="text-h2 font-poppins !font-normal text-foreground sm:text-h1 md:text-display lg:text-display leading-tight tracking-tight"
+                        className="text-h2 font-sans !font-normal text-foreground sm:text-h1 md:text-display lg:text-display leading-tight tracking-tight"
                     >
                         How It Works
                     </h2>
@@ -43,7 +43,7 @@ export default function HowItWorks() {
 
                             {/* Left column: dot + line segment running to next dot */}
                             <div className="flex flex-col items-center self-stretch shrink-0 pt-0.5">
-                                <div className="relative z-10 w-2.5 h-2.5 rounded-full bg-emerald-600 ring-2 ring-white shrink-0" />
+                                <div className="relative z-10 w-2.5 h-2.5 rounded-full bg-success ring-2 ring-white shrink-0" />
                                 {index < steps.length - 1 && (
                                     <div className="flex-1 w-px bg-gray-200" />
                                 )}
@@ -51,10 +51,10 @@ export default function HowItWorks() {
 
                             {/* Right column: title + description */}
                             <div className={index < steps.length - 1 ? 'pb-10' : ''}>
-                                <h3 className="font-poppins font-semibold text-base text-foreground">
+                                <h3 className="font-sans font-semibold text-base text-foreground">
                                     {step.title}
                                 </h3>
-                                <p className="mt-1.5 font-poppins font-normal text-sm text-muted-foreground">
+                                <p className="mt-1.5 font-sans font-normal text-sm text-muted-foreground">
                                     {step.description}
                                 </p>
                             </div>
@@ -74,7 +74,7 @@ export default function HowItWorks() {
                                     ? <div className="flex-1 h-px bg-gray-200" />
                                     : <div className="flex-1" />
                                 }
-                                <div className="relative z-10 w-2.5 h-2.5 rounded-full bg-emerald-600 ring-2 ring-white shrink-0" />
+                                <div className="relative z-10 w-2.5 h-2.5 rounded-full bg-success ring-2 ring-white shrink-0" />
                                 {index < steps.length - 1
                                     ? <div className="flex-1 h-px bg-gray-200" />
                                     : <div className="flex-1" />
@@ -83,10 +83,10 @@ export default function HowItWorks() {
 
                             {/* Content centered below dot */}
                             <div className="mt-8 text-center px-4 max-w-[240px]">
-                                <h3 className="font-poppins font-semibold text-base text-foreground">
+                                <h3 className="font-sans font-semibold text-base text-foreground">
                                     {step.title}
                                 </h3>
-                                <p className="mt-2 font-poppins font-normal text-sm text-muted-foreground">
+                                <p className="mt-2 font-sans font-normal text-sm text-muted-foreground">
                                     {step.description}
                                 </p>
                             </div>

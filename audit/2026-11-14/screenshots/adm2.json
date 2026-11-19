@@ -1,0 +1,268 @@
+[
+ {
+  "login": 200
+ },
+ {
+  "url": "/admin/dashboard?section=mail",
+  "status": 200,
+  "finalUrl": "/admin/dashboard?section=mail",
+  "title": "VirtualAddressHub - Professional London Business Address & Mail Forwarding",
+  "h1": [],
+  "desc": "Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 1,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/"
+  ],
+  "buttons": [
+   "Users",
+   "Mail",
+   "Forwarding",
+   "Plans",
+   "Blog",
+   "Audit log",
+   "Invoices",
+   "Filename Generator",
+   "Sign out"
+  ],
+  "textLen": 100,
+  "bodyStart": "Skip to main content Users Mail Forwarding Plans Blog Audit log Invoices Filename Generator Sign out",
+  "overflowX": false,
+  "axe": [],
+  "consoleErrors": [],
+  "failedRequests": []
+ },
+ {
+  "url": "/admin/dashboard?section=forwarding",
+  "status": 200,
+  "finalUrl": "/admin/dashboard?section=forwarding",
+  "title": "VirtualAddressHub - Professional London Business Address & Mail Forwarding",
+  "h1": [],
+  "desc": "Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 1,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/"
+  ],
+  "buttons": [
+   "Users",
+   "Mail",
+   "Forwarding",
+   "Plans",
+   "Blog",
+   "Audit log",
+   "Invoices",
+   "Filename Generator",
+   "Sign out",
+   "Refresh"
+  ],
+  "textLen": 456,
+  "bodyStart": "Skip to main content Users Mail Forwarding Plans Blog Audit log Invoices Filename Generator Sign out Forwarding Requests Updates every 2 minutes • Sandbox is online Refresh Requested 0 In Progress 0",
+  "overflowX": false,
+  "axe": [
+   {
+    "id": "button-name",
+    "impact": "critical",
+    "n": 1
+   }
+  ],
+  "consoleErrors": [],
+  "failedRequests": []
+ },
+ {
+  "url": "/admin/dashboard?section=plans",
+  "status": 200,
+  "finalUrl": "/admin/dashboard?section=plans",
+  "title": "VirtualAddressHub - Professional London Business Address & Mail Forwarding",
+  "h1": [],
+  "desc": "Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 1,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/"
+  ],
+  "buttons": [
+   "Users",
+   "Mail",
+   "Forwarding",
+   "Plans",
+   "Blog",
+   "Audit log",
+   "Invoices",
+   "Filename Generator",
+   "Sign out",
+   "Create New Plan",
+   "Edit",
+   "Edit",
+   "Retire",
+   "Edit",
+   "Retire",
+   "Edit",
+   "Retire",
+   "Edit",
+   "Retire",
+   "Edit",
+   "Retire"
+  ],
+  "textLen": 643,
+  "bodyStart": "Skip to main content Users Mail Forwarding Plans Blog Audit log Invoices Filename Generator Sign out Plans Management Create and manage subscription plans Create New Plan Name Slug Price Interval St",
+  "overflowX": false,
+  "axe": [],
+  "consoleErrors": [],
+  "failedRequests": []
+ },
+ {
+  "url": "/admin/dashboard?section=blog",
+  "status": 200,
+  "finalUrl": "/admin/dashboard?section=blog",
+  "title": "VirtualAddressHub - Professional London Business Address & Mail Forwarding",
+  "h1": [],
+  "desc": "Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 1,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/"
+  ],
+  "buttons": [
+   "Users",
+   "Mail",
+   "Forwarding",
+   "Plans",
+   "Blog",
+   "Audit log",
+   "Invoices",
+   "Filename Generator",
+   "Sign out",
+   "New Post",
+   "Quick Create",
+   "All Statuses",
+   "All Tags"
+  ],
+  "textLen": 344,
+  "bodyStart": "Skip to main content Users Mail Forwarding Plans Blog Audit log Invoices Filename Generator Sign out Blog Management Manage your blog posts and content New Post Quick Create Filters Search Posts Sta",
+  "overflowX": false,
+  "axe": [
+   {
+    "id": "button-name",
+    "impact": "critical",
+    "n": 2
+   }
+  ],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 502 (Bad Gateway)",
+   "[useAuthedSWR] Error: 502 Bad Gateway"
+  ],
+  "failedRequests": [
+   "502 /api/bff/admin/blog/categories"
+  ]
+ },
+ {
+  "url": "/admin/dashboard?section=audit",
+  "status": 200,
+  "finalUrl": "/admin/dashboard?section=audit",
+  "title": "VirtualAddressHub - Professional London Business Address & Mail Forwarding",
+  "h1": [],
+  "desc": "Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 1,
+  "brokenImgs": [],
+  "links": [
+   "#main-content",
+   "/"
+  ],
+  "buttons": [
+   "Users",
+   "Mail",
+   "Forwarding",
+   "Plans",
+   "Blog",
+   "Audit log",
+   "Invoices",
+   "Filename Generator",
+   "Sign out",
+   "Refresh",
+   "Admin actions",
+   "Auth events",
+   "Load audit log"
+  ],
+  "textLen": 246,
+  "bodyStart": "Skip to main content Users Mail Forwarding Plans Blog Audit log Invoices Filename Generator Sign out Audit log Every admin action recorded for accountability. Refresh Admin actions Auth events Clic",
+  "overflowX": false,
+  "axe": [],
+  "consoleErrors": [],
+  "failedRequests": []
+ },
+ {
+  "url": "/admin/forwarding",
+  "status": 200,
+  "finalUrl": "/admin/forwarding",
+  "title": "VirtualAddressHub - Professional London Business Address & Mail Forwarding",
+  "h1": [],
+  "desc": "Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services. Trusted by 1000+ businesses.",
+  "canonical": "https://virtualaddresshub.com/",
+  "robots": "index,follow",
+  "og": true,
+  "jsonld": 1,
+  "scrollW": 1440,
+  "clientW": 1440,
+  "imgsNoAlt": 0,
+  "imgs": 0,
+  "brokenImgs": [],
+  "links": [
+   "#main-content"
+  ],
+  "buttons": [
+   "Refresh"
+  ],
+  "textLen": 376,
+  "bodyStart": "Skip to main content Forwarding Requests Updates every 2 minutes • Sandbox is online Refresh Requested 0 In Progress 0 Done 1 Completed requests can be deleted to keep the board clean FR-000001 Ma",
+  "overflowX": false,
+  "axe": [
+   {
+    "id": "button-name",
+    "impact": "critical",
+    "n": 1
+   }
+  ],
+  "consoleErrors": [],
+  "failedRequests": []
+ }
+]

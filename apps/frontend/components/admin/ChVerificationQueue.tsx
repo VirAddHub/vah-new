@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useAuthedSWR } from "@/lib/useAuthedSWR";
 import { apiClient } from "@/lib/apiClient";
-import { API_BASE } from "@/lib/config";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Button } from "../ui/button";
@@ -37,7 +36,7 @@ const STATUS_OPTIONS = [
 ] as const;
 
 const STATUS_BADGE: Record<string, string> = {
-  submitted: "bg-amber-100 text-amber-900 border border-amber-200",
+  submitted: "bg-mist text-ink border border-line",
   approved: "bg-primary/10 text-primary border border-primary/20",
   rejected: "bg-destructive/10 text-destructive border border-destructive/20",
   default: "bg-muted text-muted-foreground border border-border",

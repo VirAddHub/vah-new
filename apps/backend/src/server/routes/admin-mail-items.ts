@@ -1,9 +1,10 @@
 // src/server/routes/admin-mail-items.ts
 // Admin mail items management endpoints
 
+import { clientKey } from '../lib/clientKey';
 import { Router, Request, Response } from 'express';
 import { logger } from '../../lib/logger';
-import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import rateLimit from 'express-rate-limit';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { param } from '../../lib/express-params';
@@ -19,7 +20,7 @@ const adminMailItemsLimiter = rateLimit({
     legacyHeaders: false,
     keyGenerator: (req) => {
         const u = (req as any).user;
-        return u?.id ? `admin:${u.id}` : ipKeyGenerator(req.ip ?? '');
+        return u?.id ? `admin:${u.id}` : clientKey(req);
     },
     handler: (_req, res) => {
         res.setHeader("Retry-After", "3");
@@ -342,8 +343,8 @@ router.put('/mail-items/:id', requireAdmin, async (req: Request, res: Response) 
         const auditPayload = { status, subject, sender_name, tag, notes, forwarding_status };
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
-            VALUES ($1, 'update_mail_item', 'mail_item', $2, $3, $4)
-        `, [adminId, mailId, JSON.stringify(auditPayload), Date.now()]);
+            VALUES ($1, 'update_mail_item', 'mail_item', $2, $3, NOW())
+        `, [adminId, mailId, JSON.stringify(auditPayload)]);
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {
@@ -406,8 +407,8 @@ router.post('/mail-items/:id/log-physical-dispatch', requireAdmin, async (req: R
         // Log admin action
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
-            VALUES ($1, 'log_physical_dispatch', 'mail_item', $2, $3, $4)
-        `, [adminId, mailId, JSON.stringify({ tracking_number, courier, dispatched_at }), Date.now()]);
+            VALUES ($1, 'log_physical_dispatch', 'mail_item', $2, $3, NOW())
+        `, [adminId, mailId, JSON.stringify({ tracking_number, courier, dispatched_at })]);
 
         return res.json({ ok: true, data: result.rows[0] });
     } catch (error: any) {

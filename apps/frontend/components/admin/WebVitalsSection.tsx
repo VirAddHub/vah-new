@@ -53,11 +53,11 @@ export function WebVitalsSection() {
   const getRatingColor = (rating: string) => {
     switch (rating) {
       case 'good':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-success/[0.06] text-success border-success/25';
       case 'needs-improvement':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-mist text-ink border-line';
       case 'poor':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-destructive/[0.06] text-destructive border-destructive/25';
       default:
         return 'bg-muted text-foreground border-border';
     }
@@ -175,15 +175,15 @@ export function WebVitalsSection() {
           <div className="mb-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               <div className="text-center">
-                <div className="text-h2 font-bold text-green-600">{summary.good}</div>
+                <div className="text-h2 font-bold text-success">{summary.good}</div>
                 <div className="text-body-sm text-muted-foreground">Good</div>
               </div>
               <div className="text-center">
-                <div className="text-h2 font-bold text-yellow-600">{summary.needsImprovement}</div>
+                <div className="text-h2 font-bold text-ink">{summary.needsImprovement}</div>
                 <div className="text-body-sm text-muted-foreground">Needs Improvement</div>
               </div>
               <div className="text-center">
-                <div className="text-h2 font-bold text-red-600">{summary.poor}</div>
+                <div className="text-h2 font-bold text-destructive">{summary.poor}</div>
                 <div className="text-body-sm text-muted-foreground">Poor</div>
               </div>
               <div className="text-center">

@@ -282,7 +282,7 @@ export function MailSection({ }: MailSectionProps) {
                 return {
                     label: `${days} days until deletion`,
                     variant: "secondary" as const,
-                    color: "text-amber-600",
+                    color: "text-ink",
                     icon: <AlertTriangle className="h-4 w-4" />
                 };
             }
@@ -366,9 +366,9 @@ export function MailSection({ }: MailSectionProps) {
             </Card>
 
             {/* Helper Note */}
-            <Card className="border-amber-200 bg-amber-50">
+            <Card className="border-line bg-mist">
                 <CardContent className="pt-6">
-                    <div className="text-body-sm text-amber-800">
+                    <div className="text-body-sm text-ink">
                         <p className="font-medium mb-1">📋 Physical Destruction Eligibility Information</p>
                         <p className="text-caption">
                             These fields are used to populate the Shredding & Destruction Log. Eligibility is system-calculated based on receipt date and retention rules (30-day GDPR retention period). Staff should manually copy these values into the Excel destruction log.
@@ -502,7 +502,7 @@ export function MailSection({ }: MailSectionProps) {
                                                             {(() => {
                                                                 const eligibility = getDestructionEligibilityStatus(item);
                                                                 return (
-                                                                    <div className={eligibility.isEligible ? "font-medium text-amber-600" : "font-medium text-muted-foreground"}>
+                                                                    <div className={eligibility.isEligible ? "font-medium text-ink" : "font-medium text-muted-foreground"}>
                                                                         {eligibility.label}
                                                                     </div>
                                                                 );
@@ -652,7 +652,7 @@ export function MailSection({ }: MailSectionProps) {
                                                             {(() => {
                                                                 const eligibility = getDestructionEligibilityStatus(item);
                                                                 return (
-                                                                    <div className={eligibility.isEligible ? "font-medium text-amber-600" : "font-medium text-muted-foreground"}>
+                                                                    <div className={eligibility.isEligible ? "font-medium text-ink" : "font-medium text-muted-foreground"}>
                                                                         {eligibility.label}
                                                                     </div>
                                                                 );

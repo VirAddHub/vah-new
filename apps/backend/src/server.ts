@@ -113,8 +113,6 @@ async function start() {
     server.listen(PORT, HOST, () => {
         const env = process.env.NODE_ENV || 'development';
         const cors = process.env.CORS_ORIGINS || 'default';
-        const gcEnv = process.env.GC_ENVIRONMENT || process.env.GOCARDLESS_ENV || 'live';
-        const gcToken = (process.env.GC_ACCESS_TOKEN || process.env.GOCARDLESS_ACCESS_TOKEN || '').trim();
 
         // Start maintenance service
         systemMaintenance.start();
@@ -126,9 +124,7 @@ async function start() {
             corsOrigins: cors,
             port: PORT,
             nodeEnv: env,
-            gocardlessWebhookRoute: '/api/webhooks/gocardless',
-            gcEnv,
-            gcTokenPrefix: gcToken ? gcToken.slice(0, 7) : '(missing)',
+            billingProvider: 'stripe',
         });
 
         if (env !== 'production') {

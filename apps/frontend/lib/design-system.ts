@@ -147,7 +147,7 @@ export const typography = {
 export const colors = {
   // Brand primary - Deep forest green
   primary: {
-    DEFAULT: '#20603A',
+    DEFAULT: '#0A0A0A',
     hover: '#1a4d2e',
     light: '#f0fdf4',
     foreground: '#ffffff',

@@ -33,7 +33,8 @@ import { z } from 'zod';
 import { getPool } from '../db';
 import { nowMs } from '../../lib/time';
 import { notifyOpsMailCreated } from '../../services/postmarkNotifications';
-import { sendMailScanned } from '../../lib/mailer';
+import { sendMailScanned, sendMailWaiting } from '../../lib/mailer';
+import { getAccess } from '../services/access';
 import { isUserEntitled } from '../services/entitlement';
 import crypto from 'crypto';
 
@@ -230,7 +231,10 @@ router.post('/from-onedrive', async (req, res) => {
 
     // Determine if mail item should be locked
     // Lock if: not entitled (subscription not active) OR user inactive OR plan not active OR KYC not approved
-    const locked = !entitlement.entitled || !isUserActive || !isPlanActive || !isKycApproved;
+    // The single access decision decides whether this customer may see their mail (services/access.ts).
+    // The reasons below are kept only to label the stored item for staff.
+    const accessDecision = await getAccess(Number(payload.userId));
+    const locked = !accessDecision || accessDecision.level !== 'full';
     let lockedReason: string | null = null;
 
     if (locked) {
@@ -366,6 +370,11 @@ router.post('/from-onedrive', async (req, res) => {
 
     const { getPrimaryBusinessIdForUser } = await import('../../lib/business-helpers');
     const primaryBusinessId = await getPrimaryBusinessIdForUser(payload.userId);
+    if (primaryBusinessId == null) {
+      // Every mail item must belong to a business. Signup creates one; this guards older accounts.
+      logger.error('[internalMailImport] user has no business; mail item not created', { userId: payload.userId });
+      return res.status(422).json({ ok: false, error: 'no_business', message: 'User has no business record to attach mail to.' });
+    }
 
     // Insert mail item with scan_file_url initially null
     // The worker will move the file to processed folder and update this URL with the final location
@@ -646,6 +655,21 @@ router.post('/from-onedrive', async (req, res) => {
         // Don't fail the webhook if email fails, but log it clearly
       }
     } else {
+      // Restricted account: tell the customer only THAT mail is waiting and what to finish.
+      // No sender, subject, tag, scan or contents may appear in this message.
+      try {
+        await sendMailWaiting({
+          email: userForEmail.email,
+          firstName: userForEmail.first_name || 'there',
+          cta_url: `${(process.env.APP_BASE_URL || '').replace(/\/+$/, '')}/account/overview`,
+        });
+        await getPool().query(
+          `INSERT INTO notification (user_id, type, title, body, created_at) VALUES ($1, 'mail_waiting', 'Mail is waiting', $2, $3)`,
+          [verifiedMailItem.user_id, 'Mail has arrived for you. Complete the outstanding steps on your account to view it.', Date.now()]
+        ).catch(() => {});
+      } catch (emailError) {
+        logger.error('[mailImport] mail-waiting email failed', { mail_item_id: verifiedMailItem.id });
+      }
       logger.info('[mailImport] new-mail email skipped - mail item is locked', {
         mail_item_id: verifiedMailItem.id,
         userId: verifiedMailItem.user_id,

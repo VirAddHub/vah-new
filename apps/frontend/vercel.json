@@ -6,11 +6,20 @@
   },
   "headers": [
     {
-      "source": "/api/(.*)",
+      "source": "/api/auth/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "public, s-maxage=300, stale-while-revalidate=3600"
+          "value": "no-store, no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/api/bff/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate"
         }
       ]
     },

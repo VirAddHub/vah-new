@@ -1,6 +1,7 @@
 // Hardened proxy: always 200, never throws, logs server-side
 import { NextResponse } from "next/server";
 
+import { clientIpHeaders } from '@/lib/server/clientIpHeaders';
 const ORIGIN = process.env.BACKEND_API_ORIGIN || process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN || ""; // pragma: allowlist secret
 
 function buildUrl(path: string) {
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
 
     const res = await fetch(buildUrl("/api/auth/reset-password/confirm"), {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { ...clientIpHeaders(req), "content-type": "application/json" },
       body: JSON.stringify({ token, password }),
       signal: controller.signal,
       // no-cache avoids weird CDN behaviors

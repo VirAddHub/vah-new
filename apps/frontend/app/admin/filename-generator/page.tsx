@@ -33,15 +33,15 @@ type SearchResponse =
 
 const PLAN_STATUS_CLASSES: Record<string, string> = {
   active: "bg-primary/10 text-primary border border-primary/20",
-  pending_payment: "bg-amber-50 text-amber-800 border border-amber-200",
+  pending_payment: "bg-mist text-ink border border-line",
   cancelled: "bg-destructive/10 text-destructive border border-destructive/20",
-  trialing: "bg-sky-50 text-sky-700 border border-sky-200",
+  trialing: "bg-mist text-ink border border-line",
 };
 
 const KYC_CLASSES: Record<string, string> = {
   approved: "bg-primary/10 text-primary border border-primary/20",
   verified: "bg-primary/10 text-primary border border-primary/20",
-  pending: "bg-amber-50 text-amber-800 border border-amber-200",
+  pending: "bg-mist text-ink border border-line",
   rejected: "bg-destructive/10 text-destructive border border-destructive/20",
 };
 
@@ -241,7 +241,7 @@ export default function FilenameGeneratorPage() {
       />
 
       {/* Main Content */}
-      <main id="main-content" role="main" className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-10">
+      <main id="main-content" role="main" className="flex flex-col gap-8 px-4 py-8 sm:px-6 lg:ml-56 lg:px-8"><div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
         <header className="space-y-2">
           <h1 className="text-h2 font-semibold">Mail filename generator</h1>
           <p className="text-body-sm text-muted-foreground">
@@ -433,6 +433,7 @@ export default function FilenameGeneratorPage() {
             </div>
           </section>
         )}
+      </div>
       </main>
     </div>
   );

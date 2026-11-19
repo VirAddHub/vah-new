@@ -18,7 +18,10 @@ function normaliseError(status: number, payload: unknown): ApiError {
             ? nested.code
             : typeof p?.code === 'string'
                 ? p.code
-                : undefined;
+                // Backend errors are often { error: '<code>', message: '<text>' }
+                : typeof p?.error === 'string' && typeof p?.message === 'string'
+                    ? p.error
+                    : undefined;
     const message =
         (typeof nested?.message === 'string'
             ? nested.message

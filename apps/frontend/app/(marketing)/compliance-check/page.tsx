@@ -42,7 +42,7 @@ export default function ComplianceCheckPage() {
     return (
         <main className="mx-auto max-w-5xl px-6 py-16">
             <section className="text-center">
-                <span className="inline-block rounded-full bg-orange-500/10 px-3 py-1 text-caption font-medium text-orange-500">
+                <span className="inline-block rounded-full bg-ink/10 px-3 py-1 text-caption font-medium text-ink">
                     Free 3-minute quiz
                 </span>
                 <h1 className="mt-4 text-h2 font-semibold tracking-tight sm:text-h1">
@@ -64,12 +64,12 @@ export default function ComplianceCheckPage() {
 
             <section className="mt-10 rounded-2xl border border-border bg-card p-4 shadow-sm">
                 {showCompletion ? (
-                    <div className="aspect-[16/12] w-full overflow-hidden rounded-xl border border-border bg-gradient-to-br from-orange-500/5 to-orange-500/10 p-8 flex flex-col items-center justify-center text-center">
+                    <div className="aspect-[16/12] w-full overflow-hidden rounded-xl border border-border bg-gradient-to-br from-line/5 to-line/10 p-8 flex flex-col items-center justify-center text-center">
                         <div className="text-6xl mb-4">🎉</div>
                         <h2 className="text-h2 font-semibold mb-2 text-foreground">Thanks for completing the quiz!</h2>
                         {quizScore !== null && (
                             <p className="text-body-lg text-muted-foreground mb-4">
-                                Your compliance score: <strong className="text-orange-500">{quizScore}/100</strong>
+                                Your compliance score: <strong className="text-ink">{quizScore}/100</strong>
                             </p>
                         )}
                         <p className="text-body-sm text-muted-foreground mb-6">
@@ -77,7 +77,7 @@ export default function ComplianceCheckPage() {
                         </p>
                         <a
                             href="/pricing"
-                            className="inline-flex items-center justify-center rounded-xl bg-orange-500 px-6 py-3 text-body-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+                            className="inline-flex items-center justify-center rounded-xl bg-ink px-6 py-3 text-body-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
                         >
                             View Pricing
                         </a>

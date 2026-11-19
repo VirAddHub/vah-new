@@ -4,8 +4,8 @@ import { logger } from './logger';
 import { Templates } from './postmark-templates';
 import { modelBuilders, BuildArgs } from './template-models';
 
-// Use CommonJS require for Postmark to avoid import issues
-const postmark = require('postmark');
+// Default import (esModuleInterop) so tests can replace the client with vi.mock('postmark').
+import postmark from 'postmark';
 
 /**
  * Resolves the first name to use in email templates.
@@ -42,9 +42,33 @@ export function buildAppUrl(path: string = '/dashboard'): string {
     return `${cleanBase}${cleanPath}`;
 }
 
+function createOutboxClient() {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { getPool } = require('../server/db');
+    let ready: Promise<unknown> | null = null;
+    const record = async (kind: string, m: any) => {
+        const pool = getPool();
+        ready ??= pool.query(`CREATE TABLE IF NOT EXISTS local_email_outbox (
+            id BIGSERIAL PRIMARY KEY, to_email TEXT NOT NULL, template TEXT, subject TEXT, model JSONB, body TEXT, created_at_ms BIGINT NOT NULL)`);
+        await ready;
+        await pool.query(
+            `INSERT INTO local_email_outbox (to_email, template, subject, model, body, created_at_ms) VALUES ($1,$2,$3,$4::jsonb,$5,$6)`,
+            [String(m.To), kind === 'template' ? String(m.TemplateAlias ?? m.TemplateId ?? '') : null, m.Subject ?? m.TemplateModel?.subject ?? null,
+             JSON.stringify(m.TemplateModel ?? {}), m.HtmlBody ?? m.TextBody ?? null, Date.now()]);
+        return { MessageID: `outbox-${Date.now()}` };
+    };
+    return { sendEmailWithTemplate: (m: any) => record('template', m), sendEmail: (m: any) => record('raw', m) };
+}
+
 let _client: any | null = null;
 export function getClient() {
     if (!_client) {
+        // Local/test outbox: with MAIL_TRANSPORT=outbox (never in production) nothing is sent;
+        // each message is written to the local_email_outbox table so tests can assert on it.
+        if (process.env.MAIL_TRANSPORT === 'outbox' && process.env.NODE_ENV !== 'production') {
+            _client = createOutboxClient();
+            return _client;
+        }
         if (!ENV.POSTMARK_TOKEN) return null; // no-op in local/test if unset
         _client = new postmark.ServerClient(ENV.POSTMARK_TOKEN);
     }
@@ -85,7 +109,7 @@ export async function sendTemplateEmail(opts: {
     from?: string; // Optional From override
     templateId?: number; // Optional TemplateId fallback
 }) {
-    if (!ENV.POSTMARK_TOKEN) return;
+    if (!ENV.POSTMARK_TOKEN && !(process.env.MAIL_TRANSPORT === 'outbox' && process.env.NODE_ENV !== 'production')) return;
 
     const client = getClient();
     if (!client) return;
@@ -366,6 +390,28 @@ export async function sendMailScanned({ email, firstName, name, subject, cta_url
         },
     });
     logger.info('[mailer] ✅ Mail-scanned email sent successfully to:', email);
+}
+
+/**
+ * Generic notice for a customer who is not yet in full service: mail has arrived, finish your
+ * outstanding steps. Deliberately carries NO detail about the item (no sender, subject, tag,
+ * scan or contents). Plain message, no provider template required.
+ */
+export async function sendMailWaiting({ email, firstName, cta_url }: { email: string; firstName?: string | null; cta_url?: string }) {
+    if (!emailGuard(ENV.EMAIL_MAIL)) return;
+    const client = getClient();
+    if (!client) return;
+    const link = cta_url || buildAppUrl('/account/overview');
+    const greeting = firstName ? `Hi ${firstName},` : 'Hello,';
+    await client.sendEmail({
+        From: ENV.EMAIL_FROM_NAME ? `${ENV.EMAIL_FROM_NAME} <${ENV.EMAIL_FROM}>` : ENV.EMAIL_FROM,
+        To: email,
+        Subject: 'You have mail waiting',
+        HtmlBody: `<p>${greeting}</p><p>Mail has arrived for you at VirtualAddressHub.</p><p>You will be able to view it once the outstanding steps on your account are complete, such as payment or identity verification.</p><p><a href="${link}">See what is outstanding</a></p>`,
+        TextBody: `${greeting}\n\nMail has arrived for you at VirtualAddressHub.\n\nYou will be able to view it once the outstanding steps on your account are complete, such as payment or identity verification.\n\nSee what is outstanding: ${link}`,
+        MessageStream: ENV.POSTMARK_STREAM,
+        ...(ENV.EMAIL_REPLY_TO ? { ReplyTo: ENV.EMAIL_REPLY_TO } : {}),
+    });
 }
 
 export async function sendMailForwarded({ email, firstName, name, forwarding_address, forwarded_date }: { email: string; firstName?: string | null; name?: string | null; forwarding_address?: string; forwarded_date?: string }): Promise<void> {

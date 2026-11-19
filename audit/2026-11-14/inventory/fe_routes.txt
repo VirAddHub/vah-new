@@ -1,0 +1,122 @@
+/api/_diag/env | GET |  | ADMINGUARD | 19
+/api/admin-audit | GET | /admin-audit/;/admin-audit/mail-audit |  | 19
+/api/admin/billing/metrics | GET | /admin/billing/metrics |  | 10
+/api/admin/forwarding/locks | GET | /admin/forwarding/locks |  | 11
+/api/admin/forwarding/queue | GET | /admin/forwarding/queue |  | 10
+/api/admin/forwarding/requests/[id]/force-unlock | POST | /admin/forwarding/requests/${id}/force-unlock |  | 12
+/api/admin/forwarding/requests/[id] | DELETE,GET | /admin/forwarding/requests/${id} |  | 17
+/api/admin/forwarding/requests/[id]/status | POST | /admin/forwarding/requests/${id}/status |  | 12
+/api/admin/forwarding/requests/[id]/unlock | POST | /admin/forwarding/requests/${id}/unlock |  | 12
+/api/admin/forwarding/requests | GET | /admin/forwarding/requests |  | 11
+/api/admin/mail-items | GET,POST | /admin/mail-items |  | 14
+/api/admin/password-reset | POST |  |  | 88
+/api/admin/plans | GET,POST | /admin/plans |  | 15
+/api/admin | GET,POST |  |  | 213
+/api/admin/service-status/onedrive | GET | /admin/service-status/onedrive |  | 11
+/api/admin/service-status/postmark | GET | /admin/service-status/postmark |  | 11
+/api/admin/service-status/sumsub | GET | /admin/service-status/sumsub |  | 11
+/api/admin/users/[id]/restore | POST | /admin/users/${id}/restore |  | 11
+/api/admin/users/[id] | DELETE,GET,PATCH,PUT | /admin/users/${id} |  | 26
+/api/admin/users/[id]/unlock-account | POST | /admin/users/${id}/unlock-account |  | 12
+/api/admin/users/create | POST |  |  | 221
+/api/admin/users | GET,POST | /admin/users |  | 15
+/api/admin/users/send-password-reset | POST | /admin/users/${id}/send-password-reset |  | 20
+/api/admin/users/stats | GET | /admin/users/stats |  | 10
+/api/analytics/web-vitals | POST |  |  | 56
+/api/auth/login | POST | /auth/login |  | 10
+/api/auth/reset-password/confirm | POST | /api/auth/reset-password/confirm |  | 83
+/api/auth/whoami | GET | /auth/whoami |  | 10
+/api/bff/account/businesses/[businessId] | GET,PATCH | /api/account/businesses/${businessId};/api/csrf |  | 86
+/api/bff/account/businesses/[businessId]/set-primary | POST | /api/account/businesses/${businessId}/set-primary;/api/csrf |  | 46
+/api/bff/account/businesses | GET,POST | /api/account/businesses;/api/csrf |  | 79
+/api/bff/account | GET | /api/auth/whoami;/api/bff/account;/api/bff/billing/invoices/${inv.id}/download;/api/billing/invoices?page=1&page_size=12;/api/billing/overview;/api/pr |  | 292
+/api/bff/address/lookup | GET |  |  | 57
+/api/bff/address | GET |  |  | 57
+/api/bff/admin/activity | GET | /api/admin/activity?limit=${limit}&offset=${offset} | ADMINGUARD | 63
+/api/bff/admin/billing/metrics | GET | /api/admin/billing/metrics | ADMINGUARD | 58
+/api/bff/admin/blog/categories | GET | /api/admin/blog/categories;/api/bff/admin/blog/categories | ADMINGUARD | 103
+/api/bff/admin/blog/posts/[slug] | DELETE,GET,PATCH,PUT | /api/bff/admin/blog/posts/${slug} | ADMINGUARD | 408
+/api/bff/admin/blog/posts/create | POST | /api/admin/blog/posts;/api/bff/admin/blog/posts/create | ADMINGUARD | 107
+/api/bff/admin/blog/posts | GET | /api/admin/blog/posts?includeDrafts=${includeDrafts}&page=${page}&pageSize=${pageSize};/api/bff/admin/blog/posts | ADMINGUARD | 110
+/api/bff/admin/blog/revalidate | POST |  | ADMINGUARD | 60
+/api/bff/admin/blog/upload | POST | /api/admin/blog/upload | ADMINGUARD | 56
+/api/bff/admin/exports/destruction-log | GET |  | ADMINGUARD | 92
+/api/bff/admin/forwarding/stats | GET | /api/admin/forwarding/stats?days=${days} | ADMINGUARD | 61
+/api/bff/admin/health/dependencies | GET | /api/admin/health/dependencies | ADMINGUARD | 59
+/api/bff/admin/health/summary | GET | /api/admin/health/summary | ADMINGUARD | 59
+/api/bff/admin/invoices/[id]/download | GET |  | ADMINGUARD | 64
+/api/bff/admin/invoices/[id] | GET |  | ADMINGUARD | 52
+/api/bff/admin/invoices | GET | /api/admin/invoices | ADMINGUARD | 60
+/api/bff/admin/mail-items/[id]/mark-destroyed | POST | /api/csrf | ADMINGUARD | 114
+/api/bff/admin/mail-items/[id] | GET |  | ADMINGUARD | 51
+/api/bff/admin/mail-items/test-excel-write | POST | /api/admin/mail-items/test-excel-write;/api/auth/whoami | ADMINGUARD | 99
+/api/bff/admin/metrics/growth | GET | /api/admin/metrics/growth${search} | ADMINGUARD | 59
+/api/bff/admin/overview | GET | /api/admin/overview | ADMINGUARD | 59
+/api/bff/admin/users/search | GET | /api/admin/users/search?q= | ADMINGUARD | 60
+/api/bff/auth/login | POST | /api/auth/login;/api/bff/auth/login |  | 176
+/api/bff/auth/logout | POST | /api/auth/logout;/api/bff/auth/logout |  | 144
+/api/bff/auth/signup | POST | /api/auth/signup |  | 121
+/api/bff/auth/whoami | GET | /api/auth/whoami;/api/bff/auth/whoami |  | 123
+/api/bff/billing/invoices/[id]/download | GET |  |  | 87
+/api/bff/billing/invoices | GET | /api/bff/billing/invoices;/api/bff/billing/invoices/${inv.id}/download;/api/billing/invoices?${searchParams} |  | 109
+/api/bff/billing/overview | GET | /api/bff/billing/overview;/api/billing/overview |  | 105
+/api/bff/billing/payment-methods/complete | POST | /api/bff/billing/payment-methods/complete;/api/billing/payment-methods/complete-setup;/api/csrf |  | 86
+/api/bff/billing/payment-methods/setup-intent | POST | /api/bff/billing/payment-methods/setup-intent;/api/billing/payment-methods/setup-intent;/api/csrf |  | 84
+/api/bff/billing/reauthorise | POST | /api/bff/billing/reauthorise;/api/billing/reauthorise;/api/csrf |  | 70
+/api/bff/billing/update-bank | POST | /api/bff/billing/update-bank;/api/billing/update-bank;/api/csrf |  | 76
+/api/bff/blog/detail | GET |  |  | 97
+/api/bff/blog/list | GET | /api/blog/posts |  | 78
+/api/bff/business-owners/[id]/resend | POST | /api/bff/business-owners/${id}/resend;/api/business-owners/${id}/resend |  | 74
+/api/bff/business-owners | GET,POST | /api/bff/business-owners;/api/business-owners |  | 139
+/api/bff/business-owners/verify | GET,POST | /api/bff/business-owners/verify;/api/bff/business-owners/verify/start;/api/business-owners/verify/start |  | 125
+/api/bff/business-owners/verify/start | POST | /api/business-owners/verify/start |  | 51
+/api/bff/ch-verification | GET,POST |  |  | 158
+/api/bff/companies/[number] | GET | /companies-house/company/${companyNumber} |  | 21
+/api/bff/companies/search | GET | /companies-house/search |  | 11
+/api/bff/company-details | GET |  |  | 68
+/api/bff/company-search | GET |  |  | 74
+/api/bff/contact | POST | /contact |  | 11
+/api/bff/dashboard/bootstrap | GET | /api/auth/whoami;/api/billing/overview;/api/profile;/api/profile/compliance |  | 159
+/api/bff/debug | GET | /api/auth/whoami;/api/profile |  | 112
+/api/bff/forwarding/requests/[id] | GET | /api/forwarding/requests/${id} |  | 62
+/api/bff/forwarding/requests/bulk | POST | /api/bff/forwarding/requests/bulk;/api/forwarding/requests/bulk |  | 80
+/api/bff/forwarding/requests | GET,POST | /api/auth/whoami;/api/bff/forwarding/requests;/api/forwarding/requests |  | 204
+/api/bff/health | GET | /api/healthz |  | 16
+/api/bff/healthz | GET | /api/healthz |  | 51
+/api/bff/kyc/start | POST | /api/kyc/start |  | 78
+/api/bff/kyc/sumsub-token | GET | /api/bff/kyc/sumsub-token;/api/csrf;/api/kyc/start |  | 191
+/api/bff/kyc/sync-from-sumsub | POST | /api/bff/kyc/sync-from-sumsub;/api/csrf;/api/kyc/sync-from-sumsub |  | 102
+/api/bff/logout | POST | /api/auth/logout;/api/bff/logout |  | 136
+/api/bff/mail-items/[id]/restore | POST | /api/csrf;/api/mail-items/${id}/restore |  | 90
+/api/bff/mail-items/[id] | DELETE,PATCH | /api/csrf;/api/mail-items/${id} |  | 173
+/api/bff/mail-items | GET |  |  | 77
+/api/bff/mail/scan-url | GET | /api/mail-items/${mailItemId}/download?disposition=${disposition} |  | 102
+/api/bff/metrics | GET | /api/metrics |  | 47
+/api/bff/ops/self-test | GET,POST | /api/ops/heartbeat;/api/ops/self-test |  | 86
+/api/bff/payments/redirect-flows | POST | /api/payments/redirect-flows |  | 12
+/api/bff/payments/stripe/checkout-session-embedded | POST | /api/payments/stripe/checkout-session-embedded |  | 11
+/api/bff/payments/stripe/publishable-key | GET | /api/payments/stripe/publishable-key |  | 31
+/api/bff/payments/stripe/session-status | GET | /api/payments/stripe/session-status |  | 11
+/api/bff/payments/subscription | POST | /api/payments/subscriptions |  | 53
+/api/bff/plans | GET | /plans |  | 11
+/api/bff/profile/certificate-url | GET | /api/bff/profile/certificate;/api/profile/certificate;/api/profile/certificate-url |  | 70
+/api/bff/profile/certificate | GET | /api/profile/certificate |  | 67
+/api/bff/profile/company-details | PATCH | /api/bff/profile/company-details;/api/csrf;/api/profile/company-details |  | 125
+/api/bff/profile/compliance | GET | /api/profile/compliance |  | 66
+/api/bff/profile/confirm-email-change | GET | /api/bff/profile/confirm-email-change |  | 119
+/api/bff/profile/contact | PATCH | /api/bff/profile/contact;/api/csrf;/api/profile/contact |  | 130
+/api/bff/profile/controllers | PATCH | /api/bff/profile/controllers;/api/profile/controllers |  | 106
+/api/bff/profile/email-change/resend | POST | /api/bff/profile/email-change/resend;/api/profile/email-change/resend |  | 106
+/api/bff/profile/registered-office-address | GET | /api/bff/profile/registered-office-address;/api/profile/registered-office-address |  | 97
+/api/bff/profile | GET,PATCH | /api/bff/profile;/api/csrf;/api/profile;/api/profile/contact |  | 213
+/api/bff/quiz/ping | POST |  |  | 21
+/api/bff/quiz/submit | POST | /api/quiz/submit |  | 52
+/api/bff/tags/delete | POST | /api/tags/delete |  | 80
+/api/bff/tags/merge | POST | /api/csrf;/api/tags/merge |  | 80
+/api/bff/tags/rename | POST | /api/csrf;/api/tags/rename |  | 80
+/api/bff/tags | GET | /api/tags |  | 57
+/api/blog/compile-mdx | POST |  |  | 19
+/api/ideal-postcodes-key | GET |  |  | 15
+/api/profile/reset-password-request | POST | /api/profile/reset-password-request |  | 82
+/api/profile/reset-password | POST | /api/auth/reset-password/confirm |  | 84
+/api/revalidate | POST | /api/bff/admin/blog/revalidate |  | 75

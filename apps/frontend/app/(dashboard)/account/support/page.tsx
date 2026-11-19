@@ -52,10 +52,10 @@ export default function AccountSupportPage() {
   return (
     <div className="w-full">
       <header className="mb-5 sm:mb-6">
-        <h1 className="text-[1.875rem] font-semibold leading-snug tracking-tight text-foreground">
+        <h1 className="page-title">
           Support
         </h1>
-        <p className="mt-2 max-w-md text-[0.9375rem] leading-relaxed text-foreground/80">
+        <p className="page-lede">
           Get help with your account, billing, verification, or mail through the channel that suits you best.
         </p>
       </header>

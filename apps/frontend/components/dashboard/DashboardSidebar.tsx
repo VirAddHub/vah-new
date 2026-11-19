@@ -13,6 +13,7 @@ import {
     X,
     LogOut,
     Settings,
+    Send,
     type LucideIcon
 } from 'lucide-react';
 import { performLogout } from "@/lib/logout";
@@ -24,6 +25,8 @@ import { useDashboardView } from '@/contexts/DashboardViewContext';
 import { useDashboardBootstrap } from '@/hooks/useDashboardData';
 import { isPrimaryVerificationRequiredForNav } from '@/lib/verification-state';
 import { useToast } from '@/components/ui/use-toast';
+import { useAccess } from '@/hooks/useAccess';
+import { navAttention } from '@/components/account/AccessNotice';
 
 // Lazy load CertificateDownload to avoid unnecessary bundle size
 // Only load when sidebar is rendered (not on every page)
@@ -56,6 +59,7 @@ interface NavSection {
 
 const mainNavItems: NavItem[] = [
     { label: 'Mail Inbox', href: '/mail', icon: Mail },
+    { label: 'Forwarding', href: '/forwarding', icon: Send },
 ];
 
 const accountNavItems: NavItem[] = [
@@ -85,6 +89,11 @@ export function DashboardSidebar() {
         verificationState: compliance?.verificationState,
         kycStatus: profile?.kyc_status,
     });
+
+    const { access } = useAccess();
+    const attention = access ? navAttention(access) : { billing: false, verification: verificationNavRequired };
+    const needsAttention = (href: string) =>
+        (href === '/account/verification' && attention.verification) || (href === '/account/billing' && attention.billing);
 
     const handleLogout = () => performLogout(
         setIsMobileSidebarOpen ? () => setIsMobileSidebarOpen(false) : undefined
@@ -139,13 +148,25 @@ export function DashboardSidebar() {
                             className={cn(
                                 "flex items-center gap-3 px-4 py-2.5 text-sm font-normal transition-colors text-left w-full border-l-2",
                                 isMailActive
-                                    ? "border-l-[#1a6b3c] text-foreground bg-muted/50 [&_svg]:opacity-100"
+                                    ? "border-l-ink text-foreground bg-muted/50 [&_svg]:opacity-100"
                                     : "border-l-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                             )}
                         >
                             <Mail className="w-5 h-5 opacity-60" strokeWidth={1.5} />
                             Mail Inbox
                         </button>
+                        <Link
+                            href="/forwarding"
+                            className={cn(
+                                "flex items-center gap-3 px-4 py-2.5 text-sm font-normal transition-colors border-l-2",
+                                isActive('/forwarding')
+                                    ? "border-l-ink text-foreground bg-muted/40"
+                                    : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                            )}
+                        >
+                            <Send className="w-5 h-5 opacity-60" strokeWidth={1.5} />
+                            Forwarding
+                        </Link>
                     </div>
                 </div>
 
@@ -169,14 +190,14 @@ export function DashboardSidebar() {
                                                         className={cn(
                                                             "flex items-center gap-3 px-4 py-2.5 text-sm font-normal transition-colors border-l-2",
                                                             active
-                                                                ? "border-l-[#1a6b3c] text-foreground bg-muted/40"
+                                                                ? "border-l-ink text-foreground bg-muted/40"
                                                                 : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                                                         )}
                                                     >
                                                         <Icon className="w-5 h-5 shrink-0 opacity-60" strokeWidth={1.5} />
                                                         <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                                                             <span className="truncate">{item.label}</span>
-                                                            {item.href === '/account/verification' && verificationNavRequired && (
+                                                            {needsAttention(item.href) && (
                                                                 <span className="shrink-0 text-caption font-semibold text-destructive">
                                                                     Required
                                                                 </span>
@@ -208,7 +229,7 @@ export function DashboardSidebar() {
                                                         className={cn(
                                                             "flex items-center gap-3 px-4 py-2.5 text-sm font-normal transition-colors border-l-2",
                                                             active
-                                                                ? "border-l-[#1a6b3c] text-foreground bg-muted/40"
+                                                                ? "border-l-ink text-foreground bg-muted/40"
                                                                 : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                                                         )}
                                                     >
@@ -354,13 +375,26 @@ export function DashboardSidebar() {
                                                 className={cn(
                                                     "flex items-center gap-3 px-3 py-3 min-h-[44px] text-[12.5px] font-normal transition-colors text-left w-full touch-manipulation border-l-2",
                                                     isMailActive
-                                                        ? "border-l-[#1a6b3c] text-foreground bg-muted/40"
+                                                        ? "border-l-ink text-foreground bg-muted/40"
                                                         : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                                                 )}
                                             >
                                                 <Mail className="w-4 h-4 shrink-0 opacity-60" strokeWidth={1.5} />
                                                 Mail Inbox
                                             </button>
+                                            <Link
+                                                href="/forwarding"
+                                                onClick={() => setIsMobileSidebarOpen(false)}
+                                                className={cn(
+                                                    "flex items-center gap-3 px-3 py-3 min-h-[44px] text-[12.5px] font-normal transition-colors touch-manipulation border-l-2",
+                                                    isActive('/forwarding')
+                                                        ? "border-l-ink text-foreground bg-muted/40"
+                                                        : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                                                )}
+                                            >
+                                                <Send className="w-4 h-4 shrink-0 opacity-60" strokeWidth={1.5} />
+                                                Forwarding
+                                            </Link>
                                         </div>
                                     </div>
 
@@ -383,14 +417,14 @@ export function DashboardSidebar() {
                                                         className={cn(
                                                             "flex items-center gap-3 px-3 py-3 min-h-[44px] text-[12.5px] font-normal transition-colors touch-manipulation border-l-2",
                                                             active
-                                                                ? "border-l-[#1a6b3c] text-foreground bg-muted/40"
+                                                                ? "border-l-ink text-foreground bg-muted/40"
                                                                 : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                                                         )}
                                                     >
                                                         <Icon className="w-4 h-4 shrink-0 opacity-60" strokeWidth={1.5} />
                                                         <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                                                             <span className="truncate">{item.label}</span>
-                                                            {item.href === '/account/verification' && verificationNavRequired && (
+                                                            {needsAttention(item.href) && (
                                                                 <span className="shrink-0 text-caption font-semibold text-destructive">
                                                                     Required
                                                                 </span>
@@ -421,7 +455,7 @@ export function DashboardSidebar() {
                                                         className={cn(
                                                             "flex items-center gap-3 px-3 py-3 min-h-[44px] text-[12.5px] font-normal transition-colors touch-manipulation border-l-2",
                                                             active
-                                                                ? "border-l-[#1a6b3c] text-foreground bg-muted/40"
+                                                                ? "border-l-ink text-foreground bg-muted/40"
                                                                 : "border-l-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                                                         )}
                                                     >

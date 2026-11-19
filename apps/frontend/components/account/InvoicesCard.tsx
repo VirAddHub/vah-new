@@ -45,7 +45,7 @@ export function InvoicesCard({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'paid':
-        return <Badge className="bg-green-600">Paid</Badge>;
+        return <Badge variant="success">Paid</Badge>;
       case 'not_paid':
         return <Badge variant="destructive">Not paid</Badge>;
       case 'failed':

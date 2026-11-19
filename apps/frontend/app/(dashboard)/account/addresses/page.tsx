@@ -115,10 +115,10 @@ export default function AccountAddressesPage() {
     return (
         <div className="w-full">
             <div className="mb-5 sm:mb-6 md:mb-8">
-                <h1 className="text-h1 text-foreground mb-2 sm:mb-4">
+                <h1 className="page-title">
                     Addresses
                 </h1>
-                <p className="text-body-sm sm:text-body md:text-body-lg text-muted-foreground">
+                <p className="page-lede">
                     View your registered business address and manage your mail forwarding address
                 </p>
             </div>

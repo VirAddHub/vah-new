@@ -274,7 +274,7 @@ router.get('/verify', async (req: Request, res: Response) => {
  */
 router.post('/verify/start', async (req: Request, res: Response) => {
     try {
-        const { token } = req.body;
+        const { token } = req.body ?? {};
         
         if (!token) {
             return res.status(400).json({

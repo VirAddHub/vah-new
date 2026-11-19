@@ -1,7 +1,6 @@
 import type { Request, Response } from 'express';
 import fs from 'fs';
 import { getPool } from '../db';
-import { gcCreateReauthoriseLink, gcCreateUpdateBankLink } from '../../lib/gocardless';
 import { TimestampUtils } from '../../lib/timestamp-utils';
 import { logger } from '../../lib/logger';
 import { getBillingProvider } from '../../config/billing';
@@ -101,138 +100,45 @@ export async function downloadInvoicePdf(req: Request, res: Response) {
   }
 }
 
-export async function postUpdateBank(req: Request, res: Response) {
+/**
+ * Open Stripe's customer portal: update card, view payment history, cancel at period end.
+ * /update-bank and /reauthorise are kept as aliases of /portal for existing screens.
+ */
+export async function postBillingPortal(req: Request, res: Response) {
   try {
     const userId = Number(req.user!.id);
-    if (getBillingProvider() === 'stripe') {
-      const customerResult = await getOrCreateStripeCustomerForUser(userId);
-      if (!customerResult.ok) {
-        if (customerResult.error === 'user_not_found') {
-          return res.status(404).json({ ok: false, error: customerResult.error });
-        }
-        return res.status(503).json({ ok: false, error: customerResult.error });
-      }
-      const url = await createStripeBillingPortalLink(customerResult.customerId);
-      return res.json({ ok: true, data: { redirect_url: url, url } });
+    const customerResult = await getOrCreateStripeCustomerForUser(userId);
+    if (!customerResult.ok) {
+      return res.status(customerResult.error === 'user_not_found' ? 404 : 503).json({ ok: false, error: customerResult.error });
     }
-    const link = await gcCreateUpdateBankLink(userId);
-    res.json({ ok: true, data: link });
+    const url = await createStripeBillingPortalLink(customerResult.customerId);
+    return res.json({ ok: true, data: { redirect_url: url, url } });
   } catch (error) {
-    logger.error('[postUpdateBank] error', { message: (error as any)?.message ?? String(error) });
-    res.status(500).json({ ok: false, error: 'Failed to create update bank link' });
+    logger.error('[postBillingPortal] error', { message: (error as any)?.message ?? String(error) });
+    return res.status(503).json({ ok: false, error: 'billing_portal_unavailable' });
   }
 }
+export const postUpdateBank = postBillingPortal;
+export const postReauthorise = postBillingPortal;
 
-export async function postReauthorise(req: Request, res: Response) {
-  try {
-    const userId = Number(req.user!.id);
-    if (getBillingProvider() === 'stripe') {
-      const customerResult = await getOrCreateStripeCustomerForUser(userId);
-      if (!customerResult.ok) {
-        if (customerResult.error === 'user_not_found') {
-          return res.status(404).json({ ok: false, error: customerResult.error });
-        }
-        return res.status(503).json({ ok: false, error: customerResult.error });
-      }
-      const url = await createStripeBillingPortalLink(customerResult.customerId);
-      return res.json({ ok: true, data: { redirect_url: url, url } });
-    }
-    const link = await gcCreateReauthoriseLink(userId);
-    res.json({ ok: true, data: link });
-  } catch (error) {
-    logger.error('[postReauthorise] error', { message: (error as any)?.message ?? String(error) });
-    res.status(500).json({ ok: false, error: 'Failed to create reauthorization link' });
-  }
+export async function postRetryPayment(_req: Request, res: Response) {
+  // Not implemented. Stripe retries failed renewals itself; the customer fixes their card in the
+  // billing portal. This used to answer "queued" without doing anything.
+  res.status(501).json({ ok: false, error: 'not_implemented', message: 'Update your payment method in the billing portal; Stripe retries the payment automatically.' });
 }
 
-export async function postRetryPayment(req: Request, res: Response) {
-  // Stub: schedule a retry on latest failed payment (implement via GC API)
-  res.json({ ok: true, data: { queued: true } });
-}
-
-export async function postChangePlan(req: Request, res: Response) {
-  try {
-    const userId = Number(req.user!.id);
-    const { plan_id } = req.body ?? {};
-    const pool = getPool();
-
-    if (!plan_id || isNaN(Number(plan_id))) {
-      return res.status(400).json({ ok: false, error: 'Invalid plan_id' });
-    }
-
-    // Verify the plan exists and is active
-    const planCheck = await pool.query(
-      'SELECT id, name, interval, price_pence FROM plans WHERE id = $1 AND active = true',
-      [plan_id]
-    );
-
-    if (planCheck.rows.length === 0) {
-      return res.status(400).json({ ok: false, error: 'Plan not found or inactive' });
-    }
-
-    const plan = planCheck.rows[0];
-
-    // Start transaction to ensure consistency
-    await pool.query('BEGIN');
-
-    try {
-      // Update user's plan
-      await pool.query(
-        'UPDATE "user" SET plan_id = $1, updated_at = $2 WHERE id = $3',
-        [plan_id, TimestampUtils.forTableField('user', 'updated_at'), userId]
-      );
-
-      // UPSERT subscription record (exactly one per user)
-      const cadence = plan.interval === 'year' ? 'annual' : 'monthly';
-      await pool.query(
-        `INSERT INTO subscription (user_id, plan_name, cadence, status, updated_at)
-         VALUES ($1, $2, $3, 'pending', NOW())
-         ON CONFLICT (user_id) DO UPDATE SET
-           plan_name = EXCLUDED.plan_name,
-           cadence = EXCLUDED.cadence,
-           updated_at = NOW()`,
-        [userId, plan.name, cadence]
-      );
-
-      // Log the plan change for audit purposes
-      await pool.query(
-        `INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
-         VALUES ($1, 'plan_change', 'user', $2, $3, $4)`,
-        [userId, userId, JSON.stringify({
-          old_plan_id: null, // Could be enhanced to track previous plan
-          new_plan_id: plan_id,
-          plan_name: plan.name,
-          plan_interval: plan.interval,
-          price_pence: plan.price_pence
-        }), TimestampUtils.forTableField('admin_audit', 'created_at')]
-      );
-
-      await pool.query('COMMIT');
-
-      logger.info('[postChangePlan] plan_changed', {
-        userId,
-        planName: plan.name,
-        interval: plan.interval,
-      });
-
-      res.json({
-        ok: true,
-        data: {
-          plan_id: Number(plan_id),
-          plan_name: plan.name,
-          interval: plan.interval,
-          price_pence: plan.price_pence,
-          message: 'Plan updated successfully. Billing will be updated on the next cycle.'
-        }
-      });
-    } catch (transactionError) {
-      await pool.query('ROLLBACK');
-      throw transactionError;
-    }
-  } catch (error) {
-    logger.error('[postChangePlan] error', { message: (error as any)?.message ?? String(error) });
-    res.status(500).json({ ok: false, error: 'Failed to change plan' });
-  }
+/**
+ * Changing plan is not available yet. The previous implementation changed the plan in our database
+ * only: Stripe went on charging the old price while the customer was told the change had succeeded
+ * (and its transaction ran across pooled connections). It needs a Stripe subscription update, which
+ * is recorded as outstanding provider work in audit/DECISIONS.md.
+ */
+export async function postChangePlan(_req: Request, res: Response) {
+  return res.status(501).json({
+    ok: false,
+    error: 'not_implemented',
+    message: 'Changing plan is not available yet. Please contact support.',
+  });
 }
 
 export async function postCancelAtPeriodEnd(req: Request, res: Response) {

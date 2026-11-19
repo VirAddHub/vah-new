@@ -219,7 +219,7 @@ export function ServiceMonitoring({ className }: ServiceMonitoringProps) {
             case 'healthy':
                 return <CheckCircle className="h-5 w-5 text-primary" />;
             case 'degraded':
-                return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+                return <AlertTriangle className="h-5 w-5 text-ink" />;
             case 'down':
                 return <XCircle className="h-5 w-5 text-destructive" />;
             default:
@@ -232,7 +232,7 @@ export function ServiceMonitoring({ className }: ServiceMonitoringProps) {
             case 'healthy':
                 return 'bg-primary/10 text-primary border-primary/20';
             case 'degraded':
-                return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                return 'bg-mist text-ink border-line';
             case 'down':
                 return 'bg-destructive/10 text-destructive border-destructive/20';
             default:

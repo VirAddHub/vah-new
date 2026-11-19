@@ -30,7 +30,7 @@ export interface GenerateInvoiceForPeriodOptions {
   periodEnd: Date | string; // Will be normalized to 'YYYY-MM-DD'
   billingInterval: 'monthly' | 'annual';
   currency?: string; // Defaults to 'GBP'
-  gocardlessPaymentId?: string | null; // Optional: link invoice to payment
+  providerPaymentId?: string | null; // Optional: link invoice to payment
 }
 
 export interface GenerateInvoiceForPeriodResult {
@@ -139,103 +139,9 @@ export async function recomputeInvoiceAmount(opts: {
 }
 
 /**
- * Ensure subscription charge exists for billing period (idempotent)
- * Creates a subscription_fee charge if it doesn't already exist
- */
-async function ensureSubscriptionChargeForPeriod(opts: {
-  pool: Pool;
-  userId: number;
-  periodStart: string;
-  periodEnd: string;
-  billingInterval: 'monthly' | 'annual';
-  currency: string;
-}): Promise<void> {
-  const { pool, userId, periodStart, periodEnd, billingInterval, currency } = opts;
-
-  // Get plan price from plans table
-  const interval = billingInterval === 'monthly' ? 'month' : 'year';
-  let amountPence: number;
-  let description: string;
-
-  try {
-    const planResult = await pool.query(
-      `SELECT price_pence FROM plans 
-       WHERE interval = $1 AND active = true AND retired_at IS NULL 
-       ORDER BY sort ASC, price_pence ASC 
-       LIMIT 1`,
-      [interval]
-    );
-
-    if (planResult.rows.length > 0) {
-      amountPence = Number(planResult.rows[0].price_pence);
-    } else {
-      // Fallback to hardcoded prices if plan not found
-      amountPence = billingInterval === 'monthly' ? 999 : 8999;
-    }
-  } catch (planError: unknown) {
-    // Plans table might not exist - use fallback
-    const { message } = errorInfo(planError);
-    logger.warn('[ensureSubscriptionCharge] plan_price_lookup_failed_fallback', {
-      message,
-    });
-    amountPence = billingInterval === 'monthly' ? 999 : 8999;
-  }
-
-  description = billingInterval === 'monthly'
-    ? 'Digital Mailbox Plan – Monthly subscription'
-    : 'Digital Mailbox Plan – Annual subscription';
-
-  // Generate deterministic related_id
-  const relatedId = invoicePeriodRelatedId(userId, periodStart, periodEnd);
-
-  // Insert subscription charge (idempotent via unique constraint)
-  try {
-    await pool.query(
-      `
-      INSERT INTO charge (
-        user_id,
-        amount_pence,
-        currency,
-        type,
-        description,
-        service_date,
-        status,
-        related_type,
-        related_id
-      )
-      VALUES (
-        $1, $2, $3,
-        'subscription_fee',
-        $4,
-        $5::date,
-        'pending',
-        'invoice_period',
-        $6
-      )
-      ON CONFLICT (type, related_type, related_id)
-      WHERE related_type IS NOT NULL AND related_id IS NOT NULL
-      DO NOTHING
-      `,
-      [userId, amountPence, currency, description, periodStart, relatedId]
-    );
-  } catch (chargeError: unknown) {
-    // Table doesn't exist - skip
-    const { message, code } = errorInfo(chargeError);
-    if (!message.includes('relation "charge" does not exist') && code !== '42P01') {
-      logger.error('[ensureSubscriptionCharge] create_subscription_charge_failed', { userId, message, code });
-      throw chargeError;
-    }
-    if (process.env.NODE_ENV !== 'production') {
-      logger.debug('[ensureSubscriptionCharge] charge_table_missing_skip');
-    }
-  }
-}
-
-/**
  * Generate invoice for a user's billing period
  * 
  * Process:
- * 0. Ensure subscription charge exists for period (idempotent)
  * 1. Upsert invoice row keyed by (user_id, period_start, period_end)
  * 2. Attach pending charges in period: UPDATE charge SET invoice_id, status='billed', billed_at
  * 3. Recompute invoice.amount_pence from attached charges
@@ -252,7 +158,7 @@ export async function generateInvoiceForPeriod(
     periodEnd,
     billingInterval,
     currency = 'GBP',
-    gocardlessPaymentId = null,
+    providerPaymentId = null,
   } = opts;
 
   const periodStartStr = normalizeDate(periodStart);
@@ -260,12 +166,13 @@ export async function generateInvoiceForPeriod(
 
   // 1) Upsert invoice (idempotent by user_id + period)
   // Check if invoice exists for this period
-  const existingInvoice = await pool.query<{ id: number; gocardless_payment_id?: string | null; email_sent_at?: string | null; status?: string | null }>(
+  const existingInvoice = await pool.query<{ id: number; provider_payment_id?: string | null; email_sent_at?: string | null; status?: string | null }>(
     `
-    SELECT id, gocardless_payment_id, email_sent_at, status FROM invoices
+    SELECT id, provider_payment_id, email_sent_at, status FROM invoices
     WHERE user_id = $1
       AND period_start = $2
       AND period_end = $3
+      AND stripe_invoice_id IS NULL
     ORDER BY id DESC
     LIMIT 1
     `,
@@ -275,20 +182,12 @@ export async function generateInvoiceForPeriod(
   let invoiceId: number;
   const createdAtMs = Date.now();
   const existing = existingInvoice.rows[0];
-  const isFrozen = Boolean(existing?.email_sent_at) || Boolean(existing?.gocardless_payment_id);
+  const isFrozen = Boolean(existing?.email_sent_at) || Boolean(existing?.provider_payment_id);
 
-  // 0) Ensure subscription charge exists for this period (idempotent)
-  // Only when the invoice is still open. If the invoice is frozen, we must not create/attach new items into that closed period.
-  if (!isFrozen) {
-    await ensureSubscriptionChargeForPeriod({
-      pool,
-      userId,
-      periodStart: periodStartStr,
-      periodEnd: periodEndStr,
-      billingInterval,
-      currency,
-    });
-  }
+  // The subscription itself is NOT added here. Stripe charges the subscription and each Stripe
+  // payment is recorded as its own paid invoice (webhooks-stripe.ts, stripe_invoice_id set).
+  // This invoice only gathers additional charges (e.g. forwarding) so they are recorded once;
+  // adding the subscription fee here would bill the customer a second time for the same period.
 
   // Generate invoice number using existing sequence
   const year = new Date(periodEndStr).getFullYear();
@@ -320,13 +219,13 @@ export async function generateInvoiceForPeriod(
     // Update existing invoice - keep status as-is unless explicitly changed
     invoiceId = existingInvoice.rows[0].id;
 
-    // Update gocardless_payment_id if provided and not already set
-    if (gocardlessPaymentId) {
+    // Update provider_payment_id if provided and not already set
+    if (providerPaymentId) {
       await pool.query(
         `UPDATE invoices 
-         SET gocardless_payment_id = COALESCE(gocardless_payment_id, $1)
+         SET provider_payment_id = COALESCE(provider_payment_id, $1)
          WHERE id = $2`,
-        [gocardlessPaymentId, invoiceId]
+        [providerPaymentId, invoiceId]
       );
     }
 
@@ -335,13 +234,13 @@ export async function generateInvoiceForPeriod(
     }
   } else {
     // Create new invoice - default status is 'issued' unless creating from payment flow
-    // Status will be set to 'paid' later in webhook handler if gocardlessPaymentId is provided
+    // Status will be set to 'paid' later in webhook handler if providerPaymentId is provided
     const status = 'issued'; // Always start as 'issued', webhook will update to 'paid'
     const invRes = await pool.query<{ id: number }>(
       `
       INSERT INTO invoices (
         user_id, invoice_number, amount_pence, period_start, period_end,
-        status, created_at, number, billing_interval, gocardless_payment_id, currency
+        status, created_at, number, billing_interval, provider_payment_id, currency
       )
       VALUES ($1, $2, 0, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING id
@@ -355,7 +254,7 @@ export async function generateInvoiceForPeriod(
         createdAtMs,
         invoiceNumber,
         billingInterval,
-        gocardlessPaymentId,
+        providerPaymentId,
         currency,
       ]
     );
@@ -426,7 +325,8 @@ export async function generateInvoiceForPeriod(
   }
 
   return {
-    invoiceId,
+    // pg returns bigint ids as strings; callers compare and serialise these as numbers.
+    invoiceId: Number(invoiceId),
     attachedCount,
     totalChargesPence,
     invoiceAmountPence: totalChargesPence,

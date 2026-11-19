@@ -131,10 +131,7 @@ function del<T = any>(path: string, init?: ReqInit): Promise<ApiResponse<T>> {
 
 // ---- Billing helpers (user + admin) ----
 const billing = {
-    getBilling: () => get<{ [k: string]: any }>('/api/billing'),
     getInvoices: () => get<{ items: any[] }>('/api/admin/invoices'),           // admin list
-    getSubscriptionStatus: () => get<{ subscription: any }>('/api/billing/subscription-status'),
-    createRedirectFlow: () => post<{ redirect_url: string }>('/api/billing/create-redirect-flow'),
     getInvoiceLink: (invoiceId: string) => get<{ url: string }>(`/api/admin/invoices/${invoiceId}/link`), // admin link
     getAdminTransactions: (params: { page?: number; pageSize?: number }) => {
         const searchParams = new URLSearchParams();
@@ -142,8 +139,6 @@ const billing = {
         if (params.pageSize) searchParams.set('pageSize', String(params.pageSize));
         return get<{ items: any[]; total?: number }>(`/api/admin/transactions?${searchParams.toString()}`);
     },
-    manageSubscription: (action: 'pause' | 'resume' | 'cancel') =>
-        post<{ ok: true; message?: string }>('/api/billing/subscription/manage', { action }),
 };
 
 // ---- Admin helpers (mail/forwarding + existing) ----
@@ -171,14 +166,9 @@ const adminApi = {
 
     unlockAccount: (id: string | number) =>
         post<{ message: string }>(`/api/admin/users/${id}/unlock-account`, {}),
-    suspendUser: (id: string) => put(`/api/admin/users/${id}/suspend`, {}),
-    activateUser: (id: string) => put(`/api/admin/users/${id}/activate`, {}),
     updateKyc: (id: string, status: string) => put(`/api/admin/users/${id}/kyc-status`, { status }),
 
     getPlans: () => get<any[]>('/api/admin/plans'),
-
-    analytics: (timeRange: string) =>
-        get<any>(`/api/admin/analytics?range=${encodeURIComponent(timeRange)}`),
 
     billingMetrics: () => get<any>('/api/admin/billing/metrics'),
 
@@ -187,7 +177,6 @@ const adminApi = {
             `/api/admin/forwarding/queue?${params.toString()}`
         ),
 
-    cancelForward: (id: string) => post(`/api/admin/forwarding/${id}/cancel`, {}),
 
     mailItems: (params: URLSearchParams) =>
         get<{ items: MailItem[]; total: number }>(`/api/admin/mail-items?${params.toString()}`),
@@ -362,9 +351,6 @@ const userDomain = {
     getInvoicesUser: () => get<{ items: any[] }>('/api/billing/invoices'),
     getInvoiceLinkUser: (invoiceId: string) =>
         get<{ url: string }>(`/api/billing/invoices/${invoiceId}/link`),
-
-    createPaymentRedirect: (data: { planId: string }) =>
-        post<{ url: string }>('/api/payments/redirect-flows', data),
 
     getSubscriptionStatusUser: () =>
         get<{ subscription: any }>('/api/payments/subscriptions/status'),

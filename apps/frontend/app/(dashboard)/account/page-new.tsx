@@ -154,7 +154,7 @@ export default function AccountPage() {
         <div className="max-w-6xl mx-auto p-6 space-y-8">
           <div className="flex items-center gap-3">
             <User className="h-8 w-8 text-primary" />
-            <h1 className="text-h2 font-bold text-foreground">Account</h1>
+            <h1 className="page-title">Account</h1>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

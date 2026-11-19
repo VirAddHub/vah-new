@@ -3,6 +3,10 @@ export type SubscriptionSummary = {
   price_label: string; // e.g. "£9.99"
   billing_period: "monthly" | "annual";
   status: "active" | "cancelled" | "past_due" | "unknown";
+  /** End of the period already paid for, formatted for display. */
+  paid_through_label?: string | null;
+  /** True when the customer has cancelled and the subscription ends at paid_through. */
+  cancel_at_period_end?: boolean;
 };
 
 export type BusinessContactInfo = {

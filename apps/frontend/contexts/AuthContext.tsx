@@ -13,32 +13,11 @@ import { isAdminRole } from '../lib/verifiedAdminSession';
 type AuthStatus = 'loading' | 'authed' | 'guest';
 
 
-// Client-safe logging functions
-const logAuthEvent = async (event: string, data?: any) => {
-    try {
-        await apiClient.post('/api/audit/auth-event', {
-            event,
-            data,
-            timestamp: new Date().toISOString(),
-            userId: clientAuthManager.getUser()?.id
-        });
-    } catch (error) {
-        console.error('Failed to log auth event:', error);
-    }
-};
-
-const logAdminAction = async (action: string, data?: any) => {
-    try {
-        await apiClient.post('/api/audit/admin-action', {
-            action,
-            data,
-            timestamp: new Date().toISOString(),
-            adminId: clientAuthManager.getUser()?.id
-        });
-    } catch (error) {
-        console.error('Failed to log admin action:', error);
-    }
-};
+// Sign-in and admin actions are recorded by the API itself (admin_audit, access logs). These used to
+// post to /api/audit/* endpoints that do not exist, so every sign-in produced failed requests.
+// Kept as no-ops so call sites stay readable.
+const logAuthEvent = async (_event: string, _data?: unknown) => {};
+const logAdminAction = async (_action: string, _data?: unknown) => {};
 
 interface User {
     id: string | number;

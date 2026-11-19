@@ -1,15 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import ForwardingPage from './page-content';
 
-// This page redirects /forwarding to /dashboard?view=forwarding
-export default function ForwardingRedirectPage() {
-    const router = useRouter();
-
-    useEffect(() => {
-        router.replace('/dashboard?view=forwarding');
-    }, [router]);
-
-    return null;
+// Forwarding requests and their progress. Access is enforced by the dashboard layout and the API.
+export default function Forwarding() {
+    return <ForwardingPage />;
 }
