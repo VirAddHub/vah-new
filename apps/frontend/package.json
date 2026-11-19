@@ -4,7 +4,7 @@
   "description": "VirtualAddressHub - Professional Virtual Address Service Frontend",
   "private": true,
   "engines": {
-    "node": "20.x",
+    "node": "22.x",
     "npm": ">=9.0.0"
   },
   "scripts": {
