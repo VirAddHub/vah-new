@@ -87,6 +87,7 @@ await step('A8', 'Admin delete then restore (existing routes) still work with th
 });
 
 // ---- Transactions --------------------------------------------------------------------------------
+const planEditsFrom = Date.now();
 await step('T1', 'Plan edit: a successful change persists', async () => {
   const before = await one('SELECT description FROM plans WHERE id=$1', [plan.id]);
   const r = await admin.patch(`/api/admin/plans/${plan.id}`, { description: 'Journey test description' });
@@ -101,6 +102,10 @@ await step('T1b', 'Plan edit: the price cannot be changed here (Stripe charges i
   expect(Number((await one('SELECT price_pence FROM plans WHERE id=$1', [plan.id])).price_pence) === Number(plan.price_pence), 'price changed');
   const same = await admin.patch(`/api/admin/plans/${plan.id}`, { price_pence: Number(plan.price_pence) });
   expect(same.status === 200, `saving the unchanged price returned ${same.status}`);
+});
+await step('T1c', 'Plan edits never email customers', async () => {
+  const n = Number((await one(`SELECT COUNT(*)::int n FROM local_email_outbox WHERE template = 'plan-price-change' AND created_at_ms >= $1`, [planEditsFrom])).n);
+  expect(n === 0, `${n} price-change emails queued`);
 });
 await step('T2', 'Plan edit: a failed change leaves nothing behind (20 times, to catch pooled-connection leaks)', async () => {
   for (let i = 0; i < 20; i++) {

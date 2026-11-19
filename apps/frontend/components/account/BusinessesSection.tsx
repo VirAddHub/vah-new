@@ -8,14 +8,6 @@ import { Building2 } from 'lucide-react';
 import { useActiveBusiness } from '@/contexts/ActiveBusinessContext';
 import { useToast } from '@/components/ui/use-toast';
 
-function formatPrice(pence: number): string {
-  return `£${(pence / 100).toFixed(2)}/month`;
-}
-
-function priceLabel(pence: number): string {
-  return `Business plan — ${formatPrice(pence)}`;
-}
-
 export function BusinessesSection() {
   const { businesses } = useActiveBusiness();
   const { toast } = useToast();
@@ -56,9 +48,8 @@ export function BusinessesSection() {
                   ? `Companies House: ${primaryBusiness.companies_house_number}`
                   : 'Companies House number not added yet'}
               </p>
-              <p className="text-body-sm font-medium text-foreground">
-                {priceLabel(primaryBusiness.display_price_pence ?? primaryBusiness.monthly_price_pence ?? 999)}
-              </p>
+              {/* The primary business is covered by the subscription; its price is on the Billing page
+                  (the customer's own Stripe rate), not a stored figure that could differ from it. */}
             </div>
           )}
         </CardContent>

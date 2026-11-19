@@ -10,6 +10,7 @@ import { param } from '../../lib/express-params';
 import { safeErrorMessage } from '../../lib/safeError';
 import { logger } from '../../lib/logger';
 import { getBillingProvider } from '../../config/billing';
+import { getAdvertisedRates, withAdvertisedPrice } from '../../services/stripePrices';
 
 const router = Router();
 
@@ -43,9 +44,11 @@ router.get('/plans', requireAdmin, async (req: Request, res: Response) => {
             ORDER BY sort ASC, price_pence ASC
         `);
 
+        // Show the price Stripe Checkout charges new customers, not the stored fallback.
+        const rates = await getAdvertisedRates();
         return res.json({
             ok: true,
-            data: result.rows
+            data: result.rows.map(row => withAdvertisedPrice(row, rates))
         });
     } catch (error: any) {
         logger.error('[GET /api/admin/plans] error:', { error });
@@ -329,47 +332,6 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
 
             const updatedPlan = result.rows[0];
 
-            // 1. Log price history if price changed
-            if (priceChanging) {
-                await pool.query(
-                    `INSERT INTO plan_price_history (plan_id, price_pence, currency, effective_at, note)
-                     VALUES ($1, $2, $3, $4, $5)`,
-                    [
-                        planId,
-                        newPrice,
-                        currency || currentPlan.currency || 'GBP',
-                        new Date().toISOString(),
-                        `Admin price update: ${oldPrice} → ${newPrice} pence`
-                    ]
-                );
-
-                logger.info('[PlanUpdate] Price history logged', { planId, oldPrice, newPrice });
-            }
-
-            // 2. Update subscription records for users on this plan
-            if (priceChanging) {
-                const affectedUsersResult = await pool.query(
-                    'SELECT COUNT(*) as count FROM "user" WHERE plan_id = $1 AND deleted_at IS NULL',
-                    [planId]
-                );
-
-                const affectedUsersCount = parseInt(affectedUsersResult.rows[0].count);
-
-                if (affectedUsersCount > 0) {
-                    // Update subscription records to reflect new pricing
-                    await pool.query(
-                        `UPDATE subscription 
-                         SET updated_at = $1
-                         WHERE user_id IN (
-                             SELECT id FROM "user" WHERE plan_id = $2 AND deleted_at IS NULL
-                         )`,
-                        [TimestampUtils.forTableField('plans', 'updated_at_ms'), planId]
-                    );
-
-                    logger.info('[PlanUpdate] Updated subscription records', { planId, affectedUsersCount });
-                }
-            }
-
             // 3. Log admin audit action
             const auditDetails = {
                 plan_id: planId,
@@ -397,51 +359,14 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
                 ]
             );
 
-            // 4. Get affected users for notification (if price changed)
-            let affectedUsers: Array<{ id: number, email: string, first_name: string, last_name: string }> = [];
-            if (priceChanging) {
-                const usersResult = await pool.query(
-                    `SELECT id, email, first_name, last_name 
-                     FROM "user" 
-                     WHERE plan_id = $1 AND deleted_at IS NULL`,
-                    [planId]
-                );
-                affectedUsers = usersResult.rows;
-            }
-
             // Commit the transaction
             await pool.query('COMMIT');
 
             // 5. Clear pricing cache after successful update
             pricingService.clearCache();
 
-            // 6. Send notifications to affected users (async, non-blocking)
-            if (affectedUsers.length > 0) {
-                setImmediate(async () => {
-                    try {
-                        const { sendTemplateEmail } = await import('../../lib/mailer');
-
-                        for (const user of affectedUsers) {
-                            await sendTemplateEmail({
-                                to: user.email,
-                                templateAlias: 'plan-price-change',
-                                model: {
-                                    firstName: user.first_name || 'User',
-                                    planName: updatedPlan.name,
-                                    oldPrice: `£${(oldPrice / 100).toFixed(2)}`,
-                                    newPrice: `£${(newPrice / 100).toFixed(2)}`,
-                                    interval: updatedPlan.interval,
-                                    effectiveDate: new Date().toLocaleDateString('en-GB')
-                                }
-                            });
-                        }
-
-                        logger.info('[PlanUpdate] Sent price change notifications', { userCount: affectedUsers.length });
-                    } catch (emailError) {
-                        logger.error('[PlanUpdate] Failed to send notifications:', { error: emailError });
-                    }
-                });
-            }
+            // No customer emails from plan edits: the price is never changed here (see above), and
+            // editing plan details is not something customers are notified about.
 
             logger.info('[PlanUpdate] Plan updated successfully', { planId, adminId });
 
@@ -449,9 +374,8 @@ router.patch('/plans/:id', requireAdmin, async (req: Request, res: Response) => 
                 ok: true,
                 data: {
                     ...updatedPlan,
-                    affected_users: affectedUsers.length,
-                    price_changed: priceChanging,
-                    notifications_sent: affectedUsers.length > 0
+                    price_changed: false,
+                    notifications_sent: false
                 }
             });
 

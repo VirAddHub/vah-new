@@ -14,6 +14,7 @@ import rateLimit from 'express-rate-limit';
 import { sendTemplateEmail, buildAppUrl } from '../../lib/mailer';
 import { Templates } from '../../lib/postmark-templates';
 import { logger } from '../../lib/logger';
+import { getSubscriptionRate } from '../../services/stripePrices';
 
 const router = Router();
 
@@ -524,7 +525,15 @@ router.get('/users/:id', requireAdmin, async (req: Request, res: Response) => {
             return res.status(404).json({ ok: false, error: 'not_found' });
         }
 
-        return res.json({ ok: true, data: result.rows[0] });
+        // The customer's own recurring rate from their Stripe subscription (customers on the same
+        // plan can pay different amounts: a new offer applies to new subscriptions only).
+        const subRow = (await pool.query(
+            `SELECT stripe_subscription_id, cadence, status FROM subscription WHERE user_id = $1 ORDER BY id DESC LIMIT 1`, [userId])).rows[0];
+        const rate = await getSubscriptionRate(subRow?.stripe_subscription_id);
+        return res.json({ ok: true, data: { ...result.rows[0], subscription_rate: rate ? {
+            amount_pence: rate.amountPence, currency: rate.currency, interval: rate.interval, price_id: rate.priceId,
+            status: rate.status, current_period_end: rate.currentPeriodEnd, cancel_at_period_end: rate.cancelAtPeriodEnd,
+        } : null } });
     } catch (error: any) {
         logger.error('[GET /api/admin/users/:id] error:', { error });
         return res.status(500).json({ ok: false, error: 'database_error' });

@@ -3,6 +3,8 @@
 //
 //   VAH_STAGING_SMOKE=1 node apps/backend/tests/staging/staging-smoke.mjs start
 //   VAH_STAGING_SMOKE=1 node apps/backend/tests/staging/staging-smoke.mjs status
+//   VAH_STAGING_SMOKE=1 node apps/backend/tests/staging/staging-smoke.mjs customer <tag>   (signup + monthly checkout)
+//   VAH_STAGING_SMOKE=1 node apps/backend/tests/staging/staging-smoke.mjs rate <tag>       (what the customer is shown)
 //
 // Safety:
 // - Refuses to run unless VAH_STAGING_SMOKE=1, the Stripe key is a test-mode key and the
@@ -21,7 +23,8 @@ const { Client } = require('pg');
 const API = `http://127.0.0.1:${process.env.PORT || 10000}`;
 const ORIGIN = (process.env.APP_BASE_URL || process.env.APP_URL || '').replace(/\/$/, '');
 const EMAIL = 'test@blackhole.postmarkapp.com';
-const STATE = '/tmp/vah-staging-smoke.json';
+// Kept on the service's persistent disk when there is one, so it survives redeploys.
+const STATE = fs.existsSync('/var/data') ? '/var/data/vah-staging-smoke.json' : '/tmp/vah-staging-smoke.json';
 const STAGING_DB = 'vah_postgres_40zq';
 
 if (process.env.VAH_STAGING_SMOKE !== '1') { console.error('REFUSING: set VAH_STAGING_SMOKE=1'); process.exit(2); }
@@ -166,4 +169,39 @@ if (cmd === 'status') {
   await pg.end(); process.exit(0);
 }
 
-console.error('usage: start | status'); await pg.end(); process.exit(2);
+// ---- Price checks: one extra test customer per tag, at whatever price Checkout offers now ----------
+const tagEmail = tag => `vah-${String(tag).replace(/[^a-z0-9]/gi, '').toLowerCase()}@blackhole.postmarkapp.com`;
+if (cmd === 'customer') {
+  const tag = process.argv[3]; if (!tag) { console.error('usage: customer <tag>'); process.exit(2); }
+  const email = tagEmail(tag); const all = state(); const st = all[email] || {};
+  const c = new Session();
+  const existing = await one('SELECT id FROM "user" WHERE lower(email)=$1', [email]);
+  if (existing) { expect(st.password, `account ${email} exists without a stored password`); const r = await c.post('/api/auth/login', { email, password: st.password }); expect(r.status === 200, `login ${r.status}`); }
+  else {
+    st.password = crypto.randomBytes(18).toString('base64url') + '!A1'; all[email] = st; save(all); // generated at run time, kept only on the server
+    const r = await c.post('/api/auth/signup', { first_name: 'Price', last_name: `Check ${tag}`, email, password: st.password, phone: '+447700900124',
+      company_name: `Price Check ${tag} Ltd`, business_type: 'limited_company', country_of_incorporation: 'GB', company_number: '12345678',
+      forward_to_first_name: 'Price', forward_to_last_name: 'Check', address_line1: '1 Test Street', city: 'London', postcode: 'SW1A 1AA', forward_country: 'GB',
+      billing: 'monthly', price: '9.99', isSoleController: true, additionalControllersCount: 0 });
+    expect(r.status === 200 || r.status === 201, `signup ${r.status} ${r.text.slice(0, 160)}`);
+  }
+  const plans = await c.get('/api/plans');
+  const monthly = (plans.json?.data || []).find(p => p.interval === 'month');
+  const r = await c.post('/api/payments/stripe/checkout-session', { plan_id: Number(monthly?.id), billing_period: 'monthly' });
+  expect(r.status === 200, `checkout ${r.status} ${r.text.slice(0, 160)}`);
+  const session = (String(r.json?.data?.url || '').match(/cs_test_[A-Za-z0-9]+/) || [])[0];
+  const u = await one('SELECT id, stripe_customer_id FROM "user" WHERE lower(email)=$1', [email]);
+  console.log(JSON.stringify({ tag, user: Number(u.id), customer: u.stripe_customer_id, shown_monthly_pence: monthly?.price_pence, shown_source: monthly?.price_source, shown_price_id: monthly?.stripe_price_id, checkout_session: session }));
+  await pg.end(); process.exit(0);
+}
+if (cmd === 'rate') {
+  const email = tagEmail(process.argv[3] || ''); const st = state()[email];
+  expect(st?.password, `no stored account for ${email}`);
+  const c = new Session(); const r = await c.post('/api/auth/login', { email, password: st.password }); expect(r.status === 200, `login ${r.status}`);
+  const o = (await c.get('/api/billing/overview')).json?.data;
+  const sub = await one('SELECT s.status, s.cadence, s.stripe_subscription_id FROM subscription s JOIN "user" u ON u.id = s.user_id WHERE lower(u.email)=$1', [email]);
+  console.log(JSON.stringify({ email, shown_price_pence: o?.current_price_pence, price_source: o?.current_price_source, cadence: o?.cadence, next_billing_date: o?.next_billing_date, db_subscription: sub }));
+  await pg.end(); process.exit(0);
+}
+
+console.error('usage: start | status | customer <tag> | rate <tag>'); await pg.end(); process.exit(2);

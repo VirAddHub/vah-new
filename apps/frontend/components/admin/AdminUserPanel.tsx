@@ -59,7 +59,7 @@ export function AdminUserPanel({ user, onClose, onOpenStanding }: {
 }) {
   const [tab, setTab] = useState<Tab>('profile');
   const id = user?.id;
-  const profile = useSWR(id && tab === 'profile' ? `/api/admin/users/${id}` : null, getJson);
+  const profile = useSWR(id && (tab === 'profile' || tab === 'billing') ? `/api/admin/users/${id}` : null, getJson);
   const standing = useSWR(id && (tab === 'profile' || tab === 'audit') ? `/api/bff/admin/users/${id}/standing` : null, getJson);
   const mail = useSWR(id && tab === 'mail' ? `/api/admin/mail-items?user_id=${id}&limit=50` : null, getJson);
   const billing = useSWR(id && tab === 'billing' ? `/api/bff/admin/invoices?user_id=${id}&pageSize=50` : null, getJson);
@@ -138,6 +138,23 @@ export function AdminUserPanel({ user, onClose, onOpenStanding }: {
             )}
 
             {tab === 'billing' && (
+              <>
+              {/* This customer's own recurring rate, from their Stripe subscription. Customers on the
+                  same plan can pay different amounts; a new advertised price applies to new signups only. */}
+              <dl className="mb-4 divide-y divide-line rounded-lg border border-line px-4">
+                <Row label="Recurring rate">
+                  {p?.subscription_rate
+                    ? <span className="figure-mono">{money(p.subscription_rate.amount_pence)} / {p.subscription_rate.interval === 'year' ? 'year' : 'month'}</span>
+                    : profile.isLoading ? 'Loading…' : 'No Stripe subscription'}
+                </Row>
+                {p?.subscription_rate && (
+                  <>
+                    <Row label="Stripe status">{p.subscription_rate.status}{p.subscription_rate.cancel_at_period_end ? ' (ends at period end)' : ''}</Row>
+                    <Row label="Renews">{p.subscription_rate.current_period_end ? fmtDate(p.subscription_rate.current_period_end * 1000) : '—'}</Row>
+                    <Row label="Stripe price"><span className="figure-mono text-[13px]">{p.subscription_rate.price_id}</span></Row>
+                  </>
+                )}
+              </dl>
               <State loading={billing.isLoading} error={billing.error} empty={!invoices.length}>
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[420px] text-left">
@@ -158,6 +175,7 @@ export function AdminUserPanel({ user, onClose, onOpenStanding }: {
                   </table>
                 </div>
               </State>
+              </>
             )}
 
             {tab === 'audit' && (

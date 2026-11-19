@@ -24,6 +24,7 @@ import { getStripePriceId } from '../../lib/stripe';
 import { sendInvoiceSent, sendPaymentFailed, sendPlanCancelled } from '../../lib/mailer';
 import { insertPlanStatusEvent } from '../services/planStatusAudit';
 import { logger } from '../../lib/logger';
+import { forgetSubscriptionRate } from '../../services/stripePrices';
 
 const router = Router();
 
@@ -183,6 +184,9 @@ async function applySubscriptionState(db: Db, c: StateChange, after: AfterCommit
        updated_at = EXCLUDED.updated_at`,
     [c.userId, planName, cadence, status, stripeSubId, c.customerId, paidThrough,
      c.cancelAtPeriodEnd ?? (sameSub ? cur?.cancel_at_period_end === true : false), eventMs, c.event.id, now]);
+
+  // The customer's own rate is read from Stripe and cached briefly; drop it so the next read is fresh.
+  forgetSubscriptionRate(stripeSubId);
 
   // Display copies on the user row. Access is decided from the subscription row (services/access.ts).
   const sets = ['plan_status = $2', 'subscription_status = $2', 'updated_at = $3', 'stripe_customer_id = COALESCE(stripe_customer_id, $4)'];

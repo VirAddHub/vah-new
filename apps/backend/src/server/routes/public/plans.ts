@@ -4,6 +4,7 @@ import { selectMany } from '../../db-helpers';
 import { getPool } from '../../db';
 import { ok } from '../../lib/apiResponse';
 import { createHash } from 'crypto';
+import { getAdvertisedRates, withAdvertisedPrice } from '../../../services/stripePrices';
 
 const router = Router();
 
@@ -36,8 +37,11 @@ router.get('/plans', async (req: Request, res: Response) => {
         );
 
         const maxUpdatedAt = maxUpdatedResult.rows[0]?.max_updated_at;
+        // The shown price is the Stripe price Checkout charges, so it is part of the ETag.
+        const rates = await getAdvertisedRates();
+        const rateKey = `${rates.month?.priceId}:${rates.month?.amountPence}|${rates.year?.priceId}:${rates.year?.amountPence}`;
         const etag = maxUpdatedAt
-            ? `"${createHash('md5').update(String(new Date(maxUpdatedAt).getTime())).digest('hex')}"`
+            ? `"${createHash('md5').update(String(new Date(maxUpdatedAt).getTime()) + rateKey).digest('hex')}"`
             : generateETag([]);
 
         // Check If-None-Match header for conditional request
@@ -58,7 +62,7 @@ router.get('/plans', async (req: Request, res: Response) => {
         ) as any[];
 
         // Format prices for frontend consumption
-        const formattedPlans = rows.map(plan => ({
+        const formattedPlans = rows.map(row => withAdvertisedPrice(row, rates)).map(plan => ({
             ...plan,
             priceFormatted: `£${(plan.price_pence / 100).toFixed(2)}`,
             price: plan.price_pence / 100,
@@ -77,44 +81,8 @@ router.get('/plans', async (req: Request, res: Response) => {
         return ok(res, formattedPlans);
     } catch (e) {
         logger.error('[Public Plans] Database error:', e);
-        // Safe stub if DB not reachable
-        const stubPlans = [
-            {
-                id: 'monthly',
-                name: 'Virtual Mailbox - Monthly',
-                price_pence: 995,
-                price: 9.95,
-                priceFormatted: '£9.95',
-                interval: 'month',
-                currency: 'GBP',
-                features: ['Use as Registered Office & Director\'s Service Address (Companies House + HMRC)', 'Professional London business address for banking, invoices & websites', 'Unlimited digital mail scanning — uploaded same day it arrives', 'Secure online dashboard to read, download, archive or request actions', 'HMRC & Companies House mail: digital scan + physical forwarding at no charge', 'Cancel anytime. No setup fees or long-term contracts', 'UK support — Mon-Fri, 9AM–6PM GMT'],
-                active: true,
-                isMonthly: true,
-                isAnnual: false
-            },
-            {
-                id: 'annual',
-                name: 'Virtual Mailbox - Annual',
-                price_pence: 8999,
-                price: 89.99,
-                priceFormatted: '£89.99',
-                interval: 'year',
-                currency: 'GBP',
-                features: ['Use as Registered Office & Director\'s Service Address (Companies House + HMRC)', 'Professional London business address for banking, invoices & websites', 'Unlimited digital mail scanning — uploaded same day it arrives', 'Secure online dashboard to read, download, archive or request actions', 'HMRC & Companies House mail: digital scan + physical forwarding at no charge', 'Cancel anytime. No setup fees or long-term contracts', 'UK support — Mon-Fri, 9AM–6PM GMT', 'Save 25% — equivalent to £7.50/month'],
-                active: true,
-                isMonthly: false,
-                isAnnual: true
-            }
-        ];
-
-        // Even stub plans should have cache headers (but shorter TTL)
-        res.set({
-            'ETag': generateETag(stubPlans),
-            'Cache-Control': 'public, max-age=10, stale-while-revalidate=30'
-        });
-
-        // Return as array (static list, no pagination needed)
-        return ok(res, stubPlans);
+        // No made-up plans: a stub here once advertised £9.95 while Checkout charged £9.99.
+        return res.status(503).json({ ok: false, error: 'plans_unavailable' });
     }
 });
 

@@ -118,7 +118,9 @@ export default function PlansSection() {
     if (!editingPlan) return;
 
     try {
-      const res = await apiClient.patch(`/api/admin/plans/${editingPlan.id}`, formData);
+      // The price is set in Stripe, so it is never sent with an edit.
+      const { price_pence: _price, ...details } = formData;
+      const res = await apiClient.patch(`/api/admin/plans/${editingPlan.id}`, details);
       if (res.ok) {
         toast({ title: "Success", description: "Plan updated successfully" });
         setEditingPlan(null);
@@ -363,7 +365,7 @@ export default function PlansSection() {
                   />
                   {editingPlan && (
                     <p id="price_pence_note" className="text-caption text-muted-foreground">
-                      Set in Stripe. Customers are charged the Stripe price, so it can&apos;t be changed here.
+                      This is the Stripe price new customers are charged. To change it, point the price ID setting at a new Stripe price; existing customers keep their own rate.
                     </p>
                   )}
                 </div>

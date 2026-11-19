@@ -3,6 +3,7 @@ import { getBillingProvider } from '../../config/billing';
 import { getStripe } from '../../lib/stripe';
 import { logger } from '../../lib/logger';
 import type { Pool } from 'pg';
+import { getAdvertisedRates, getSubscriptionRate, type SubscriptionRate } from '../../services/stripePrices';
 
 type StripeClient = NonNullable<ReturnType<typeof getStripe>>;
 
@@ -39,6 +40,8 @@ export interface BillingOverviewData {
   next_billing_date: string | null;
   has_payment_method: boolean;
   current_price_pence: number;
+  /** 'subscription': the customer's own Stripe price. 'advertised': not subscribed, today's Checkout price. */
+  current_price_source: 'subscription' | 'advertised';
   latest_invoice_amount_pence: number;
   pending_forwarding_fees_pence: number;
   billing_provider: ReturnType<typeof getBillingProvider>;
@@ -48,6 +51,8 @@ export interface BillingOverviewDeps {
   pool: Pool;
   getProvider: typeof getBillingProvider;
   getStripeClient: () => StripeClient | null;
+  getRate: (stripeSubscriptionId: string) => Promise<SubscriptionRate | null>;
+  getAdvertised: typeof getAdvertisedRates;
   now: () => number;
   warn: (msg: string, meta?: Record<string, unknown>) => void;
   error: (msg: string, meta?: Record<string, unknown>) => void;
@@ -58,6 +63,8 @@ function getBillingOverviewDeps(overrides?: Partial<BillingOverviewDeps>): Billi
     pool: getPool(),
     getProvider: getBillingProvider,
     getStripeClient: () => getStripe(),
+    getRate: (id) => getSubscriptionRate(id),
+    getAdvertised: () => getAdvertisedRates(),
     now: () => Date.now(),
     warn: (msg, meta) => logger.warn(msg, meta),
     error: (msg, meta) => logger.error(msg, meta),
@@ -96,7 +103,7 @@ export async function getBillingOverviewData(
   deps?: Partial<BillingOverviewDeps>
 ): Promise<BillingOverviewData> {
   const resolvedDeps = getBillingOverviewDeps(deps);
-  const { pool, getProvider, getStripeClient, now, warn } = resolvedDeps;
+  const { pool, getProvider, getRate, getAdvertised, now, warn } = resolvedDeps;
 
   const subResult = await pool.query(`
     SELECT
@@ -114,20 +121,14 @@ export async function getBillingOverviewData(
   `, [userId]);
   const sub = subResult.rows[0] || null;
 
+  // The customer's own rate and renewal date come from their Stripe subscription: a customer who
+  // joined at an earlier price keeps paying it, whatever the plan is advertised at today.
   let stripeNextBillingDate: string | null = null;
+  let ownRate: SubscriptionRate | null = null;
   if (getProvider() === 'stripe' && sub?.stripe_subscription_id) {
-    try {
-      const stripe = getStripeClient();
-      if (stripe) {
-        const stripeSub = await stripe.subscriptions.retrieve(sub.stripe_subscription_id, { expand: [] });
-        if (stripeSub.current_period_end) {
-          stripeNextBillingDate = new Date(stripeSub.current_period_end * 1000).toISOString().slice(0, 10);
-        }
-      }
-    } catch (e) {
-      warn('[billingOverview] stripe_subscription_fetch_failed', {
-        message: (e as any)?.message ?? String(e),
-      });
+    ownRate = await getRate(sub.stripe_subscription_id);
+    if (ownRate?.currentPeriodEnd) {
+      stripeNextBillingDate = new Date(ownRate.currentPeriodEnd * 1000).toISOString().slice(0, 10);
     }
   }
 
@@ -247,6 +248,9 @@ export async function getBillingOverviewData(
       : 'monthly';
   const fallbackPricePence = resolvedCadence === 'annual' ? 8999 : 999;
 
+  const advertised = ownRate ? null
+    : (await getAdvertised())[resolvedCadence === 'annual' ? 'year' : 'month'];
+
   let accountStatus: 'active' | 'past_due' | 'suspended' | 'grace_period' = 'active';
   let gracePeriodInfo: { days_left: number; retry_count: number; grace_until: number } | null = null;
   if (user?.account_suspended_at) {
@@ -308,11 +312,16 @@ export async function getBillingOverviewData(
       return null;
     })(),
     has_payment_method: !!user?.stripe_customer_id,
-    current_price_pence: (resolvedPlan?.price_pence && resolvedPlan.price_pence > 0)
-      ? resolvedPlan.price_pence
-      : (sub?.price_pence && sub.price_pence > 0)
-        ? sub.price_pence
-        : fallbackPricePence,
+    // Own Stripe rate when subscribed; otherwise the price Checkout would charge today; the stored
+    // plan price only if Stripe cannot be reached.
+    current_price_pence: ownRate?.amountPence
+      ?? advertised?.amountPence
+      ?? ((resolvedPlan?.price_pence && resolvedPlan.price_pence > 0)
+        ? resolvedPlan.price_pence
+        : (sub?.price_pence && sub.price_pence > 0)
+          ? sub.price_pence
+          : fallbackPricePence),
+    current_price_source: ownRate ? 'subscription' : 'advertised',
     latest_invoice_amount_pence: latestInvoice?.amount_pence || 0,
     pending_forwarding_fees_pence: await getPendingForwardingFees(userId, resolvedDeps),
     billing_provider: getProvider(),
