@@ -29,3 +29,17 @@ export async function buildBackendMutationHeaders(
     ...extra,
   };
 }
+
+/**
+ * The CSRF header for a state-changing request forwarded to the API on behalf of a signed-in
+ * browser: the double-submit token is the browser's own `vah_csrf_token` cookie. Without it the
+ * API answers 403 csrf_token_missing for every signed-in POST/PATCH/DELETE (this broke starting
+ * identity checks, subscription actions, controller answers and server-side logout).
+ */
+export function csrfHeaderFromCookie(cookie: string): Record<string, string> {
+  const m = cookie.match(/(?:^|;\s*)vah_csrf_token=([^;]+)/);
+  if (!m) return {};
+  let token = m[1];
+  try { token = decodeURIComponent(token); } catch { /* keep raw value */ }
+  return { 'X-CSRF-Token': token };
+}

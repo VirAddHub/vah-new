@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
+import { csrfHeaderFromCookie } from '@/lib/server/backendMutationHeaders';
 
 // Force dynamic rendering - never cache this route
 export const dynamic = 'force-dynamic';
@@ -25,6 +26,7 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: {
         'Cookie': cookie,
+        ...csrfHeaderFromCookie(cookie),
         'Content-Type': 'application/json',
       },
       cache: 'no-store',

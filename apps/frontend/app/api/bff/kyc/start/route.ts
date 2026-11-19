@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
+import { csrfHeaderFromCookie } from '@/lib/server/backendMutationHeaders';
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,6 +17,7 @@ export async function POST(req: NextRequest) {
         accept: 'application/json',
         'Content-Type': 'application/json',
         cookie: cookieHeader,
+        ...csrfHeaderFromCookie(cookieHeader),
       },
       credentials: 'include',
     });

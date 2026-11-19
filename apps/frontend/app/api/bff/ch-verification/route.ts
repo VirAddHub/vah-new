@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { csrfHeaderFromCookie } from '@/lib/server/backendMutationHeaders';
 
 const DEFAULT_BACKEND = 'https://vah-api-staging.onrender.com/api';
 
@@ -103,6 +104,7 @@ export async function POST(req: NextRequest) {
       body: backendFormData,
       headers: {
         cookie: cookieHeader,
+        ...csrfHeaderFromCookie(cookieHeader),
       },
       credentials: "include",
     });
