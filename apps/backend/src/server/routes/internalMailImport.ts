@@ -274,19 +274,8 @@ router.post('/from-onedrive', async (req, res) => {
     // We check by userId + fileName (via notes pattern) or userId + scan_file_url
     let existingMailItem: any = null;
 
-    if (payload.oneDriveDownloadUrl) {
-      // Check by scan_file_url (most reliable, unique per file)
-      const urlCheck = await pool.query(
-        'SELECT id, subject, tag, status, scan_file_url, idempotency_key FROM mail_item WHERE user_id = $1 AND scan_file_url = $2 LIMIT 1',
-        [payload.userId, payload.oneDriveDownloadUrl]
-      );
-      if (urlCheck.rows.length > 0) {
-        existingMailItem = { ...urlCheck.rows[0], matchedBy: 'link' };
-      }
-    }
-
-    // The same OneDrive file (same file id) imported before, for any customer
-    if (!existingMailItem && payload.oneDriveFileId) {
+    // Exact match first: this very OneDrive file (same file id), for any customer
+    if (payload.oneDriveFileId) {
       const fileCheck = await pool.query(
         'SELECT id, user_id, subject, tag, status, scan_file_url, idempotency_key FROM mail_item WHERE idempotency_key = ANY($1::text[]) ORDER BY id LIMIT 1',
         [[`onedrive_import_${payload.oneDriveFileId}`, `onedrive_${payload.oneDriveFileId}`]]
@@ -304,6 +293,17 @@ router.post('/from-onedrive', async (req, res) => {
           });
         }
         existingMailItem = { ...row, matchedBy: 'link' };
+      }
+    }
+
+    if (!existingMailItem && payload.oneDriveDownloadUrl) {
+      // Check by scan_file_url (most reliable, unique per file)
+      const urlCheck = await pool.query(
+        'SELECT id, subject, tag, status, scan_file_url, idempotency_key FROM mail_item WHERE user_id = $1 AND scan_file_url = $2 LIMIT 1',
+        [payload.userId, payload.oneDriveDownloadUrl]
+      );
+      if (urlCheck.rows.length > 0) {
+        existingMailItem = { ...urlCheck.rows[0], matchedBy: 'link' };
       }
     }
 
