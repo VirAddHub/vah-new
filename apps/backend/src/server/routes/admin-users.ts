@@ -15,6 +15,7 @@ import { sendTemplateEmail, buildAppUrl } from '../../lib/mailer';
 import { Templates } from '../../lib/postmark-templates';
 import { logger } from '../../lib/logger';
 import { getSubscriptionRate } from '../../services/stripePrices';
+import { passwordSchema } from '../../lib/passwordSchema';
 
 const router = Router();
 
@@ -982,10 +983,25 @@ router.post('/users/:id/restore', requireAdmin, async (req: Request, res: Respon
  */
 router.post('/users', requireAdmin, async (req: Request, res: Response) => {
     const adminId = req.user!.id;
-    const { email, first_name, last_name, company_name, plan_status, password } = req.body;
+    const { email, plan_status, password } = req.body;
+    let { first_name, last_name, company_name } = req.body;
+    // A test customer: the admin sets the password in the form, so no email is sent, and the account
+    // is labelled so it can't be mistaken for a real customer. Like every new account it starts
+    // unpaid, so it has restricted access until a real (test-mode) payment and identity check.
+    const testAccount = req.body?.test_account === true;
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {
         return res.status(400).json({ ok: false, error: 'valid_email_required' });
+    }
+    if (testAccount) {
+        const pw = passwordSchema.safeParse(password);
+        if (!pw.success) {
+            return res.status(400).json({ ok: false, error: 'invalid_password', message: pw.error.issues[0]?.message || 'Choose a stronger password.' });
+        }
+        first_name = (typeof first_name === 'string' && first_name.trim()) || 'Test';
+        last_name = (typeof last_name === 'string' && last_name.trim()) || 'Customer';
+        const label = 'TEST ACCOUNT - not a real customer';
+        company_name = (typeof company_name === 'string' && company_name.trim()) ? `${company_name.trim()} (${label})` : label;
     }
 
     const pool = getPool();
@@ -1037,8 +1053,13 @@ router.post('/users', requireAdmin, async (req: Request, res: Response) => {
         await pool.query(
             `INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
              VALUES ($1, 'create_user', 'user', $2, $3, NOW())`,
-            [adminId, newUser.id, JSON.stringify({ email: newUser.email })]
+            [adminId, newUser.id, JSON.stringify({ email: newUser.email, test_account: testAccount })]
         );
+
+        // A test customer already has the password the admin chose: no email.
+        if (testAccount) {
+            return res.status(201).json({ ok: true, data: { ...newUser, test_account: true } });
+        }
 
         // Send password-reset so user can set their own password on first login
         queueMicrotask(async () => {

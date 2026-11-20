@@ -129,7 +129,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
   // Create user modal state
   const [createModal, setCreateModal] = useState(false);
-  const [createForm, setCreateForm] = useState({ email: '', first_name: '', last_name: '', company_name: '', plan_status: 'pending_payment' });
+  const [createForm, setCreateForm] = useState({ email: '', first_name: '', last_name: '', company_name: '', plan_status: 'pending_payment', test_account: false, password: '' });
   const [createError, setCreateError] = useState('');
 
   // Edit profile modal state
@@ -436,7 +436,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
           <Button
             variant="primary"
             size="sm"
-            onClick={() => { setCreateForm({ email: '', first_name: '', last_name: '', company_name: '', plan_status: 'pending_payment' }); setCreateError(''); setCreateModal(true); }}
+            onClick={() => { setCreateForm({ email: '', first_name: '', last_name: '', company_name: '', plan_status: 'pending_payment', test_account: false, password: '' }); setCreateError(''); setCreateModal(true); }}
           >
             + Create user
           </Button>
@@ -1015,10 +1015,26 @@ export default function UsersSection({ users, loading, error, total, page, pageS
           <div className="bg-card border rounded-2xl p-6 w-full max-w-md space-y-5">
             <div>
               <h3 className="text-body-lg font-semibold mb-1">Create user</h3>
-              <p className="text-body-sm text-muted-foreground">A password-reset email will be sent so they can set their own password.</p>
+              <p className="text-body-sm text-muted-foreground">
+                {createForm.test_account
+                  ? 'A test customer for checking the service. You set the password here; no email is sent.'
+                  : 'A password-reset email will be sent so they can set their own password.'}
+              </p>
             </div>
             {createError && <p className="text-body-sm text-destructive">{createError}</p>}
             <div className="space-y-3">
+              <label className="flex items-start gap-2 rounded-lg border p-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={createForm.test_account}
+                  onChange={(e) => setCreateForm(f => ({ ...f, test_account: e.target.checked, password: '' }))}
+                />
+                <span className="text-body-sm">
+                  <span className="font-medium">Test customer</span>
+                  <span className="block text-muted-foreground">Labelled as a test account. Use an email address you can read, so you can see what customers receive.</span>
+                </span>
+              </label>
               <div className="space-y-1">
                 <Label htmlFor="cu-email">Email *</Label>
                 <Input id="cu-email" type="email" value={createForm.email} onChange={(e) => setCreateForm(f => ({ ...f, email: e.target.value }))} placeholder="user@example.com" />
@@ -1037,6 +1053,13 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 <Label htmlFor="cu-company">Company name</Label>
                 <Input id="cu-company" value={createForm.company_name} onChange={(e) => setCreateForm(f => ({ ...f, company_name: e.target.value }))} placeholder="Acme Ltd" />
               </div>
+              {createForm.test_account && (
+                <div className="space-y-1">
+                  <Label htmlFor="cu-password">Password *</Label>
+                  <Input id="cu-password" type="password" autoComplete="new-password" value={createForm.password} onChange={(e) => setCreateForm(f => ({ ...f, password: e.target.value }))} />
+                  <p className="text-caption text-muted-foreground">At least 8 characters, with an upper-case letter, a lower-case letter and a number.</p>
+                </div>
+              )}
               {/* No plan-status choice: access comes from a Stripe payment, so "Active" here would only
                   have changed a label. New accounts start awaiting payment. */}
               <p className="text-caption text-muted-foreground">The account starts as awaiting payment. Service begins once they pay at checkout.</p>
@@ -1046,6 +1069,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
               <Button
                 onClick={async () => {
                   if (!createForm.email.includes('@')) { setCreateError('Enter a valid email address.'); return; }
+                  if (createForm.test_account && !createForm.password) { setCreateError('Choose a password for the test customer.'); return; }
                   setIsMutating(true);
                   setCreateError('');
                   try {
@@ -1053,11 +1077,22 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                       method: 'POST',
                       credentials: 'include',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(createForm),
+                      body: JSON.stringify(createForm.test_account
+                        ? createForm
+                        : { email: createForm.email, first_name: createForm.first_name, last_name: createForm.last_name, company_name: createForm.company_name }),
                     });
                     const json = await res.json().catch(() => ({}));
                     if (!res.ok) throw new Error(json.message || json.error || 'Failed to create user');
-                    toast({ title: 'User created', description: `${createForm.email} has been created and will receive a password-reset email.` });
+                    const newId = json?.data?.id;
+                    if (createForm.test_account) {
+                      toast({
+                        title: `Test customer #${newId} created`,
+                        description: `Sign in as ${createForm.email} with the password you chose. Name test scans user${newId}_DD-MM-YY_Type.pdf.`,
+                      });
+                    } else {
+                      toast({ title: 'User created', description: `${createForm.email} has been created and will receive a password-reset email.` });
+                    }
+                    setCreateForm(f => ({ ...f, password: '' }));
                     setCreateModal(false);
                     if (onRefreshUsers) await onRefreshUsers();
                   } catch (e: any) {
