@@ -792,15 +792,19 @@ router.patch('/from-onedrive/:mailId/scan-url', async (req, res) => {
 
     const pool = getPool();
 
-    // Update the mail item's scan_file_url
-    // The file has moved: point this letter, and any other letter of the same customer that linked to
-    // the same old location (an earlier import of the same scan), at the new place.
+    // The file has moved: point this letter at its new place, plus any other letter of the same customer
+    // imported from the very same OneDrive file (same item id, in either key format). Letters from a
+    // different file are never touched, even if they share the old link or the file name.
     const updateResult = await pool.query(
-      `WITH target AS (SELECT id, user_id, scan_file_url FROM mail_item WHERE id = $3)
+      `WITH target AS (
+         SELECT id, user_id, substring(idempotency_key from '^onedrive(?:_import)?_(.+)$') AS item_id
+         FROM mail_item WHERE id = $3
+       )
        UPDATE mail_item m SET scan_file_url = $1, updated_at = $2
        FROM target t
        WHERE m.id = t.id
-          OR (t.scan_file_url IS NOT NULL AND m.user_id = t.user_id AND m.scan_file_url = t.scan_file_url)
+          OR (t.item_id IS NOT NULL AND m.user_id = t.user_id
+              AND m.idempotency_key IN ('onedrive_import_' || t.item_id, 'onedrive_' || t.item_id))
        RETURNING m.id, m.scan_file_url`,
       [scanFileUrl, nowMs(), mailId]
     );

@@ -81,13 +81,6 @@ async function fetchOneDriveContentByPath(
     log("[GRAPH DEBUG] driveId:", driveId);
 
     const candidates = new Set<string>([drivePath]);
-    // A scan whose letter still links to the inbox may already have been moved to Processed_Mail
-    // (the importer moves it, then updates the link). Look there too, by the same file name.
-    const addProcessedFallback = (path: string) => {
-        if (/(^|\/)Scanned_Mail\//i.test(path)) {
-            candidates.add(path.replace(/(^|\/)Scanned_Mail\//i, '$1Processed_Mail/'));
-        }
-    };
     if (/^Documents\/.+/i.test(drivePath)) {
         candidates.add(drivePath.replace(/^Documents\//i, ""));
         const segs = drivePath.split("/");
@@ -102,7 +95,6 @@ async function fetchOneDriveContentByPath(
         }
     }
 
-    for (const p of [...candidates]) addProcessedFallback(p);
     let lastDetail = "";
     for (const p of candidates) {
         const encoded = encodeDrivePath(p);
@@ -128,6 +120,52 @@ async function fetchOneDriveContentByPath(
     }
 
     throw new Error(`Graph content error: all candidates failed. Last detail: ${lastDetail}`);
+}
+
+function sendPdf(res: any, upstream: Response, name: string, disp: string) {
+    const len = upstream.headers.get("content-length");
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `${disp}; filename="${name}"`);
+    res.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("Cache-Control", "private, no-store");
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Expose-Headers", "Accept-Ranges, Content-Length, Content-Disposition, Content-Type");
+    if (len) res.setHeader("Content-Length", len);
+    const body = upstream.body as any;
+    if (!body) { res.end(); return; }
+    if (typeof body.pipe === "function") body.pipe(res);
+    else Readable.fromWeb(body).pipe(res);
+}
+
+export class ScanFileMissingError extends Error {
+    code = "scan_file_missing";
+    constructor() { super("The scanned file for this letter is no longer in OneDrive"); }
+}
+
+/**
+ * Stream a scan by its own OneDrive item id. The id stays the same when the file is moved or renamed,
+ * so the letter always opens the exact file it was imported from, never a different file that happens
+ * to share its name. If that file no longer exists the letter has no scan: nothing else is substituted.
+ */
+export async function streamOneDriveItemById(
+    res: any,
+    itemId: string,
+    opts: { filename?: string; disposition?: "inline" | "attachment"; fileUrl?: string } = {}
+) {
+    const token = await graphBearer();
+    const upnFromUrlVal = opts.fileUrl ? upnFromPersonalUrl(opts.fileUrl) : null;
+    const upn = upnFromUrlVal || process.env.ONEDRIVE_USER_UPN || extractUPNFromSitePath(SITE_PATH);
+    const r = await fetch(
+        `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/drive/items/${encodeURIComponent(itemId)}/content`,
+        { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (r.status === 404) throw new ScanFileMissingError();
+    if (!r.ok) {
+        const detail = await r.text().catch(() => "");
+        throw new Error(`Graph content error ${r.status}: ${detail.slice(0, 200)}`);
+    }
+    sendPdf(res, r, opts.filename || "file.pdf", opts.disposition || "inline");
 }
 
 export async function streamSharePointFileByPath(

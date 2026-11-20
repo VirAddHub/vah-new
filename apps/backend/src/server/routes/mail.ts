@@ -5,7 +5,7 @@ import { streamPdfFromUrl } from '../../controllers/pdfProxy';
 import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { selectPaged } from '../db-helpers';
-import { extractDrivePathFromSharePointUrl, streamSharePointFileByPath } from '../../services/sharepoint';
+import { extractDrivePathFromSharePointUrl, streamSharePointFileByPath, streamOneDriveItemById, ScanFileMissingError } from '../../services/sharepoint';
 import { logger } from '../../lib/logger';
 import { safeErrorMessage } from '../../lib/safeError';
 import { requireFullService } from '../services/access';
@@ -32,6 +32,12 @@ function normalizeTag(tag: unknown): string | null {
     return str.length > 0 ? str : null;
 }
 
+/** The OneDrive item id a letter was imported from (both key formats the importer has used). */
+export function oneDriveItemIdFromKey(key: unknown): string | null {
+    const m = /^onedrive(?:_import)?_([A-Za-z0-9!._-]+)$/.exec(String(key ?? ''));
+    return m ? m[1] : null;
+}
+
 /** Resolve a downloadable URL for a mail item, regardless of source - Fixed SQL query */
 async function resolveScanUrl(mailId: string, userId: string, isAdmin: boolean = false) {
     const pool = getPool();
@@ -50,7 +56,8 @@ async function resolveScanUrl(mailId: string, userId: string, isAdmin: boolean =
             m.user_id,
             -- Check file table first, then webhook columns on the mail_item row
             COALESCE(f.web_url, m.scan_file_url) AS url,
-            COALESCE(f.name, m.subject) AS filename
+            COALESCE(f.name, m.subject) AS filename,
+            m.idempotency_key
         FROM mail_item m
         LEFT JOIN file f ON f.id = m.file_id
         WHERE ${where}
@@ -69,6 +76,7 @@ async function resolveScanUrl(mailId: string, userId: string, isAdmin: boolean =
         ok: true as const,
         url: row.url as string,
         filename: (row.filename ?? `mail_item_${mailId}.pdf`) as string,
+        oneDriveItemId: oneDriveItemIdFromKey(row.idempotency_key),
     };
 }
 
@@ -509,6 +517,16 @@ router.get('/mail-items/:id/download', requireAuth, requireFullService, async (r
             return res.status(502).json({ ok: false, error: 'scan_location_unsupported' });
         }
 
+        // A letter imported from OneDrive opens its own file by id, wherever that file now is.
+        if (result.oneDriveItemId) {
+            await streamOneDriveItemById(res, result.oneDriveItemId, {
+                filename: `mail-${mailId}.pdf`,
+                disposition,
+                fileUrl: result.url,
+            });
+            return;
+        }
+
         // Extract SharePoint drive path from URL
         const drivePath = extractDrivePathFromSharePointUrl(result.url);
         logger.debug('[mail] drive path extracted', { mailItemId: mailId, ok: Boolean(drivePath) });
@@ -521,6 +539,11 @@ router.get('/mail-items/:id/download', requireAuth, requireFullService, async (r
         });
 
     } catch (err: any) {
+        if (err instanceof ScanFileMissingError) {
+            logger.warn('[mail] scan file missing', { mailItemId: param(req, 'id') });
+            if (!res.headersSent) return res.status(404).json({ ok: false, error: 'scan_file_missing' });
+            return;
+        }
         logger.error('[mail] download error', { message: err?.message });
         if (!res.headersSent) {
             res.status(500).json({ ok: false, error: 'internal_error', message: safeErrorMessage(err) });
