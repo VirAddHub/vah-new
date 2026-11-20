@@ -288,8 +288,8 @@ router.post('/from-onedrive', async (req, res) => {
     // The same OneDrive file (same file id) imported before, for any customer
     if (!existingMailItem && payload.oneDriveFileId) {
       const fileCheck = await pool.query(
-        'SELECT id, user_id, subject, tag, status, scan_file_url, idempotency_key FROM mail_item WHERE idempotency_key = $1 LIMIT 1',
-        [`onedrive_import_${payload.oneDriveFileId}`]
+        'SELECT id, user_id, subject, tag, status, scan_file_url, idempotency_key FROM mail_item WHERE idempotency_key = ANY($1::text[]) ORDER BY id LIMIT 1',
+        [[`onedrive_import_${payload.oneDriveFileId}`, `onedrive_${payload.oneDriveFileId}`]]
       );
       if (fileCheck.rows.length > 0) {
         const row = fileCheck.rows[0];
@@ -332,9 +332,10 @@ router.post('/from-onedrive', async (req, res) => {
       // Same file = the letter was made from this very OneDrive file (same file id). Only then may
       // the worker finish moving it to Processed_Mail. Otherwise a different file reuses a name that
       // was already used: staff must look at it.
+      // An older importer stored the same file id as onedrive_<id>; the current one as onedrive_import_<id>.
       const sameFile = Boolean(
         payload.oneDriveFileId &&
-        existingMailItem.idempotency_key === `onedrive_import_${payload.oneDriveFileId}`
+        [`onedrive_import_${payload.oneDriveFileId}`, `onedrive_${payload.oneDriveFileId}`].includes(existingMailItem.idempotency_key)
       );
 
       return res.status(200).json({
@@ -792,8 +793,15 @@ router.patch('/from-onedrive/:mailId/scan-url', async (req, res) => {
     const pool = getPool();
 
     // Update the mail item's scan_file_url
+    // The file has moved: point this letter, and any other letter of the same customer that linked to
+    // the same old location (an earlier import of the same scan), at the new place.
     const updateResult = await pool.query(
-      'UPDATE mail_item SET scan_file_url = $1, updated_at = $2 WHERE id = $3 RETURNING id, scan_file_url',
+      `WITH target AS (SELECT id, user_id, scan_file_url FROM mail_item WHERE id = $3)
+       UPDATE mail_item m SET scan_file_url = $1, updated_at = $2
+       FROM target t
+       WHERE m.id = t.id
+          OR (t.scan_file_url IS NOT NULL AND m.user_id = t.user_id AND m.scan_file_url = t.scan_file_url)
+       RETURNING m.id, m.scan_file_url`,
       [scanFileUrl, nowMs(), mailId]
     );
 
@@ -807,14 +815,14 @@ router.patch('/from-onedrive/:mailId/scan-url', async (req, res) => {
 
     logger.info('[internalMailImport] Updated scan_file_url for mail item', {
       mailId,
-      scanFileUrl,
+      lettersUpdated: updateResult.rows.length,
     });
 
     return res.status(200).json({
       ok: true,
       data: {
-        mailId: updateResult.rows[0].id,
-        scanFileUrl: updateResult.rows[0].scan_file_url,
+        mailId,
+        lettersUpdated: updateResult.rows.length,
       },
     });
   } catch (error: any) {
