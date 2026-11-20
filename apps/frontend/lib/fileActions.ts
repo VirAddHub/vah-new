@@ -1,3 +1,5 @@
+import { scanErrorFromResponse } from "./scanErrors";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 export async function openInline(url: string) {
@@ -29,8 +31,7 @@ export async function downloadFile(url: string, fallback = "document.pdf") {
         });
 
         if (!response.ok) {
-            const errorText = await response.text().catch(() => 'Download failed');
-            throw new Error(errorText || `Download failed (${response.status})`);
+            throw new Error(await scanErrorFromResponse(response));
         }
 
         const blob = await response.blob();

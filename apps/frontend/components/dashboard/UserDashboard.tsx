@@ -32,6 +32,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { openInline, downloadFile } from "@/lib/fileActions";
+import { scanErrorFromResponse } from "@/lib/scanErrors";
 import PDFViewerModal from "@/components/PDFViewerModal";
 import { useToast } from "@/components/ui/use-toast";
 import { usePDFPreloader } from "@/hooks/usePDFPreloader";
@@ -310,7 +311,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
       await downloadFile(`${API_BASE}/api/mail-items/${item.id}/download`, `mail-item-${item.id}.pdf`);
     } catch (err) {
       console.error('Download failed:', err);
-      alert('Unable to download file. Please try again.');
+      alert((err as Error)?.message || 'Unable to download file. Please try again.');
     }
   }, []);
 
@@ -389,8 +390,7 @@ export function UserDashboard({ onLogout, onNavigate, onGoBack }: UserDashboardP
           signal: ctrl.signal,
         });
         if (!res.ok) {
-          const txt = await res.text().catch(() => '');
-          throw new Error(txt || `Failed to load preview (${res.status})`);
+          throw new Error(await scanErrorFromResponse(res));
         }
 
         const ab = await res.arrayBuffer();

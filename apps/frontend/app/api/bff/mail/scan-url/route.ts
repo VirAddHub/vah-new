@@ -58,10 +58,10 @@ export async function GET(request: NextRequest) {
         mailItemId,
         errorText: errorText.substring(0, 200) // Truncate for logging
       });
-      return NextResponse.json(
-        { error: `Backend error: ${response.status} - ${errorText}` },
-        { status: response.status }
-      );
+      // Pass the backend's error code through without its raw body, so the page can show a plain message.
+      let code = 'scan_unavailable';
+      try { code = String(JSON.parse(errorText)?.error || code); } catch { /* not JSON */ }
+      return NextResponse.json({ ok: false, error: code }, { status: response.status });
     }
 
     // Get the PDF content
