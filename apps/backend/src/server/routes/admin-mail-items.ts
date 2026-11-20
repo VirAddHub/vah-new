@@ -9,6 +9,8 @@ import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { param } from '../../lib/express-params';
 import { safeErrorMessage } from '../../lib/safeError';
+import { DESTRUCTION_STATE_SQL, DESTROY_FROM_SQL } from '../../services/mailRetention';
+import { getImporterStatus } from '../../services/mailImportStatus';
 
 const router = Router();
 
@@ -43,6 +45,16 @@ function keyFrom(req: Request): Key {
 }
 
 /**
+ * GET /api/admin/mail-import/status
+ * What the OneDrive importer last reported: is it running, can it read the inbox,
+ * and which files it could not file onto a customer's account.
+ */
+router.get('/mail-import/status', requireAdmin, (_req: Request, res: Response) => {
+    res.setHeader('Cache-Control', 'no-store');
+    return res.json({ ok: true, data: getImporterStatus() });
+});
+
+/**
  * GET /api/admin/mail-items
  * Get all mail items (admin only)
  */
@@ -62,13 +74,43 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
 
     const exec = (async () => {
         const pool = getPool();
-        const { status, user_id, limit = '100', offset = '0' } = req.query;
+        const { status, user_id, view, q, limit = '100', offset = '0' } = req.query;
 
-        const limitNum = parseInt(limit as string) || 100;
+        const limitNum = Math.min(parseInt(limit as string) || 100, 500);
         const offsetNum = parseInt(offset as string) || 0;
 
         try {
-            let query = `
+            // Filters shared by the list and the counts
+            const where: string[] = ['m.deleted = false'];
+            const params: any[] = [];
+            const add = (value: any) => { params.push(value); return `$${params.length}`; };
+
+            if (status && status !== 'all') {
+                where.push(`m.status = ${add(status)}`);
+            }
+            if (user_id) {
+                where.push(`m.user_id = ${add(parseInt(user_id as string))}`);
+            }
+            const search = typeof q === 'string' ? q.trim() : '';
+            let exactFirst = '';
+            if (search) {
+                const like = add(`%${search}%`);
+                let idMatch = '';
+                if (/^#?\d+$/.test(search)) {
+                    const idParam = add(parseInt(search.replace('#', ''), 10));
+                    idMatch = `OR m.id = ${idParam} OR m.user_id = ${idParam}`;
+                    // An exact letter number first, then that customer's letters
+                    exactFirst = `(m.id = ${idParam}) DESC, (m.user_id = ${idParam}) DESC, `;
+                }
+                where.push(`(u.email ILIKE ${like} OR u.first_name ILIKE ${like} OR u.last_name ILIKE ${like}
+                    OR m.subject ILIKE ${like} OR m.sender_name ILIKE ${like} OR m.tag ILIKE ${like} ${idMatch})`);
+            }
+            const baseWhere = where.join(' AND ');
+            const listWhere = view === 'needs_destruction'
+                ? `${baseWhere} AND (${DESTRUCTION_STATE_SQL}) = 'due'`
+                : baseWhere;
+
+            const query = `
             SELECT
                 m.id,
                 m.user_id,
@@ -92,82 +134,44 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
                 f.name as file_name,
                 f.size as file_size,
                 f.web_url as file_url,
-                -- Calculate days until/past 30-day expiry
-                -- Use received_at_ms first (most accurate), then received_date, then created_at as fallback
-                CASE 
-                    WHEN m.received_at_ms IS NOT NULL THEN
-                        EXTRACT(EPOCH FROM (to_timestamp(m.received_at_ms / 1000) + INTERVAL '30 days' - now())) / 86400
-                    WHEN m.received_date IS NOT NULL THEN
-                        EXTRACT(EPOCH FROM (m.received_date::timestamptz + INTERVAL '30 days' - now())) / 86400
-                    WHEN m.created_at IS NOT NULL THEN
-                        EXTRACT(EPOCH FROM (to_timestamp(m.created_at / 1000) + INTERVAL '30 days' - now())) / 86400
-                    ELSE NULL
-                END as days_until_deletion,
-                -- Check if past 30 days (same fallback logic)
-                -- Uses >= so items on day 30 are considered past 30 days
-                CASE 
-                    WHEN m.received_at_ms IS NOT NULL AND (now() - to_timestamp(m.received_at_ms / 1000)) >= INTERVAL '30 days' THEN true
-                    WHEN m.received_date IS NOT NULL AND (now() - m.received_date::timestamptz) >= INTERVAL '30 days' THEN true
-                    WHEN m.created_at IS NOT NULL AND (now() - to_timestamp(m.created_at / 1000)) >= INTERVAL '30 days' THEN true
-                    ELSE false
-                END as past_30_days
+                EXTRACT(EPOCH FROM (${DESTROY_FROM_SQL} - now())) / 86400 as days_until_deletion,
+                (now() >= ${DESTROY_FROM_SQL}) as past_30_days,
+                ${DESTROY_FROM_SQL} as destroy_from,
+                ${DESTRUCTION_STATE_SQL} as destruction_state
             FROM mail_item m
             JOIN "user" u ON m.user_id = u.id
             LEFT JOIN file f ON m.file_id = f.id
-            WHERE m.deleted = false
-            AND (
-                -- Include scanned items OR items with files OR items with scan URLs
-                (m.scanned = true OR m.scan_file_url IS NOT NULL OR f.id IS NOT NULL)
-                -- OR include items that have dates (even if not marked scanned) - they might need destruction
-                OR (m.received_at_ms IS NOT NULL OR m.received_date IS NOT NULL OR m.created_at IS NOT NULL)
-            )
-            AND (m.received_at_ms IS NOT NULL OR m.received_date IS NOT NULL OR m.created_at IS NOT NULL)
+            WHERE ${listWhere}
+            ORDER BY ${exactFirst}${view === 'needs_destruction' ? 'destroy_from ASC' : 'm.created_at DESC'}
+            LIMIT ${add(limitNum)} OFFSET ${add(offsetNum)}
         `;
-
-            const params: any[] = [];
-            let paramIndex = 1;
-
-            if (status && status !== 'all') {
-                query += ` AND m.status = $${paramIndex}`;
-                params.push(status);
-                paramIndex++;
-            }
-
-            if (user_id) {
-                query += ` AND m.user_id = $${paramIndex}`;
-                params.push(parseInt(user_id as string));
-                paramIndex++;
-            }
-
-            query += ` ORDER BY m.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-            params.push(limitNum, offsetNum);
 
             const result = await pool.query(query, params);
 
-            // Get total count
-            let countQuery = 'SELECT COUNT(*) FROM mail_item m WHERE m.deleted = false';
-            const countParams: any[] = [];
-            let countParamIndex = 1;
-
-            if (status && status !== 'all') {
-                countQuery += ` AND m.status = $${countParamIndex}`;
-                countParams.push(status);
-                countParamIndex++;
-            }
-
-            if (user_id) {
-                countQuery += ` AND m.user_id = $${countParamIndex}`;
-                countParams.push(parseInt(user_id as string));
-                countParamIndex++;
-            }
-
-            const countResult = await pool.query(countQuery, countParams);
-            const total = parseInt(countResult.rows[0].count);
+            // Counts for the tabs (same filters, no paging)
+            const countParams = params.slice(0, params.length - 2);
+            const countResult = await pool.query(
+                `SELECT
+                    COUNT(*)::int AS all_count,
+                    COUNT(*) FILTER (WHERE (${DESTRUCTION_STATE_SQL}) = 'due')::int AS due_count,
+                    COUNT(*) FILTER (WHERE (${DESTRUCTION_STATE_SQL}) = 'destroyed')::int AS destroyed_count
+                 FROM mail_item m
+                 JOIN "user" u ON m.user_id = u.id
+                 WHERE ${baseWhere}`,
+                countParams
+            );
+            const counts = countResult.rows[0] || { all_count: 0, due_count: 0, destroyed_count: 0 };
+            const total = view === 'needs_destruction' ? counts.due_count : counts.all_count;
 
             return {
                 ok: true,
                 items: result.rows,
                 total: total,
+                counts: {
+                    all: counts.all_count,
+                    needsDestruction: counts.due_count,
+                    destroyed: counts.destroyed_count,
+                },
                 data: result.rows, // Keep for backward compatibility
                 pagination: {
                     limit: limitNum,
@@ -237,7 +241,9 @@ router.get('/mail-items/:id', requireAdmin, async (req: Request, res: Response) 
                 admin_user.email as destroyed_by_email,
                 admin_user.first_name as destroyed_by_first_name,
                 admin_user.last_name as destroyed_by_last_name,
-                admin_audit.created_at as destroyed_by_at
+                admin_audit.created_at as destroyed_by_at,
+                ${DESTROY_FROM_SQL} as destroy_from,
+                ${DESTRUCTION_STATE_SQL} as destruction_state
             FROM mail_item m
             JOIN "user" u ON m.user_id = u.id
             LEFT JOIN file f ON m.file_id = f.id
@@ -471,7 +477,8 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
                 u.last_name AS user_last_name,
                 u.email AS user_email,
                 u.company_name,
-                u.is_admin AS user_is_admin
+                u.is_admin AS user_is_admin,
+                ${DESTRUCTION_STATE_SQL} AS destruction_state
             FROM mail_item m
             JOIN "user" u ON u.id = m.user_id
             WHERE m.id = $1
@@ -493,6 +500,22 @@ router.post('/mail-items/:id/mark-destroyed', requireAdmin, async (req: Request,
                 ok: false, 
                 error: 'invalid_destruction_target',
                 message: 'Cannot destroy mail for internal staff accounts'
+            });
+        }
+
+        // A forwarded letter is no longer here; an open forwarding request means the customer is waiting for it.
+        if (mailItem.destruction_state === 'forwarded') {
+            return res.status(400).json({
+                ok: false,
+                error: 'already_forwarded',
+                message: 'This letter was forwarded to the customer, so there is nothing to shred.'
+            });
+        }
+        if (mailItem.destruction_state === 'forwarding_open') {
+            return res.status(400).json({
+                ok: false,
+                error: 'forwarding_in_progress',
+                message: 'The customer has asked for this letter to be forwarded. Finish or cancel the forwarding request before shredding it.'
             });
         }
 

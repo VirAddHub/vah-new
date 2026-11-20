@@ -73,7 +73,8 @@ export function parseMailFilename(filename: string): ParsedMailFilename | null {
 
   const userId = parseInt(match[1], 10);
   const dateSegment = match[2];
-  const sourceSlug = match[3].toLowerCase().trim();
+  // OneDrive's "keep both" adds " 1", " (1)" etc. after the name: ignore anything after a space
+  const sourceSlug = match[3].trim().split(/\s+/)[0].toLowerCase();
 
   if (isNaN(userId) || userId <= 0 || !sourceSlug) {
     return null;

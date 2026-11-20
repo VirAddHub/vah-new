@@ -86,7 +86,7 @@ export default function AdminMailDetailPage() {
 
   async function markAsDestroyed() {
     if (adminStatus !== "ready" || !id) return;
-    if (!confirm("Are you sure you want to mark this mail item as physically destroyed? This action will be logged in the audit trail.")) {
+    if (!confirm("Only do this once the paper is in the shredder. It will be added to the shredding log with your name and today's date, and can't be undone. Record this letter as shredded?")) {
       return;
     }
 
@@ -204,7 +204,7 @@ export default function AdminMailDetailPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Mail Information</CardTitle>
-                  {!isDestroyed && (
+                  {!isDestroyed && mailItem.destruction_state === "due" && (
                     <Button
                       variant="destructive"
                       onClick={markAsDestroyed}
@@ -212,8 +212,19 @@ export default function AdminMailDetailPage() {
                       className="gap-2"
                     >
                       <Trash2 className="h-4 w-4" />
-                      {markingDestroyed ? "Marking..." : "Mark as Destroyed"}
+                      {markingDestroyed ? "Recording..." : "Mark as shredded"}
                     </Button>
+                  )}
+                  {!isDestroyed && mailItem.destruction_state !== "due" && (
+                    <span className="text-body-sm text-muted-foreground">
+                      {mailItem.destruction_state === "forwarded"
+                        ? "Forwarded to the customer: nothing to shred"
+                        : mailItem.destruction_state === "forwarding_open"
+                          ? "Forwarding requested: keep this letter"
+                          : mailItem.destroy_from
+                            ? `Keep until ${new Date(mailItem.destroy_from).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`
+                            : "Not due for shredding yet"}
+                    </span>
                   )}
                 </div>
               </CardHeader>

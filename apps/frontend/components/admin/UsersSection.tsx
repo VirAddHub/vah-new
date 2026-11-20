@@ -453,7 +453,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
             {deletedUsersLoading && <div className="animate-spin rounded-full h-3 w-3 border-b border-background"></div>}
           </Button>
           <Input
-            placeholder="Search ID, name or email…"
+            placeholder="Search number, name, email or company…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="w-full sm:w-60"

@@ -38,6 +38,31 @@ import {
   type OneDriveFile,
 } from '../services/onedriveClient';
 import { parseMailFilename } from '../services/mailFilenameParser';
+import { classifyListError, type ImporterReport, type ImportIssueReason } from '../services/mailImportStatus';
+
+type RunIssue = { fileName: string; reason: ImportIssueReason; detail?: string | null };
+
+/**
+ * Files that cannot be filed until a person fixes them (wrong name, unknown customer number).
+ * Keyed by inbox snapshot: renaming or replacing the file changes the key, so it is tried again.
+ * This stops the worker re-reading (and re-sending to OpenAI) the same stuck file every run.
+ */
+const stuckSnapshots = new Map<string, RunIssue>();
+
+/** Map a webhook error to something staff can act on; null = temporary, try again next run. */
+function permanentIssueFor(fileName: string, status: number, error: unknown): RunIssue | null {
+  const code = typeof error === 'string' ? error : '';
+  if (code === 'user_not_found' || status === 404) {
+    return { fileName, reason: 'customer_not_found', detail: 'No customer has the number in this filename.' };
+  }
+  if (code === 'no_business' || status === 422) {
+    return { fileName, reason: 'no_business', detail: 'This customer has no business on their account to attach mail to.' };
+  }
+  if (code === 'validation_error' || code === 'invalid_payload' || status === 400) {
+    return { fileName, reason: 'bad_filename', detail: 'The importer rejected the details read from this filename.' };
+  }
+  return null;
+}
 
 /**
  * OneDrive keeps the same drive item `id` when you replace a file in place. Deduping only on `id`
@@ -263,12 +288,20 @@ const processedInboxSnapshots = new Set<string>();
  * Process a single file: parse, call webhook
  * Returns: 'created' | 'skipped' | 'failed'
  */
-async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 'failed'> {
+async function processFile(
+  file: OneDriveFile,
+  report: (issue: RunIssue, permanent: boolean) => void = () => {}
+): Promise<'created' | 'skipped' | 'failed'> {
   // Parse filename
   const parsed = parseMailFilename(file.name);
 
   if (!parsed) {
     logger.warn(`[onedriveMailIngest] Skipping file "${file.name}" (filename pattern did not match)`);
+    report({
+      fileName: file.name,
+      reason: 'bad_filename',
+      detail: 'The name does not follow user{number}_{DD-MM-YY}_{TYPE}.pdf. Use the Filenames tool.',
+    }, true);
     return 'failed';
   }
 
@@ -344,6 +377,7 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
         errorName: err.name,
       });
     }
+    report({ fileName: file.name, reason: 'import_failed', detail: 'Could not reach the website; will retry.' }, false);
     return 'failed';
   }
 
@@ -355,6 +389,11 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
       error: errorMsg,
       body: responseData,
     });
+    const permanent = permanentIssueFor(file.name, response.status, responseData?.error);
+    report(
+      permanent || { fileName: file.name, reason: 'import_failed', detail: `The website returned an error (${errorMsg}); will retry.` },
+      Boolean(permanent)
+    );
     return 'failed';
   }
 
@@ -502,15 +541,24 @@ async function processFile(file: OneDriveFile): Promise<'created' | 'skipped' | 
  */
 async function runOnce(): Promise<void> {
   logger.info('[onedriveMailIngest] Starting mail ingestion...');
+  const runIssues: RunIssue[] = [];
 
   try {
     // List all PDF files in inbox
-    const files = await listInboxFiles();
+    let files: OneDriveFile[];
+    try {
+      files = await listInboxFiles();
+    } catch (listErr: any) {
+      const { problem, detail } = classifyListError(listErr?.message || String(listErr));
+      await reportStatus({ ok: false, problem, problemDetail: detail });
+      throw listErr;
+    }
     logger.info(`[onedriveMailIngest] 📦 Found ${files.length} PDF file(s) in inbox`);
     logger.info(`[onedriveMailIngest] 📊 In-memory dedupe cache: ${processedInboxSnapshots.size} snapshot(s) already processed`);
 
     if (files.length === 0) {
       logger.info('[onedriveMailIngest] No files to process');
+      await reportStatus({ ok: true, filesInInbox: 0, imported: 0, issues: [] });
       return;
     }
 
@@ -530,6 +578,14 @@ async function runOnce(): Promise<void> {
 
       const snapshotKey = inboxSnapshotKey(file);
 
+      // Still stuck from an earlier run and unchanged since: report it again without re-processing
+      const stuck = stuckSnapshots.get(snapshotKey);
+      if (stuck) {
+        runIssues.push(stuck);
+        failedCount++;
+        continue;
+      }
+
       // Skip if we've already processed this exact inbox snapshot in this worker process
       if (processedInboxSnapshots.has(snapshotKey)) {
         logger.info('[onedriveMailIngest] ⏭️  SKIPPING already-processed file (in-memory dedupe)', {
@@ -546,7 +602,10 @@ async function runOnce(): Promise<void> {
       }
 
       try {
-        const result = await processFile(file);
+        const result = await processFile(file, (issue, permanent) => {
+          runIssues.push(issue);
+          if (permanent) stuckSnapshots.set(snapshotKey, issue);
+        });
 
         // Only mark as processed after a successful call (created or skipped by backend)
         if (result === 'created' || result === 'skipped') {
@@ -569,7 +628,8 @@ async function runOnce(): Promise<void> {
           failedCount++;
         }
       } catch (err: any) {
-        logger.error(`[onedriveMailIngest] Error processing file "${file.name}":`, err.message);
+        logger.error(`[onedriveMailIngest] Error processing file "${file.name}"`, { error: err?.message });
+        runIssues.push({ fileName: file.name, reason: 'import_failed', detail: 'Unexpected error; will retry.' });
         failedCount++;
         // Continue with next file
       }
@@ -583,11 +643,50 @@ async function runOnce(): Promise<void> {
       summary: `${createdCount} new, ${skippedCount} skipped (${skippedCount > 0 ? 'in-memory dedupe' : 'none'}), ${failedCount} failed`,
     });
 
+    // Files still in the inbox = everything listed, minus what was imported and moved out this run
+    const movesOut = Boolean(process.env.ONEDRIVE_MAIL_PROCESSED_FOLDER_ID || process.env.GRAPH_MAIL_PROCESSED_FOLDER_ID);
+    await reportStatus({
+      ok: true,
+      filesInInbox: Math.max(0, files.length - (movesOut ? createdCount : 0)),
+      imported: createdCount,
+      issues: runIssues,
+    });
+
     // Give a small delay to ensure all async operations (like fetch) complete
     await new Promise(resolve => setTimeout(resolve, 100));
   } catch (err: any) {
-    logger.error('[onedriveMailIngest] Fatal error during ingestion:', err.message);
+    logger.error('[onedriveMailIngest] Fatal error during ingestion', { error: err?.message });
     throw err;
+  }
+}
+
+/**
+ * Tell the website how this run went, for the importer panel staff see on the Mail and Filenames pages.
+ * Never throws: a failed report must not stop mail being imported.
+ */
+async function reportStatus(report: Omit<ImporterReport, 'intervalMs'>): Promise<void> {
+  try {
+    const statusUrl = `${WEBHOOK_URL_STRING.replace(/\/+$/, '')}/status`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    try {
+      const res = await fetch(statusUrl, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-mail-import-secret': WEBHOOK_SECRET_STRING },
+        body: JSON.stringify({
+          ...report,
+          intervalMs: Number(process.env.ONEDRIVE_MAIL_POLL_INTERVAL_MS ?? '300000'),
+        }),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        logger.warn('[onedriveMailIngest] Status report was not accepted', { status: res.status });
+      }
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  } catch (err: any) {
+    logger.warn('[onedriveMailIngest] Could not send status report', { error: err?.message });
   }
 }
 
@@ -610,7 +709,7 @@ async function runOnceSafely(): Promise<void> {
   try {
     await runOnce();
   } catch (err: any) {
-    logger.error('[onedriveMailIngest] Error during runOnce:', err);
+    logger.error('[onedriveMailIngest] Error during runOnce', { error: err?.message });
     // Do NOT exit. Log error and continue.
   } finally {
     isRunning = false;

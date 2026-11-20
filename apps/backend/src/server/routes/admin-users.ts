@@ -150,7 +150,7 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
             } else {
                 // Simplified search for better performance - use individual field matching
                 const searchTerm = String(search).trim();
-                whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex})`;
+                whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex} OR u.company_name ILIKE $${paramIndex})`;
                 params.push(`%${searchTerm}%`);
             }
             paramIndex++;
@@ -208,7 +208,7 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
                 countQuery += ` AND u.id = $${countParamIndex}`;
                 countParams.push(searchNum);
             } else {
-                countQuery += ` AND (u.email ILIKE $${countParamIndex} OR u.first_name ILIKE $${countParamIndex} OR u.last_name ILIKE $${countParamIndex})`;
+                countQuery += ` AND (u.email ILIKE $${countParamIndex} OR u.first_name ILIKE $${countParamIndex} OR u.last_name ILIKE $${countParamIndex} OR u.company_name ILIKE $${countParamIndex})`;
                 countParams.push(`%${String(search).trim()}%`);
             }
             countParamIndex++;
@@ -299,18 +299,21 @@ router.get('/users/search', adminUsersLimiter, requireAdmin, async (req: Request
                 company_name,
                 plan_status,
                 kyc_status,
-                status
+                status,
+                (suspended_at IS NOT NULL AND suspended_at <= NOW()) AS is_suspended
             FROM "user"
             WHERE deleted_at IS NULL
+              AND COALESCE(is_admin, false) = false
               AND (
                 email ILIKE $1
                 OR CONCAT_WS(' ', COALESCE(first_name, ''), COALESCE(last_name, '')) ILIKE $1
                 OR company_name ILIKE $1
+                OR id::text = $2
               )
-            ORDER BY id ASC
+            ORDER BY (id::text = $2) DESC, id ASC
             LIMIT 20
             `,
-            [like]
+            [like, q.replace(/^#|^user/i, '')]
         );
 
         return res.json({ ok: true, data: result.rows });
@@ -445,7 +448,7 @@ router.get('/users/deleted', adminUsersLimiter, requireAdmin, async (req: Reques
             } else {
                 // Simplified search for better performance
                 const searchTerm = String(search).trim();
-                whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex})`;
+                whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex} OR u.company_name ILIKE $${paramIndex})`;
                 params.push(`%${searchTerm}%`);
             }
             paramIndex++;
@@ -467,7 +470,7 @@ router.get('/users/deleted', adminUsersLimiter, requireAdmin, async (req: Reques
                 countQuery += ` AND u.id = $${countParamIndex}`;
                 countParams.push(searchNum);
             } else {
-                countQuery += ` AND (u.email ILIKE $${countParamIndex} OR u.first_name ILIKE $${countParamIndex} OR u.last_name ILIKE $${countParamIndex})`;
+                countQuery += ` AND (u.email ILIKE $${countParamIndex} OR u.first_name ILIKE $${countParamIndex} OR u.last_name ILIKE $${countParamIndex} OR u.company_name ILIKE $${countParamIndex})`;
                 countParams.push(`%${String(search).trim()}%`);
             }
             countParamIndex++;

@@ -1,17 +1,28 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Card } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Search, Eye, Trash2, AlertTriangle, CheckCircle, AlertCircle, Download } from "lucide-react";
+import { Checkbox } from "../ui/checkbox";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "../ui/dialog";
+import { Search, Eye, Download, Scissors } from "lucide-react";
 import { apiClient, safe } from "../../lib/apiClient";
 import { useSimpleDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useAuthedSWR } from "../../lib/useAuthedSWR";
 import { useToast } from "@/components/ui/use-toast";
+import { MailImporterStatus } from "./MailImporterStatus";
+
+type DestructionState = "destroyed" | "forwarded" | "forwarding_open" | "due" | "not_yet";
 
 interface MailItem {
     id: number;
@@ -22,674 +33,345 @@ interface MailItem {
     subject: string | null;
     sender_name: string | null;
     tag: string | null;
-    status: string;
     received_date: string | null;
-    received_at_ms: number | null;
-    created_at: number | null;
-    expires_at: number | null;
-    days_until_deletion: number | null;
-    past_30_days: boolean;
+    received_at_ms: number | string | null;
+    created_at: number | string | null;
     physical_destruction_date: string | null;
+    destroy_from: string | null;
+    destruction_state: DestructionState;
 }
 
-type MailSectionProps = Record<string, never>;
+interface MailListResponse {
+    items: MailItem[];
+    total: number;
+    counts?: { all: number; needsDestruction: number; destroyed: number };
+}
 
-export function MailSection({ }: MailSectionProps) {
-    const [actionLoading, setActionLoading] = useState(false);
+type View = "needs_destruction" | "all";
+
+const PAGE_SIZE = 200;
+
+const toDate = (value: number | string | null | undefined): Date | null => {
+    if (value === null || value === undefined || value === "") return null;
+    const asNumber = typeof value === "string" && /^\d+$/.test(value) ? Number(value) : value;
+    const d = new Date(asNumber as any);
+    return Number.isNaN(d.getTime()) ? null : d;
+};
+
+const fmt = (d: Date | null) =>
+    d ? d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—";
+
+const receivedOf = (item: MailItem) =>
+    toDate(item.received_at_ms) || toDate(item.received_date) || toDate(item.created_at);
+
+function ShredStatus({ item }: { item: MailItem }) {
+    switch (item.destruction_state) {
+        case "destroyed":
+            return <Badge variant="secondary">Shredded {fmt(toDate(item.physical_destruction_date))}</Badge>;
+        case "forwarded":
+            return <Badge variant="secondary">Forwarded, nothing to shred</Badge>;
+        case "forwarding_open":
+            return <Badge variant="outline">Forwarding requested: keep it</Badge>;
+        case "due":
+            return <Badge variant="destructive">Due since {fmt(toDate(item.destroy_from))}</Badge>;
+        default:
+            return <Badge variant="outline">Keep until {fmt(toDate(item.destroy_from))}</Badge>;
+    }
+}
+
+export function MailSection() {
     const { toast } = useToast();
-    const { query: searchTerm, setQuery: setSearchTerm, debouncedQuery: debouncedSearchTerm } = useSimpleDebouncedSearch(300, 0);
+    const [view, setView] = useState<View>("needs_destruction");
+    const [selected, setSelected] = useState<Set<number>>(new Set());
+    const [confirmIds, setConfirmIds] = useState<number[] | null>(null);
+    const [working, setWorking] = useState(false);
+    const { query: searchTerm, setQuery: setSearchTerm, debouncedQuery } = useSimpleDebouncedSearch(300, 0);
 
-    // Build query parameters - only show scanned mail
-    const mailItemsParams = useMemo(() => ({
-        q: debouncedSearchTerm || "",
-        limit: '500', // Show more items
-        offset: '0'
-    }), [debouncedSearchTerm]);
-
-    const {
-        data: mailItemsData,
-        isLoading: mailItemsLoading,
-        mutate: refetchMailItems
-    } = useAuthedSWR<{ items: MailItem[]; total: number }>(
-        ['/api/admin/mail-items', mailItemsParams],
-        {
-            dedupingInterval: 5000,
-            revalidateOnFocus: true, // Refresh when tab gets focus
-            revalidateOnReconnect: true, // Refresh when connection restored
-            refreshInterval: 10000, // Refresh every 10 seconds (faster updates)
-            refreshWhenHidden: false,
-        }
+    const params = useMemo(
+        () => ({ view, q: debouncedQuery || "", limit: String(PAGE_SIZE), offset: "0" }),
+        [view, debouncedQuery]
     );
 
-    const mailItems = safe(mailItemsData?.items, []);
-    const loading = mailItemsLoading || actionLoading;
-
-    const handleViewItem = (itemId: number) => {
-        window.open(`/admin/mail/${itemId}`, '_blank');
-    };
-
-    const handleMarkDestroyed = async (itemId: number) => {
-        if (!confirm("Are you sure you want to mark this mail item as physically destroyed? This action will be logged in the audit trail.")) {
-            return;
-        }
-
-        setActionLoading(true);
-        try {
-            // Use BFF route - credentials are included automatically via apiClient
-            const response = await apiClient.post(`/api/bff/admin/mail-items/${itemId}/mark-destroyed`, undefined, {
-                credentials: 'include'
-            });
-            
-            // apiClient returns { ok: boolean, data?: any, message?: string, status?: number }
-            // On success: { ok: true, data: { ok: true } }
-            // On HTTP error (4xx/5xx): { ok: false, message: string, status: number }
-            // On JSON error response: { ok: false, data: { ok: false, error: string, message: string } }
-            
-            const isSuccess = response.ok && (response.data?.ok === true || (response as any).ok === true);
-            
-            if (isSuccess) {
-                toast({
-                    title: "Mail item marked as destroyed",
-                    description: "Physical destruction has been logged in the audit trail.",
-                });
-                refetchMailItems();
-            } else {
-                // Extract error message (apiClient puts backend message in .error or .message)
-                const status = (response as any).status;
-                const errorData = response.data as { error?: string; message?: string } | undefined;
-                let errorMessage =
-                    (response as any).error
-                    || errorData?.message
-                    || errorData?.error
-                    || (response as any).message
-                    || `Failed to mark as destroyed (status: ${status || 'unknown'})`;
-                if (status === 403) {
-                    errorMessage = "You don't have permission to perform this action. If you're an admin, try signing in again.";
-                }
-                console.error('[Mark Destroyed] Backend error:', { status, errorMessage, response });
-                throw new Error(errorMessage);
-            }
-        } catch (error: any) {
-            const status = error?.status ?? error?.response?.status;
-            const errorMessage =
-                error?.response?.data?.message
-                || error?.response?.data?.error
-                || error?.data?.message
-                || error?.data?.error
-                || error?.message
-                || (status === 403
-                    ? "You don't have permission. If you're an admin, try signing in again."
-                    : "An error occurred");
-            if (process.env.NODE_ENV === 'development') {
-                console.error('[Mark Destroyed]', errorMessage, status != null ? `(status ${status})` : '');
-            }
-            toast({
-                title: "Failed to mark as destroyed",
-                description: errorMessage,
-                variant: "destructive",
-            });
-        } finally {
-            setActionLoading(false);
-        }
-    };
-
-    const handleExportDestructionLog = () => {
-        // Simple download - browser handles it automatically
-        window.location.href = '/api/bff/admin/exports/destruction-log';
-    };
-
-    const parseDate = (dateStr: string | null, ms: number | null, fallbackMs?: number | null): Date | null => {
-        // Try received_at_ms first
-        if (ms !== null && ms !== undefined) {
-            const msNum = typeof ms === 'string' ? parseInt(ms, 10) : ms;
-            if (!isNaN(msNum) && msNum > 0) {
-                const date = new Date(msNum);
-                if (!isNaN(date.getTime())) return date;
-            }
-        }
-        // Try received_date string
-        if (dateStr) {
-            const date = new Date(dateStr);
-            if (!isNaN(date.getTime())) return date;
-        }
-        // Fallback to created_at if provided
-        if (fallbackMs !== null && fallbackMs !== undefined) {
-            const msNum = typeof fallbackMs === 'string' ? parseInt(fallbackMs, 10) : fallbackMs;
-            if (!isNaN(msNum) && msNum > 0) {
-                const date = new Date(msNum);
-                if (!isNaN(date.getTime())) return date;
-            }
-        }
-        return null;
-    };
-
-    const formatDate = (dateStr: string | null, ms: number | null, fallbackMs?: number | null) => {
-        const date = parseDate(dateStr, ms, fallbackMs);
-        if (date) {
-            return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        }
-        return '—';
-    };
-
-    const formatDateDDMMYYYY = (dateStr: string | null, ms: number | null, fallbackMs?: number | null) => {
-        const date = parseDate(dateStr, ms, fallbackMs);
-        if (date) {
-            return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        }
-        return '—';
-    };
-
-    const getDestructionEligibilityDate = (item: MailItem): string => {
-        // Use expires_at if available
-        if (item.expires_at !== null && item.expires_at !== undefined) {
-            const expiresMs = typeof item.expires_at === 'string' ? parseInt(item.expires_at, 10) : item.expires_at;
-            if (!isNaN(expiresMs) && expiresMs > 0) {
-                const date = new Date(expiresMs);
-                if (!isNaN(date.getTime())) {
-                    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                }
-            }
-        }
-
-        // Calculate from received date + 30 days
-        const receivedDate = parseDate(item.received_date, item.received_at_ms, item.created_at);
-        if (receivedDate) {
-            const eligibilityDate = new Date(receivedDate.getTime() + (30 * 24 * 60 * 60 * 1000));
-            return eligibilityDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        }
-
-        return '—';
-    };
-
-    const getDestructionEligibilityStatus = (item: MailItem): { label: string; isEligible: boolean } => {
-        // If already destroyed, show destroyed status
-        if (item.physical_destruction_date) {
-            // physical_destruction_date is an ISO string from PostgreSQL TIMESTAMPTZ
-            const destroyedDate = typeof item.physical_destruction_date === 'string'
-                ? new Date(item.physical_destruction_date)
-                : item.physical_destruction_date
-                    ? new Date(item.physical_destruction_date)
-                    : null;
-            const destroyedDateStr = destroyedDate && !isNaN(destroyedDate.getTime())
-                ? destroyedDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                : '—';
-            return { label: `Destroyed on ${destroyedDateStr}`, isEligible: false };
-        }
-
-        // Use backend's past_30_days calculation if available (most reliable)
-        if (item.past_30_days === true) {
-            return { label: "Eligible for destruction", isEligible: true };
-        }
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        let eligibilityDate: Date | null = null;
-
-        // Use expires_at if available
-        if (item.expires_at !== null && item.expires_at !== undefined) {
-            const expiresMs = typeof item.expires_at === 'string' ? parseInt(item.expires_at, 10) : item.expires_at;
-            if (!isNaN(expiresMs) && expiresMs > 0) {
-                const date = new Date(expiresMs);
-                if (!isNaN(date.getTime())) {
-                    eligibilityDate = date;
-                }
-            }
-        }
-
-        // Calculate from received date + 30 days
-        if (!eligibilityDate) {
-            const receivedDate = parseDate(item.received_date, item.received_at_ms, item.created_at);
-            if (receivedDate) {
-                eligibilityDate = new Date(receivedDate.getTime() + (30 * 24 * 60 * 60 * 1000));
-            }
-        }
-
-        if (!eligibilityDate) {
-            return { label: "Not yet eligible", isEligible: false };
-        }
-
-        eligibilityDate.setHours(0, 0, 0, 0);
-        const isEligible = today >= eligibilityDate;
-
-        return {
-            label: isEligible ? "Eligible for destruction" : "Not yet eligible",
-            isEligible
-        };
-    };
-
-    const getDeletionStatus = (item: MailItem) => {
-        if (item.physical_destruction_date) {
-            return {
-                label: "Destroyed",
-                variant: "default" as const,
-                color: "text-primary",
-                icon: <CheckCircle className="h-4 w-4" />
-            };
-        }
-        if (item.past_30_days) {
-            const daysPast = item.days_until_deletion ? Math.abs(Math.round(item.days_until_deletion)) : 0;
-            return {
-                label: `Past ${daysPast} days - Destroy now`,
-                variant: "destructive" as const,
-                color: "text-destructive",
-                icon: <AlertTriangle className="h-4 w-4" />
-            };
-        }
-        if (item.days_until_deletion !== null) {
-            const days = Math.round(item.days_until_deletion);
-            if (days <= 7) {
-                return {
-                    label: `${days} days until deletion`,
-                    variant: "secondary" as const,
-                    color: "text-ink",
-                    icon: <AlertTriangle className="h-4 w-4" />
-                };
-            }
-            return {
-                label: `${days} days until deletion`,
-                variant: "outline" as const,
-                color: "text-muted-foreground",
-                icon: null
-            };
-        }
-        return {
-            label: "No expiry date",
-            variant: "outline" as const,
-            color: "text-muted-foreground",
-            icon: null
-        };
-    };
-
-    const [activeTab, setActiveTab] = useState<string>("needs-destruction");
-
-    // Filter items by search term
-    const searchFilteredItems: MailItem[] = mailItems.filter((item: MailItem) => {
-        if (!debouncedSearchTerm) return true;
-        const searchLower = debouncedSearchTerm.toLowerCase();
-        return (
-            String(item.id).includes(searchLower) ||
-            (item.subject || '').toLowerCase().includes(searchLower) ||
-            (item.sender_name || '').toLowerCase().includes(searchLower) ||
-            (item.user_email || '').toLowerCase().includes(searchLower) ||
-            ((item.first_name || '') + ' ' + (item.last_name || '')).toLowerCase().includes(searchLower)
-        );
+    const { data, isLoading, mutate } = useAuthedSWR<MailListResponse>(["/api/admin/mail-items", params], {
+        dedupingInterval: 5000,
+        revalidateOnFocus: true,
+        refreshInterval: 60000,
+        refreshWhenHidden: false,
     });
 
-    // Separate items into two groups
-    const needsDestructionItems: MailItem[] = searchFilteredItems.filter(
-        (item) => item.past_30_days && !item.physical_destruction_date
-    );
-    const allItems: MailItem[] = searchFilteredItems;
+    const items: MailItem[] = safe(data?.items, []);
+    const counts = data?.counts;
+    const total = data?.total ?? items.length;
+    const dueIds = items.filter((i) => i.destruction_state === "due").map((i) => i.id);
+    const allDueSelected = dueIds.length > 0 && dueIds.every((id) => selected.has(id));
 
-    // Use the appropriate list based on active tab
-    const filteredItems: MailItem[] = activeTab === "needs-destruction" ? needsDestructionItems : allItems;
+    const changeView = (next: View) => {
+        setView(next);
+        setSelected(new Set());
+    };
 
-    const processedCount = filteredItems.filter((item) => item.status === 'processed' || item.status === 'forwarded').length;
-    const needsDestructionCount = needsDestructionItems.length;
+    const toggle = (id: number, on: boolean) => {
+        setSelected((prev) => {
+            const next = new Set(prev);
+            if (on) next.add(id);
+            else next.delete(id);
+            return next;
+        });
+    };
+
+    const toggleAll = (on: boolean) => setSelected(on ? new Set(dueIds) : new Set());
+
+    const errorText = (response: any): string => {
+        const body = response?.data as { message?: string; error?: string } | undefined;
+        if (response?.status === 403) return "Your admin session has expired. Sign in again.";
+        return body?.message || response?.message || body?.error || "Something went wrong";
+    };
+
+    /** Record each letter as shredded, one at a time, so every one is checked and logged by the server. */
+    const markShredded = async (ids: number[]) => {
+        setWorking(true);
+        const failures: string[] = [];
+        let done = 0;
+        for (const id of ids) {
+            try {
+                const response = await apiClient.post(`/api/bff/admin/mail-items/${id}/mark-destroyed`, undefined, {
+                    credentials: "include",
+                });
+                if (response.ok && ((response as any).data?.ok !== false)) {
+                    done++;
+                } else {
+                    failures.push(`#${id}: ${errorText(response)}`);
+                }
+            } catch (err: any) {
+                failures.push(`#${id}: ${err?.message || "Something went wrong"}`);
+            }
+        }
+        setWorking(false);
+        setConfirmIds(null);
+        setSelected(new Set());
+        await mutate();
+
+        if (done > 0) {
+            toast({
+                title: `${done} letter${done === 1 ? "" : "s"} recorded as shredded`,
+                description: "Each one is in the shredding log with your name and today's date.",
+            });
+        }
+        if (failures.length > 0) {
+            toast({
+                title: `${failures.length} couldn't be recorded`,
+                description: failures.slice(0, 3).join(" · ") + (failures.length > 3 ? " …" : ""),
+                variant: "destructive",
+            });
+        }
+    };
+
+    const downloadLog = () => {
+        window.location.href = "/api/bff/admin/exports/destruction-log";
+    };
+
+    const customerName = (item: MailItem) =>
+        `${item.first_name || ""} ${item.last_name || ""}`.trim() || item.user_email || `Customer #${item.user_id}`;
+
+    const showCheckboxes = view === "needs_destruction";
+    const columnCount = showCheckboxes ? 6 : 5;
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="space-y-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <h1 className="text-h2 font-bold">Scanned Mail</h1>
-                    <p className="text-muted-foreground">All scanned mail items - track processing and deletion dates</p>
-                    <div className="flex gap-4 mt-2 text-body-sm text-muted-foreground">
-                        <span>Total: {filteredItems.length}</span>
-                        <span>Processed: {processedCount}</span>
-                        <span className="text-destructive">Needs Destruction: {needsDestructionCount}</span>
-                    </div>
+                    <h1 className="text-h2 font-bold">Mail</h1>
+                    <p className="text-muted-foreground max-w-2xl">
+                        Paper letters are kept for 30 days after they arrive, then shredded. Letters that were forwarded,
+                        or that a customer has asked to be forwarded, are never listed for shredding.
+                    </p>
                 </div>
-                <Button
-                    onClick={handleExportDestructionLog}
-                    variant="outline"
-                    className="flex items-center gap-2"
-                >
-                    <Download className="h-4 w-4" />
-                    Export Destruction Log
+                <Button onClick={downloadLog} variant="outline" className="flex items-center gap-2">
+                    <Download className="h-4 w-4" aria-hidden />
+                    Download shredding log
                 </Button>
             </div>
 
-            {/* Search */}
+            <MailImporterStatus />
+
+            <div className="flex flex-wrap items-center gap-3">
+                <div className="inline-flex rounded-lg border border-line p-1" role="tablist" aria-label="Which mail to show">
+                    {(
+                        [
+                            ["needs_destruction", `To shred (${counts?.needsDestruction ?? "…"})`],
+                            ["all", `All mail (${counts?.all ?? "…"})`],
+                        ] as const
+                    ).map(([key, label]) => (
+                        <button
+                            key={key}
+                            role="tab"
+                            aria-selected={view === key}
+                            onClick={() => changeView(key)}
+                            className={`px-3 py-1.5 rounded-md text-body-sm font-medium ${
+                                view === key ? "bg-ink text-paper" : "text-ink hover:bg-mist"
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+                <div className="relative flex-1 min-w-[240px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden />
+                    <Input
+                        placeholder="Search by letter number, customer number, name, email, sender or subject"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                        aria-label="Search mail"
+                    />
+                </div>
+            </div>
+
+            {showCheckboxes && selected.size > 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-mist px-4 py-3">
+                    <span className="text-body-sm font-medium">
+                        {selected.size} letter{selected.size === 1 ? "" : "s"} selected
+                    </span>
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setSelected(new Set())}>
+                            Clear
+                        </Button>
+                        <Button size="sm" onClick={() => setConfirmIds(Array.from(selected))} disabled={working}>
+                            <Scissors className="h-4 w-4 mr-1.5" aria-hidden />
+                            Mark as shredded
+                        </Button>
+                    </div>
+                </div>
+            )}
+
             <Card>
-                <CardContent className="p-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Search by ID, subject, sender, or user..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10"
-                        />
-                    </div>
-                </CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            {showCheckboxes && (
+                                <TableHead className="w-10">
+                                    <Checkbox
+                                        checked={allDueSelected}
+                                        onCheckedChange={(v) => toggleAll(v === true)}
+                                        disabled={dueIds.length === 0}
+                                        aria-label="Select every letter on this page"
+                                    />
+                                </TableHead>
+                            )}
+                            <TableHead>Letter</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Received</TableHead>
+                            <TableHead>Shredding</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading && items.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={columnCount} className="text-center py-8 text-muted-foreground">
+                                    Loading…
+                                </TableCell>
+                            </TableRow>
+                        ) : items.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={columnCount} className="text-center py-8 text-muted-foreground">
+                                    {debouncedQuery
+                                        ? "No mail matches that search."
+                                        : view === "needs_destruction"
+                                          ? "Nothing to shred today."
+                                          : "No mail yet."}
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            items.map((item) => {
+                                const isDue = item.destruction_state === "due";
+                                return (
+                                    <TableRow key={item.id}>
+                                        {showCheckboxes && (
+                                            <TableCell>
+                                                <Checkbox
+                                                    checked={selected.has(item.id)}
+                                                    onCheckedChange={(v) => toggle(item.id, v === true)}
+                                                    disabled={!isDue}
+                                                    aria-label={`Select letter #${item.id}`}
+                                                />
+                                            </TableCell>
+                                        )}
+                                        <TableCell>
+                                            <div className="font-medium">
+                                                #{item.id} · {item.subject || "Untitled letter"}
+                                            </div>
+                                            <div className="text-caption text-muted-foreground">
+                                                {[item.sender_name, item.tag].filter(Boolean).join(" · ") || "Sender not recorded"}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="font-medium">{customerName(item)}</div>
+                                            <div className="text-caption text-muted-foreground">
+                                                #{item.user_id} · {item.user_email}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="whitespace-nowrap">{fmt(receivedOf(item))}</TableCell>
+                                        <TableCell>
+                                            <ShredStatus item={item} />
+                                        </TableCell>
+                                        <TableCell className="text-right whitespace-nowrap">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => window.open(`/admin/mail/${item.id}`, "_blank")}
+                                                aria-label={`Open letter #${item.id}`}
+                                            >
+                                                <Eye className="h-4 w-4" aria-hidden />
+                                            </Button>
+                                            {isDue && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="ml-2"
+                                                    onClick={() => setConfirmIds([item.id])}
+                                                    disabled={working}
+                                                >
+                                                    Shredded
+                                                </Button>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })
+                        )}
+                    </TableBody>
+                </Table>
             </Card>
 
-            {/* Helper Note */}
-            <Card className="border-line bg-mist">
-                <CardContent className="pt-6">
-                    <div className="text-body-sm text-ink">
-                        <p className="font-medium mb-1">📋 Physical Destruction Eligibility Information</p>
-                        <p className="text-caption">
-                            These fields are used to populate the Shredding & Destruction Log. Eligibility is system-calculated based on receipt date and retention rules (30-day GDPR retention period). Staff should manually copy these values into the Excel destruction log.
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
+            {total > items.length && (
+                <p className="text-body-sm text-muted-foreground">
+                    Showing the first {items.length} of {total}. Search to narrow the list.
+                </p>
+            )}
 
-            {/* Tabs for Needs Destruction vs All Mail */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="needs-destruction" className="flex items-center gap-2">
-                        <AlertCircle className="h-4 w-4 text-destructive" />
-                        Needs Destruction ({needsDestructionCount})
-                    </TabsTrigger>
-                    <TabsTrigger value="all" className="flex items-center gap-2">
-                        <Eye className="h-4 w-4" />
-                        All Mail ({allItems.length})
-                    </TabsTrigger>
-                </TabsList>
-
-                {/* Needs Destruction Tab */}
-                <TabsContent value="needs-destruction" className="mt-4">
-                    <Card>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>ID</TableHead>
-                                    <TableHead>User</TableHead>
-                                    <TableHead>Subject</TableHead>
-                                    <TableHead>Received</TableHead>
-                                    <TableHead>Processed</TableHead>
-                                    <TableHead>Deletion Status</TableHead>
-                                    <TableHead>Physical Destruction Eligibility</TableHead>
-                                    <TableHead>Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading && filteredItems.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                                            Loading...
-                                        </TableCell>
-                                    </TableRow>
-                                ) : filteredItems.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                                            No scanned mail items found
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    filteredItems.map((item) => {
-                                        const deletionStatus = getDeletionStatus(item);
-                                        const userName = item.first_name || item.last_name
-                                            ? `${item.first_name || ''} ${item.last_name || ''}`.trim()
-                                            : item.user_email || `User #${item.user_id}`;
-                                        const isProcessed = item.status === 'processed' || item.status === 'forwarded';
-                                        const canMarkDestroyed = item.past_30_days && !item.physical_destruction_date;
-
-                                        return (
-                                            <TableRow
-                                                key={item.id}
-                                                className={item.past_30_days && !item.physical_destruction_date ? "bg-destructive/5 border-l-4 border-l-destructive" : ""}
-                                            >
-                                                <TableCell className="font-medium">#{item.id}</TableCell>
-                                                <TableCell>
-                                                    <div>
-                                                        <div className="font-medium">{userName}</div>
-                                                        <div className="text-caption text-muted-foreground">{item.user_email}</div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="max-w-md truncate" title={item.subject || '—'}>
-                                                        {item.subject || '—'}
-                                                    </div>
-                                                    {item.tag && (
-                                                        <Badge variant="outline" className="mt-1 text-caption">{item.tag}</Badge>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-muted-foreground">
-                                                    {formatDate(item.received_date, item.received_at_ms, item.created_at)}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {isProcessed ? (
-                                                        <Badge variant="default" className="bg-primary">
-                                                            <CheckCircle className="h-3 w-3 mr-1" />
-                                                            Yes
-                                                        </Badge>
-                                                    ) : (
-                                                        <Badge variant="outline">No</Badge>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        {deletionStatus.icon}
-                                                        <Badge
-                                                            variant={deletionStatus.variant === "destructive" ? "outline" : deletionStatus.variant}
-                                                            className={deletionStatus.variant === "destructive" ? "border-0 bg-transparent " + deletionStatus.color : deletionStatus.color}
-                                                        >
-                                                            {deletionStatus.label}
-                                                        </Badge>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="space-y-2 text-caption min-w-[220px]">
-                                                        <div>
-                                                            <div className="text-muted-foreground mb-0.5">Mail Item ID:</div>
-                                                            <div className="font-medium">#{item.id}</div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-muted-foreground mb-0.5">Customer Name / ID:</div>
-                                                            <div className="font-medium">{userName}</div>
-                                                            <div className="text-caption text-muted-foreground">ID: {item.user_id}</div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-muted-foreground mb-0.5">Mail Description:</div>
-                                                            <div className="font-medium">
-                                                                {item.subject || '—'}{item.sender_name ? ` – ${item.sender_name}` : ''}
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-muted-foreground mb-0.5">Receipt Date:</div>
-                                                            <div className="font-medium">{formatDateDDMMYYYY(item.received_date, item.received_at_ms, item.created_at)}</div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-muted-foreground mb-0.5">Destruction Eligibility Date:</div>
-                                                            <div className="font-medium">{getDestructionEligibilityDate(item)}</div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-muted-foreground mb-0.5">Physical Destruction Status:</div>
-                                                            {(() => {
-                                                                const eligibility = getDestructionEligibilityStatus(item);
-                                                                return (
-                                                                    <div className={eligibility.isEligible ? "font-medium text-ink" : "font-medium text-muted-foreground"}>
-                                                                        {eligibility.label}
-                                                                    </div>
-                                                                );
-                                                            })()}
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => handleViewItem(item.id)}
-                                                        >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                        {canMarkDestroyed && (
-                                                            <Button
-                                                                size="sm"
-                                                                variant="destructive"
-                                                                onClick={() => handleMarkDestroyed(item.id)}
-                                                                disabled={actionLoading}
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })
-                                )}
-                            </TableBody>
-                        </Table>
-                    </Card>
-                </TabsContent>
-
-                {/* All Mail Tab */}
-                <TabsContent value="all" className="mt-4">
-                    <Card>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>ID</TableHead>
-                                    <TableHead>User</TableHead>
-                                    <TableHead>Subject</TableHead>
-                                    <TableHead>Received</TableHead>
-                                    <TableHead>Processed</TableHead>
-                                    <TableHead>Deletion Status</TableHead>
-                                    <TableHead className="min-w-[250px]">Destruction Eligibility</TableHead>
-                                    <TableHead>Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading && allItems.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                                            Loading...
-                                        </TableCell>
-                                    </TableRow>
-                                ) : allItems.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                                            No mail items found
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    allItems.map((item) => {
-                                        const deletionStatus = getDeletionStatus(item);
-                                        const userName = item.first_name || item.last_name
-                                            ? `${item.first_name || ''} ${item.last_name || ''}`.trim()
-                                            : item.user_email || `User #${item.user_id}`;
-                                        const isProcessed = item.status === 'processed' || item.status === 'forwarded';
-                                        const canMarkDestroyed = item.past_30_days && !item.physical_destruction_date;
-
-                                        return (
-                                            <TableRow
-                                                key={item.id}
-                                                className=""
-                                            >
-                                                <TableCell className="font-medium">#{item.id}</TableCell>
-                                                <TableCell>
-                                                    <div>
-                                                        <div className="font-medium">{userName}</div>
-                                                        <div className="text-caption text-muted-foreground">{item.user_email}</div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="max-w-md truncate" title={item.subject || '—'}>
-                                                        {item.subject || '—'}
-                                                    </div>
-                                                    {item.tag && (
-                                                        <Badge variant="outline" className="mt-1 text-caption">{item.tag}</Badge>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-muted-foreground">
-                                                    {formatDate(item.received_date, item.received_at_ms, item.created_at)}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {isProcessed ? (
-                                                        <Badge variant="default" className="bg-primary">
-                                                            <CheckCircle className="h-3 w-3 mr-1" />
-                                                            Yes
-                                                        </Badge>
-                                                    ) : (
-                                                        <Badge variant="outline">No</Badge>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        {deletionStatus.icon}
-                                                        <Badge
-                                                            variant={deletionStatus.variant === "destructive" ? "outline" : deletionStatus.variant}
-                                                            className={deletionStatus.variant === "destructive" ? "border-0 bg-transparent " + deletionStatus.color : deletionStatus.color}
-                                                        >
-                                                            {deletionStatus.label}
-                                                        </Badge>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="space-y-2 text-caption min-w-[220px]">
-                                                        <div>
-                                                            <div className="text-muted-foreground mb-0.5">Mail Item ID:</div>
-                                                            <div className="font-medium">#{item.id}</div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-muted-foreground mb-0.5">Customer Name / ID:</div>
-                                                            <div className="font-medium">{userName}</div>
-                                                            <div className="text-caption text-muted-foreground">ID: {item.user_id}</div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-muted-foreground mb-0.5">Mail Description:</div>
-                                                            <div className="font-medium">
-                                                                {item.subject || '—'}{item.sender_name ? ` – ${item.sender_name}` : ''}
-                                                            </div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-muted-foreground mb-0.5">Receipt Date:</div>
-                                                            <div className="font-medium">{formatDateDDMMYYYY(item.received_date, item.received_at_ms, item.created_at)}</div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-muted-foreground mb-0.5">Destruction Eligibility Date:</div>
-                                                            <div className="font-medium">{getDestructionEligibilityDate(item)}</div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-muted-foreground mb-0.5">Physical Destruction Status:</div>
-                                                            {(() => {
-                                                                const eligibility = getDestructionEligibilityStatus(item);
-                                                                return (
-                                                                    <div className={eligibility.isEligible ? "font-medium text-ink" : "font-medium text-muted-foreground"}>
-                                                                        {eligibility.label}
-                                                                    </div>
-                                                                );
-                                                            })()}
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => handleViewItem(item.id)}
-                                                        >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                        {canMarkDestroyed && (
-                                                            <Button
-                                                                size="sm"
-                                                                variant="destructive"
-                                                                onClick={() => handleMarkDestroyed(item.id)}
-                                                                disabled={actionLoading}
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })
-                                )}
-                            </TableBody>
-                        </Table>
-                    </Card>
-                </TabsContent>
-            </Tabs>
+            <Dialog open={confirmIds !== null} onOpenChange={(open) => !open && !working && setConfirmIds(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            Record {confirmIds?.length === 1 ? "this letter" : `${confirmIds?.length ?? 0} letters`} as shredded?
+                        </DialogTitle>
+                        <DialogDescription>
+                            Only do this once the paper is in the shredder. Each letter is added to the shredding log with
+                            your name and today&apos;s date, and the customer can no longer ask for it to be forwarded. This
+                            can&apos;t be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setConfirmIds(null)} disabled={working}>
+                            Cancel
+                        </Button>
+                        <Button onClick={() => confirmIds && markShredded(confirmIds)} disabled={working}>
+                            {working ? "Recording…" : "Yes, they're shredded"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

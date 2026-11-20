@@ -8,13 +8,12 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { Loader2, Search, Clipboard, ClipboardCheck, Users, Truck, FileText, Package } from "lucide-react";
+import { Loader2, Search, Clipboard, ClipboardCheck, Users, Truck, FileText, Package, AlertTriangle, Minus, Plus } from "lucide-react";
 import { AdminHeader } from "@/components/admin/parts/AdminHeader";
 import { useVerifiedAdminSession } from "@/hooks/useVerifiedAdminSession";
 import { buildAdminBffHeaders } from "@/lib/verifiedAdminSession";
+import { MailImporterStatus } from "@/components/admin/MailImporterStatus";
 
 type AdminUserHit = {
   id: number;
@@ -22,36 +21,36 @@ type AdminUserHit = {
   first_name?: string | null;
   last_name?: string | null;
   company_name?: string | null;
-  plan_status?: string | null;
-  kyc_status?: string | null;
-  status?: string | null;
+  is_suspended?: boolean | null;
 };
 
 type SearchResponse =
   | { ok: true; data: AdminUserHit[] }
   | { ok: false; error?: string; message?: string };
 
-const PLAN_STATUS_CLASSES: Record<string, string> = {
-  active: "bg-primary/10 text-primary border border-primary/20",
-  pending_payment: "bg-mist text-ink border border-line",
-  cancelled: "bg-destructive/10 text-destructive border border-destructive/20",
-  trialing: "bg-mist text-ink border border-line",
+/** Letter types. `code` goes in the filename; HMRC and Companies House are forwarded free. */
+const LETTER_TYPES = [
+  { code: "HMRC", label: "HMRC" },
+  { code: "CompaniesHouse", label: "Companies House" },
+  { code: "Bank", label: "Bank" },
+  { code: "Insurance", label: "Insurance" },
+  { code: "Utilities", label: "Utilities" },
+  { code: "Other", label: "Anything else" },
+] as const;
+
+const isoToday = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-const KYC_CLASSES: Record<string, string> = {
-  approved: "bg-primary/10 text-primary border border-primary/20",
-  verified: "bg-primary/10 text-primary border border-primary/20",
-  pending: "bg-mist text-ink border border-line",
-  rejected: "bg-destructive/10 text-destructive border border-destructive/20",
+/** 2026-11-20 -> 20-11-26, the date format the importer reads. */
+const toFilenameDate = (iso: string) => {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}-${m[2]}-${m[1].slice(-2)}` : "";
 };
 
-const todayString = () => {
-  const date = new Date();
-  const dd = String(date.getDate()).padStart(2, "0");
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const yy = String(date.getFullYear()).slice(-2);
-  return `${dd}-${mm}-${yy}`;
-};
+const displayName = (u: AdminUserHit) =>
+  u.company_name || [u.first_name, u.last_name].filter(Boolean).join(" ") || u.email;
 
 export default function FilenameGeneratorPage() {
   const router = useRouter();
@@ -67,46 +66,50 @@ export default function FilenameGeneratorPage() {
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<AdminUserHit[]>([]);
   const [selectedUser, setSelectedUser] = useState<AdminUserHit | null>(null);
-  const [tag, setTag] = useState("");
-  const [date, setDate] = useState(todayString());
+  const [tag, setTag] = useState<string>("");
+  const [dateIso, setDateIso] = useState(isoToday());
+  const [letterNumber, setLetterNumber] = useState(1);
   const [copied, setCopied] = useState(false);
+  /** How many names were copied this session per customer + date + type, so the next one is numbered. */
+  const [copiedCounts, setCopiedCounts] = useState<Record<string, number>>({});
 
-  /** Allowed tag segment options: HMRC, Companies House, or numeric 1–10 (filename uses no spaces). */
-  const commonTags = useMemo(
-    () => ["HMRC", "Companies House", ...Array.from({ length: 10 }, (_, i) => String(i + 1))],
-    []
-  );
+  const countKey = selectedUser && tag ? `${selectedUser.id}|${dateIso}|${tag}` : "";
 
+  // When the customer, date or type changes, suggest the next number not yet used this session
   useEffect(() => {
-    setDate(todayString());
-    setTag("");
-  }, [selectedUser?.id]);
+    setLetterNumber(countKey && copiedCounts[countKey] ? copiedCounts[countKey] + 1 : 1);
+    setCopied(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [countKey]);
 
-  const sanitizedTag = useMemo(() => {
-    return tag.trim().replace(/\s+/g, "");
-  }, [tag]);
+  /** Same customer, type and day: move on to the next number. */
+  const nextLetter = () => {
+    setLetterNumber((n) => Math.max(n + 1, (countKey && copiedCounts[countKey] ? copiedCounts[countKey] + 1 : 1)));
+    setCopied(false);
+  };
+
+  const filenameDate = toFilenameDate(dateIso);
 
   const generatedFilename = useMemo(() => {
-    if (!selectedUser || !date.trim() || !sanitizedTag) return "";
-    return `user${selectedUser.id}_${date}_${sanitizedTag}.pdf`;
-  }, [selectedUser, date, sanitizedTag]);
+    if (!selectedUser || !filenameDate || !tag) return "";
+    const suffix = letterNumber > 1 ? `_${letterNumber}` : "";
+    return `user${selectedUser.id}_${filenameDate}_${tag}${suffix}.pdf`;
+  }, [selectedUser, filenameDate, tag, letterNumber]);
 
-  const handleSearch = async () => {
-    if (!query.trim()) {
-      setError("Enter a name, company or email");
+  const runSearch = async (text: string) => {
+    const q = text.trim();
+    if (!q) {
       setResults([]);
-      setSelectedUser(null);
+      setError(null);
       return;
     }
 
     setLoading(true);
     setError(null);
-    setResults([]);
-    setSelectedUser(null);
 
     try {
       const res = await fetch(
-        `/api/bff/admin/users/search?q=${encodeURIComponent(query.trim())}`,
+        `/api/bff/admin/users/search?q=${encodeURIComponent(q)}`,
         {
           method: "GET",
           credentials: "include",
@@ -118,29 +121,14 @@ export default function FilenameGeneratorPage() {
       const json: SearchResponse = await res.json();
 
       if (!res.ok || json.ok === false) {
-        const message =
-          json.ok === false
-            ? ('error' in json ? json.error : undefined) || ('message' in json ? json.message : undefined) || "Search failed"
-            : "Search failed";
-        setError(message);
+        setError("Search didn't work. Try again, or sign in again if it keeps failing.");
         return;
       }
 
-      if (json.ok === true) {
-        const data = json.data ?? [];
-        setResults(data);
-
-        if (data.length === 1) {
-          setSelectedUser(data[0]);
-        }
-
-        if (data.length === 0) {
-          setError("No users found for that search.");
-        }
-      } else {
-        setError("Search failed");
-        setResults([]);
-      }
+      const data = json.data ?? [];
+      setResults(data);
+      if (data.length === 1) setSelectedUser(data[0]);
+      if (data.length === 0) setError("No customer matches that. Try their number, email, name or company.");
     } catch (err) {
       console.error("[filename-generator] search error", err);
       setError("Something went wrong while searching.");
@@ -149,11 +137,30 @@ export default function FilenameGeneratorPage() {
     }
   };
 
+  // Search as you type (after a short pause)
+  useEffect(() => {
+    if (query.trim().length < 2) {
+      setResults([]);
+      setError(null);
+      return;
+    }
+    const timer = setTimeout(() => runSearch(query), 350);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
   const handleCopy = async () => {
     if (!generatedFilename) return;
-    await navigator.clipboard.writeText(generatedFilename);
+    try {
+      await navigator.clipboard.writeText(generatedFilename);
+    } catch {
+      setError("Your browser blocked copying. Select the name and copy it by hand.");
+      return;
+    }
     setCopied(true);
-    setTimeout(() => setCopied(false), 1200);
+    if (countKey) {
+      setCopiedCounts((prev) => ({ ...prev, [countKey]: Math.max(prev[countKey] || 0, letterNumber) }));
+    }
   };
 
   const handleLogout = async () => {
@@ -241,197 +248,158 @@ export default function FilenameGeneratorPage() {
       />
 
       {/* Main Content */}
-      <main id="main-content" role="main" className="flex flex-col gap-8 px-4 py-8 sm:px-6 lg:ml-56 lg:px-8"><div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
+      <main id="main-content" role="main" className="flex flex-col gap-8 px-4 py-8 sm:px-6 lg:ml-56 lg:px-8"><div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
         <header className="space-y-2">
-          <h1 className="text-h2 font-semibold">Mail filename generator</h1>
+          <h1 className="text-h2 font-semibold">Name a scan</h1>
           <p className="text-body-sm text-muted-foreground">
-            Generate the exact filename format we require before uploading scans.
-          </p>
-          <p className="text-caption text-muted-foreground font-mono bg-muted/60 inline-block px-2 py-1 rounded">
-            user&#123;ID&#125;_&#123;DD-MM-YY&#125;_&#123;TAG&#125;.pdf
+            Every scan saved in the OneDrive mail inbox needs a name that says whose letter it is. Pick the customer
+            and the type of letter, copy the name, and save the scan with it. It appears on the customer&apos;s
+            account within about 5 minutes.
           </p>
         </header>
 
-        <section className="space-y-3">
-          <Label htmlFor="search">Search user</Label>
-          <div className="flex flex-col gap-2 md:flex-row">
+        <MailImporterStatus compact />
+
+        {/* Step 1 */}
+        <section className="space-y-3" aria-labelledby="step-customer">
+          <h2 id="step-customer" className="text-body-lg font-medium">1. Who is the letter for?</h2>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden />
             <Input
               id="search"
-              placeholder="Search by name, company, or email…"
+              className="pl-10"
+              placeholder="Customer number, name, company or email (as printed on the envelope)"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              onKeyDown={(e) => e.key === "Enter" && runSearch(query)}
+              aria-label="Find the customer"
+              autoFocus
             />
-            <Button
-              onClick={handleSearch}
-              className="md:w-40"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Searching…
-                </>
-              ) : (
-                <>
-                  <Search className="mr-2 h-4 w-4" />
-                  Search
-                </>
-              )}
-            </Button>
+            {loading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" aria-hidden />}
           </div>
           {error && <p className="text-body-sm text-destructive">{error}</p>}
 
           {results.length > 0 && (
-            <div className="divide-y rounded-lg border bg-card shadow-sm">
+            <div className="divide-y rounded-lg border bg-card" role="listbox" aria-label="Matching customers">
               {results.map((user) => {
                 const isActive = selectedUser?.id === user.id;
                 return (
                   <button
                     key={user.id}
+                    role="option"
+                    aria-selected={isActive}
                     className={cn(
-                      "flex w-full flex-col items-start gap-1 px-4 py-3 text-left transition hover:bg-accent",
-                      isActive && "bg-accent/60"
+                      "flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-mist",
+                      isActive && "bg-mist"
                     )}
                     onClick={() => setSelectedUser(user)}
                   >
-                    <span className="text-body-sm font-medium">
-                      {user.company_name ||
-                        [user.first_name, user.last_name]
-                          .filter(Boolean)
-                          .join(" ") ||
-                        user.email}
+                    <span className="min-w-0">
+                      <span className="block text-body-sm font-medium truncate">{displayName(user)}</span>
+                      <span className="block text-caption text-muted-foreground truncate">
+                        #{user.id} · {[user.first_name, user.last_name].filter(Boolean).join(" ")}{user.company_name ? " · " : ""}{user.email}
+                      </span>
                     </span>
-                    <span className="text-caption text-muted-foreground">
-                      ID {user.id} • {user.email}
-                    </span>
+                    {isActive && <span className="text-caption font-medium text-ink shrink-0">Selected</span>}
                   </button>
                 );
               })}
             </div>
           )}
+
+          {selectedUser?.is_suspended && (
+            <p className="flex items-start gap-2 text-body-sm text-ink rounded-lg border border-line bg-mist px-3 py-2">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" aria-hidden />
+              This account is suspended. Scan and name the letter as normal: it will be held on their account, but they
+              can&apos;t open it until the account is restored.
+            </p>
+          )}
         </section>
 
         {selectedUser && (
-          <section className="space-y-4 rounded-xl border bg-card p-5 shadow-sm">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-body-lg font-medium">Selected user</h2>
-              <p className="text-body-sm text-muted-foreground font-mono">
-                user#{selectedUser.id}
-              </p>
-            </div>
-
-            <div className="grid gap-3 text-body-sm md:grid-cols-2">
-              <div className="space-y-1">
-                <p className="font-medium text-muted-foreground">Name</p>
-                <p>
-                  {[selectedUser.first_name, selectedUser.last_name]
-                    .filter(Boolean)
-                    .join(" ") || "—"}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="font-medium text-muted-foreground">Email</p>
-                <p className="font-mono text-caption">{selectedUser.email}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="font-medium text-muted-foreground">Company</p>
-                <p>{selectedUser.company_name || "—"}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="font-medium text-muted-foreground">Account status</p>
-                <p>{selectedUser.status || "unknown"}</p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 text-caption">
-              <Badge
-                variant="outline"
-                className={
-                  PLAN_STATUS_CLASSES[selectedUser.plan_status ?? ""] ??
-                  "bg-muted text-muted-foreground border border-border"
-                }
-              >
-                Plan: {selectedUser.plan_status ?? "unknown"}
-              </Badge>
-              <Badge
-                variant="outline"
-                className={
-                  KYC_CLASSES[selectedUser.kyc_status ?? ""] ??
-                  "bg-muted text-muted-foreground border border-border"
-                }
-              >
-                KYC: {selectedUser.kyc_status ?? "pending"}
-              </Badge>
-              {selectedUser.status && (
-                <Badge variant="outline">Status: {selectedUser.status}</Badge>
-              )}
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="date">Date segment (DD-MM-YY)</Label>
-                <Input
-                  id="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  placeholder="e.g. 27-11-25"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tag">Mail tag</Label>
-                <Select value={tag || undefined} onValueChange={setTag}>
-                  <SelectTrigger id="tag">
-                    <SelectValue placeholder="Select HMRC, Companies House, or 1–10" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {commonTags.map((commonTag) => (
-                      <SelectItem key={commonTag} value={commonTag}>
-                        {commonTag}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-caption text-muted-foreground">
-                  Spaces are removed in the tag segment (e.g. Companies House → CompaniesHouse in the filename).
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <Label>Generated filename</Label>
-              {generatedFilename ? (
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <code className="flex-1 rounded-lg bg-muted px-3 py-2 text-body-sm">
-                    {generatedFilename}
-                  </code>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="sm:w-32"
-                    onClick={handleCopy}
-                  >
-                    {copied ? (
-                      <>
-                        <ClipboardCheck className="mr-2 h-4 w-4" />
-                        Copied
-                      </>
-                    ) : (
-                      <>
-                        <Clipboard className="mr-2 h-4 w-4" />
-                        Copy
-                      </>
+          <>
+            {/* Step 2 */}
+            <section className="space-y-3" aria-labelledby="step-type">
+              <h2 id="step-type" className="text-body-lg font-medium">2. What kind of letter is it?</h2>
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Type of letter">
+                {LETTER_TYPES.map((t) => (
+                  <button
+                    key={t.code}
+                    role="radio"
+                    aria-checked={tag === t.code}
+                    onClick={() => setTag(t.code)}
+                    className={cn(
+                      "rounded-full border px-4 py-1.5 text-body-sm font-medium transition",
+                      tag === t.code ? "border-ink bg-ink text-paper" : "border-line bg-paper text-ink hover:bg-mist"
                     )}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-caption text-muted-foreground">
+                HMRC and Companies House letters are forwarded free; other letters have a forwarding fee.
+              </p>
+            </section>
+
+            {/* Step 3 */}
+            <section className="grid gap-4 sm:grid-cols-2" aria-label="Date and letter number">
+              <div className="space-y-2">
+                <Label htmlFor="date">3. Date it arrived</Label>
+                <Input id="date" type="date" value={dateIso} max={isoToday()} onChange={(e) => setDateIso(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="letter-number">Letter number (same customer, type and day)</Label>
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => { setLetterNumber((n) => Math.max(1, n - 1)); setCopied(false); }} aria-label="One less">
+                    <Minus className="h-4 w-4" aria-hidden />
+                  </Button>
+                  <span id="letter-number" className="w-10 text-center font-medium" aria-live="polite">{letterNumber}</span>
+                  <Button type="button" variant="outline" size="sm" onClick={() => { setLetterNumber((n) => Math.min(50, n + 1)); setCopied(false); }} aria-label="One more">
+                    <Plus className="h-4 w-4" aria-hidden />
                   </Button>
                 </div>
-              ) : (
-                <p className="text-body-sm text-muted-foreground">
-                  Enter both a date and a tag to see the filename.
+                <p className="text-caption text-muted-foreground">
+                  Use 2, 3… for a second or third letter of the same type for the same customer on the same day, so no two scans share a name.
                 </p>
+              </div>
+            </section>
+
+            {/* Step 4 */}
+            <section className="space-y-3 rounded-xl border bg-card p-5" aria-labelledby="step-copy">
+              <h2 id="step-copy" className="text-body-lg font-medium">4. Copy the name and save the scan with it</h2>
+              {generatedFilename ? (
+                <>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <code className="flex-1 rounded-lg bg-mist px-3 py-2 text-body break-all">{generatedFilename}</code>
+                    <Button type="button" className="sm:w-36" onClick={handleCopy}>
+                      {copied ? (
+                        <><ClipboardCheck className="mr-2 h-4 w-4" aria-hidden />Copied</>
+                      ) : (
+                        <><Clipboard className="mr-2 h-4 w-4" aria-hidden />Copy name</>
+                      )}
+                    </Button>
+                  </div>
+                  {copied ? (
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between" aria-live="polite">
+                      <p className="text-body-sm text-muted-foreground">
+                        Copied. Now save the scan into the OneDrive mail inbox with this name.
+                      </p>
+                      <Button type="button" variant="outline" size="sm" onClick={nextLetter}>
+                        Another {LETTER_TYPES.find((t) => t.code === tag)?.label} letter for this customer
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-body-sm text-muted-foreground">
+                      For {displayName(selectedUser)} (#{selectedUser.id}).
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-body-sm text-muted-foreground">Choose the type of letter to see the name.</p>
               )}
-            </div>
-          </section>
+            </section>
+          </>
         )}
       </div>
       </main>

@@ -11,6 +11,7 @@ type InvoiceRow = {
   user_id: string | number;
   invoice_number: string | null;
   pdf_path: string | null;
+  stripe_invoice_id?: string | null;
   amount_pence: number | null;
   currency: string | null;
   period_start: string;
@@ -68,7 +69,7 @@ export async function prepareInvoicePdfForDownload(opts: {
   } = getBillingInvoicePdfDeps(deps);
 
   const result = await pool.query<InvoiceRow>(
-    `SELECT id, user_id, invoice_number, pdf_path, amount_pence, currency, period_start, period_end
+    `SELECT id, user_id, invoice_number, pdf_path, amount_pence, currency, period_start, period_end, stripe_invoice_id
      FROM invoices WHERE id=$1 LIMIT 1`,
     [invoiceId]
   );
@@ -90,7 +91,11 @@ export async function prepareInvoicePdfForDownload(opts: {
     return { ok: false, error: 'forbidden' };
   }
 
-  const amountPence = await recomputeInvoiceAmount(pool, inv.id, inv.currency || 'GBP');
+  // A Stripe invoice's amount is what Stripe charged; it has no internal `charge` rows, so
+  // recomputing from charges would overwrite it with £0. Only internal invoices are rebuilt.
+  const amountPence = inv.stripe_invoice_id
+    ? Number(inv.amount_pence || 0)
+    : await recomputeInvoiceAmount(pool, inv.id, inv.currency || 'GBP');
   const baseDir = resolveBaseDir();
 
   if (inv.pdf_path) {

@@ -37,6 +37,7 @@ import { sendMailScanned, sendMailWaiting } from '../../lib/mailer';
 import { getAccess } from '../services/access';
 import { isUserEntitled } from '../services/entitlement';
 import crypto from 'crypto';
+import { recordImporterReport } from '../../services/mailImportStatus';
 
 const router = Router();
 
@@ -70,11 +71,13 @@ const tagToTitle = (tagSlug: string): string => {
     hmrc: 'HMRC',
     companies_house: 'Companies House',
     companieshouse: 'Companies House',
-    bank: 'Bank Statement',
+    bank: 'Bank',
     insurance: 'Insurance',
     utilities: 'Utilities',
     other: 'General Mail',
   };
+  // Older filenames used numbers (1-10) as the tag; those letters are general mail.
+  if (/^\d+$/.test(tagSlug)) return 'General Mail';
   return titleMap[tagSlug] || tagSlug.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
@@ -819,5 +822,36 @@ router.patch('/from-onedrive/:mailId/scan-url', async (req, res) => {
   }
 });
 
-export default router;
+// Status report from the OneDrive worker after each run (shown to staff on the Mail and Filenames pages)
+const ImporterReportPayload = z.object({
+  ok: z.boolean(),
+  problem: z.enum(['onedrive_access_denied', 'onedrive_folder_not_found', 'microsoft_sign_in_failed', 'not_configured', 'onedrive_error']).nullable().optional(),
+  problemDetail: z.string().max(1000).nullable().optional(),
+  filesInInbox: z.number().int().min(0).nullable().optional(),
+  imported: z.number().int().min(0).nullable().optional(),
+  intervalMs: z.number().int().positive().nullable().optional(),
+  issues: z.array(z.object({
+    fileName: z.string().max(1000),
+    reason: z.enum(['bad_filename', 'customer_not_found', 'no_business', 'import_failed']),
+    detail: z.string().max(1000).nullable().optional(),
+  })).max(500).optional(),
+});
 
+router.post('/from-onedrive/status', (req, res) => {
+  const expectedSecret = process.env.MAIL_IMPORT_WEBHOOK_SECRET;
+  const secret = req.headers['x-mail-import-secret'];
+  if (!expectedSecret) {
+    return res.status(500).json({ ok: false, error: 'server_configuration_error' });
+  }
+  if (!secret || !timingSafeStringEqual(String(secret), expectedSecret)) {
+    return res.status(401).json({ ok: false, error: 'unauthorized' });
+  }
+  const parsed = ImporterReportPayload.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ ok: false, error: 'validation_error' });
+  }
+  recordImporterReport(parsed.data);
+  return res.json({ ok: true });
+});
+
+export default router;

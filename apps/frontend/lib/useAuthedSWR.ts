@@ -118,6 +118,7 @@ function makeFetcher(token?: string | null) {
           total: raw.total ?? raw.count ?? 0,
           page: raw.page,
           pageSize: raw.pageSize,
+          ...(raw.counts !== undefined ? { counts: raw.counts } : {}),
         };
       }
       // If response has { ok: true, data } - unwrap the data

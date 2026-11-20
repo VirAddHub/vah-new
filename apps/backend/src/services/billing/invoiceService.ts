@@ -70,6 +70,21 @@ export async function recomputeInvoiceTotal(
   invoiceId: number,
   currency: string = 'GBP'
 ): Promise<number> {
+  // Stripe invoices carry the amount Stripe charged and have no internal charge rows:
+  // never overwrite them from charges (that would reset a paid £9.99 invoice to £0).
+  try {
+    const stripeCheck = await pool.query<{ amount_pence: string | number | null; stripe_invoice_id: string | null }>(
+      `SELECT amount_pence, stripe_invoice_id FROM invoices WHERE id = $1`,
+      [invoiceId]
+    );
+    const row = stripeCheck.rows[0];
+    if (row?.stripe_invoice_id) {
+      return Number(row.amount_pence || 0);
+    }
+  } catch {
+    // Fall through to the charge-based recompute
+  }
+
   let totalChargesPence = 0;
   try {
     const chargesSum = await pool.query<{ total_pence: string | number }>(
