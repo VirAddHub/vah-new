@@ -10,6 +10,8 @@ export type ImportIssueReason =
   | 'bad_filename'
   | 'customer_not_found'
   | 'no_business'
+  | 'conflict'
+  | 'move_pending'
   | 'import_failed';
 
 export interface ImportIssue {

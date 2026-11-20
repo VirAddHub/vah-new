@@ -25,3 +25,15 @@ describe('parseMailFilename', () => {
     expect(parseMailFilename('52_20-11-26_HMRC.pdf')).toBeNull();
   });
 });
+
+describe('parseMailFilename dates', () => {
+  it('rejects impossible dates in either format', () => {
+    expect(parseMailFilename('user4_31-02-26_HMRC.pdf')?.dateIso).toBeNull();
+    expect(parseMailFilename('user4_2026-02-31_HMRC.pdf')?.dateIso).toBeNull();
+    expect(parseMailFilename('user4_0000_hmrc.pdf')?.dateIso).toBeNull();
+  });
+  it('accepts real dates in either format', () => {
+    expect(parseMailFilename('user4_2026-11-15_HMRC.pdf')?.dateIso).toBe('2026-11-15');
+    expect(parseMailFilename('user4_29-02-28_HMRC.pdf')?.dateIso).toBe('2028-02-29');
+  });
+});

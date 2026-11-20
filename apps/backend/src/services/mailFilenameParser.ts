@@ -44,7 +44,10 @@ function parseDateSegment(segment: string): string | null {
     const [, yyyy, mm, dd] = isoMatch;
     const padded = `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
     const d = new Date(padded + 'T00:00:00.000Z');
-    if (!Number.isNaN(d.getTime())) return padded;
+    // Reject dates that roll over (e.g. 2026-02-31 becoming 3 March)
+    if (!Number.isNaN(d.getTime()) && d.getUTCDate() === parseInt(dd, 10) && d.getUTCMonth() + 1 === parseInt(mm, 10)) {
+      return padded;
+    }
   }
   return null;
 }

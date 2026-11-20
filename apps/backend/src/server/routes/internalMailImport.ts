@@ -38,6 +38,8 @@ import { getAccess } from '../services/access';
 import { isUserEntitled } from '../services/entitlement';
 import crypto from 'crypto';
 import { recordImporterReport } from '../../services/mailImportStatus';
+import { parseMailFilename } from '../../services/mailFilenameParser';
+import { letterDetailsFromType } from '../../services/mailLetterDetails';
 
 const router = Router();
 
@@ -61,25 +63,7 @@ const MailImportPayload = z.object({
   oneDriveFileId: z.string().optional(),
   oneDriveDownloadUrl: z.string().url().optional().nullable(),
   createdAt: z.string().optional(),
-  sender: z.union([z.string(), z.null()]).optional(),
-  mailType: z.union([z.string(), z.null()]).optional(),
 });
-
-// Convert tag slug to human-readable title
-const tagToTitle = (tagSlug: string): string => {
-  const titleMap: Record<string, string> = {
-    hmrc: 'HMRC',
-    companies_house: 'Companies House',
-    companieshouse: 'Companies House',
-    bank: 'Bank',
-    insurance: 'Insurance',
-    utilities: 'Utilities',
-    other: 'General Mail',
-  };
-  // Older filenames used numbers (1-10) as the tag; those letters are general mail.
-  if (/^\d+$/.test(tagSlug)) return 'General Mail';
-  return titleMap[tagSlug] || tagSlug.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-};
 
 const formatUkDateShort = (d: Date): string => {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -293,11 +277,33 @@ router.post('/from-onedrive', async (req, res) => {
     if (payload.oneDriveDownloadUrl) {
       // Check by scan_file_url (most reliable, unique per file)
       const urlCheck = await pool.query(
-        'SELECT id, subject, tag, status FROM mail_item WHERE user_id = $1 AND scan_file_url = $2 LIMIT 1',
+        'SELECT id, subject, tag, status, scan_file_url, idempotency_key FROM mail_item WHERE user_id = $1 AND scan_file_url = $2 LIMIT 1',
         [payload.userId, payload.oneDriveDownloadUrl]
       );
       if (urlCheck.rows.length > 0) {
-        existingMailItem = urlCheck.rows[0];
+        existingMailItem = { ...urlCheck.rows[0], matchedBy: 'link' };
+      }
+    }
+
+    // The same OneDrive file (same file id) imported before, for any customer
+    if (!existingMailItem && payload.oneDriveFileId) {
+      const fileCheck = await pool.query(
+        'SELECT id, user_id, subject, tag, status, scan_file_url, idempotency_key FROM mail_item WHERE idempotency_key = $1 LIMIT 1',
+        [`onedrive_import_${payload.oneDriveFileId}`]
+      );
+      if (fileCheck.rows.length > 0) {
+        const row = fileCheck.rows[0];
+        if (Number(row.user_id) !== Number(payload.userId)) {
+          // Never move a letter to another customer because a file was renamed
+          return res.status(409).json({
+            ok: false,
+            error: 'file_already_imported_for_other_customer',
+            message: `This file was already added to customer #${row.user_id}'s account.`,
+            fileName: payload.fileName,
+            mailId: row.id,
+          });
+        }
+        existingMailItem = { ...row, matchedBy: 'link' };
       }
     }
 
@@ -305,11 +311,11 @@ router.post('/from-onedrive', async (req, res) => {
     if (!existingMailItem) {
       const notesPattern = `OneDrive import: ${payload.fileName}`;
       const notesCheck = await pool.query(
-        'SELECT id, subject, tag, status FROM mail_item WHERE user_id = $1 AND notes = $2 LIMIT 1',
+        'SELECT id, subject, tag, status, scan_file_url, idempotency_key FROM mail_item WHERE user_id = $1 AND notes = $2 LIMIT 1',
         [payload.userId, notesPattern]
       );
       if (notesCheck.rows.length > 0) {
-        existingMailItem = notesCheck.rows[0];
+        existingMailItem = { ...notesCheck.rows[0], matchedBy: 'name' };
       }
     }
 
@@ -323,13 +329,45 @@ router.post('/from-onedrive', async (req, res) => {
         scanFileUrl: payload.oneDriveDownloadUrl,
       });
 
+      // Same file = the letter was made from this very OneDrive file (same file id). Only then may
+      // the worker finish moving it to Processed_Mail. Otherwise a different file reuses a name that
+      // was already used: staff must look at it.
+      const sameFile = Boolean(
+        payload.oneDriveFileId &&
+        existingMailItem.idempotency_key === `onedrive_import_${payload.oneDriveFileId}`
+      );
+
       return res.status(200).json({
         ok: true,
         skipped: true,
         data: {
           mailId: existingMailItem.id,
-          reason: 'duplicate_file_for_user',
+          reason: sameFile ? 'duplicate_file_for_user' : 'name_already_used',
+          sameFile,
         },
+      });
+    }
+
+    // The date must come from the filename: never guess it from when the file was saved.
+    // Same parser as the worker and the Filenames tool (user{ID}_{DD-MM-YY}_{TYPE}.pdf)
+    const parsedName = parseMailFilename(payload.fileName);
+    const dateFromFilename = parsedName?.dateIso
+      ? new Date(`${parsedName.dateIso}T00:00:00.000Z`)
+      : tryParseDateFromFilename(payload.fileName);
+    if (!dateFromFilename) {
+      return res.status(400).json({
+        ok: false,
+        error: 'invalid_filename_date',
+        message: 'The date in the filename is missing or not a real date (use DD-MM-YY).',
+        fileName: payload.fileName,
+      });
+    }
+    if (dateFromFilename.getTime() > nowMs() + 24 * 60 * 60 * 1000) {
+      return res.status(400).json({
+        ok: false,
+        error: 'filename_date_in_future',
+        message: 'The date in the filename is in the future.',
+        fileName: payload.fileName,
       });
     }
 
@@ -338,27 +376,15 @@ router.post('/from-onedrive', async (req, res) => {
       ? `onedrive_import_${payload.oneDriveFileId}`
       : `onedrive_import_${payload.fileName}_${receivedAtMs}`;
 
-    const tagTitle = tagToTitle(payload.sourceSlug);
-    const dateFromName = tryParseDateFromFilename(payload.fileName);
+    const { subject, senderName, emailLabel } = letterDetailsFromType(payload.sourceSlug);
+    // Store the file's stable SharePoint link straight away so the letter opens even before it is moved.
+    // Temporary pre-signed download links (older workers) are never stored.
+    const offeredLink = payload.oneDriveDownloadUrl || null;
+    const initialScanLink =
+      offeredLink && !/tempauth=|download\.aspx/i.test(offeredLink) ? offeredLink : null;
+    const dateFromName = dateFromFilename;
+    const mailTypeValue: string | null = null; // no automatic classification
 
-    const aiSender =
-      payload.sender != null && String(payload.sender).trim() ? String(payload.sender).trim() : null;
-    const senderName = aiSender ?? tagTitle;
-    const mailTypeValue =
-      payload.mailType != null && String(payload.mailType).trim()
-        ? String(payload.mailType).trim()
-        : null;
-
-    // Build subject from AI data when available, so the customer dashboard shows
-    // what the letter actually is (e.g. "HMRC — Tax Return" or "Lloyds Bank — Statement")
-    // rather than a generic tag-based name like "HMRC letter".
-    // Falls back to the tag-based name if AI extraction returned nothing.
-    const subject = aiSender
-      ? mailTypeValue
-        ? `${aiSender} — ${mailTypeValue.charAt(0).toUpperCase() + mailTypeValue.slice(1)}`
-        : aiSender
-      : `${tagTitle} letter`;
-    
     // Use date from filename if available, otherwise use receivedAtMs
     const finalReceivedDate = dateFromName 
       ? dateFromName.toISOString().split('T')[0]
@@ -394,24 +420,8 @@ router.post('/from-onedrive', async (req, res) => {
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
         ON CONFLICT (idempotency_key) DO UPDATE SET
-          user_id = EXCLUDED.user_id,
-          business_id = EXCLUDED.business_id,
-          subject = EXCLUDED.subject,
-          sender_name = EXCLUDED.sender_name,
-          received_date = EXCLUDED.received_date,
-          scan_file_url = EXCLUDED.scan_file_url,
-          file_size = EXCLUDED.file_size,
-          scanned = EXCLUDED.scanned,
-          status = EXCLUDED.status,
-          source_slug = EXCLUDED.source_slug,
-          notes = EXCLUDED.notes,
-          received_at_ms = EXCLUDED.received_at_ms,
-          updated_at = EXCLUDED.updated_at,
-          locked = EXCLUDED.locked,
-          locked_reason = EXCLUDED.locked_reason,
-          admin_note = EXCLUDED.admin_note,
-          mail_type = EXCLUDED.mail_type
-        RETURNING id, subject, status, tag, locked, locked_reason`,
+          updated_at = mail_item.updated_at
+        RETURNING id, subject, status, tag, locked, locked_reason, (xmax::text <> '0') AS already_existed`,
         [
           idempotencyKey,                    // $1: idempotency_key
           payload.userId,                     // $2: user_id
@@ -419,7 +429,7 @@ router.post('/from-onedrive', async (req, res) => {
           subject,                            // $4: subject
           senderName,                         // $5: sender_name
           finalReceivedDate,                  // $6: received_date (from filename or receivedAtMs)
-          null,                               // $7: scan_file_url - set to null initially, will be updated after file move
+          initialScanLink,                    // $7: scan_file_url - the file's stable inbox link; updated after the move
           0,                                  // $8: file_size (not provided in payload)
           true,                               // $9: scanned (true for OneDrive files)
           'received',                         // $10: status
@@ -432,7 +442,7 @@ router.post('/from-onedrive', async (req, res) => {
           locked,                             // $17: locked
           lockedReason,                       // $18: locked_reason
           locked ? `Ingested while ${lockedReason}` : null, // $19: admin_note
-          mailTypeValue,                      // $20: mail_type (AI classification)
+          mailTypeValue,                      // $20: mail_type (none: no automatic classification)
         ]
       );
     } else {
@@ -453,22 +463,8 @@ router.post('/from-onedrive', async (req, res) => {
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
         ON CONFLICT (idempotency_key) DO UPDATE SET
-          user_id = EXCLUDED.user_id,
-          business_id = EXCLUDED.business_id,
-          subject = EXCLUDED.subject,
-          sender_name = EXCLUDED.sender_name,
-          received_date = EXCLUDED.received_date,
-          scan_file_url = EXCLUDED.scan_file_url,
-          file_size = EXCLUDED.file_size,
-          scanned = EXCLUDED.scanned,
-          status = EXCLUDED.status,
-          source_slug = EXCLUDED.source_slug,
-          notes = EXCLUDED.notes,
-          received_at_ms = EXCLUDED.received_at_ms,
-          updated_at = EXCLUDED.updated_at,
-          admin_note = EXCLUDED.admin_note,
-          mail_type = EXCLUDED.mail_type
-        RETURNING id, subject, status, tag`,
+          updated_at = mail_item.updated_at
+        RETURNING id, subject, status, tag, (xmax::text <> '0') AS already_existed`,
         [
           idempotencyKey,                    // $1: idempotency_key
           payload.userId,                     // $2: user_id
@@ -476,7 +472,7 @@ router.post('/from-onedrive', async (req, res) => {
           subject,                            // $4: subject
           senderName,                         // $5: sender_name
           finalReceivedDate,                  // $6: received_date (from filename or receivedAtMs)
-          null,                               // $7: scan_file_url - set to null initially, will be updated after file move
+          initialScanLink,                    // $7: scan_file_url - the file's stable inbox link; updated after the move
           0,                                  // $8: file_size (not provided in payload)
           true,                               // $9: scanned (true for OneDrive files)
           'received',                         // $10: status
@@ -487,12 +483,21 @@ router.post('/from-onedrive', async (req, res) => {
           now,                                // $15: created_at
           now,                                // $16: updated_at
           locked ? `Ingested while ${lockedReason} (locked columns not available)` : null, // $17: admin_note
-          mailTypeValue,                      // $18: mail_type (AI classification)
+          mailTypeValue,                      // $18: mail_type (none: no automatic classification)
         ]
       );
     }
 
     const mailItem = result.rows[0];
+
+    // Another import of the same file got there first: leave that letter exactly as it is
+    if (mailItem?.already_existed) {
+      return res.status(200).json({
+        ok: true,
+        skipped: true,
+        data: { mailId: mailItem.id, reason: 'duplicate_file_for_user', sameFile: true },
+      });
+    }
 
     // Explicit log immediately after mail_item insert (after COMMIT)
     logger.info('[mailImport] ✅ mail_item created successfully', {
@@ -623,14 +628,14 @@ router.post('/from-onedrive', async (req, res) => {
           userId: verifiedMailItem.user_id,
           mailId: verifiedMailItem.id,
           fileName: payload.fileName,
-          tagTitle,
+          letterType: emailLabel,
           subject: verifiedMailItem.subject,
         });
 
         await sendMailScanned({
           email: userForEmail.email, // Use verified email from database
           firstName: userForEmail.first_name || "there",
-          subject: `New mail received - ${tagTitle}`,
+          subject: emailLabel ? `New mail received - ${emailLabel}` : 'New mail received',
           cta_url: `${process.env.APP_BASE_URL || 'https://vah-new-frontend-75d6.vercel.app'}/dashboard`
         });
         
@@ -639,7 +644,7 @@ router.post('/from-onedrive', async (req, res) => {
           userId: verifiedMailItem.user_id,
           mailId: verifiedMailItem.id,
           fileName: payload.fileName,
-          tagTitle,
+          letterType: emailLabel,
           confirmation: 'Mail item is confirmed in database for this user',
         });
       } catch (emailError) {
@@ -832,7 +837,7 @@ const ImporterReportPayload = z.object({
   intervalMs: z.number().int().positive().nullable().optional(),
   issues: z.array(z.object({
     fileName: z.string().max(1000),
-    reason: z.enum(['bad_filename', 'customer_not_found', 'no_business', 'import_failed']),
+    reason: z.enum(['bad_filename', 'customer_not_found', 'no_business', 'conflict', 'move_pending', 'import_failed']),
     detail: z.string().max(1000).nullable().optional(),
   })).max(500).optional(),
 });

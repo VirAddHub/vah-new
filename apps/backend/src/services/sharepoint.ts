@@ -81,6 +81,13 @@ async function fetchOneDriveContentByPath(
     log("[GRAPH DEBUG] driveId:", driveId);
 
     const candidates = new Set<string>([drivePath]);
+    // A scan whose letter still links to the inbox may already have been moved to Processed_Mail
+    // (the importer moves it, then updates the link). Look there too, by the same file name.
+    const addProcessedFallback = (path: string) => {
+        if (/(^|\/)Scanned_Mail\//i.test(path)) {
+            candidates.add(path.replace(/(^|\/)Scanned_Mail\//i, '$1Processed_Mail/'));
+        }
+    };
     if (/^Documents\/.+/i.test(drivePath)) {
         candidates.add(drivePath.replace(/^Documents\//i, ""));
         const segs = drivePath.split("/");
@@ -95,6 +102,7 @@ async function fetchOneDriveContentByPath(
         }
     }
 
+    for (const p of [...candidates]) addProcessedFallback(p);
     let lastDetail = "";
     for (const p of candidates) {
         const encoded = encodeDrivePath(p);

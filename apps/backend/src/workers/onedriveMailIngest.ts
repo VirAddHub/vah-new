@@ -18,12 +18,14 @@
  * Environment variables:
  * - MAIL_IMPORT_WEBHOOK_URL (required) - URL of the internal backend endpoint
  * - MAIL_IMPORT_WEBHOOK_SECRET (required) - Shared secret for authentication
- * - OPENAI_API_KEY (optional) - If set, classifies each PDF (sender + mailType) via gpt-4o-mini before webhook POST
- *   Sends PDF as data:application/pdf;base64 in the chat vision payload (no poppler / system deps).
  * - ONEDRIVE_MAIL_POLL_INTERVAL_MS (optional) - Polling interval in ms (default: 300000 = 5 minutes)
  * - ONEDRIVE_MAIL_PROCESSED_FOLDER_ID or GRAPH_MAIL_PROCESSED_FOLDER_ID (optional) - OneDrive folder ID for processed/archive folder
- *   - If set, files are moved here after successful import (new imports only, not duplicates)
+ *   - If set, files are moved here once they are on the customer's account. A file whose move was
+ *     interrupted is moved on a later run (the website confirms it is the same OneDrive file).
  *   - If not set, files remain in inbox for manual review
+ *
+ * No AI: the customer, date and letter type come only from the filename (Filenames tool).
+ * The PDF content is never read or sent anywhere by this worker.
  * 
  * To change the interval:
  *   - Set ONEDRIVE_MAIL_POLL_INTERVAL_MS environment variable
@@ -34,7 +36,6 @@ import { logger } from '../lib/logger';
 import {
   listInboxFiles,
   moveFileToProcessed,
-  downloadDriveItemPdfBytes,
   type OneDriveFile,
 } from '../services/onedriveClient';
 import { parseMailFilename } from '../services/mailFilenameParser';
@@ -45,7 +46,7 @@ type RunIssue = { fileName: string; reason: ImportIssueReason; detail?: string |
 /**
  * Files that cannot be filed until a person fixes them (wrong name, unknown customer number).
  * Keyed by inbox snapshot: renaming or replacing the file changes the key, so it is tried again.
- * This stops the worker re-reading (and re-sending to OpenAI) the same stuck file every run.
+ * This stops the worker re-sending the same stuck file to the website every run.
  */
 const stuckSnapshots = new Map<string, RunIssue>();
 
@@ -58,6 +59,15 @@ function permanentIssueFor(fileName: string, status: number, error: unknown): Ru
   if (code === 'no_business' || status === 422) {
     return { fileName, reason: 'no_business', detail: 'This customer has no business on their account to attach mail to.' };
   }
+  if (code === 'invalid_filename_date') {
+    return { fileName, reason: 'bad_filename', detail: 'The date in the name is missing or not a real date (DD-MM-YY).' };
+  }
+  if (code === 'filename_date_in_future') {
+    return { fileName, reason: 'bad_filename', detail: 'The date in the name is in the future.' };
+  }
+  if (code === 'file_already_imported_for_other_customer' || status === 409) {
+    return { fileName, reason: 'conflict', detail: 'This file is already on another customer\'s account. Check the customer number.' };
+  }
   if (code === 'validation_error' || code === 'invalid_payload' || status === 400) {
     return { fileName, reason: 'bad_filename', detail: 'The importer rejected the details read from this filename.' };
   }
@@ -66,203 +76,11 @@ function permanentIssueFor(fileName: string, status: number, error: unknown): Ru
 
 /**
  * OneDrive keeps the same drive item `id` when you replace a file in place. Deduping only on `id`
- * would skip AI + webhook forever after the first import. Include revision metadata so a new upload
+ * would skip the webhook forever after the first import. Include revision metadata so a new upload
  * (new lastModified / size) is processed again in the same worker session.
  */
 function inboxSnapshotKey(file: OneDriveFile): string {
   return `${file.id}|${file.lastModifiedDateTime ?? ''}|${file.size ?? ''}`;
-}
-
-/** Log once per process if AI is disabled (avoids per-file spam). */
-let loggedOpenAiKeyMissing = false;
-
-function isPdfMagic(buf: Uint8Array): boolean {
-  if (buf.length < 5) return false;
-  return String.fromCharCode(buf[0], buf[1], buf[2], buf[3], buf[4]).startsWith('%PDF');
-}
-
-/** PDF bytes for AI: prefer URL (graph download); if HTML or missing, use Graph /content. */
-async function loadPdfBytesForAi(
-  downloadUrl: string | undefined,
-  fileId: string
-): Promise<Uint8Array | null> {
-  if (downloadUrl) {
-    try {
-      const r = await fetch(downloadUrl);
-      if (r.ok) {
-        const buf = new Uint8Array(await r.arrayBuffer());
-        if (isPdfMagic(buf)) {
-          return buf;
-        }
-        logger.warn('[onedriveMailIngest] downloadUrl did not return PDF bytes (likely HTML page)', {
-          fileId,
-          contentType: r.headers.get('content-type'),
-        });
-      } else {
-        logger.warn('[onedriveMailIngest] downloadUrl fetch not ok', { fileId, status: r.status });
-      }
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      logger.warn('[onedriveMailIngest] downloadUrl fetch error', { fileId, message: msg });
-    }
-  }
-
-  const graphBuf = await downloadDriveItemPdfBytes(fileId);
-  if (graphBuf && graphBuf.length > 0) {
-    const u8 = new Uint8Array(graphBuf);
-    if (isPdfMagic(u8)) {
-      return u8;
-    }
-  }
-  logger.warn('[onedriveMailIngest] Could not load PDF bytes for AI', { fileId });
-  return null;
-}
-
-async function extractSenderFromPdf(
-  downloadUrl: string | undefined,
-  fileId: string,
-  fileName?: string
-): Promise<{ sender: string | null; mailType: string | null }> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    if (!loggedOpenAiKeyMissing) {
-      loggedOpenAiKeyMissing = true;
-      logger.warn(
-        '[extractSenderFromPdf] OPENAI_API_KEY not set — AI classification skipped for all files (set on the worker service, not only the API)'
-      );
-    }
-    return { sender: null, mailType: null };
-  }
-
-  try {
-    const pdfBytes = await loadPdfBytesForAi(downloadUrl, fileId);
-    if (!pdfBytes || pdfBytes.length === 0) {
-      logger.warn('[extractSenderFromPdf] No PDF bytes for AI', { fileId, fileName });
-      return { sender: null, mailType: null };
-    }
-
-    // ── Step 1: Upload PDF to OpenAI Files API ──────────────────────────────
-    // The Chat Completions API does NOT support PDFs via image_url / base64.
-    // The correct approach is: upload → get file_id → reference in message → delete.
-    logger.info('[extractSenderFromPdf] uploading PDF to OpenAI Files API', {
-      fileName: fileName ?? fileId,
-      pdfBytes: pdfBytes.length,
-    });
-
-    const uploadForm = new FormData();
-    uploadForm.append(
-      'file',
-      new Blob([pdfBytes], { type: 'application/pdf' }),
-      fileName ?? 'document.pdf'
-    );
-    uploadForm.append('purpose', 'user_data');
-
-    const uploadResponse = await fetch('https://api.openai.com/v1/files', {
-      method: 'POST',
-      headers: { authorization: `Bearer ${apiKey}` },
-      body: uploadForm,
-    });
-
-    if (!uploadResponse.ok) {
-      const uploadError = (await uploadResponse.json().catch(() => ({}))) as {
-        error?: { message?: string };
-      };
-      logger.warn('[extractSenderFromPdf] PDF upload to OpenAI failed', {
-        status: uploadResponse.status,
-        error: uploadError?.error?.message,
-        fileName: fileName ?? fileId,
-      });
-      return { sender: null, mailType: null };
-    }
-
-    const uploadData = (await uploadResponse.json()) as { id: string };
-    const openAiFileId = uploadData.id;
-
-    // ── Step 2: Ask GPT to read the uploaded PDF ────────────────────────────
-    logger.info('[extractSenderFromPdf] PDF uploaded — calling gpt-4o-mini', {
-      fileName: fileName ?? fileId,
-      openAiFileId,
-    });
-
-    const prompt =
-      'Look at this letter. Reply with JSON only, no markdown fences: ' +
-      '{ "sender": "Primary organisation name (e.g. HMRC, Lloyds Bank, NHS Neurology Department)", ' +
-      '"mailType": "letter | bill | statement | notice | legal | tax | parcel notice" }. ' +
-      'Use the organisation name, not an individual staff member name. ' +
-      'If the letter is in a language other than English, still extract the organisation name as written. ' +
-      'If unsure about either field, use null.';
-
-    const chatResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        max_tokens: 150,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              { type: 'file', file: { file_id: openAiFileId } },
-            ],
-          },
-        ],
-      }),
-    });
-
-    // ── Step 3: Delete the uploaded file (best-effort, non-blocking) ────────
-    fetch(`https://api.openai.com/v1/files/${openAiFileId}`, {
-      method: 'DELETE',
-      headers: { authorization: `Bearer ${apiKey}` },
-    }).catch((e: unknown) => {
-      logger.warn('[extractSenderFromPdf] Failed to delete OpenAI file (non-fatal)', {
-        openAiFileId,
-        error: e instanceof Error ? e.message : String(e),
-      });
-    });
-
-    // ── Step 4: Parse the response ──────────────────────────────────────────
-    const data = (await chatResponse.json()) as {
-      error?: { message?: string };
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-
-    if (!chatResponse.ok) {
-      logger.warn('[extractSenderFromPdf] OpenAI chat HTTP error', {
-        status: chatResponse.status,
-        message: data?.error?.message,
-        fileName: fileName ?? fileId,
-      });
-      return { sender: null, mailType: null };
-    }
-
-    const raw = data.choices?.[0]?.message?.content ?? '{}';
-    const text = raw
-      .trim()
-      .replace(/^```(?:json)?\s*/i, '')
-      .replace(/\s*```$/i, '')
-      .trim();
-    const parsed = JSON.parse(text) as { sender?: unknown; mailType?: unknown };
-    const sender =
-      parsed.sender != null && String(parsed.sender).trim() ? String(parsed.sender).trim() : null;
-    const mailType =
-      parsed.mailType != null && String(parsed.mailType).trim()
-        ? String(parsed.mailType).trim()
-        : null;
-    logger.info('[extractSenderFromPdf] done', {
-      fileName: fileName ?? fileId,
-      sender: sender ?? '(null)',
-      mailType: mailType ?? '(null)',
-    });
-    return { sender, mailType };
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    logger.warn('[extractSenderFromPdf] Failed:', msg);
-    return { sender: null, mailType: null };
-  }
 }
 
 const WEBHOOK_URL = process.env.MAIL_IMPORT_WEBHOOK_URL;
@@ -284,15 +102,88 @@ const WEBHOOK_SECRET_STRING: string = WEBHOOK_SECRET;
 // Backend dedupe remains the safety net for true duplicates.
 const processedInboxSnapshots = new Set<string>();
 
+/** Base URL of the internal import routes (WEBHOOK_URL without its trailing /from-onedrive). */
+const IMPORT_BASE_URL = WEBHOOK_URL_STRING.replace(/\/from-onedrive\/?$/, '');
+
+/** Store the file's stable link on the letter. Returns false if the website did not accept it. */
+async function updateScanLink(mailId: number | string, fileName: string, webUrl: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${IMPORT_BASE_URL}/from-onedrive/${mailId}/scan-url`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', 'x-mail-import-secret': WEBHOOK_SECRET_STRING },
+      body: JSON.stringify({ scanFileUrl: webUrl }),
+    });
+    if (!res.ok) {
+      logger.error('[onedriveMailIngest] Website did not accept the new file link', { fileName, mailId, status: res.status });
+      return false;
+    }
+    return true;
+  } catch (err: any) {
+    logger.error('[onedriveMailIngest] Could not send the new file link', { fileName, mailId, error: err?.message });
+    return false;
+  }
+}
+
 /**
- * Process a single file: parse, call webhook
+ * Move a file that is on a customer's account into Processed_Mail and point the letter at its new place.
+ * Returns true when the file is out of the inbox (or no processed folder is configured).
+ */
+async function finishFiling(
+  file: OneDriveFile,
+  mailId: number | string,
+  report: (issue: RunIssue, permanent: boolean) => void
+): Promise<boolean> {
+  const processedFolderId = process.env.ONEDRIVE_MAIL_PROCESSED_FOLDER_ID || process.env.GRAPH_MAIL_PROCESSED_FOLDER_ID;
+  if (!processedFolderId) {
+    return true; // files stay in the inbox by configuration; the letter already links to it
+  }
+
+  let moved: OneDriveFile;
+  try {
+    moved = await moveFileToProcessed(file.id);
+  } catch (err: any) {
+    logger.error('[onedriveMailIngest] Could not move file to Processed_Mail (letter is on the account; will retry)', {
+      fileName: file.name,
+      mailId,
+      error: err?.message,
+    });
+    report({
+      fileName: file.name,
+      reason: 'move_pending',
+      detail: 'On the customer\'s account, but not yet moved to Processed_Mail. Retrying each run.',
+    }, false);
+    return false;
+  }
+
+  logger.info('[onedriveMailIngest] Moved file to Processed_Mail', {
+    fileName: file.name,
+    mailId,
+    renamed: moved.name && moved.name !== file.name ? moved.name : undefined,
+  });
+
+  if (moved.webUrl) {
+    const linked = await updateScanLink(mailId, file.name, moved.webUrl);
+    if (!linked) {
+      // The viewer also looks in Processed_Mail when a file is missing from Scanned_Mail.
+      report({
+        fileName: file.name,
+        reason: 'move_pending',
+        detail: 'Moved to Processed_Mail, but the letter\'s link could not be updated.',
+      }, false);
+    }
+  }
+  return true;
+}
+
+/**
+ * Process a single file: check the name, add it to the customer's account, move it to Processed_Mail.
  * Returns: 'created' | 'skipped' | 'failed'
  */
 async function processFile(
   file: OneDriveFile,
   report: (issue: RunIssue, permanent: boolean) => void = () => {}
 ): Promise<'created' | 'skipped' | 'failed'> {
-  // Parse filename
+  // The customer, date and type come only from the name. Never guess the recipient.
   const parsed = parseMailFilename(file.name);
 
   if (!parsed) {
@@ -305,37 +196,26 @@ async function processFile(
     return 'failed';
   }
 
-  // Use date from filename (user{ID}_{DD-MM-YY}_{TAG}.pdf) when present; otherwise OneDrive file date
-  const createdAt =
-    parsed.dateIso ? `${parsed.dateIso}T00:00:00.000Z` : file.createdDateTime;
-
-  const aiData = await extractSenderFromPdf(file.downloadUrl, file.id, file.name);
+  const createdAt = parsed.dateIso ? `${parsed.dateIso}T00:00:00.000Z` : file.createdDateTime;
 
   const payload = {
     userId: parsed.userId,
     sourceSlug: parsed.sourceSlug,
     fileName: file.name,
     oneDriveFileId: file.id,
-    oneDriveDownloadUrl: file.downloadUrl ?? null,
+    // Stable SharePoint link only (what the viewer opens); never a temporary download link
+    oneDriveDownloadUrl: file.webUrl ?? null,
     createdAt,
-    sender: aiData.sender,
-    mailType: aiData.mailType,
   };
 
-  // Call webhook
   let response: Response;
   let responseData: any = null;
 
   try {
-    logger.info(`[onedriveMailIngest] Calling webhook for file "${file.name}"`, {
-      webhookUrl: WEBHOOK_URL_STRING,
-      userId: parsed.userId,
-    });
+    logger.info(`[onedriveMailIngest] Calling webhook for file "${file.name}"`, { userId: parsed.userId });
 
-    // Create abort controller for timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     try {
       response = await fetch(WEBHOOK_URL_STRING, {
         method: 'POST',
@@ -350,45 +230,24 @@ async function processFile(
       clearTimeout(timeoutId);
     }
 
-    // Parse JSON safely
     try {
       responseData = await response.json();
-    } catch (parseError) {
-      // If JSON parse fails, try to get text for debugging
-      const text = await response.text().catch(() => 'Unable to read response');
-      logger.error(`[onedriveMailIngest] Failed to parse JSON response for "${file.name}"`, {
-        status: response.status,
-        statusText: response.statusText,
-        responseText: text.substring(0, 500),
-      });
+    } catch {
+      logger.error(`[onedriveMailIngest] Website reply was not JSON for "${file.name}"`, { status: response.status });
       responseData = null;
     }
   } catch (err: any) {
-    // Handle fetch errors (network, timeout, etc.)
-    if (err.name === 'AbortError' || err.name === 'TimeoutError') {
-      logger.error(`[onedriveMailIngest] Webhook call timed out for file "${file.name}"`, {
-        webhookUrl: WEBHOOK_URL_STRING,
-        error: err.message,
-      });
-    } else {
-      logger.error(`[onedriveMailIngest] Failed to call webhook for file "${file.name}"`, {
-        webhookUrl: WEBHOOK_URL_STRING,
-        error: err.message,
-        errorName: err.name,
-      });
-    }
+    logger.error(`[onedriveMailIngest] Failed to call webhook for file "${file.name}"`, {
+      error: err?.message,
+      errorName: err?.name,
+    });
     report({ fileName: file.name, reason: 'import_failed', detail: 'Could not reach the website; will retry.' }, false);
     return 'failed';
   }
 
-  // Check response
   if (!response.ok || !responseData?.ok) {
     const errorMsg = responseData?.error || `HTTP ${response.status}`;
-    logger.error(`[onedriveMailIngest] Failed to import file "${file.name}"`, {
-      status: response.status,
-      error: errorMsg,
-      body: responseData,
-    });
+    logger.error(`[onedriveMailIngest] Failed to import file "${file.name}"`, { status: response.status, error: errorMsg });
     const permanent = permanentIssueFor(file.name, response.status, responseData?.error);
     report(
       permanent || { fileName: file.name, reason: 'import_failed', detail: `The website returned an error (${errorMsg}); will retry.` },
@@ -397,142 +256,32 @@ async function processFile(
     return 'failed';
   }
 
-  // Extract mailId from response (could be in data.mailId or mailId directly)
-  const mailId = responseData.data?.mailId || responseData.mailId || 'unknown';
+  const mailId = responseData.data?.mailId || responseData.mailId;
 
-  // Check if this was a duplicate (skipped)
   if (responseData.skipped) {
-    logger.info(`[onedriveMailIngest] Skipped duplicate file`, {
+    if (responseData.data?.sameFile === undefined) {
+      // An older website that does not say whether this is the same file (e.g. mid-deploy):
+      // do nothing now and ask again next run, rather than guess either way.
+      logger.warn('[onedriveMailIngest] Website did not confirm whether this is the same file; will retry', { fileName: file.name });
+      return 'failed';
+    }
+    if (responseData.data.sameFile && mailId) {
+      // Already on the account from this very file: an earlier move was interrupted. Finish it.
+      logger.info('[onedriveMailIngest] File already on the account; finishing its move', { fileName: file.name, mailId });
+      const done = await finishFiling(file, mailId, report);
+      return done ? 'skipped' : 'failed';
+    }
+    // A different file reuses a name that was already filed: never attach it to the old letter.
+    report({
       fileName: file.name,
-      userId: parsed.userId,
-      mailId: mailId,
-      reason: responseData.reason || 'duplicate_file_for_user',
-    });
-    return 'skipped';
+      reason: 'conflict',
+      detail: 'A letter with this name is already on the account. If this is a different letter, rename it with the next letter number.',
+    }, true);
+    return 'failed';
   }
 
-  // New file was created
-  logger.info(`[onedriveMailIngest] Imported new file`, {
-    fileName: file.name,
-    userId: parsed.userId,
-    mailId: mailId,
-    tag: parsed.sourceSlug,
-  });
-
-  // Move file to processed folder (only for newly created imports, not duplicates)
-  // This is optional - if ONEDRIVE_MAIL_PROCESSED_FOLDER_ID is not set, files remain in inbox
-  const processedFolderId = process.env.ONEDRIVE_MAIL_PROCESSED_FOLDER_ID || process.env.GRAPH_MAIL_PROCESSED_FOLDER_ID;
-  let finalScanUrl: string | null = null;
-
-  if (processedFolderId) {
-    try {
-      // Move file and get the moved file's metadata (including new download URL)
-      const movedFile = await moveFileToProcessed(file.id);
-      finalScanUrl = movedFile.downloadUrl || null;
-
-      logger.info(`[onedriveMailIngest] Moved file to processed folder`, {
-        fileName: file.name,
-        fileId: file.id,
-        processedFolderId,
-        newFileId: movedFile.id,
-        hasDownloadUrl: !!finalScanUrl,
-        finalScanUrl: finalScanUrl ? finalScanUrl.substring(0, 200) : null, // Log first 200 chars for debugging
-        // Check if URL contains Processed_Mail to verify it's the new location
-        containsProcessedMail: finalScanUrl ? finalScanUrl.toLowerCase().includes('processed_mail') : false,
-      });
-
-      // Update the mail item's scan_file_url with the final location
-      if (finalScanUrl) {
-        try {
-          // Construct update URL: remove trailing /from-onedrive and add /from-onedrive/:mailId/scan-url
-          const baseUrl = WEBHOOK_URL_STRING.replace(/\/from-onedrive\/?$/, '');
-          const updateUrl = `${baseUrl}/from-onedrive/${mailId}/scan-url`;
-          const updateResponse = await fetch(updateUrl, {
-            method: 'PATCH',
-            headers: {
-              'content-type': 'application/json',
-              'x-mail-import-secret': WEBHOOK_SECRET_STRING,
-            },
-            body: JSON.stringify({
-              scanFileUrl: finalScanUrl,
-            }),
-          });
-
-          if (!updateResponse.ok) {
-            const updateError = await updateResponse.json().catch(() => ({}));
-            logger.error(`[onedriveMailIngest] Failed to update scan_file_url (file was moved but URL not updated)`, {
-              fileName: file.name,
-              mailId,
-              status: updateResponse.status,
-              error: updateError,
-            });
-          } else {
-            const updateData = await updateResponse.json().catch(() => ({}));
-            logger.info(`[onedriveMailIngest] Updated scan_file_url for mail item`, {
-              fileName: file.name,
-              mailId,
-              scanFileUrl: finalScanUrl ? finalScanUrl.substring(0, 100) + '...' : null, // Log first 100 chars
-              updateResponse: updateData,
-            });
-          }
-        } catch (updateError: any) {
-          logger.error(`[onedriveMailIngest] Failed to call update endpoint for scan_file_url`, {
-            fileName: file.name,
-            mailId,
-            error: updateError.message,
-          });
-        }
-      } else {
-        logger.warn(`[onedriveMailIngest] Moved file but no download URL in response`, {
-          fileName: file.name,
-          fileId: file.id,
-          movedFileId: movedFile.id,
-        });
-      }
-    } catch (moveError: any) {
-      // Don't fail the import if move fails - log it and continue
-      logger.error(`[onedriveMailIngest] Failed to move file to processed folder (import still succeeded)`, {
-        fileName: file.name,
-        fileId: file.id,
-        error: moveError.message,
-      });
-    }
-  } else {
-    // No processed folder configured - use original URL
-    // Update mail item with original download URL
-    if (file.downloadUrl) {
-      try {
-        // Construct update URL: remove trailing /from-onedrive and add /from-onedrive/:mailId/scan-url
-        const baseUrl = WEBHOOK_URL_STRING.replace(/\/from-onedrive\/?$/, '');
-        const updateUrl = `${baseUrl}/from-onedrive/${mailId}/scan-url`;
-        const updateResponse = await fetch(updateUrl, {
-          method: 'PATCH',
-          headers: {
-            'content-type': 'application/json',
-            'x-mail-import-secret': WEBHOOK_SECRET_STRING,
-          },
-          body: JSON.stringify({
-            scanFileUrl: file.downloadUrl,
-          }),
-        });
-
-        if (!updateResponse.ok) {
-          logger.error(`[onedriveMailIngest] Failed to update scan_file_url with original URL`, {
-            fileName: file.name,
-            mailId,
-            status: updateResponse.status,
-          });
-        }
-      } catch (updateError: any) {
-        logger.error(`[onedriveMailIngest] Failed to call update endpoint for scan_file_url`, {
-          fileName: file.name,
-          mailId,
-          error: updateError.message,
-        });
-      }
-    }
-  }
-
+  logger.info('[onedriveMailIngest] Imported new file', { fileName: file.name, userId: parsed.userId, mailId, tag: parsed.sourceSlug });
+  await finishFiling(file, mailId, report);
   return 'created';
 }
 
@@ -594,7 +343,6 @@ async function runOnce(): Promise<void> {
           lastModifiedDateTime: file.lastModifiedDateTime,
           size: file.size,
           reason: 'Same id + lastModified + size already processed in this worker process',
-          note: 'No [extractSenderFromPdf] here — dedupe skips before processFile. Replace file in OneDrive (new mtime/size) to re-run.',
           processedCount: processedInboxSnapshots.size,
         });
         skippedCount++;
@@ -602,13 +350,15 @@ async function runOnce(): Promise<void> {
       }
 
       try {
+        let pending = false;
         const result = await processFile(file, (issue, permanent) => {
           runIssues.push(issue);
           if (permanent) stuckSnapshots.set(snapshotKey, issue);
+          else pending = true;
         });
 
-        // Only mark as processed after a successful call (created or skipped by backend)
-        if (result === 'created' || result === 'skipped') {
+        // Remember the file as done only when it is fully filed; anything pending is retried next run
+        if ((result === 'created' || result === 'skipped') && !pending) {
           processedInboxSnapshots.add(snapshotKey);
           logger.info('[onedriveMailIngest] ✅ Marked file as processed (in-memory)', {
             oneDriveFileId,
@@ -722,9 +472,7 @@ async function startDaemon(): Promise<void> {
   const intervalMinutes = intervalMs / (60 * 1000);
 
   logger.info(`[onedriveMailIngest] Starting daemon loop (interval = ${intervalMinutes} minutes)`);
-  logger.info(
-    '[onedriveMailIngest] Worker AI path: PDF bytes → OpenAI Files API upload → Chat Completions (file_id reference) → delete. Requires OPENAI_API_KEY on this service.'
-  );
+  logger.info('[onedriveMailIngest] Filing from filenames only (no AI): customer, date and letter type come from the name');
 
   // Run immediately on boot
   await runOnceSafely();

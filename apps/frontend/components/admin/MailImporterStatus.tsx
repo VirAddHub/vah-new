@@ -3,7 +3,7 @@
 import { useAuthedSWR } from "../../lib/useAuthedSWR";
 import { CheckCircle, AlertTriangle, Clock, FileWarning } from "lucide-react";
 
-type IssueReason = "bad_filename" | "customer_not_found" | "no_business" | "import_failed";
+type IssueReason = "bad_filename" | "customer_not_found" | "no_business" | "conflict" | "move_pending" | "import_failed";
 
 interface ImporterStatus {
     health: "ok" | "problem" | "no_report";
@@ -23,6 +23,8 @@ const REASON_LABEL: Record<IssueReason, string> = {
     bad_filename: "Name not recognised",
     customer_not_found: "No customer with that number",
     no_business: "Customer has no business set up",
+    conflict: "Clashes with a letter already filed",
+    move_pending: "Filed, not yet moved to Processed_Mail",
     import_failed: "Couldn't be added yet (retrying)",
 };
 
@@ -30,12 +32,14 @@ const REASON_FIX: Record<IssueReason, string> = {
     bad_filename: "Rename it in OneDrive using a name from the Filenames tool.",
     customer_not_found: "Check the customer number, then rename the file in OneDrive.",
     no_business: "Open the customer and check their account is set up, then leave the file in place.",
+    conflict: "Check it is a different letter and the right customer, then rename it in OneDrive (use the next letter number).",
+    move_pending: "No action needed; it is retried every run. Tell the owner if it stays for more than an hour.",
     import_failed: "No action needed unless this stays for more than an hour.",
 };
 
 const PROBLEM_FIX: Record<string, string> = {
     onedrive_access_denied:
-        "New scans won't reach customers until this is fixed. In Microsoft 365, check the app has Files.ReadWrite.All (Application) with admin consent, and that the OneDrive account still exists and is licensed.",
+        "New scans won't reach customers until this is fixed. Microsoft signed the importer in but refused the folder: check the app the worker uses (GRAPH_CLIENT_ID) has Files.ReadWrite.All granted in Enterprise applications, and that the OneDrive account still exists.",
     onedrive_folder_not_found:
         "New scans won't reach customers until this is fixed. The inbox folder may have been moved, renamed or deleted.",
     microsoft_sign_in_failed:

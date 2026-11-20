@@ -23,7 +23,8 @@ export type OneDriveFile = {
   createdDateTime: string;
   /** Updates when content is replaced in place (same id, new bytes). */
   lastModifiedDateTime?: string;
-  downloadUrl?: string;
+  /** Stable SharePoint link to the file (what the PDF viewer opens). Never a temporary download link. */
+  webUrl?: string;
   size?: number;
 };
 
@@ -77,7 +78,7 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
     throw new Error('Either ONEDRIVE_DRIVE_ID (not "me") or ONEDRIVE_USER_UPN must be set for app-only authentication');
   }
 
-  const url = `${baseUrl}/items/${encodeURIComponent(inboxFolderId)}/children?$select=id,name,createdDateTime,lastModifiedDateTime,size,@microsoft.graph.downloadUrl,webUrl,file`;
+  const url = `${baseUrl}/items/${encodeURIComponent(inboxFolderId)}/children?$select=id,name,createdDateTime,lastModifiedDateTime,size,webUrl,file`;
 
   logger.info(`[onedriveClient] Attempting to list files from folder ID: ${inboxFolderId}`);
   logger.info(`[onedriveClient] Using base URL: ${baseUrl}`);
@@ -140,61 +141,14 @@ export async function listInboxFiles(): Promise<OneDriveFile[]> {
       name: item.name,
       createdDateTime: item.createdDateTime,
       lastModifiedDateTime: item.lastModifiedDateTime,
-      // Prefer @microsoft.graph.downloadUrl for server-side fetch (PDF bytes). webUrl is a SharePoint
-      // HTML page — anonymous fetch returns HTML, breaking pdftoppm / OpenAI vision in the worker.
-      downloadUrl: item['@microsoft.graph.downloadUrl'] || item.webUrl,
+      // Stable SharePoint link only. Temporary pre-signed download links are never requested,
+      // stored or logged.
+      webUrl: item.webUrl,
       size: item.size,
     });
   }
 
   return files;
-}
-
-/**
- * Download raw file bytes via Graph (Bearer). Use when @microsoft.graph.downloadUrl is missing
- * or fetch returned HTML — required for worker PDF→PNG→OpenAI pipeline.
- */
-export async function downloadDriveItemPdfBytes(fileId: string): Promise<Buffer | null> {
-  const token = await getGraphAccessToken();
-  const driveId = process.env.ONEDRIVE_DRIVE_ID;
-  const userUpn = process.env.ONEDRIVE_USER_UPN || process.env.MS_SHAREPOINT_USER_UPN || process.env.GRAPH_USER_UPN;
-
-  let baseUrl: string;
-  if (driveId && driveId !== 'me') {
-    baseUrl = `https://graph.microsoft.com/v1.0/drives/${encodeURIComponent(driveId)}`;
-  } else if (userUpn) {
-    baseUrl = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userUpn)}/drive`;
-  } else {
-    logger.error('[onedriveClient] downloadDriveItemPdfBytes: set ONEDRIVE_DRIVE_ID or ONEDRIVE_USER_UPN');
-    return null;
-  }
-
-  const url = `${baseUrl}/items/${encodeURIComponent(fileId)}/content`;
-  const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    redirect: 'follow',
-  });
-
-  if (!response.ok) {
-    const t = await response.text().catch(() => '');
-    logger.error(`[onedriveClient] downloadDriveItemPdfBytes failed: ${response.status}`, t.slice(0, 200));
-    if (response.status === 401 || response.status === 403) {
-      cachedToken = null;
-    }
-    return null;
-  }
-
-  const buf = Buffer.from(await response.arrayBuffer());
-  if (buf.length >= 5) {
-    const head = buf.slice(0, 5).toString('ascii');
-    if (head.startsWith('%PDF')) {
-      return buf;
-    }
-  }
-  logger.warn('[onedriveClient] downloadDriveItemPdfBytes: response was not a PDF');
-  return null;
 }
 
 /**
@@ -223,8 +177,9 @@ export async function moveFileToProcessed(fileId: string): Promise<OneDriveFile>
   }
 
   // Move file using PATCH with parentReference
-  // Request webUrl (stable SharePoint URL) and downloadUrl in the response
-  const url = `${baseUrl}/items/${encodeURIComponent(fileId)}?$select=id,name,createdDateTime,lastModifiedDateTime,size,webUrl,@microsoft.graph.downloadUrl,file`;
+  // Request webUrl (stable SharePoint URL) in the response
+  // If Processed_Mail already holds a file with this name, Microsoft adds " 1" instead of refusing the move.
+  const url = `${baseUrl}/items/${encodeURIComponent(fileId)}?@microsoft.graph.conflictBehavior=rename&$select=id,name,createdDateTime,lastModifiedDateTime,size,webUrl,file`;
 
   const response = await fetch(url, {
     method: 'PATCH',
@@ -255,11 +210,10 @@ export async function moveFileToProcessed(fileId: string): Promise<OneDriveFile>
     lastModifiedDateTime?: string;
     size?: number;
     webUrl?: string;
-    '@microsoft.graph.downloadUrl'?: string;
   };
 
   // Fetch the item again to ensure we get the updated webUrl (SharePoint URLs may not update immediately in PATCH response)
-  const getUrl = `${baseUrl}/items/${encodeURIComponent(movedItem.id)}?$select=id,name,createdDateTime,lastModifiedDateTime,size,webUrl,@microsoft.graph.downloadUrl,file`;
+  const getUrl = `${baseUrl}/items/${encodeURIComponent(movedItem.id)}?$select=id,name,createdDateTime,lastModifiedDateTime,size,webUrl,file`;
   const getResponse = await fetch(getUrl, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -286,8 +240,8 @@ export async function moveFileToProcessed(fileId: string): Promise<OneDriveFile>
     name: finalItem.name || '',
     createdDateTime: finalItem.createdDateTime || '',
     lastModifiedDateTime: finalItem.lastModifiedDateTime,
-    // Stable browser link for DB / users; worker AI uses Graph /content if needed
-    downloadUrl: finalItem.webUrl || finalItem['@microsoft.graph.downloadUrl'] || '',
+    // Stable browser link for the database and the PDF viewer
+    webUrl: finalItem.webUrl || '',
     size: finalItem.size || 0,
   };
 }
