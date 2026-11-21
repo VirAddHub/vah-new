@@ -221,7 +221,7 @@ it('defaults to Mail added and explains automated imports without inventing an e
   expect(screen.getByText('Human uploader: Not recorded')).toBeInTheDocument();
 });
 
-vi.mock('../lib/apiClient', () => ({adminApi:{userStats:vi.fn(async()=>({ok:true,data:{total:80,active:80,suspended:0,pending:0,deleted:1}})),deletedUsers:vi.fn(async()=>({ok:true,data:{items:[],total:0}}))}}));
+vi.mock('../lib/apiClient', () => ({adminApi:{getPlans:vi.fn(async()=>({ok:true,data:[{id:37,name:'Business annual'},{id:91,name:'Legacy monthly'}]})),updateUser:vi.fn(async()=>({ok:true})),userStats:vi.fn(async()=>({ok:true,data:{total:80,active:80,suspended:0,pending:0,deleted:1}})),deletedUsers:vi.fn(async()=>({ok:true,data:{items:[],total:0}}))}}));
 import UsersSection from '../components/admin/UsersSection';
 import {adminApi} from '../lib/apiClient';
 it('makes customer actions discoverable and shows the backend result count', async () => {
@@ -250,7 +250,7 @@ it('opens account forms on opaque, scrollable panels rather than transparent sur
   expect(screen.getByLabelText('Email')).toHaveValue('jamie@example.test');
   fireEvent.click(screen.getByRole('button',{name:'Cancel'}));
   fireEvent.click(screen.getByRole('button',{name:'Account & plan status'}));
-  expect(screen.getByRole('heading',{name:'Update plan status'}).parentElement!.parentElement!).toHaveClass('bg-white','overflow-y-auto');
+  expect(screen.getByRole('heading',{name:'Account & plan status'}).parentElement!.parentElement!).toHaveClass('bg-white','overflow-y-auto');
 });
 
 
@@ -264,4 +264,42 @@ it('refreshes accounts on request and shows the successful London update time', 
   await waitFor(() => expect(screen.getByRole('button', {name:'Refresh'})).toBeEnabled());
   view.rerender(<UsersSection {...props} isValidating={true} />);
   expect(screen.getByRole('button', {name:'Refreshing…'})).toBeDisabled();
+});
+
+
+const accountProps = {users:[{id:53,email:'jamie@example.test',company_name:'Original Ltd',status:'suspended',plan_status:'cancelled'}],loading:false,error:null,total:1,page:1,pageSize:25,onPageChange:vi.fn(),isValidating:false};
+it('preserves suspension when changing billing and restores access only when explicitly selected', async () => {
+  vi.mocked(adminApi.updateUser).mockClear();
+  render(<UsersSection {...accountProps} />);
+  fireEvent.click(screen.getByRole('button', {name:'Account & plan status'}));
+  expect(screen.getByLabelText('Account access')).toHaveValue('suspended');
+  fireEvent.change(screen.getByLabelText('Plan status'), {target:{value:'active'}});
+  fireEvent.click(screen.getByRole('button', {name:'Save changes'}));
+  await waitFor(()=>expect(adminApi.updateUser).toHaveBeenLastCalledWith(53,{plan_status:'active'}));
+  await waitFor(()=>expect(screen.queryByLabelText('Account access')).not.toBeInTheDocument());
+  fireEvent.click(screen.getByRole('button', {name:'Account & plan status'}));
+  fireEvent.change(screen.getByLabelText('Account access'), {target:{value:'active'}});
+  fireEvent.click(screen.getByRole('button', {name:'Save changes'}));
+  await waitFor(()=>expect(adminApi.updateUser).toHaveBeenLastCalledWith(53,{status:'active'}));
+});
+it('shows deleted account failures instead of claiming no matching customers, and allows retry', async () => {
+  vi.mocked(adminApi.deletedUsers).mockResolvedValueOnce({ok:false,error:'unavailable'} as any);
+  render(<UsersSection {...accountProps} />);
+  fireEvent.click(screen.getByRole('button',{name:'Show Deleted'}));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Could not load deleted accounts');
+  expect(screen.queryByText(/No matching customers/)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button',{name:'Refresh'}));
+  await waitFor(()=>expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+  expect(await screen.findByText(/No matching customers/)).toBeInTheDocument();
+});
+it('loads plan options with their real IDs', async () => {
+  const onFiltersChange=vi.fn();
+  render(<form><UsersSection {...accountProps} onFiltersChange={onFiltersChange} /></form>);
+  await waitFor(()=>expect(adminApi.getPlans).toHaveBeenCalled());
+  // Radix also renders a native select for form participation.
+  await waitFor(()=>expect(document.querySelector('option[value="37"]')).toHaveTextContent('Business annual'));
+  expect(document.querySelector('option[value="91"]')).toHaveTextContent('Legacy monthly');
+  expect(document.querySelector('option[value="1"]')).not.toBeInTheDocument();
+  fireEvent.change(document.querySelector('option[value="37"]')!.parentElement!, {target:{value:'37'}});
+  await waitFor(()=>expect(onFiltersChange).toHaveBeenLastCalledWith(expect.objectContaining({plan_id:'37'})));
 });

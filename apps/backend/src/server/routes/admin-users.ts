@@ -131,8 +131,8 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
 
         // Status filter (skip if __all__)
         if (status && status !== '__all__') {
-            whereClause += ` AND u.status = $${paramIndex}`;
-            params.push(String(status));
+            whereClause += ` AND (CASE WHEN u.status = 'pending_payment' THEN 'pending' ELSE u.status END) = $${paramIndex}`;
+            params.push(status === 'pending_payment' ? 'pending' : String(status));
             paramIndex++;
         }
 
@@ -183,8 +183,8 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
         }
 
         if (status && status !== '__all__') {
-            countQuery += ` AND u.status = $${countParamIndex}`;
-            countParams.push(String(status));
+            countQuery += ` AND (CASE WHEN u.status = 'pending_payment' THEN 'pending' ELSE u.status END) = $${countParamIndex}`;
+            countParams.push(status === 'pending_payment' ? 'pending' : String(status));
             countParamIndex++;
         }
 
@@ -307,7 +307,7 @@ router.get('/users/stats', requireAdmin, async (req: Request, res: Response) => 
         const suspended = parseInt(suspendedResult.rows[0].count);
 
         // Get pending users
-        const pendingResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE status = $1 AND deleted_at IS NULL', ['pending']);
+        const pendingResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE status IN ($1, $2) AND deleted_at IS NULL', ['pending', 'pending_payment']);
         const pending = parseInt(pendingResult.rows[0].count);
 
         // Get deleted users
@@ -499,6 +499,7 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         email,
         first_name,
         last_name,
+        company_name,
         is_admin,
         plan_id,
         plan_status,
@@ -534,6 +535,10 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         if (typeof last_name === 'string') {
             updates.push(`last_name = $${paramIndex++}`);
             values.push(last_name);
+        }
+        if (typeof company_name === 'string') {
+            updates.push(`company_name = $${paramIndex++}`);
+            values.push(company_name.trim());
         }
         if (typeof is_admin === 'boolean') {
             updates.push(`is_admin = $${paramIndex++}`);

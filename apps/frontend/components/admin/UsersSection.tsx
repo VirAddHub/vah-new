@@ -18,9 +18,9 @@ import {
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
 const PLAN_STATUS_OPTIONS = [
-  { value: 'active', label: 'Active', description: 'User is fully billable and can receive scans.' },
+  { value: 'active', label: 'Active', description: 'Billing is active. Account access and verification are checked separately.' },
   { value: 'pending_payment', label: 'Pending payment', description: 'User cannot receive new mail until payment is completed.' },
-  { value: 'cancelled', label: 'Cancelled', description: 'Account cancelled. Mail ingest should be blocked.' },
+  { value: 'cancelled', label: 'Cancelled', description: 'Plan cancelled. This does not change account access.' },
   { value: 'trialing', label: 'Trial', description: 'Limited trial access.' },
 ] as const;
 
@@ -112,8 +112,12 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   });
 
   // Plan status modal state
-  const [planStatusModal, setPlanStatusModal] = useState<null | { id: string | number; email: string; plan_status?: string }>(null);
+  const [planStatusModal, setPlanStatusModal] = useState<null | { id: string | number; email: string; plan_status?: string; status?: string }>(null);
   const [planStatusValue, setPlanStatusValue] = useState<string>('pending_payment');
+  const [accountStatusValue, setAccountStatusValue] = useState('pending');
+  const [plans, setPlans] = useState<{id: string | number; name: string}[]>([]);
+  const [plansError, setPlansError] = useState(false);
+  const [deletedError, setDeletedError] = useState<string | null>(null);
   const [kycModal, setKycModal] = useState<null | { id: string | number; email: string; kyc_status?: string | null }>(null);
   const [kycValue, setKycValue] = useState<string>('pending');
 
@@ -169,6 +173,15 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   const [refreshing, setRefreshing] = useState(false);
   const [deletedLastUpdated, setDeletedLastUpdated] = useState<number | null>(null);
 
+  useEffect(() => {
+    let cancelled = false;
+    adminApi.getPlans().then(res => {
+      if (!res.ok || !Array.isArray(res.data)) throw new Error('Plans unavailable');
+      if (!cancelled) { setPlans(res.data); setPlansError(false); }
+    }).catch(() => { if (!cancelled) setPlansError(true); });
+    return () => { cancelled = true; };
+  }, []);
+
   // Load user stats
   const loadUserStats = useCallback(async () => {
     const res = await adminApi.userStats();
@@ -194,6 +207,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   useEffect(() => {
     if (planStatusModal) {
       setPlanStatusValue(planStatusModal.plan_status ?? 'pending_payment');
+      setAccountStatusValue(planStatusModal.status ?? 'pending');
     }
   }, [planStatusModal]);
 
@@ -207,6 +221,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
     const request = ++deletedRequest.current;
     setDeletedUsers([]);
     setDeletedTotal(0);
+    setDeletedError(null);
     setDeletedUsersLoading(true);
     try {
       console.log('[UsersSection] Fetching deleted users from API...');
@@ -223,9 +238,11 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         setDeletedLastUpdated(Date.now());
         console.log('[UsersSection] Set deleted users:', users.length, 'users');
       } else {
-        console.error('[UsersSection] API returned error:', res);
+        setDeletedError('Could not load deleted accounts. Use Refresh to try again.');
       }
     } catch (error) {
+      if (request !== deletedRequest.current) return;
+      setDeletedError('Could not load deleted accounts. Use Refresh to try again.');
       console.error('Failed to load deleted users:', error);
       toast({ title: 'Error', description: 'Failed to load deleted users', variant: 'destructive' });
     } finally {
@@ -405,6 +422,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       )}
 
       {showDeleted && <p className="text-sm text-neutral-600">Search deleted accounts by name, company, email or ID. Status, plan and verification filters apply to current accounts only.</p>}
+      {plansError && <p role="alert" className="text-sm text-destructive">Plan filters could not load. Reload the page to try again.</p>}
       {/* Filters */}
       <div className="flex flex-wrap gap-4 p-4 bg-muted/50 rounded-lg">
         <div className="flex items-center gap-2">
@@ -425,13 +443,12 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         <div className="flex items-center gap-2">
           <label className="text-body-sm font-medium">Plan:</label>
           <Select value={planFilter} onValueChange={setPlanFilter}>
-            <SelectTrigger disabled={showDeleted} className="w-40">
+            <SelectTrigger disabled={showDeleted || plansError || plans.length === 0} className="w-40">
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent className="bg-white text-neutral-900">
               <SelectItem value="__all__">All</SelectItem>
-              <SelectItem value="1">Virtual Annual</SelectItem>
-              <SelectItem value="2">Virtual Monthly</SelectItem>
+              {plans.map(plan => <SelectItem key={plan.id} value={String(plan.id)}>{plan.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -472,7 +489,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         <div>
           <h3 className="text-base font-semibold">{showDeleted ? "Deleted accounts" : "Customer results"}</h3>
           <p className="text-body-sm text-muted-foreground">
-            {showDeleted ? `${deletedTotal} matching deleted accounts · Page ${page}` : `${total} matching customers · Page ${page}`}
+            {showDeleted ? (deletedError ? 'Deleted accounts unavailable' : `${deletedTotal} matching deleted accounts · Page ${page}`) : `${total} matching customers · Page ${page}`}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -506,12 +523,13 @@ export default function UsersSection({ users, loading, error, total, page, pageS
           Loading users…
         </div>
       )}
-      {error && (
+      {showDeleted && deletedError && <p role="alert" className="text-sm text-destructive">{deletedError}</p>}
+      {error && !showDeleted && (
         <div className="text-center py-2">
           <div className="text-body-sm text-destructive mb-2">{error}</div>
         </div>
       )}
-      {!loading && !deletedUsersLoading && !error && displayUsers.length === 0 && (
+      {!loading && !deletedUsersLoading && !(showDeleted ? deletedError : error) && displayUsers.length === 0 && (
         <div className="text-center py-2">
           <div className="text-body-sm text-muted-foreground mb-2">No matching customers. Try another search or clear the filters.</div>
         </div>
@@ -621,7 +639,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setPlanStatusModal({ id: u.id, email: u.email, plan_status: u.plan_status })}
+                              onClick={() => setPlanStatusModal({ id: u.id, email: u.email, plan_status: u.plan_status, status: u.status })}
                               disabled={isMutating}
                             >
                               Account &amp; plan status
@@ -878,16 +896,17 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white text-neutral-900 shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto border rounded-2xl p-6 w-full max-w-md space-y-5">
             <div>
-              <h3 className="font-semibold text-body-lg mb-1">Update plan status</h3>
+              <h3 className="font-semibold text-body-lg mb-1">Account &amp; plan status</h3>
               <p className="text-body-sm text-muted-foreground">
                 Adjust billing/state enforcement for {planStatusModal.email}.
             </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-body-sm font-medium">Plan status</label>
+              <label htmlFor="account-plan-status" className="text-body-sm font-medium">Plan status</label>
                 <select
                   className="w-full border rounded-md px-3 py-2 bg-background"
+                id="account-plan-status"
                 value={planStatusValue}
                 onChange={(e) => setPlanStatusValue(e.target.value)}
                 >
@@ -905,9 +924,20 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                   })()}
                 </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="account-access-status">Account access</Label>
+              <select id="account-access-status" className="w-full border rounded-md px-3 py-2 bg-white" value={accountStatusValue} onChange={e => setAccountStatusValue(e.target.value)}>
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+                <option value="pending">Pending</option>
+                <option value="pending_payment">Pending payment</option>
+                {!["active", "suspended", "pending", "pending_payment"].includes(accountStatusValue) && <option value={accountStatusValue}>{accountStatusValue}</option>}
+              </select>
+              <p className="text-sm text-neutral-600">Changing the plan does not reactivate a suspended account. Set account access to Active only when you intend to restore access.</p>
+            </div>
             <div className="bg-muted/40 rounded-lg px-3 py-2 text-caption text-muted-foreground">
               <p>
-                This value is what the mail ingest worker checks before accepting PDFs.
+                Mail access requires an active account, an active subscription and approved verification.
               </p>
               <p>
                 Set to <strong>pending payment</strong> to block scans until billing is fixed.
@@ -927,25 +957,26 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                   if (!planStatusModal) return;
                   setIsMutating(true);
                   try {
-                    // Update both plan_status and status to keep them in sync
-                    // If setting to pending_payment, also set status to pending_payment
-                    // If setting to active, also set status to active
-                    const statusValue = planStatusValue === 'pending_payment' ? 'pending_payment' : 
-                                       planStatusValue === 'active' ? 'active' : 
-                                       planStatusValue === 'cancelled' ? 'suspended' : undefined;
-                    
-                    const updatePayload: any = { plan_status: planStatusValue };
-                    if (statusValue) {
-                      updatePayload.status = statusValue;
+                    const updatePayload: { plan_status?: string; status?: string } = {};
+                    if (planStatusValue !== (planStatusModal.plan_status ?? 'pending_payment')) {
+                      updatePayload.plan_status = planStatusValue;
                     }
-                    
+                    // Only an explicit access change may lift a suspension.
+                    if (accountStatusValue !== (planStatusModal.status ?? 'pending')) {
+                      updatePayload.status = accountStatusValue;
+                    }
+
+                    if (Object.keys(updatePayload).length === 0) {
+                      setPlanStatusModal(null);
+                      return;
+                    }
                     const res = await adminApi.updateUser(planStatusModal.id, updatePayload);
                     if (!res.ok) {
                       throw new Error(res.error || 'update_failed');
                     }
                     toast({
-                      title: 'Plan status updated',
-                      description: `${planStatusModal.email} is now ${formatPlanStatus(planStatusValue)}.`,
+                      title: 'Account and plan updated',
+                      description: `Plan: ${formatPlanStatus(planStatusValue)}. Account access: ${accountStatusValue.replace(/_/g, ' ')}.`,
                     });
                     setPlanStatusModal(null);
                     if (onRefreshUsers) {

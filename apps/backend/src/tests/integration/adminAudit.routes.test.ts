@@ -1,3 +1,4 @@
+import adminUsersRouter from '../../server/routes/admin-users';
 import { readFileSync } from 'node:fs';
 import { adminUserSearch } from '../../lib/adminUserSearch';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -237,4 +238,35 @@ describe('customer state regression checks', () => {
     await db.exec(`UPDATE "user" SET status='active' WHERE id=53`);
     expect((await request(guarded).get('/')).status).toBe(200);
   });
+});
+
+
+it('saves company edits alone and alongside other profile changes through the admin endpoint', async () => {
+  await db.exec(`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS updated_at bigint;
+    ALTER TABLE admin_audit ALTER COLUMN created_at TYPE timestamptz USING to_timestamp(created_at / 1000.0);
+    CREATE SEQUENCE IF NOT EXISTS test_audit_id START 10000;
+    ALTER TABLE admin_audit ALTER COLUMN id SET DEFAULT nextval('test_audit_id');`);
+  const usersApp = express();
+  usersApp.use(express.json());
+  usersApp.use(authenticateJWT);
+  usersApp.use('/api/admin',adminUsersRouter);
+  const update = (body: any) => request(usersApp).patch('/api/admin/users/53').set('Authorization', `Bearer ${adminToken}`).send(body);
+  expect((await update({company_name:'Updated Studio Ltd'})).status).toBe(200);
+  expect((await db.query('SELECT company_name FROM "user" WHERE id=53')).rows[0].company_name).toBe('Updated Studio Ltd');
+  expect((await update({company_name:'Second Studio Ltd',first_name:'New name'})).status).toBe(200);
+  expect((await db.query('SELECT company_name,first_name FROM "user" WHERE id=53')).rows[0]).toEqual({company_name:'Second Studio Ltd',first_name:'New name'});
+});
+it('includes both pending statuses in list/count predicates and statistics', async () => {
+  const source = readFileSync(new URL('../../server/routes/admin-users.ts',import.meta.url),'utf8');
+  const predicates=[...source.matchAll(/AND (\(CASE WHEN u\.status[^`]+?) = \$\$\{/g)];
+  expect(predicates).toHaveLength(2);
+  for (const match of predicates) {
+    const result=await db.query(`SELECT u.id FROM (VALUES (1,'pending'),(2,'pending_payment'),(3,'active'),(4,'suspended')) u(id,status) WHERE ${match[1]} = $1 ORDER BY id`,['pending']);
+    expect(result.rows.map((r:any)=>r.id)).toEqual([1,2]);
+  }
+  await db.exec(`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS deleted_at bigint; UPDATE "user" SET status='pending' WHERE id=50; UPDATE "user" SET status='pending_payment' WHERE id=53;`);
+  const usersApp=express();usersApp.use(authenticateJWT);usersApp.use('/api/admin',adminUsersRouter);
+  const result=await request(usersApp).get('/api/admin/users/stats').set('Authorization',`Bearer ${adminToken}`);
+  expect(result.status).toBe(200);
+  expect(result.body.data.pending).toBe(2);
 });
