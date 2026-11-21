@@ -331,7 +331,7 @@ async function handleInvoicePaid(pool: any, event: Stripe.Event) {
   );
   const nowMs = Date.now();
   await pool.query(
-    `UPDATE "user" SET plan_status = 'active', subscription_status = 'active', plan_start_date = COALESCE(plan_start_date, $1), payment_failed_at = NULL, payment_retry_count = 0, payment_grace_until = NULL, account_suspended_at = NULL, updated_at = $2 WHERE id = $3`,
+    `UPDATE "user" SET plan_status = 'active', subscription_status = 'active', plan_start_date = COALESCE(plan_start_date, $1), payment_failed_at = NULL, payment_retry_count = 0, payment_grace_until = NULL, account_suspended_at = CASE WHEN status = 'suspended' THEN account_suspended_at ELSE NULL END, updated_at = $2 WHERE id = $3`,
     [nowMs, nowMs, uid]
   );
   await pool.query(

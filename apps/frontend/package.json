@@ -22,7 +22,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "docs:refresh": "mkdir -p public/api-docs && cp ../backend/docs/public/api.html public/api-docs/index.html"
+    "docs:refresh": "mkdir -p public/api-docs && cp ../backend/docs/public/api.html public/api-docs/index.html",
+    "test:audit": "vitest run --config vitest.audit.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.0",

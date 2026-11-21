@@ -101,6 +101,7 @@ export function EnhancedAdminDashboard({
 
     // Pagination state
     const [usersPage, setUsersPage] = useState(1);
+    const [usersLastUpdated, setUsersLastUpdated] = useState<number | null>(null);
 
     // User filters state
     const [userFilters, setUserFilters] = useState({
@@ -137,8 +138,9 @@ export function EnhancedAdminDashboard({
         refreshInterval: 300000, // 5 minutes instead of 1 minute
         refreshWhenHidden: false,
         refreshWhenOffline: false,
-        revalidateOnFocus: false, // Disable focus revalidation
-        revalidateOnReconnect: false, // Disable reconnect revalidation
+        revalidateOnFocus: true,
+        revalidateOnReconnect: true,
+        onSuccess: () => setUsersLastUpdated(Date.now()),
         dedupingInterval: 10000, // Dedupe requests within 10 seconds
         errorRetryCount: 1, // Reduce retry count
         errorRetryInterval: 15000, // Increase retry interval
@@ -191,6 +193,7 @@ export function EnhancedAdminDashboard({
                         onPageChange={setUsersPage}
                         isValidating={usersValidating}
                         onRefreshUsers={refetchUsers}
+                        lastUpdated={usersLastUpdated}
                     />
                 );
             case "mail":
@@ -221,6 +224,7 @@ export function EnhancedAdminDashboard({
                         onPageChange={setUsersPage}
                         isValidating={usersValidating}
                         onRefreshUsers={refetchUsers}
+                        lastUpdated={usersLastUpdated}
                     />
                 );
         }

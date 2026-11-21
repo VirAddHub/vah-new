@@ -542,7 +542,7 @@ async function handlePaymentConfirmed(pool: any, links: any, eventContext: { eve
             SET payment_failed_at = NULL,
                 payment_retry_count = 0,
                 payment_grace_until = NULL,
-                account_suspended_at = NULL,
+                account_suspended_at = CASE WHEN status = 'suspended' THEN account_suspended_at ELSE NULL END,
                 updated_at = $1
             WHERE id = $2
         `, [Date.now(), userId]);
