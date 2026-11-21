@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
@@ -65,10 +66,14 @@ export default function CollaborativeForwardingBoard({
   const router = useRouter();
   
   // State hooks - all called unconditionally
+  const loadRequest = useRef(0);
   const [rows, setRows] = useState<ForwardingRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
+  const [page, setPage] = useState(1);
+  useEffect(() => setPage(1), [debouncedSearch]);
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
   const [isAnyTransitionInProgress, setIsAnyTransitionInProgress] = useState(false);
   const [deletingRequest, setDeletingRequest] = useState<number | null>(null);
@@ -236,10 +241,13 @@ export default function CollaborativeForwardingBoard({
 
   // Load forwarding requests with real-time updates - WITH DEDUPLICATION
   const load = useCallback(async () => {
+    const request = ++loadRequest.current;
     setLoading(true);
     try {
-      const data = await adminApi.getForwardingRequests({ limit: 100, offset: 0 });
+      const data = await adminApi.getForwardingRequests({ limit: 100, offset: (page - 1) * 100, status: 'all', q: debouncedSearch });
+      if (request !== loadRequest.current) return;
       if (data.ok && Array.isArray(data.data)) {
+        setError(null);
         setRows(data.data);
 
         // Notify parent component of data update
@@ -249,8 +257,11 @@ export default function CollaborativeForwardingBoard({
 
         // Load locks separately to ensure we have the latest lock information
         await loadLocks();
+      } else {
+        throw new Error(data.error || "Failed to load forwarding requests");
       }
     } catch (error) {
+      if (request !== loadRequest.current) return;
       console.error('Failed to load forwarding requests:', error);
       // Don't show error for rate limiting - just log it
       if (error instanceof Error && error.message.includes('429')) {
@@ -259,9 +270,9 @@ export default function CollaborativeForwardingBoard({
       }
       setError('Failed to load forwarding requests');
     } finally {
-      setLoading(false);
+      if (request === loadRequest.current) setLoading(false);
     }
-  }, [onDataUpdate, loadLocks]);
+  }, [onDataUpdate, loadLocks, page, debouncedSearch]);
 
   // Real-time polling for updates - REDUCED FREQUENCY WITH DEDUPLICATION
   useEffect(() => {
@@ -313,18 +324,7 @@ export default function CollaborativeForwardingBoard({
 
   // Categorize requests for display - SIMPLIFIED 3-STAGE KANBAN
   const categorizeRequests = (requests: ForwardingRequest[]) => {
-    const filteredRequests = requests.filter(req => {
-      const searchLower = searchQuery.toLowerCase();
-      return (
-        (req.user_name || '').toLowerCase().includes(searchLower) ||
-        (req.first_name || '').toLowerCase().includes(searchLower) ||
-        (req.last_name || '').toLowerCase().includes(searchLower) ||
-        (req.email || '').toLowerCase().includes(searchLower) ||
-        req.to_name.toLowerCase().includes(searchLower) ||
-        formatFRId(req.id).toLowerCase().includes(searchLower) ||
-        (req.address1 || '').toLowerCase().includes(searchLower)
-    );
-    });
+    const filteredRequests = requests;
 
     // Simple 3-stage categorization - map all possible status values to 3 stages
     const requested = filteredRequests.filter(r => {
@@ -341,7 +341,7 @@ export default function CollaborativeForwardingBoard({
     const done = filteredRequests.filter(r => {
       const status = r.status?.toLowerCase();
       return status === 'dispatched' || status === 'delivered' || status === 'shipped' ||
-        status === 'completed' || status === 'complete';
+        status === 'completed' || status === 'complete' || status === 'cancelled';
     });
 
     return { requested, inProgress, done, other: [] };
@@ -733,6 +733,7 @@ export default function CollaborativeForwardingBoard({
 
   return (
     <div className="space-y-6">
+      {error && <div role="alert" className="text-destructive">{error}. Use Refresh to try again.</div>}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -762,6 +763,13 @@ export default function CollaborativeForwardingBoard({
         </div>
       </div>
 
+      <div className="flex items-center justify-between">
+        <span>Page {page} · {rows.length} requests on this page</span>
+        <div className="flex gap-2">
+          <Button variant="outline" disabled={loading || page === 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
+          <Button variant="outline" disabled={loading || !!error || rows.length < 100} onClick={() => setPage(p => p + 1)}>Next</Button>
+        </div>
+      </div>
       {/* Status columns */}
       <div className="grid gap-6 md:grid-cols-3">
         {/* Requested */}

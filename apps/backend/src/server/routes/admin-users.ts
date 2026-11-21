@@ -71,6 +71,7 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
                 u.is_admin,
                 u.status,
                 u.plan_status,
+                s.status AS service_subscription_status,
                 u.plan_id,
                 u.kyc_status,
                 u.created_at,
@@ -354,6 +355,7 @@ router.get('/users/deleted', adminUsersLimiter, requireAdmin, async (req: Reques
                 u.is_admin,
                 'deleted' as status,  -- Override status to show 'deleted' for soft-deleted users
                 u.plan_status,
+                s.status AS service_subscription_status,
                 u.plan_id,
                 u.kyc_status,
                 u.created_at,

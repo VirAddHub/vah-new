@@ -151,9 +151,13 @@ export default function FilenameGeneratorPage() {
 
   const handleCopy = async () => {
     if (!generatedFilename) return;
-    await navigator.clipboard.writeText(generatedFilename);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1200);
+    try {
+      await navigator.clipboard.writeText(generatedFilename);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {
+      setError('Could not copy automatically. Select the filename and copy it manually.');
+    }
   };
 
   const handleLogout = async () => {

@@ -88,9 +88,7 @@ export function EnhancedAdminDashboard({
     // Sync activeSection with URL query param
     useEffect(() => {
         const sectionParam = searchParams.get('section');
-        if (sectionParam && ['users', 'mail', 'forwarding', 'plans', 'blog', 'audit'].includes(sectionParam)) {
-            setActiveSection(sectionParam as AdminSection);
-        }
+        setActiveSection(sectionParam && ['users', 'mail', 'forwarding', 'plans', 'blog', 'audit'].includes(sectionParam) ? sectionParam as AdminSection : 'users');
     }, [searchParams]);
 
     // Update URL when activeSection changes

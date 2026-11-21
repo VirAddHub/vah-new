@@ -62,29 +62,35 @@ async function getPostBySlug(slug: string) {
 router.get("/blog/posts", requireAdmin, async (req: Request, res: Response) => {
     try {
         const includeDrafts = req.query.includeDrafts === "true";
-        const page = parseInt(String(req.query.page || '1')) || 1;
-        const pageSize = parseInt(String(req.query.pageSize || '20')) || 20;
+        const page = Math.max(1, parseInt(String(req.query.page || '1')) || 1);
+        const pageSize = Math.max(1, Math.min(100, parseInt(String(req.query.pageSize || '20')) || 20));
         const offset = (page - 1) * pageSize;
         
         const pool = getPool();
         
-        let whereClause = '';
-        if (!includeDrafts) {
-            whereClause = ` WHERE status != 'draft'`;
+        const conditions: string[] = [];
+        const params: any[] = [];
+        if (!includeDrafts) conditions.push("status != 'draft'");
+        if (typeof req.query.q === 'string' && req.query.q.trim()) {
+            params.push('%' + req.query.q.trim().replace(/[\\%_]/g, '\\$&') + '%');
+            conditions.push(`(title ILIKE $${params.length} OR description ILIKE $${params.length} OR content ILIKE $${params.length})`);
         }
-        
-        const countQuery = `SELECT COUNT(*) as total FROM blog_posts${whereClause}`;
-        const countResult = await pool.query(countQuery);
-        const total = parseInt(countResult.rows[0].total, 10);
-        
-        let query = `SELECT 
-            slug, title, description, content, excerpt, date, updated, tags, cover, 
+        if (typeof req.query.status === 'string' && req.query.status !== 'all') {
+            params.push(req.query.status);
+            conditions.push(`status = $${params.length}`);
+        }
+        if (typeof req.query.tag === 'string' && req.query.tag !== 'all') {
+            params.push(req.query.tag);
+            conditions.push(`to_jsonb(tags) ? $${params.length}`);
+        }
+        const whereClause = conditions.length ? ' WHERE ' + conditions.join(' AND ') : '';
+        const countResult = await pool.query(`SELECT COUNT(*) as total FROM blog_posts${whereClause}`, params);
+        const total = Number(countResult.rows[0].total);
+        const query = `SELECT slug, title, description, content, excerpt, date, updated, tags, cover,
             status, og_title, og_desc, noindex, author_name, author_title, author_image
-        FROM blog_posts${whereClause}
-        ORDER BY date DESC
-        LIMIT $1 OFFSET $2`;
-
-        const result = await pool.query(query, [pageSize, offset]);
+            FROM blog_posts${whereClause} ORDER BY date DESC, slug ASC
+            LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        const result = await pool.query(query, [...params, pageSize, offset]);
         const posts = result.rows.map(post => ({
             slug: post.slug,
             title: post.title,

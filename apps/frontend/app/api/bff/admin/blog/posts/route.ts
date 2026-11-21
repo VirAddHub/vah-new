@@ -28,7 +28,12 @@ export async function GET(request: NextRequest) {
     const page = searchParams.get('page') || '1';
     const pageSize = searchParams.get('pageSize') || '20';
     
-    backendUrl = `${backend}/api/admin/blog/posts?includeDrafts=${includeDrafts}&page=${page}&pageSize=${pageSize}`;
+    const forwarded = new URLSearchParams({includeDrafts, page, pageSize});
+    for (const key of ['q', 'status', 'tag']) {
+      const value = searchParams.get(key);
+      if (value) forwarded.set(key, value);
+    }
+    backendUrl = `${backend}/api/admin/blog/posts?${forwarded}`;
 
     const response = await fetch(backendUrl, {
       method: 'GET',

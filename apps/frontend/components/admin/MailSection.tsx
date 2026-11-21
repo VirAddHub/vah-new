@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
@@ -39,16 +39,21 @@ export function MailSection({ }: MailSectionProps) {
     const { toast } = useToast();
     const { query: searchTerm, setQuery: setSearchTerm, debouncedQuery: debouncedSearchTerm } = useSimpleDebouncedSearch(300, 0);
 
-    // Build query parameters - only show scanned mail
+    const [activeTab, setActiveTab] = useState<string>("needs-destruction");
+    const [page, setPage] = useState(1);
+    useEffect(() => { setPage(1); }, [debouncedSearchTerm, activeTab]);
+    // Search and destruction filtering apply before server pagination.
     const mailItemsParams = useMemo(() => ({
         q: debouncedSearchTerm || "",
-        limit: '500', // Show more items
-        offset: '0'
-    }), [debouncedSearchTerm]);
+        limit: '50',
+        offset: String((page - 1) * 50),
+        needs_destruction: String(activeTab === 'needs-destruction')
+    }), [debouncedSearchTerm, page, activeTab]);
 
     const {
         data: mailItemsData,
         isLoading: mailItemsLoading,
+        error: mailItemsError,
         mutate: refetchMailItems
     } = useAuthedSWR<{ items: MailItem[]; total: number }>(
         ['/api/admin/mail-items', mailItemsParams],
@@ -61,7 +66,7 @@ export function MailSection({ }: MailSectionProps) {
         }
     );
 
-    const mailItems = safe(mailItemsData?.items, []);
+    const mailItems: MailItem[] = mailItemsData?.items ?? [];
     const loading = mailItemsLoading || actionLoading;
 
     const handleViewItem = (itemId: number) => {
@@ -301,30 +306,9 @@ export function MailSection({ }: MailSectionProps) {
         };
     };
 
-    const [activeTab, setActiveTab] = useState<string>("needs-destruction");
-
-    // Filter items by search term
-    const searchFilteredItems: MailItem[] = mailItems.filter((item: MailItem) => {
-        if (!debouncedSearchTerm) return true;
-        const searchLower = debouncedSearchTerm.toLowerCase();
-        return (
-            String(item.id).includes(searchLower) ||
-            (item.subject || '').toLowerCase().includes(searchLower) ||
-            (item.sender_name || '').toLowerCase().includes(searchLower) ||
-            (item.user_email || '').toLowerCase().includes(searchLower) ||
-            ((item.first_name || '') + ' ' + (item.last_name || '')).toLowerCase().includes(searchLower)
-        );
-    });
-
-    // Separate items into two groups
-    const needsDestructionItems: MailItem[] = searchFilteredItems.filter(
-        (item) => item.past_30_days && !item.physical_destruction_date
-    );
-    const allItems: MailItem[] = searchFilteredItems;
-
-    // Use the appropriate list based on active tab
-    const filteredItems: MailItem[] = activeTab === "needs-destruction" ? needsDestructionItems : allItems;
-
+    const allItems: MailItem[] = mailItems;
+    const filteredItems: MailItem[] = mailItems;
+    const needsDestructionItems = mailItems.filter(item => item.past_30_days && !item.physical_destruction_date);
     const processedCount = filteredItems.filter((item) => item.status === 'processed' || item.status === 'forwarded').length;
     const needsDestructionCount = needsDestructionItems.length;
 
@@ -335,9 +319,9 @@ export function MailSection({ }: MailSectionProps) {
                     <h1 className="text-h2 font-bold">Scanned Mail</h1>
                     <p className="text-muted-foreground">All scanned mail items - track processing and deletion dates</p>
                     <div className="flex gap-4 mt-2 text-body-sm text-muted-foreground">
-                        <span>Total: {filteredItems.length}</span>
-                        <span>Processed: {processedCount}</span>
-                        <span className="text-destructive">Needs Destruction: {needsDestructionCount}</span>
+                        <span>Matching items: {mailItemsData?.total ?? 0}</span>
+                        <span>Processed on this page: {processedCount}</span>
+                        <span className="text-destructive">Needs destruction on this page: {needsDestructionCount}</span>
                     </div>
                 </div>
                 <Button
@@ -350,6 +334,7 @@ export function MailSection({ }: MailSectionProps) {
                 </Button>
             </div>
 
+            {mailItemsError && <div role="alert" className="text-destructive">Could not load mail. <Button variant="outline" onClick={() => refetchMailItems()}>Retry</Button></div>}
             {/* Search */}
             <Card>
                 <CardContent className="p-4">
@@ -371,7 +356,7 @@ export function MailSection({ }: MailSectionProps) {
                     <div className="text-body-sm text-amber-800">
                         <p className="font-medium mb-1">📋 Physical Destruction Eligibility Information</p>
                         <p className="text-caption">
-                            These fields are used to populate the Shredding & Destruction Log. Eligibility is system-calculated based on receipt date and retention rules (30-day GDPR retention period). Staff should manually copy these values into the Excel destruction log.
+                            These fields are used to populate the Shredding & Destruction Log. Eligibility is system-calculated based on receipt date and the configured 30-day retention rule. Staff should manually copy these values into the Excel destruction log.
                         </p>
                     </div>
                 </CardContent>
@@ -382,11 +367,11 @@ export function MailSection({ }: MailSectionProps) {
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="needs-destruction" className="flex items-center gap-2">
                         <AlertCircle className="h-4 w-4 text-destructive" />
-                        Needs Destruction ({needsDestructionCount})
+                        Needs Destruction
                     </TabsTrigger>
                     <TabsTrigger value="all" className="flex items-center gap-2">
                         <Eye className="h-4 w-4" />
-                        All Mail ({allItems.length})
+                        All Mail
                     </TabsTrigger>
                 </TabsList>
 
@@ -416,7 +401,7 @@ export function MailSection({ }: MailSectionProps) {
                                 ) : filteredItems.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                                            No scanned mail items found
+                                            {mailItemsError ? 'Mail is unavailable. Please retry.' : 'No scanned mail items found'}
                                         </TableCell>
                                     </TableRow>
                                 ) : (
@@ -690,6 +675,13 @@ export function MailSection({ }: MailSectionProps) {
                     </Card>
                 </TabsContent>
             </Tabs>
+            <div className="flex items-center justify-between gap-3">
+              <span>Page {page} · {mailItemsData?.total ?? 0} matching items</span>
+              <div className="flex gap-2">
+                <Button variant="outline" disabled={loading || page <= 1} onClick={() => setPage(p => p - 1)}>Previous</Button>
+                <Button variant="outline" disabled={loading || !!mailItemsError || page * 50 >= (mailItemsData?.total ?? 0)} onClick={() => setPage(p => p + 1)}>Next</Button>
+              </div>
+            </div>
         </div>
     );
 }

@@ -63,8 +63,8 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
         const pool = getPool();
         const { status, user_id, limit = '100', offset = '0' } = req.query;
 
-        const limitNum = parseInt(limit as string) || 100;
-        const offsetNum = parseInt(offset as string) || 0;
+        const limitNum = Math.max(1, Math.min(500, parseInt(limit as string) || 100));
+        const offsetNum = Math.max(0, parseInt(offset as string) || 0);
 
         try {
             let query = `
@@ -104,12 +104,7 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
                 END as days_until_deletion,
                 -- Check if past 30 days (same fallback logic)
                 -- Uses >= so items on day 30 are considered past 30 days
-                CASE 
-                    WHEN m.received_at_ms IS NOT NULL AND (now() - to_timestamp(m.received_at_ms / 1000)) >= INTERVAL '30 days' THEN true
-                    WHEN m.received_date IS NOT NULL AND (now() - m.received_date::timestamptz) >= INTERVAL '30 days' THEN true
-                    WHEN m.created_at IS NOT NULL AND (now() - to_timestamp(m.created_at / 1000)) >= INTERVAL '30 days' THEN true
-                    ELSE false
-                END as past_30_days
+                (now() - COALESCE(to_timestamp(m.received_at_ms / 1000.0), m.received_date::timestamptz, to_timestamp(m.created_at / 1000.0)) >= INTERVAL '30 days') as past_30_days
             FROM mail_item m
             JOIN "user" u ON m.user_id = u.id
             LEFT JOIN file f ON m.file_id = f.id
@@ -138,30 +133,19 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
                 paramIndex++;
             }
 
-            query += ` ORDER BY m.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-            params.push(limitNum, offsetNum);
-
-            const result = await pool.query(query, params);
-
-            // Get total count
-            let countQuery = 'SELECT COUNT(*) FROM mail_item m WHERE m.deleted = false';
-            const countParams: any[] = [];
-            let countParamIndex = 1;
-
-            if (status && status !== 'all') {
-                countQuery += ` AND m.status = $${countParamIndex}`;
-                countParams.push(status);
-                countParamIndex++;
+            if (typeof req.query.q === 'string' && req.query.q.trim()) {
+                query += ` AND (m.id::text ILIKE $${paramIndex} OR m.subject ILIKE $${paramIndex} OR m.sender_name ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex} OR CONCAT_WS(' ', u.first_name, u.last_name) ILIKE $${paramIndex})`;
+                params.push('%' + req.query.q.trim().replace(/[\\%_]/g, '\\$&') + '%');
+                paramIndex++;
             }
-
-            if (user_id) {
-                countQuery += ` AND m.user_id = $${countParamIndex}`;
-                countParams.push(parseInt(user_id as string));
-                countParamIndex++;
+            if (req.query.needs_destruction === 'true') {
+                query += ` AND m.physical_destruction_date IS NULL AND (now() - COALESCE(to_timestamp(m.received_at_ms / 1000.0), m.received_date::timestamptz, to_timestamp(m.created_at / 1000.0)) >= INTERVAL '30 days')`;
             }
-
-            const countResult = await pool.query(countQuery, countParams);
-            const total = parseInt(countResult.rows[0].count);
+            // Count exactly the same filtered dataset before applying pagination.
+            const countResult = await pool.query('SELECT COUNT(*) ' + query.slice(query.indexOf('FROM mail_item m')), params);
+            const total = Number(countResult.rows[0].count);
+            query += ` ORDER BY m.created_at DESC, m.id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+            const result = await pool.query(query, [...params, limitNum, offsetNum]);
 
             return {
                 ok: true,

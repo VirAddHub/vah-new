@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { customerAccessNotes, customerStatusLabel } from './customer-access';
 import { adminApi } from "../../lib/apiClient";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -32,7 +33,7 @@ const PLAN_STATUS_STYLES: Record<string, string> = {
 };
 
 const formatPlanStatus = (value?: string) => {
-  if (!value) return 'pending payment';
+  if (!value) return 'Not recorded';
   const option = PLAN_STATUS_OPTIONS.find((opt) => opt.value === value);
   return option ? option.label : value.replace(/_/g, ' ');
 };
@@ -188,7 +189,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
     if (res.ok) setStats(res.data as any);
   }, []);
 
-  useEffect(() => { loadUserStats(); }, [loadUserStats]);
+  useEffect(() => { void loadUserStats().catch(() => {}); }, [loadUserStats, lastUpdated]);
 
   // Reload deleted accounts when their search or page changes.
   useEffect(() => {
@@ -406,7 +407,6 @@ export default function UsersSection({ users, loading, error, total, page, pageS
             <Button variant="outline" disabled={refreshing || isValidating || deletedUsersLoading} onClick={refreshAccounts}>{refreshing || isValidating || deletedUsersLoading ? 'Refreshing…' : 'Refresh'}</Button>
           </div>
         </div>
-        <p className="text-base text-neutral-600">Find a customer, then use Edit profile for their name, email or company. Account &amp; plan status manages access; More actions includes password reset, unlocking and deletion.</p>
         <label htmlFor="customer-search" className="block text-sm font-medium">Find a customer</label>
         <Input id="customer-search" type="search" placeholder="Name, company, email or customer ID (e.g. #53)" value={q} onChange={e => setQ(e.target.value)} className="w-full max-w-2xl !text-base !h-11" />
       </header>
@@ -426,7 +426,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       {/* Filters */}
       <div className="flex flex-wrap gap-4 p-4 bg-muted/50 rounded-lg">
         <div className="flex items-center gap-2">
-          <label className="text-body-sm font-medium">Status:</label>
+          <label className="text-body-sm font-medium">Account access:</label>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger disabled={showDeleted} className="w-32">
               <SelectValue placeholder="All" />
@@ -454,7 +454,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-body-sm font-medium">KYC:</label>
+          <label className="text-body-sm font-medium">Identity check:</label>
           <Select value={kycFilter} onValueChange={setKycFilter}>
             <SelectTrigger disabled={showDeleted} className="w-32">
               <SelectValue placeholder="All" />
@@ -545,26 +545,28 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 <TableHead>Email</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Company</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Account access</TableHead>
                 <TableHead>Plan</TableHead>
-                <TableHead>Plan status</TableHead>
-                <TableHead>KYC</TableHead>
+                <TableHead>Billing</TableHead>
+                <TableHead>Identity check</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {displayUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-muted-foreground">
-                    {error ?? "No users found."}
+                  <TableCell colSpan={9} className="text-muted-foreground">
+                    {(showDeleted ? deletedError : error) ?? "No users found."}
                   </TableCell>
                 </TableRow>
               ) : (
                 displayUsers.map((u) => {
-                  const planStatusValue = u.plan_status ?? 'pending_payment';
+                  const access = customerAccessNotes(u);
+                  const planStatusValue = u.plan_status ?? '';
                   const planStatusClass = PLAN_STATUS_STYLES[planStatusValue] ?? 'bg-muted text-muted-foreground';
                   return (
-                  <TableRow key={u.id} className={u.deleted_at ? "opacity-60 bg-destructive/10" : ""}>
+                  <Fragment key={u.id}>
+                  <TableRow className={u.deleted_at ? "opacity-60 bg-destructive/10" : ""}>
                     <TableCell className="font-mono text-body-sm">
                       {u.id}
                     </TableCell>
@@ -583,7 +585,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                     <TableCell>
                       <div className="flex flex-col gap-1">
                         <Badge variant={u.status === "active" ? "default" : u.status === "suspended" ? "destructive" : "secondary"}>
-                          {u.status || "active"}
+                          {customerStatusLabel(u.status)}
                         </Badge>
                         {u.locked_until && Number(u.locked_until) > Date.now() && (
                           <span className="inline-flex items-center text-caption text-amber-700 font-medium">
@@ -604,7 +606,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                           ) : null}
                         </div>
                       ) : (
-                        <span className="text-body-sm text-muted-foreground">No plan</span>
+                        <details className="text-sm text-neutral-600"><summary className="cursor-pointer">Plan not identified</summary><p className="mt-1">A plan name could not be found. Check billing to confirm payment and subscription details.</p></details>
                       )}
                     </TableCell>
                     <TableCell>
@@ -613,7 +615,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{u.kyc_status || "pending"}</Badge>
+                      <Badge variant="outline">{customerStatusLabel(u.kyc_status || "pending")}</Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
@@ -730,6 +732,16 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                       </div>
                     </TableCell>
                   </TableRow>
+                  <TableRow className="bg-neutral-50">
+                    <TableCell colSpan={9} className="text-sm text-neutral-700">
+                      <div aria-label={`Access explanation for customer ${u.id}`} className="space-y-1">
+                        <p className="font-medium">{access.title}</p>
+                        <p>{access.summary}</p>
+                        <p><span className="font-medium">Next step:</span> {access.next}</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  </Fragment>
                 )})
               )}
             </TableBody>

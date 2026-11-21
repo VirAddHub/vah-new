@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,11 +77,6 @@ export default function AdminInvoicesPage() {
   const [pageSize] = useState(25);
   const [total, setTotal] = useState<number | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const moneyFmt = useMemo(
-    () => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }),
-    []
-  );
 
   async function loadInvoices(nextPage = page) {
     if (adminStatus !== "ready") return;
@@ -397,7 +392,7 @@ export default function AdminInvoicesPage() {
                     items.map((inv) => {
                       const created = parseDateMaybe(inv.created_at);
                       const createdLabel = created ? created.toLocaleString("en-GB") : "—";
-                      const amount = moneyFmt.format((Number(inv.amount_pence || 0) / 100) || 0);
+                      const amount = new Intl.NumberFormat("en-GB", {style:"currency", currency: inv.currency || "GBP"}).format((Number(inv.amount_pence || 0) / 100) || 0);
                       return (
                         <TableRow key={inv.id}>
                           <TableCell className="font-medium">

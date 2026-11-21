@@ -221,7 +221,7 @@ it('defaults to Mail added and explains automated imports without inventing an e
   expect(screen.getByText('Human uploader: Not recorded')).toBeInTheDocument();
 });
 
-vi.mock('../lib/apiClient', () => ({adminApi:{getPlans:vi.fn(async()=>({ok:true,data:[{id:37,name:'Business annual'},{id:91,name:'Legacy monthly'}]})),updateUser:vi.fn(async()=>({ok:true})),userStats:vi.fn(async()=>({ok:true,data:{total:80,active:80,suspended:0,pending:0,deleted:1}})),deletedUsers:vi.fn(async()=>({ok:true,data:{items:[],total:0}}))}}));
+vi.mock('../lib/apiClient', () => ({apiClient:{post:vi.fn(async()=>({ok:true})),get:vi.fn(async()=>({ok:false,error:'unavailable'}))},adminApi:{getPlans:vi.fn(async()=>({ok:true,data:[{id:37,name:'Business annual'},{id:91,name:'Legacy monthly'}]})),updateUser:vi.fn(async()=>({ok:true})),userStats:vi.fn(async()=>({ok:true,data:{total:80,active:80,suspended:0,pending:0,deleted:1}})),deletedUsers:vi.fn(async()=>({ok:true,data:{items:[],total:0}}))}}));
 import UsersSection from '../components/admin/UsersSection';
 import {adminApi} from '../lib/apiClient';
 it('makes customer actions discoverable and shows the backend result count', async () => {
@@ -302,4 +302,89 @@ it('loads plan options with their real IDs', async () => {
   expect(document.querySelector('option[value="1"]')).not.toBeInTheDocument();
   fireEvent.change(document.querySelector('option[value="37"]')!.parentElement!, {target:{value:'37'}});
   await waitFor(()=>expect(onFiltersChange).toHaveBeenLastCalledWith(expect.objectContaining({plan_id:'37'})));
+});
+
+
+import {customerAccessNotes} from '../components/admin/customer-access';
+it('summarises each customer without overstating access', () => {
+  const suspended=customerAccessNotes({status:'suspended',plan_status:'active',kyc_status:'verified',service_subscription_status:'active'});
+  expect(suspended.title).toBe('Suspended by admin');
+  expect(suspended.summary).toContain('Payment will not remove');
+  expect(suspended.next).toBe('Restore account access when you are ready.');
+  const unpaidVerified=customerAccessNotes({status:'suspended',plan_status:'pending_payment',kyc_status:'verified',service_subscription_status:null});
+  expect(unpaidVerified.next).toContain('Resolve billing.');
+  expect(unpaidVerified.next).not.toContain('identity');
+  const unverified=customerAccessNotes({status:'suspended',plan_status:'active',kyc_status:'pending',service_subscription_status:'active'});
+  expect(unverified.next).toContain('Complete identity verification.');
+  expect(unverified.next).not.toContain('billing');
+  const pending=customerAccessNotes({status:'pending_payment',plan_status:'pending_payment',kyc_status:'pending',service_subscription_status:null});
+  expect(pending.summary).toContain('Mail access is blocked');
+  expect(pending.next).toContain('complete identity verification');
+  const eligible=customerAccessNotes({status:'active',plan_status:'active',kyc_status:'approved',service_subscription_status:'active'});
+  expect(eligible.title).toBe('Ready to receive mail');
+  expect(eligible.next).toContain('Previously locked scans');
+  expect(customerAccessNotes({status:'active',plan_status:'active',kyc_status:'approved'}).title).toBe('Access needs checking');
+  expect(customerAccessNotes({status:'active',plan_status:'active',kyc_status:'rejected',service_subscription_status:'active'}).summary).toContain('rejected');
+});
+
+
+vi.mock('../lib/useAuthedSWR', () => ({useAuthedSWR:vi.fn()}));
+import {useAuthedSWR} from '../lib/useAuthedSWR';
+import {apiClient} from '../lib/apiClient';
+import ChVerificationQueue from '../components/admin/ChVerificationQueue';
+import {MailSection} from '../components/admin/MailSection';
+import PlansSection from '../components/admin/PlansSection';
+it('cancelling the approval prompt never approves a Companies House submission', async () => {
+  vi.mocked(useAuthedSWR).mockReturnValue({data:{items:[{id:53,email:'jamie@example.test',ch_verification_status:'submitted'}]},mutate:vi.fn(),isLoading:false} as any);
+  vi.spyOn(window,'prompt').mockReturnValue(null);
+  vi.mocked(apiClient.post).mockClear();
+  render(<ChVerificationQueue />);
+  fireEvent.click(screen.getByRole('button',{name:'Approve'}));
+  expect(apiClient.post).not.toHaveBeenCalled();
+  vi.mocked(window.prompt).mockRestore();
+});
+it('mail load failures show an error and retry rather than an empty success', () => {
+  const mutate=vi.fn();
+  vi.mocked(useAuthedSWR).mockReturnValue({error:new Error('Unavailable'),mutate,isLoading:false} as any);
+  render(<MailSection />);
+  expect(screen.getByRole('alert')).toHaveTextContent('Could not load mail');
+  fireEvent.click(screen.getByRole('button',{name:'Retry'}));expect(mutate).toHaveBeenCalled();
+  expect(screen.queryByText('No scanned mail items found')).not.toBeInTheDocument();
+});
+it('plans expose a persistent load error with retry', async () => {
+  render(<PlansSection />);
+  expect(await screen.findByRole('alert')).toHaveTextContent('Could not load plans');
+});
+it('checks status combinations without asking for already-completed checks', () => {
+  for (const status of ['active','suspended','pending_payment','pending',undefined]) {
+    for (const plan of ['active','pending_payment','cancelled','past_due',undefined]) {
+      for (const subscription of ['active','pending','cancelled',null,undefined]) {
+        for (const identity of ['approved','verified','pending','rejected',undefined]) {
+          const notes=customerAccessNotes({status,plan_status:plan,service_subscription_status:subscription,kyc_status:identity});
+          if (identity==='approved'||identity==='verified') expect(notes.next.toLowerCase()).not.toContain('identity');
+          if (status==='suspended') expect(notes.summary).toContain('Mail access is blocked');
+          if(notes.title==='Ready to receive mail') {
+            expect(status).toBe('active');expect(plan).toBe('active');expect(subscription).toBe('active');expect(['approved','verified']).toContain(identity);
+          }
+          expect(notes.next).not.toBe('.');
+        }
+      }
+    }
+  }
+  expect(customerAccessNotes({is_admin:true,status:'active'}).title).toBe('Admin account');
+});
+
+it('blocks duplicate plan submissions while saving', async () => {
+  vi.mocked(apiClient.get).mockResolvedValueOnce({ok:true,data:[]} as any);
+  let finish: (value:any)=>void=()=>{};
+  vi.mocked(apiClient.post).mockClear();
+  vi.mocked(apiClient.post).mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}) as any);
+  render(<PlansSection />);
+  fireEvent.click(screen.getByRole('button',{name:'Create New Plan'}));
+  fireEvent.click(screen.getByRole('button',{name:'Create Plan'}));
+  expect(screen.getByRole('button',{name:'Saving…'})).toBeDisabled();
+  fireEvent.click(screen.getByRole('button',{name:'Saving…'}));
+  expect(apiClient.post).toHaveBeenCalledTimes(1);
+  await act(async()=>finish({ok:false,error:'test failure'}));
+  expect(screen.getByRole('button',{name:'Create Plan'})).toBeEnabled();
 });

@@ -325,7 +325,10 @@ router.post('/forwarding/requests/:id/status', adminForwardingLimiter, async (re
         const status = parseForwardingStatus(req.body.status); // accepts "In Progress", etc.
 
         const pool = getPool();
-        await pool.query('UPDATE forwarding_request SET status = $1 WHERE id = $2', [status, id]);
+        if (!Number.isSafeInteger(id) || id <= 0) return res.status(400).json({ok:false,error:'invalid_id'});
+        const updated = await pool.query('UPDATE forwarding_request SET status = $1, updated_at = $3 WHERE id = $2 RETURNING id', [status, id, Date.now()]);
+        if (updated.rows.length === 0) return res.status(404).json({ok:false,error:'not_found'});
+        clearAdminForwardingCache(Number(req.user!.id));
 
         // Send email notification when status changes to "dispatched"
         if (status === 'dispatched') {
