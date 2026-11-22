@@ -1,5 +1,7 @@
 'use client';
 
+import { VAHLogo } from '@/components/VAHLogo';
+
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -16,64 +18,11 @@ import { isAdminRole } from '@/lib/verifiedAdminSession';
 type LoginBrandVariant = 'default' | 'onDark';
 
 /**
- * Login header brand — not VAHLogo: explicit box + eager img + text fallback
+ * Login uses the same green brand assets and fallback as every frontend header
  * so the mark stays visible even if flex/SVG sizing misbehaves or the asset 404s.
  */
 function LoginBrandMark({ variant = 'default' }: { variant?: LoginBrandVariant }) {
-  const [useTextFallback, setUseTextFallback] = useState(false);
-  const onDark = variant === 'onDark';
-
-  if (useTextFallback) {
-    return (
-      <Link
-        href="/"
-        className={cn(
-          'inline-flex min-h-[36px] min-w-0 shrink-0 items-center rounded-md focus-visible:outline-none focus-visible:ring-2',
-          onDark
-            ? 'focus-visible:ring-white/35'
-            : 'focus-visible:ring-primary/30'
-        )}
-        aria-label="VirtualAddressHub home"
-      >
-        <span
-          className={cn(
-            'text-body font-semibold tracking-tight sm:text-body-lg',
-            onDark ? 'text-white' : 'text-foreground'
-          )}
-        >
-          Virtual
-          <span className={onDark ? 'text-emerald-200' : 'text-primary'}>Address</span>
-          Hub
-        </span>
-      </Link>
-    );
-  }
-
-  return (
-    <Link
-      href="/"
-      className={cn(
-        'inline-flex h-9 min-h-[36px] w-auto max-w-[200px] shrink-0 items-center rounded-md focus-visible:outline-none focus-visible:ring-2 sm:h-10 sm:max-w-[220px]',
-        onDark ? 'focus-visible:ring-white/35' : 'focus-visible:ring-primary/30'
-      )}
-      aria-label="VirtualAddressHub home"
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element -- public SVG; avoids optimizer quirks */}
-      <img
-        src="/images/logo.svg"
-        alt=""
-        width={160}
-        height={40}
-        className={cn(
-          'block h-8 w-auto max-w-[200px] object-contain object-left sm:h-9 sm:max-w-[220px]',
-          onDark && 'brightness-0 invert opacity-95'
-        )}
-        loading="eager"
-        decoding="sync"
-        onError={() => setUseTextFallback(true)}
-      />
-    </Link>
-  );
+  return <VAHLogo variant={variant} size="md" className="shrink-0" />;
 }
 
 // Map backend error codes to user-friendly messages

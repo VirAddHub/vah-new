@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { usePlans, usePricing } from '@/hooks/usePlans';
+import { usePricing } from '@/hooks/usePlans';
 import { formatPrice } from '@/lib/formatPrice';
 import { Button } from './ui/button';
 
@@ -12,8 +12,8 @@ interface PlansPageProps {
 export function PlansPage({ onNavigate }: PlansPageProps) {
     const [isAnnual, setIsAnnual] = useState(false);
 
-    const { loading, error } = usePlans();
-    const { monthlyPrice, annualPrice } = usePricing();
+    const { monthlyPrice, annualPrice, loading, error, monthlySavingsPct } = usePricing();
+    const selectedPrice = isAnnual ? annualPrice : monthlyPrice;
 
     // Handle plan selection
     const handleSelectPlan = () => {
@@ -36,7 +36,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
         'Digital delivery same business day'
     ];
 
-    const displayPrice = isAnnual ? formatPrice(annualPrice, { interval: 'year' }) : formatPrice(monthlyPrice, { interval: 'month' });
+    const displayPrice = selectedPrice === null ? (loading ? 'Loading pricing…' : 'Pricing unavailable') : formatPrice(selectedPrice, {interval: isAnnual ? 'year' : 'month'});
 
     return (
         <div className="bg-background min-w-0">
@@ -103,7 +103,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                         </div>
                                         <div className="inline-block border-b-2 border-primary/20 pb-0.5">
                                             <p className="text-caption sm:text-body-sm text-muted-foreground">
-                                                {isAnnual ? '2 months free. Billed annually.' : 'Everything included. Cancel anytime.'}
+                                                {isAnnual ? 'Billed annually.' : 'Everything included. Cancel anytime.'}
                                             </p>
                                         </div>
                                     </div>
@@ -111,6 +111,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     {/* CTA - full width on mobile, touch-friendly */}
                                     <Button
                                         onClick={handleSelectPlan}
+                                        disabled={selectedPrice === null}
                                         size="lg"
                                         className="h-12 min-h-[48px] px-6 sm:px-8 w-full sm:w-auto font-medium mb-2"
                                     >
@@ -118,10 +119,9 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                     </Button>
 
                                     <p className="text-caption sm:text-body-sm text-muted-foreground tabular-nums">
-                                        {isAnnual
-                                            ? `Equivalent to ${formatPrice(annualPrice / 12, { interval: 'month' })}`
-                                            : 'Switch to annual anytime and save 2 months'
-                                        }
+                                        {selectedPrice !== null && (isAnnual
+                                            ? `Equivalent to ${formatPrice(selectedPrice / 12, { interval: 'month' })}`
+                                            : monthlySavingsPct > 0 ? `Save ${monthlySavingsPct}% with annual billing` : 'Annual billing also available')}
                                     </p>
                                 </div>
 

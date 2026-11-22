@@ -94,7 +94,7 @@ function MixHero({ onNavigate }: { onNavigate?: (p: string, d?: any) => void }) 
 
         <div className="mt-7">
           <div className="font-newsreader text-[22px] sm:text-[26px] text-mix-green leading-none tracking-[-0.02em]">
-            One simple price: £9.99/month.
+            One simple plan.
           </div>
           <div className="font-dmsans text-[13px] sm:text-[14px] text-mix-ink2 mt-2 leading-[1.7]">
             No setup fee. No joining fee. No hidden extras.<br />
@@ -232,7 +232,8 @@ function MixPlan({ onNavigate }: { onNavigate?: (p: string, d?: any) => void }) 
   const [annual, setAnnual] = useState(false);
   const { monthlyPrice, annualPrice } = usePricing();
 
-  const displayPrice = annual ? formatAnnual(annualPrice) : formatMonthly(monthlyPrice);
+  const selectedPrice = annual ? annualPrice : monthlyPrice;
+  const displayPrice = selectedPrice === null ? 'Pricing unavailable' : annual ? formatAnnual(selectedPrice) : formatMonthly(selectedPrice);
   const cadence = annual ? '/ year' : '/ month';
 
   return (
@@ -245,7 +246,7 @@ function MixPlan({ onNavigate }: { onNavigate?: (p: string, d?: any) => void }) 
             className="font-newsreader text-mix-ink m-0 tracking-[-0.02em] font-normal leading-[1.05]"
             style={{ fontSize: 'clamp(26px, 3vw, 42px)' }}
           >
-            One plan. £9.99/month.<br />
+            One plan.<br />
             <span className="text-mix-green">Everything included.</span>
           </h2>
           <p className="font-dmsans text-[14px] sm:text-[15px] text-mix-ink2 leading-[1.6] mt-4 max-w-[520px] font-medium">
@@ -503,7 +504,7 @@ function MixCTA({ onNavigate }: { onNavigate?: (p: string, d?: any) => void }) {
         className="font-newsreader text-mix-ink2 mt-5 leading-[1.5]"
         style={{ fontSize: 'clamp(14px, 1.4vw, 16px)' }}
       >
-        £9.99/month. Cancel anytime. No tiers.
+        Cancel anytime. No tiers.
       </p>
       <button
         onClick={() => onNavigate?.('signup', { initialBilling: 'monthly' })}

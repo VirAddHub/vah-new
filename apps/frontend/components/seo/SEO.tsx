@@ -129,7 +129,7 @@ export const SEO_CONFIGS = {
       "@type": "Organization",
       "name": "VirtualAddressHub",
       "url": "https://virtualaddresshub.com",
-      "logo": "https://virtualaddresshub.com/images/logo.png",
+      "logo": "https://virtualaddresshub.com/images/logo-green.png",
       "description": "Professional UK virtual business address service",
       "address": {
         "@type": "PostalAddress",

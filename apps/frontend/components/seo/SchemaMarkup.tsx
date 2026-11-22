@@ -11,7 +11,7 @@ export const SchemaMarkup = {
     "url": "https://virtualaddresshub.com",
     "logo": {
       "@type": "ImageObject",
-      "url": "https://virtualaddresshub.com/images/logo.png",
+      "url": "https://virtualaddresshub.com/images/logo-green.png",
       "width": 200,
       "height": 60
     },
@@ -268,7 +268,7 @@ export const SchemaMarkup = {
       "name": "VirtualAddressHub",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://virtualaddresshub.com/images/logo.png"
+        "url": "https://virtualaddresshub.com/images/logo-green.png"
       }
     },
     "image": article.image || "https://virtualaddresshub.com/images/og-image.jpg",

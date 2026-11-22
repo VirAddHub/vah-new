@@ -37,6 +37,7 @@ const logoVariants = cva(
 
 interface VAHLogoProps extends VariantProps<typeof logoVariants> {
     href?: string;
+    variant?: "default" | "onDark";
     showText?: boolean;
     initials?: string;
     fullName?: string;
@@ -48,6 +49,7 @@ interface VAHLogoProps extends VariantProps<typeof logoVariants> {
 export function VAHLogo({
     size,
     href = "/",
+    variant = "default",
     showText = true,
     initials = "VAH",
     fullName = "VirtualAddressHub",
@@ -98,10 +100,10 @@ export function VAHLogo({
     const inner = (
         <span className="inline-flex shrink-0 items-center" data-vah-logo>
             {imgFailed ? (
-                <span className="font-semibold text-foreground text-body tracking-tight">{fullName}</span>
+                <span className={cn("font-semibold text-body tracking-tight", variant === "onDark" ? "text-white" : "text-foreground")}>{fullName === "VirtualAddressHub" ? <>VirtualAddress<span className="text-[#28b663]">Hub</span></> : fullName}</span>
             ) : (
                 <img
-                    src="/images/logo.svg"
+                    src={variant === "onDark" ? "/images/logo-green-on-dark.svg" : "/images/logo-green.svg"}
                     alt={fullName}
                     width={logoDimensions.width}
                     height={logoDimensions.height}

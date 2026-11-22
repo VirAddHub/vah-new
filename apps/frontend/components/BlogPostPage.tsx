@@ -115,7 +115,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
             "url": "https://virtualaddresshub.com",
             "logo": {
                 "@type": "ImageObject",
-                "url": "https://virtualaddresshub.com/images/logo.png"
+                "url": "https://virtualaddresshub.com/images/logo-green.png"
             }
         },
         "mainEntityOfPage": {
