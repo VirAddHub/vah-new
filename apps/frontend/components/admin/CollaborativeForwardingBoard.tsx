@@ -407,12 +407,12 @@ export default function CollaborativeForwardingBoard({
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ status: canonicalStatus }),
+        body: JSON.stringify({ status: canonicalStatus, expected_status: originalRows.find(row => row.id === requestId)?.status }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
+        throw new Error(errorData.message || errorData.error || `HTTP ${response.status}`);
       }
 
       const result = await response.json();
@@ -510,7 +510,7 @@ export default function CollaborativeForwardingBoard({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
+        throw new Error(errorData.message || errorData.error || `HTTP ${response.status}`);
       }
 
       // Remove from local state

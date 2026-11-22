@@ -1,3 +1,5 @@
+vi.mock('../../lib/mailer', () => ({sendMailForwarded:vi.fn(async()=>{})}));
+import {sendMailForwarded} from '../../lib/mailer';
 import { beforeAll, afterAll, expect, it, vi } from 'vitest';
 import { createRequire } from 'node:module';
 import express from 'express';
@@ -51,4 +53,16 @@ it('forwarding lists include delivered requests when requested, search full name
  expect(page.status).toBe(200);expect(page.body.data).toHaveLength(1);expect(page.body.data[0].status).toBe('Delivered');
  const missing=await request(app).post('/admin/forwarding/requests/999/status').send({status:'in_progress'});
  expect(missing.status).toBe(404);
+});
+
+it('rejects stale forwarding updates and sends dispatch notifications only once', async()=>{
+ await db.exec(`ALTER TABLE forwarding_request ADD COLUMN address1 text; ALTER TABLE forwarding_request ADD COLUMN city text; ALTER TABLE forwarding_request ADD COLUMN country text;`);
+ const update=(body:any)=>request(app).post('/admin/forwarding/requests/2/status').send(body);
+ expect((await update({status:'in_progress',expected_status:'Requested'})).status).toBe(200);
+ expect((await update({status:'dispatched',expected_status:'Requested'})).status).toBe(409);
+ expect((await update({status:'dispatched',expected_status:'in_progress'})).status).toBe(200);
+ const changed=(await db.query('SELECT updated_at FROM forwarding_request WHERE id=2')).rows[0].updated_at;
+ expect((await update({status:'dispatched',expected_status:'in_progress'})).status).toBe(200);
+ expect((await db.query('SELECT updated_at FROM forwarding_request WHERE id=2')).rows[0].updated_at).toBe(changed);
+ expect(sendMailForwarded).toHaveBeenCalledTimes(1);
 });

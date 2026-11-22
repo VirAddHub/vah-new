@@ -326,8 +326,21 @@ router.post('/forwarding/requests/:id/status', adminForwardingLimiter, async (re
 
         const pool = getPool();
         if (!Number.isSafeInteger(id) || id <= 0) return res.status(400).json({ok:false,error:'invalid_id'});
-        const updated = await pool.query('UPDATE forwarding_request SET status = $1, updated_at = $3 WHERE id = $2 RETURNING id', [status, id, Date.now()]);
-        if (updated.rows.length === 0) return res.status(404).json({ok:false,error:'not_found'});
+        const current = await pool.query('SELECT status FROM forwarding_request WHERE id = $1', [id]);
+        if (!current.rows.length) return res.status(404).json({ok:false,error:'not_found'});
+        const previousStatus = current.rows[0].status;
+        const normaliseStored = (value: unknown): string => {
+            const key = String(value ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+            if (['processing', 'reviewed', 'review'].includes(key)) return 'in_progress';
+            try { return parseForwardingStatus(key); } catch { return key; }
+        };
+        // An identical retry is successful without another write or notification.
+        if (normaliseStored(previousStatus) === status) return res.json({ok:true,data:{id,status,label:FWD_LABEL[status]}});
+        if (req.body.expected_status !== undefined && normaliseStored(req.body.expected_status) !== normaliseStored(previousStatus)) {
+            return res.status(409).json({ok:false,error:'status_changed',message:'This request changed. Refresh before updating it.'});
+        }
+        const updated = await pool.query('UPDATE forwarding_request SET status = $1, updated_at = $3 WHERE id = $2 AND status IS NOT DISTINCT FROM $4 RETURNING id', [status, id, Date.now(), previousStatus]);
+        if (!updated.rows.length) return res.status(409).json({ok:false,error:'status_changed',message:'This request changed. Refresh before updating it.'});
         clearAdminForwardingCache(Number(req.user!.id));
 
         // Send email notification when status changes to "dispatched"

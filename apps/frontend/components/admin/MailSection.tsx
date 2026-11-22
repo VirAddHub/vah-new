@@ -185,17 +185,6 @@ export function MailSection({ }: MailSectionProps) {
     };
 
     const getDestructionEligibilityDate = (item: MailItem): string => {
-        // Use expires_at if available
-        if (item.expires_at !== null && item.expires_at !== undefined) {
-            const expiresMs = typeof item.expires_at === 'string' ? parseInt(item.expires_at, 10) : item.expires_at;
-            if (!isNaN(expiresMs) && expiresMs > 0) {
-                const date = new Date(expiresMs);
-                if (!isNaN(date.getTime())) {
-                    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                }
-            }
-        }
-
         // Calculate from received date + 30 days
         const receivedDate = parseDate(item.received_date, item.received_at_ms, item.created_at);
         if (receivedDate) {
@@ -221,46 +210,11 @@ export function MailSection({ }: MailSectionProps) {
             return { label: `Destroyed on ${destroyedDateStr}`, isEligible: false };
         }
 
-        // Use backend's past_30_days calculation if available (most reliable)
-        if (item.past_30_days === true) {
-            return { label: "Eligible for destruction", isEligible: true };
-        }
+        // Never override a server refusal with a browser-local date calculation.
+        return item.past_30_days === true
+            ? { label: "Eligible for destruction", isEligible: true }
+            : { label: "Not yet eligible", isEligible: false };
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        let eligibilityDate: Date | null = null;
-
-        // Use expires_at if available
-        if (item.expires_at !== null && item.expires_at !== undefined) {
-            const expiresMs = typeof item.expires_at === 'string' ? parseInt(item.expires_at, 10) : item.expires_at;
-            if (!isNaN(expiresMs) && expiresMs > 0) {
-                const date = new Date(expiresMs);
-                if (!isNaN(date.getTime())) {
-                    eligibilityDate = date;
-                }
-            }
-        }
-
-        // Calculate from received date + 30 days
-        if (!eligibilityDate) {
-            const receivedDate = parseDate(item.received_date, item.received_at_ms, item.created_at);
-            if (receivedDate) {
-                eligibilityDate = new Date(receivedDate.getTime() + (30 * 24 * 60 * 60 * 1000));
-            }
-        }
-
-        if (!eligibilityDate) {
-            return { label: "Not yet eligible", isEligible: false };
-        }
-
-        eligibilityDate.setHours(0, 0, 0, 0);
-        const isEligible = today >= eligibilityDate;
-
-        return {
-            label: isEligible ? "Eligible for destruction" : "Not yet eligible",
-            isEligible
-        };
     };
 
     const getDeletionStatus = (item: MailItem) => {

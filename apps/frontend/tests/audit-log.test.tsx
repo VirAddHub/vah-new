@@ -388,3 +388,11 @@ it('blocks duplicate plan submissions while saving', async () => {
   await act(async()=>finish({ok:false,error:'test failure'}));
   expect(screen.getByRole('button',{name:'Create Plan'})).toBeEnabled();
 });
+
+it('never labels mail eligible when the server refuses destruction eligibility', () => {
+ vi.mocked(useAuthedSWR).mockReturnValue({data:{items:[{id:77,user_email:'test@example.test',subject:'Recent receipt',past_30_days:false,received_at_ms:Date.now(),expires_at:1,status:'received'}],total:1},isLoading:false,mutate:vi.fn()} as any);
+ render(<MailSection />);
+ expect(screen.getByText('Not yet eligible')).toBeInTheDocument();
+ expect(screen.queryByText('01/01/1970')).not.toBeInTheDocument();
+ expect(screen.queryByText('Eligible for destruction')).not.toBeInTheDocument();
+});
