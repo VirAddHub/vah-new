@@ -108,7 +108,7 @@ export function VAHLogo({
                     width={logoDimensions.width}
                     height={logoDimensions.height}
                     className={cn(
-                        "block object-contain object-left grayscale brightness-0 transition-opacity duration-150 group-hover:opacity-80",
+                        "block object-contain object-left transition-opacity duration-150 group-hover:opacity-80",
                         sizeImgClass,
                         imgClassName
                     )}
