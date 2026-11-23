@@ -31,11 +31,11 @@ const aboutPageJsonLd = {
 const T = {
     paper:      '#FFFFFF',
     paperLight: '#FFFFFF',
-    ink:        '#0A0A0A',
-    ink2:       '#404040',
-    muted:      '#6B6B6B',
-    rule:       '#E5E5E5',
-    green:      '#0A0A0A',
+    ink:        'hsl(var(--ink))',
+    ink2:       'hsl(var(--graphite))',
+    muted:      'hsl(var(--slate))',
+    rule:       'hsl(var(--line))',
+    green:      'hsl(var(--ink))',
     font:       "'Inter', system-ui, sans-serif",
 } as const;
 
@@ -143,7 +143,7 @@ export default function AboutPage() {
                                         fontFamily: T.font,
                                         fontSize: 14,
                                         fontWeight: 500,
-                                        borderRadius: 4,
+                                        borderRadius: 999,
                                         textDecoration: 'none',
                                         display: 'inline-flex',
                                         alignItems: 'center',

@@ -118,9 +118,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", backgroundColor: '#FFFFFF', minHeight: '100vh' }}>
       <style>{`
-        .post-body { font-family: 'Inter', sans-serif; font-size: clamp(15px, 2vw, 17px); color: #404040; line-height: 1.8; }
+        .post-body { font-family: 'Inter', sans-serif; font-size: clamp(15px, 2vw, 17px); color: hsl(var(--graphite)); line-height: 1.8; }
         .post-body h1, .post-body h2, .post-body h3, .post-body h4 {
-          font-family: 'Inter', sans-serif; color: #0A0A0A; font-weight: 600;
+          font-family: 'Inter', sans-serif; color: hsl(var(--ink)); font-weight: 600;
           letter-spacing: -0.02em; margin: 1.8em 0 0.6em; line-height: 1.2;
         }
         .post-body h1 { font-size: clamp(22px,3vw,30px); }
@@ -129,37 +129,37 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         .post-body p { margin: 0 0 1.3em; }
         .post-body ul, .post-body ol { padding-left: 22px; margin: 0 0 1.3em; }
         .post-body li { margin-bottom: 6px; }
-        .post-body strong { color: #0A0A0A; font-weight: 600; }
-        .post-body a { color: #0A0A0A; text-decoration: underline; }
+        .post-body strong { color: hsl(var(--ink)); font-weight: 600; }
+        .post-body a { color: hsl(var(--ink)); text-decoration: underline; }
         .post-body a:hover { opacity: 0.75; }
         .post-body blockquote {
-          border-left: 3px solid #0A0A0A; margin: 1.5em 0;
-          padding: 4px 0 4px 20px; color: #6B6B6B; font-style: normal;
+          border-left: 3px solid hsl(var(--ink)); margin: 1.5em 0;
+          padding: 4px 0 4px 20px; color: hsl(var(--slate)); font-style: normal;
         }
         .post-body code {
-          background: #F5F5F5; padding: 2px 6px; border-radius: 3px;
-          font-family: 'IBM Plex Mono', monospace; font-size: 0.88em; color: #0A0A0A;
+          background: hsl(var(--mist)); padding: 2px 6px; border-radius: 3px;
+          font-family: 'IBM Plex Mono', monospace; font-size: 0.88em; color: hsl(var(--ink));
         }
         .post-body pre {
-          background: #0A0A0A; color: #FFFFFF; padding: 20px; border-radius: 6px;
+          background: hsl(var(--ink)); color: #FFFFFF; padding: 20px; border-radius: 6px;
           overflow-x: auto; margin: 1.5em 0;
         }
         .post-body pre code { background: none; padding: 0; color: inherit; }
-        .post-body hr { border: none; border-top: 1px solid #E5E5E5; margin: 2.5em 0; }
-        .post-body img { max-width: 100%; border-radius: 4px; margin: 1em 0; border: 1px solid #E5E5E5; }
+        .post-body hr { border: none; border-top: 1px solid hsl(var(--line)); margin: 2.5em 0; }
+        .post-body img { max-width: 100%; border-radius: 4px; margin: 1em 0; border: 1px solid hsl(var(--line)); }
         .back-link {
           display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
-          font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; color: #0A0A0A;
+          font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; color: hsl(var(--ink));
           transition: opacity 0.15s; margin-bottom: 40px;
         }
         .back-link:hover { opacity: 0.7; }
         .related-card {
           display: flex; flex-direction: column; text-decoration: none;
-          border: 1px solid #E5E5E5; border-radius: 4px; overflow: hidden;
+          border: 1px solid hsl(var(--line)); border-radius: 4px; overflow: hidden;
           background: #FFFFFF; transition: border-color 0.15s;
         }
-        .related-card:hover { border-color: #0A0A0A; }
-        .related-card:hover .related-title { color: #0A0A0A; }
+        .related-card:hover { border-color: hsl(var(--ink)); }
+        .related-card:hover .related-title { color: hsl(var(--ink)); }
         .related-title { transition: color 0.15s; }
       `}</style>
 
@@ -177,13 +177,13 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <div style={{
           display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center',
           fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
-          fontSize: '11px', color: '#6B6B6B',
+          fontSize: '11px', color: 'hsl(var(--slate))',
           letterSpacing: '0.1em', textTransform: 'uppercase',
           marginBottom: '18px',
         }}>
           {categoryLabel && (
             <>
-              <span style={{ color: '#0A0A0A', fontWeight: 500 }}>{categoryLabel}</span>
+              <span style={{ color: 'hsl(var(--ink))', fontWeight: 500 }}>{categoryLabel}</span>
               <span>·</span>
             </>
           )}
@@ -196,7 +196,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           fontFamily: "'Inter', sans-serif",
           fontSize: 'clamp(26px,4vw,44px)',
           fontWeight: 600,
-          color: '#0A0A0A',
+          color: 'hsl(var(--ink))',
           margin: '0 0 18px',
           letterSpacing: '-0.025em',
           lineHeight: 1.1,
@@ -209,7 +209,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <p style={{
             fontFamily: "'Inter', sans-serif",
             fontSize: 'clamp(15px,2vw,18px)',
-            color: '#6B6B6B',
+            color: 'hsl(var(--slate))',
             margin: '0 0 32px',
             lineHeight: 1.55,
             fontWeight: 400,
@@ -220,14 +220,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
         {/* Cover image */}
         {post.cover && (
-          <div style={{ margin: '0 0 40px', borderRadius: '4px', overflow: 'hidden', border: '1px solid #E5E5E5' }}>
+          <div style={{ margin: '0 0 40px', borderRadius: '4px', overflow: 'hidden', border: '1px solid hsl(var(--line))' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={post.cover} alt={post.title} style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
           </div>
         )}
 
         {/* Divider */}
-        <div style={{ borderTop: '1px solid #E5E5E5', marginBottom: '40px' }} />
+        <div style={{ borderTop: '1px solid hsl(var(--line))', marginBottom: '40px' }} />
 
         {/* Body */}
         <div className="post-body">
@@ -260,7 +260,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         </div>
 
         {/* Back link bottom */}
-        <div style={{ borderTop: '1px solid #E5E5E5', marginTop: '56px', paddingTop: '28px' }}>
+        <div style={{ borderTop: '1px solid hsl(var(--line))', marginTop: '56px', paddingTop: '28px' }}>
           <Link href="/blog" className="back-link" style={{ margin: 0 }}>
             <span style={{ fontSize: '16px' }}>←</span>
             <span>Back to blog</span>
@@ -270,13 +270,13 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
       {/* Related posts */}
       {relatedPosts.length > 0 && (
-        <section style={{ borderTop: '1px solid #E5E5E5', backgroundColor: '#F5F5F5', padding: 'clamp(40px,6vw,72px) clamp(20px,5vw,40px)' }}>
+        <section style={{ borderTop: '1px solid hsl(var(--line))', backgroundColor: 'hsl(var(--mist))', padding: 'clamp(40px,6vw,72px) clamp(20px,5vw,40px)' }}>
           <div style={{ maxWidth: '720px', margin: '0 auto' }}>
             <h2 style={{
               fontFamily: "'Inter', sans-serif", fontSize: 'clamp(18px,2.5vw,22px)',
-              fontWeight: 600, color: '#0A0A0A', margin: '0 0 8px', letterSpacing: '-0.01em',
+              fontWeight: 600, color: 'hsl(var(--ink))', margin: '0 0 8px', letterSpacing: '-0.01em',
             }}>More from the blog</h2>
-            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: '#6B6B6B', margin: '0 0 28px' }}>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: 'hsl(var(--slate))', margin: '0 0 28px' }}>
               Keep reading
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
@@ -290,18 +290,18 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                     {related.category && (
                       <span style={{
                         fontFamily: "'IBM Plex Mono', monospace", fontSize: '10px',
-                        color: '#0A0A0A', letterSpacing: '0.1em', textTransform: 'uppercase',
+                        color: 'hsl(var(--ink))', letterSpacing: '0.1em', textTransform: 'uppercase',
                         display: 'block', marginBottom: '6px',
                       }}>{related.category}</span>
                     )}
                     <h3 className="related-title" style={{
                       fontFamily: "'Inter', sans-serif", fontSize: '14px',
-                      fontWeight: 600, color: '#0A0A0A', margin: '0 0 6px', lineHeight: 1.3,
+                      fontWeight: 600, color: 'hsl(var(--ink))', margin: '0 0 6px', lineHeight: 1.3,
                     }}>{related.title}</h3>
                     {related.excerpt && (
                       <p style={{
                         fontFamily: "'Inter', sans-serif", fontSize: '12px',
-                        color: '#6B6B6B', margin: 0, lineHeight: 1.5,
+                        color: 'hsl(var(--slate))', margin: 0, lineHeight: 1.5,
                         display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                       }}>{related.excerpt}</p>
                     )}
@@ -314,10 +314,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       )}
 
       {/* CTA strip */}
-      <div style={{ borderTop: '1px solid #E5E5E5', padding: '32px clamp(20px,5vw,40px)', textAlign: 'center', backgroundColor: '#FFFFFF' }}>
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', color: '#6B6B6B', margin: 0 }}>
+      <div style={{ borderTop: '1px solid hsl(var(--line))', padding: '32px clamp(20px,5vw,40px)', textAlign: 'center', backgroundColor: '#FFFFFF' }}>
+        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', color: 'hsl(var(--slate))', margin: 0 }}>
           Running a UK business?{' '}
-          <Link href="/signup" style={{ color: '#0A0A0A', fontWeight: 500, textDecoration: 'underline' }}>
+          <Link href="/signup" style={{ color: 'hsl(var(--ink))', fontWeight: 500, textDecoration: 'underline' }}>
             Get a London business address
           </Link>
         </p>

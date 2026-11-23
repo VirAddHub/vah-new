@@ -43,7 +43,7 @@ export function Header({ onNavigate }: HeaderProps) {
     };
 
     return (
-        <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-neutral-200">
+        <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-border">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     {/* Logo - explicit min size so it never renders small (200x50) */}
@@ -57,7 +57,7 @@ export function Header({ onNavigate }: HeaderProps) {
                             <button
                                 key={item.label}
                                 onClick={() => handleNavClick(item.page)}
-                                className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+                                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 {item.label}
                             </button>
@@ -68,7 +68,7 @@ export function Header({ onNavigate }: HeaderProps) {
                     <div className="hidden md:flex items-center gap-4">
                         <button
                             onClick={() => handleNavClick('login')}
-                            className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+                            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                         >
                             Log in
                         </button>
@@ -84,7 +84,7 @@ export function Header({ onNavigate }: HeaderProps) {
                     {/* Mobile Menu Button */}
                     <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="md:hidden p-2 -mr-2 text-neutral-600 hover:text-neutral-900 transition-colors"
+                        className="md:hidden p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors"
                         aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
                     >
                         {isMenuOpen ? (
@@ -98,22 +98,22 @@ export function Header({ onNavigate }: HeaderProps) {
 
             {/* Mobile Menu */}
             {isMenuOpen && (
-                <div className="md:hidden border-t border-neutral-200 bg-white">
+                <div className="md:hidden border-t border-border bg-white">
                     <div className="px-6 py-6 space-y-1">
                         {navItems.map((item) => (
                             <button
                                 key={item.label}
                                 onClick={() => handleNavClick(item.page)}
-                                className="block w-full text-left px-3 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-lg transition-colors"
+                                className="block w-full text-left px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
                             >
                                 {item.label}
                             </button>
                         ))}
                         
-                        <div className="pt-4 space-y-2 border-t border-neutral-200 mt-4">
+                        <div className="pt-4 space-y-2 border-t border-border mt-4">
                             <button
                                 onClick={() => handleNavClick('login')}
-                                className="block w-full text-center px-3 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+                                className="block w-full text-center px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 Log in
                             </button>

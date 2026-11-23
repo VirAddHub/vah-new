@@ -20,7 +20,7 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
             return (plan.price_pence / 100).toFixed(2);
         }
         // Fallback to hardcoded prices if plans not loaded
-        return interval === 'annual' ? '89.99' : '9.99';
+        return '…'; // never show a price that didn't come from Stripe
     };
 
     const getMonthlyEquivalent = () => {
@@ -28,7 +28,7 @@ export function SignupStep1({ onNext, onBack, initialBilling = 'monthly' }: Sign
         if (plan) {
             return ((plan.price_pence / 100) / 12).toFixed(2);
         }
-        return '7.50'; // Fallback
+        return '…';
     };
 
     const planFeatures = [

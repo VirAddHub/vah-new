@@ -1,3 +1,5 @@
+import { ClassicTheme } from '@/components/admin/ClassicTheme';
+
 // Force dynamic rendering for all admin pages (they require authentication).
 // Per-page gating: useVerifiedAdminSession → /api/bff/auth/whoami → backend DB-backed user (not AuthContext.is_admin or vah_user JSON).
 // BFF: every /api/bff/admin/* route handler calls requireBffAdmin (same whoami source) before proxying to the API.
@@ -8,5 +10,5 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <ClassicTheme>{children}</ClassicTheme>;
 }

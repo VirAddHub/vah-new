@@ -42,15 +42,15 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
     const handleLogout = () => performLogout();
 
     return (
-        <header className="w-full shrink-0 border-b border-border/80 bg-card">
+        <header className="w-full shrink-0 border-b border-border bg-card/90 backdrop-blur-lg">
             {/* Inner: same max-width/padding as dashboard shell; single row, justify-between */}
-            <div className="flex h-12 w-full items-center justify-between gap-4 px-4 sm:h-16 sm:px-6">
+            <div className="flex h-14 w-full items-center justify-between gap-4 px-4 sm:h-16 sm:px-6">
                 {/* Left: hamburger (mobile only) + logo */}
                 <div className="flex flex-shrink-0 items-center gap-2">
                     <button
                         ref={hamburgerRef}
                         onClick={() => setIsMobileSidebarOpen(true)}
-                        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground touch-manipulation lg:hidden"
+                        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-2 text-muted-foreground hover:bg-muted transition-colors hover:text-foreground touch-manipulation lg:hidden"
                         aria-label="Open dashboard menu"
                     >
                         <Menu className="h-5 w-5 shrink-0" strokeWidth={2} />
@@ -69,7 +69,7 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
                         onClick={handleLogout}
                         variant="outline"
                         size="sm"
-                        className="flex min-h-[44px] min-w-[44px] shrink-0 items-center gap-2 px-2.5 touch-manipulation sm:min-w-0 sm:px-3"
+                        className="flex min-h-[44px] min-w-[44px] shrink-0 items-center gap-2 rounded-full px-2.5 touch-manipulation sm:min-w-0 sm:px-4"
                         aria-label="Sign out"
                     >
                         <LogOut className="h-4 w-4 shrink-0" strokeWidth={2} />

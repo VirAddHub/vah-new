@@ -30,7 +30,7 @@ export const SheetOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <div
         ref={ref}
-        className={cn("fixed inset-0 bg-black/40", className)}
+        className={cn("fixed inset-0 bg-primary/40", className)}
         {...props}
     />
 ))
@@ -44,7 +44,7 @@ export const SheetContent = React.forwardRef<
         ref={ref}
         className={cn(
             "fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-lg rounded-t-2xl bg-white p-6 shadow-lg outline-none",
-            "dark:bg-neutral-900",
+            "dark:bg-primary",
             className
         )}
         {...props}
@@ -84,7 +84,7 @@ export const SheetDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <div
         ref={ref}
-        className={cn("text-sm text-neutral-600 dark:text-neutral-400", className)}
+        className={cn("text-sm text-muted-foreground dark:text-muted-foreground", className)}
         {...props}
     />
 ))

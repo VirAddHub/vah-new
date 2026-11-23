@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import * as Dialog from '@radix-ui/react-dialog';
-import { ArrowUpRight, Menu, X } from 'lucide-react';
+import { ArrowRight, Menu, X } from 'lucide-react';
 import { VAHLogo } from './VAHLogo';
 import styles from './marketing.module.css';
 
@@ -20,19 +21,20 @@ const links = [
 
 export function MarketingNavigation({ onNavigate }: MarketingNavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <header className={styles.header}>
       <div className={`${styles.container} ${styles.navInner}`}>
         <VAHLogo onNavigate={onNavigate} size="lg" className={styles.brand} />
         <nav aria-label="Main navigation" className={styles.desktopNav}>
-          {links.map(({ label, href }) => <Link key={href} href={href}>{label}</Link>)}
+          {links.map(({ label, href }) => <Link key={href} href={href} aria-current={pathname === href ? 'page' : undefined}>{label}</Link>)}
         </nav>
         <div className={styles.authNav}>
           <Link href="/login" className={styles.loginLink}>Log in</Link>
-          <Link href="/signup" className={styles.primaryButton}>Get started <ArrowUpRight size={16} /></Link>
+          <Link href="/signup" className={styles.primaryButton}>Get started <ArrowRight size={16} /></Link>
           <Dialog.Root open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-            <Dialog.Trigger className={styles.menuTrigger} aria-label="Open menu"><Menu size={19} /></Dialog.Trigger>
+            <Dialog.Trigger className={styles.menuTrigger} aria-label="Open menu"><Menu size={20} /></Dialog.Trigger>
             <Dialog.Portal>
               <Dialog.Overlay className={styles.mobileOverlay} />
               <Dialog.Content className={styles.mobileMenu}>
@@ -44,7 +46,7 @@ export function MarketingNavigation({ onNavigate }: MarketingNavigationProps) {
                 <nav aria-label="Mobile navigation">
                   {[...links, { label: 'Contact', href: '/contact' }].map(({ label, href }) => <Link key={href} href={href} onClick={() => setIsMenuOpen(false)}>{label}</Link>)}
                 </nav>
-                <Link href="/signup" className={styles.primaryButton} onClick={() => setIsMenuOpen(false)}>Get started <ArrowUpRight size={18} /></Link>
+                <Link href="/signup" className={styles.primaryButton} onClick={() => setIsMenuOpen(false)}>Get started <ArrowRight size={18} /></Link>
                 <Link href="/login" className={styles.textButton} onClick={() => setIsMenuOpen(false)}>Log in to your account</Link>
               </Dialog.Content>
             </Dialog.Portal>

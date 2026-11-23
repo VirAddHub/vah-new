@@ -56,7 +56,7 @@ export function RightPanel({
     <div className="fixed inset-0 z-50 lg:static lg:z-auto">
       {/* Mobile overlay */}
       <div 
-        className="lg:hidden fixed inset-0 bg-black/50" 
+        className="lg:hidden fixed inset-0 bg-primary/50" 
         onClick={onClose}
         aria-hidden="true"
       />

@@ -419,13 +419,13 @@ export default function MailInboxPage() {
                     </div>
 
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                        <div role="tablist" aria-label="Which mail to show" className="flex max-w-full overflow-x-auto rounded-full border border-line p-1 [scrollbar-width:none]">
+                        <div role="tablist" aria-label="Which mail to show" className="flex max-w-full overflow-x-auto rounded-full bg-mist p-1 [scrollbar-width:none]">
                             {STATUS_OPTIONS.map(({ key, label }) => (
                                 <button key={key} type="button" role="tab" aria-selected={statusFilter === key}
                                     onClick={() => setStatusFilter(key)}
                                     className={cn('inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 text-[14px] font-medium transition-colors duration-150',
                                         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink',
-                                        statusFilter === key ? 'bg-ink text-paper' : 'text-graphite hover:text-ink')}>
+                                        statusFilter === key ? 'bg-paper text-ink shadow-sm' : 'text-graphite hover:text-ink')}>
                                     {label}
                                     {statusCounts[key] > 0 && <span className="figure-mono text-[12px] opacity-70">{statusCounts[key]}</span>}
                                 </button>
@@ -489,7 +489,7 @@ export default function MailInboxPage() {
                     </div>
                 </div>
             ) : (
-                <div className="w-full overflow-hidden rounded-lg border border-line">
+                <div className="w-full overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
                     {mailLoading ? (
                         <ul aria-label="Loading mail" className="divide-y divide-line">
                             {[0, 1, 2, 3].map(i => (
@@ -527,21 +527,23 @@ export default function MailInboxPage() {
                                 const rowLabel = getMailItemPrimaryLabel(item);
                                 const isUnread = !(item.is_read ?? true);
                                 return (
-                                    <li key={item.id} className="group relative flex items-center gap-3 px-4 py-3.5 hover:bg-mist focus-within:bg-mist md:gap-4 md:px-5">
-                                        <Icon className="h-4 w-4 shrink-0 text-graphite" strokeWidth={1.5} aria-hidden />
-                                        <span className={cn('h-2 w-2 shrink-0 rounded-full', isUnread ? 'bg-ink' : 'bg-transparent')} aria-hidden />
+                                    <li key={item.id} className="group relative flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-mist focus-within:bg-mist md:gap-4 md:px-5">
+                                        <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', isUnread ? 'bg-ink text-paper' : 'bg-mist text-graphite')}>
+                                            <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden />
+                                        </span>
                                         <button type="button" onClick={() => handleMailClick(item)}
                                             className="min-w-0 flex-1 text-left after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-ink">
                                             <span className={cn('block truncate text-[15px]', isUnread ? 'font-semibold text-ink' : 'text-graphite')}>
                                                 {rowLabel}{isUnread && <span className="sr-only"> (unread)</span>}
+                                                {isUnread && <span aria-hidden className="ml-2 inline-flex rounded-full bg-green-soft px-2 py-0.5 align-middle text-[11px] font-semibold text-green-ink">New</span>}
                                             </span>
-                                            <span className="figure-mono mt-0.5 block text-[12px] text-slate md:hidden">{receivedDate(item)}</span>
+                                            <span className="mt-0.5 block text-[13px] tabular-nums text-slate md:hidden">{receivedDate(item)}</span>
                                         </button>
                                         <div className="relative z-10 shrink-0">
                                             <CreatableTagSelect compact value={item.tag ?? null} availableTags={availableTags}
                                                 onValueChange={newTag => handleTagUpdate(item, newTag)} getTagLabel={getTagLabel} className="w-auto" />
                                         </div>
-                                        <span className="figure-mono hidden w-28 shrink-0 text-right text-[13px] text-graphite md:block">{receivedDate(item)}</span>
+                                        <span className="hidden w-28 shrink-0 text-right text-[14px] tabular-nums text-graphite md:block">{receivedDate(item)}</span>
                                         <div className="relative z-10 hidden shrink-0 md:block">
                                             {item.deleted ? (
                                                 <button type="button" onClick={e => handleUnarchive(item, e)} aria-label={`Move ${rowLabel} back to inbox`}

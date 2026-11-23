@@ -93,10 +93,10 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                     font-family: 'Inter', sans-serif;
                     font-size: 16px;
                     font-style: normal;
-                    color: #0A0A0A;
+                    color: hsl(var(--ink));
                 }
                 .blog-search-input::placeholder {
-                    color: #6B6B6B;
+                    color: hsl(var(--slate));
                     font-style: normal;
                 }
                 .featured-post-link {
@@ -104,8 +104,8 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                     grid-template-columns: 1fr 1.2fr;
                     gap: 48px;
                     padding: 40px 0;
-                    border-top: 1px solid #E5E5E5;
-                    border-bottom: 1px solid #E5E5E5;
+                    border-top: 1px solid hsl(var(--line));
+                    border-bottom: 1px solid hsl(var(--line));
                     margin-bottom: 56px;
                     text-decoration: none;
                     cursor: pointer;
@@ -115,7 +115,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                     opacity: 0.7;
                 }
                 .featured-post-link:hover .featured-title {
-                    color: #0A0A0A;
+                    color: hsl(var(--ink));
                 }
                 .featured-title { transition: color 0.15s; }
                 .blog-grid-item {
@@ -125,15 +125,15 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                     display: block;
                 }
                 .blog-grid-item:hover .blog-grid-title {
-                    color: #0A0A0A;
+                    color: hsl(var(--ink));
                 }
                 .blog-grid-title { transition: color 0.15s; }
                 .blog-read-link {
                     font-family: 'Inter', sans-serif;
                     font-size: 14px;
                     font-weight: 500;
-                    color: #0A0A0A;
-                    border-bottom: 1px solid #0A0A0A;
+                    color: hsl(var(--ink));
+                    border-bottom: 1px solid hsl(var(--ink));
                     padding-bottom: 2px;
                     text-decoration: none;
                     display: inline-block;
@@ -151,7 +151,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                         border-right: none !important;
                         padding-left: 0 !important;
                         padding-right: 0 !important;
-                        border-top: 1px solid #E5E5E5 !important;
+                        border-top: 1px solid hsl(var(--line)) !important;
                     }
                     .blog-post-grid .blog-grid-item:first-child {
                         border-top: none !important;
@@ -170,19 +170,19 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                     fontFamily: "'Inter', sans-serif",
                     fontSize: 'clamp(32px,6vw,68px)',
                     fontWeight: 600,
-                    color: '#0A0A0A',
+                    color: 'hsl(var(--ink))',
                     margin: '0 0 18px',
                     letterSpacing: '-0.025em',
                     lineHeight: 1.05,
                 }}>
                     Helpful notes for{' '}
-                    <em style={{ fontStyle: 'normal', color: '#6B6B6B' }}>running a UK business.</em>
+                    <em style={{ fontStyle: 'normal', color: 'hsl(var(--slate))' }}>running a UK business.</em>
                 </h1>
 
                 <p style={{
                     fontFamily: "'Inter', sans-serif",
                     fontSize: 'clamp(14px,2vw,19px)',
-                    color: '#404040',
+                    color: 'hsl(var(--graphite))',
                     margin: '0 0 36px',
                     maxWidth: '620px',
                     lineHeight: 1.55,
@@ -197,7 +197,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                     alignItems: 'center',
                     gap: '16px',
                     background: '#FFFFFF',
-                    border: '1px solid #E5E5E5',
+                    border: '1px solid hsl(var(--line))',
                     padding: '14px 20px',
                     borderRadius: '4px',
                     marginBottom: '56px',
@@ -206,7 +206,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                     <span style={{
                         fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
                         fontSize: '11px',
-                        color: '#6B6B6B',
+                        color: 'hsl(var(--slate))',
                         letterSpacing: '0.1em',
                         textTransform: 'uppercase',
                         flexShrink: 0,
@@ -220,7 +220,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                     <span style={{
                         fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
                         fontSize: '11px',
-                        color: '#6B6B6B',
+                        color: 'hsl(var(--slate))',
                         flexShrink: 0,
                     }}>⏎</span>
                 </div>
@@ -231,7 +231,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
 
                 {/* Loading */}
                 {loading && (
-                    <div style={{ padding: '60px 0', textAlign: 'center', color: '#6B6B6B', fontFamily: "'Inter', sans-serif", fontSize: '14px' }}>
+                    <div style={{ padding: '60px 0', textAlign: 'center', color: 'hsl(var(--slate))', fontFamily: "'Inter', sans-serif", fontSize: '14px' }}>
                         Loading posts…
                     </div>
                 )}
@@ -239,13 +239,13 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                 {/* Error */}
                 {error && !loading && (
                     <div style={{ padding: '60px 0', textAlign: 'center' }}>
-                        <p style={{ color: '#6B6B6B', fontFamily: "'Inter', sans-serif", fontSize: '14px', marginBottom: '16px' }}>{error}</p>
+                        <p style={{ color: 'hsl(var(--slate))', fontFamily: "'Inter', sans-serif", fontSize: '14px', marginBottom: '16px' }}>{error}</p>
                         <button
                             onClick={() => window.location.reload()}
                             style={{
-                                background: 'none', border: '1px solid #E5E5E5', borderRadius: '4px',
+                                background: 'none', border: '1px solid hsl(var(--line))', borderRadius: '4px',
                                 padding: '8px 16px', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
-                                fontSize: '13px', color: '#404040',
+                                fontSize: '13px', color: 'hsl(var(--graphite))',
                             }}
                         >
                             Try again
@@ -255,7 +255,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
 
                 {/* Empty */}
                 {!loading && !error && filteredPosts.length === 0 && (
-                    <div style={{ padding: '60px 0', textAlign: 'center', color: '#6B6B6B', fontFamily: "'Inter', sans-serif", fontSize: '14px' }}>
+                    <div style={{ padding: '60px 0', textAlign: 'center', color: 'hsl(var(--slate))', fontFamily: "'Inter', sans-serif", fontSize: '14px' }}>
                         {searchQuery ? `No posts matching "${searchQuery}"` : 'No posts yet.'}
                     </div>
                 )}
@@ -272,12 +272,12 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                         {/* Cover */}
                         <div style={{
                             aspectRatio: '4/3',
-                            background: '#F5F5F5',
+                            background: 'hsl(var(--mist))',
                             backgroundImage: `repeating-linear-gradient(45deg, #E5E5E540 0 1px, transparent 1px 16px)`,
                             display: 'grid',
                             placeItems: 'center',
                             position: 'relative',
-                            border: '1px solid #E5E5E5',
+                            border: '1px solid hsl(var(--line))',
                             overflow: 'hidden',
                             borderRadius: '2px',
                         }}>
@@ -291,7 +291,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                                 <div style={{
                                     fontFamily: "'IBM Plex Mono', monospace",
                                     fontSize: '11px',
-                                    color: '#6B6B6B',
+                                    color: 'hsl(var(--slate))',
                                     letterSpacing: '0.1em',
                                     textAlign: 'center',
                                     padding: '24px',
@@ -319,13 +319,13 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                                 gap: '12px',
                                 fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
                                 fontSize: '11px',
-                                color: '#6B6B6B',
+                                color: 'hsl(var(--slate))',
                                 letterSpacing: '0.1em',
                                 textTransform: 'uppercase',
                                 marginBottom: '18px',
                                 flexWrap: 'wrap',
                             }}>
-                                <span style={{ color: '#0A0A0A', fontWeight: 500 }}>{featuredPost.category}</span>
+                                <span style={{ color: 'hsl(var(--ink))', fontWeight: 500 }}>{featuredPost.category}</span>
                                 <span>·</span>
                                 <span>{featuredPost.dateLong}</span>
                                 <span>·</span>
@@ -335,7 +335,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                             <h2 className="featured-title" style={{
                                 fontFamily: "'Inter', sans-serif",
                                 fontSize: 'clamp(24px,3.5vw,42px)',
-                                color: '#0A0A0A',
+                                color: 'hsl(var(--ink))',
                                 margin: '0 0 16px',
                                 letterSpacing: '-0.02em',
                                 fontWeight: 600,
@@ -348,7 +348,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                                 <p style={{
                                     fontFamily: "'Inter', sans-serif",
                                     fontSize: 'clamp(14px,1.8vw,17px)',
-                                    color: '#404040',
+                                    color: 'hsl(var(--graphite))',
                                     lineHeight: 1.6,
                                     margin: '0 0 24px',
                                     fontWeight: 400,
@@ -374,8 +374,8 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                                 tabIndex={0}
                                 onKeyDown={e => { if (e.key === 'Enter') onNavigate?.('blog-post', { slug: post.slug }); }}
                                 style={{
-                                    borderTop: i >= 2 ? '1px solid #E5E5E5' : 'none',
-                                    borderRight: i % 2 === 0 ? '1px solid #E5E5E5' : 'none',
+                                    borderTop: i >= 2 ? '1px solid hsl(var(--line))' : 'none',
+                                    borderRight: i % 2 === 0 ? '1px solid hsl(var(--line))' : 'none',
                                     paddingRight: i % 2 === 0 ? '36px' : '0',
                                     paddingLeft: i % 2 === 1 ? '36px' : '0',
                                 }}
@@ -385,13 +385,13 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                                     gap: '10px',
                                     fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
                                     fontSize: '11px',
-                                    color: '#6B6B6B',
+                                    color: 'hsl(var(--slate))',
                                     letterSpacing: '0.1em',
                                     textTransform: 'uppercase',
                                     marginBottom: '14px',
                                     flexWrap: 'wrap',
                                 }}>
-                                    <span style={{ color: '#0A0A0A', fontWeight: 500 }}>{post.category}</span>
+                                    <span style={{ color: 'hsl(var(--ink))', fontWeight: 500 }}>{post.category}</span>
                                     <span>·</span>
                                     <span>{post.dateLong}</span>
                                 </div>
@@ -399,7 +399,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                                 <h3 className="blog-grid-title" style={{
                                     fontFamily: "'Inter', sans-serif",
                                     fontSize: 'clamp(18px,2.2vw,24px)',
-                                    color: '#0A0A0A',
+                                    color: 'hsl(var(--ink))',
                                     margin: '0 0 10px',
                                     letterSpacing: '-0.015em',
                                     fontWeight: 600,
@@ -412,7 +412,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                                     <p style={{
                                         fontFamily: "'Inter', sans-serif",
                                         fontSize: 'clamp(13px,1.5vw,15px)',
-                                        color: '#404040',
+                                        color: 'hsl(var(--graphite))',
                                         lineHeight: 1.6,
                                         margin: '0 0 14px',
                                         fontWeight: 400,
@@ -424,7 +424,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
                                 <span style={{
                                     fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
                                     fontSize: '11px',
-                                    color: '#6B6B6B',
+                                    color: 'hsl(var(--slate))',
                                     letterSpacing: '0.1em',
                                     textTransform: 'uppercase',
                                 }}>

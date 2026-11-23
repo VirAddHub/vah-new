@@ -21,7 +21,7 @@ const ONBOARDING_PATHS = [
   '/business-owners',
 ];
 
-const isOnboardingPath = (pathname: string) =>
+export const isOnboardingPath = (pathname: string) =>
   pathname === '/account' || ONBOARDING_PATHS.some(p => pathname === p || pathname.startsWith(`${p}/`));
 
 export function OnboardingGate({ children }: { children: React.ReactNode }) {
