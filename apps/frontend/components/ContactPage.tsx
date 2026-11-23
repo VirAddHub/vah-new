@@ -8,13 +8,13 @@ import { useAsync } from "@/hooks/useAsync";
 // ── Design tokens ────────────────────────────────────────────
 const T = {
     paper:      '#FFFFFF',
-    paperDeep:  'hsl(var(--mist))',
+    paperDeep:  '#F5F5F5',
     paperLight: '#FFFFFF',
-    ink:        'hsl(var(--ink))',
-    ink2:       'hsl(var(--graphite))',
-    muted:      'hsl(var(--slate))',
-    rule:       'hsl(var(--line))',
-    green:      'hsl(var(--ink))',
+    ink:        '#0A0A0A',
+    ink2:       '#404040',
+    muted:      '#6B6B6B',
+    rule:       '#E5E5E5',
+    green:      '#0A0A0A',
     font:       "'Inter', system-ui, sans-serif",
 } as const;
 
@@ -110,7 +110,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
         fontWeight: 400,
         color: T.ink,
         outline: 'none',
-        borderRadius: 12,
+        borderRadius: 0,
         transition: 'border-color .15s',
     };
     const labelStyle: React.CSSProperties = {
@@ -155,9 +155,9 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                         <button
                             onClick={() => setIsSubmitted(false)}
                             style={{
-                                border: `1px solid ${T.rule}`, color: T.ink,
+                                border: `1px solid ${T.ink2}`, color: T.ink,
                                 padding: '13px 22px', fontFamily: T.font, fontSize: 14,
-                                fontWeight: 500, borderRadius: 999, background: 'transparent',
+                                fontWeight: 500, borderRadius: 4, background: 'transparent',
                                 cursor: 'pointer', display: 'inline-flex', alignItems: 'center', minHeight: 44,
                             }}
                         >
@@ -229,7 +229,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                         style={{
                             background: T.paperDeep,
                             padding: 'clamp(24px, 4vw, 36px)',
-                            border: `1px solid ${T.rule}`, borderRadius: 20,
+                            border: `1px solid ${T.rule}`,
                         }}
                     >
                         {/* Honeypot */}
@@ -248,7 +248,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                         {errorMsg && (
                             <div style={{
                                 background: '#fef2f2', border: '1px solid #fca5a5',
-                                borderRadius: 12, padding: '12px 16px', marginBottom: 20,
+                                borderRadius: 4, padding: '12px 16px', marginBottom: 20,
                                 fontFamily: T.font, fontSize: 13, color: '#991b1b', fontWeight: 400,
                             }}>
                                 {errorMsg}
@@ -349,7 +349,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 color: T.paper, padding: '16px',
                                 fontFamily: T.font, fontSize: 15, fontWeight: 500,
                                 border: 'none', cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                                borderRadius: 999, minHeight: 48,
+                                borderRadius: 4, minHeight: 48,
                                 transition: 'background 0.15s',
                             }}
                         >
@@ -370,7 +370,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                         {/* Email */}
                         <div style={{
                             background: T.paperLight, padding: 28,
-                            border: `1px solid ${T.rule}`, borderRadius: 20,
+                            border: `1px solid ${T.rule}`,
                         }}>
                             <div style={{ fontFamily: T.font, fontSize: 11, color: T.muted, fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
                                 Email
@@ -389,9 +389,9 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 className="contact-email-btn"
                                 style={{
                                     display: 'inline-flex', alignItems: 'center',
-                                    border: `1px solid ${T.rule}`, color: T.ink,
+                                    border: `1px solid ${T.ink2}`, color: T.ink,
                                     padding: '9px 16px', fontFamily: T.font, fontSize: 13,
-                                    fontWeight: 500, borderRadius: 999, textDecoration: 'none',
+                                    fontWeight: 500, borderRadius: 4, textDecoration: 'none',
                                     minHeight: 40, transition: 'opacity 0.1s, background 0.1s',
                                     cursor: 'pointer',
                                 }}
@@ -403,7 +403,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                         {/* WhatsApp */}
                         <div style={{
                             background: T.paperLight, padding: 28,
-                            border: `1px solid ${T.rule}`, borderRadius: 20,
+                            border: `1px solid ${T.rule}`,
                         }}>
                             <div style={{ fontFamily: T.font, fontSize: 11, color: T.muted, fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
                                 WhatsApp
@@ -430,7 +430,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                         </div>
 
                         {/* Service address — green card, no real address before signup */}
-                        <div style={{ background: T.green, color: T.paper, padding: 28, borderRadius: 20, backgroundImage: 'radial-gradient(120% 120% at 100% 0%, rgba(40,182,99,.45) 0%, rgba(10,37,64,0) 55%)' }}>
+                        <div style={{ background: T.green, color: T.paper, padding: 28 }}>
                             <div style={{ fontFamily: T.font, fontSize: 11, fontWeight: 500, opacity: 0.8, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
                                 Service address
                             </div>

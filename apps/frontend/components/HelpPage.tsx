@@ -26,7 +26,7 @@ const FAQS: FAQ[] = [
     id: "vah-what",
     category: "Understanding Your Virtual Address",
     q: "What exactly is a Virtual Address with VirtualAddressHub?",
-    a: `It's a real, physical UK office address for your business, without the traditional costs and commitment of renting an office. We handle your official mail by scanning and uploading it securely to your online dashboard—usually the same working day—all for one monthly price, shown on our pricing page.`,
+    a: `It's a real, physical UK office address for your business, without the traditional costs and commitment of renting an office. We handle your official mail by scanning and uploading it securely to your online dashboard—usually the same working day—all for £9.99 per month.`,
   },
   {
     id: "vah-registered-office",
@@ -123,7 +123,7 @@ const FAQS: FAQ[] = [
     id: "billing-price",
     category: "Pricing & Billing",
     q: "What is the total price? Are there any hidden fees?",
-    a: `There is one plan, and the current price is shown on our pricing page. It includes your UK business address, unlimited mail scanning, dashboard access, and support. No setup fees or hidden charges. Only optional forwarding of non-official mail is chargeable as outlined.`,
+    a: `The plan is £9.99 per month. This includes your UK business address, unlimited mail scanning, dashboard access, and support. No setup fees or hidden charges. Only optional forwarding of non-official mail is chargeable as outlined.`,
   },
   {
     id: "billing-start",
@@ -344,7 +344,7 @@ const FAQS: FAQ[] = [
           Head to the{' '}
           <a
             href="/pricing"
-            style={{ color: 'hsl(var(--ink))', textDecoration: 'underline', fontWeight: 500 }}
+            style={{ color: '#0A0A0A', textDecoration: 'underline', fontWeight: 500 }}
           >
             Pricing page
           </a>
@@ -355,7 +355,7 @@ const FAQS: FAQ[] = [
             href="/signup"
             style={{
               display: 'inline-block',
-              background: 'hsl(var(--ink))',
+              background: '#0A0A0A',
               color: '#FFFFFF',
               padding: '10px 20px',
               borderRadius: '4px',
@@ -479,24 +479,24 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           padding: 10px 16px 10px 20px;
           font-family: 'Inter', sans-serif;
           font-size: 13.5px;
-          color: hsl(var(--slate));
+          color: #6B6B6B;
           border-left: 2px solid transparent;
           transition: color 0.15s, border-color 0.15s;
           line-height: 1.4;
         }
         .help-sidebar-btn:hover {
-          color: hsl(var(--ink));
+          color: #0A0A0A;
         }
         .help-sidebar-btn.active {
-          color: hsl(var(--ink));
+          color: #0A0A0A;
           font-style: normal;
-          border-left-color: hsl(var(--ink));
+          border-left-color: #0A0A0A;
         }
         .help-faq-row {
-          border-bottom: 1px solid hsl(var(--line));
+          border-bottom: 1px solid #E5E5E5;
         }
         .help-faq-row:first-child {
-          border-top: 1px solid hsl(var(--line));
+          border-top: 1px solid #E5E5E5;
         }
         .help-faq-trigger {
           display: flex;
@@ -511,12 +511,12 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           font-family: 'Inter', sans-serif;
         }
         .help-faq-trigger:hover .help-faq-question {
-          color: hsl(var(--ink));
+          color: #0A0A0A;
         }
         .help-faq-num {
           font-family: 'IBM Plex Mono', 'Courier New', monospace;
           font-size: 12px;
-          color: hsl(var(--slate));
+          color: #6B6B6B;
           flex-shrink: 0;
           margin-top: 2px;
           letter-spacing: 0.02em;
@@ -525,7 +525,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           flex: 1;
           font-size: 15px;
           font-weight: 500;
-          color: hsl(var(--ink));
+          color: #0A0A0A;
           line-height: 1.45;
           transition: color 0.15s;
         }
@@ -534,7 +534,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           font-family: 'Inter', sans-serif;
           font-size: 18px;
           font-style: normal;
-          color: hsl(var(--ink));
+          color: #0A0A0A;
           font-weight: 400;
           margin-left: 12px;
           transition: transform 0.2s ease;
@@ -547,7 +547,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
         .help-faq-answer {
           padding: 0 0 20px 38px;
           font-size: 14px;
-          color: hsl(var(--graphite));
+          color: #404040;
           line-height: 1.7;
         }
         .help-faq-answer p { margin: 0 0 10px; }
@@ -555,9 +555,8 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
         .help-faq-answer ul { margin: 8px 0; padding-left: 18px; }
         .help-faq-answer li { margin-bottom: 4px; }
         .help-cta-card {
-          background: hsl(var(--ink));
-          border-radius: 24px;
-          background-image: radial-gradient(120% 140% at 100% 0%, rgba(40,182,99,.45) 0%, rgba(10,37,64,0) 55%);
+          background: #0A0A0A;
+          border-radius: 8px;
           padding: 36px 40px;
           margin-top: 56px;
           display: flex;
@@ -568,9 +567,9 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
         }
         .help-cta-btn {
           background: #FFFFFF;
-          color: hsl(var(--ink));
+          color: #0A0A0A;
           border: none;
-          border-radius: 999px;
+          border-radius: 4px;
           padding: 12px 24px;
           font-family: 'Inter', sans-serif;
           font-size: 14px;
@@ -581,7 +580,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
           flex-shrink: 0;
         }
         .help-cta-btn:hover { background: #FFFFFF; }
-        .help-cta-btn:active { transform: scale(0.97); background: hsl(var(--mist)); }
+        .help-cta-btn:active { transform: scale(0.97); background: #F5F5F5; }
         @media (max-width: 768px) {
           .help-layout { flex-direction: column !important; }
           .help-sidebar { position: static !important; width: 100% !important; }
@@ -594,7 +593,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
             font-size: 12.5px;
           }
           .help-sidebar-btn.active {
-            border-bottom-color: hsl(var(--ink)) !important;
+            border-bottom-color: #0A0A0A !important;
             border-left-color: transparent !important;
           }
           .help-faq-answer { padding-left: 28px; }
@@ -616,18 +615,18 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
             fontFamily: "'Inter', sans-serif",
             fontSize: 'clamp(32px,5vw,54px)',
             fontWeight: 600,
-            color: 'hsl(var(--ink))',
+            color: '#0A0A0A',
             lineHeight: 1.15,
             margin: '0 0 16px',
             letterSpacing: '-0.02em',
           }}>
             Got questions?{' '}
-            <em style={{ color: 'hsl(var(--slate))', fontStyle: 'normal' }}>We've got answers.</em>
+            <em style={{ color: '#6B6B6B', fontStyle: 'normal' }}>We've got answers.</em>
           </h1>
           <p style={{
             fontFamily: "'Inter', sans-serif",
             fontSize: 'clamp(14px,2vw,17px)',
-            color: 'hsl(var(--slate))',
+            color: '#6B6B6B',
             margin: 0,
             maxWidth: '560px',
             lineHeight: 1.6,
@@ -635,7 +634,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
             Everything we get asked about, in plain English. If your question isn't here,{' '}
             <button
               onClick={() => onNavigate?.('contact')}
-              style={{ background: 'none', border: 'none', color: 'hsl(var(--ink))', textDecoration: 'underline', cursor: 'pointer', font: 'inherit', padding: 0 }}
+              style={{ background: 'none', border: 'none', color: '#0A0A0A', textDecoration: 'underline', cursor: 'pointer', font: 'inherit', padding: 0 }}
             >
               the contact page is.
             </button>
@@ -669,13 +668,13 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
               fontFamily: "'Inter', sans-serif",
               fontSize: 'clamp(18px,2.5vw,24px)',
               fontWeight: 600,
-              color: 'hsl(var(--ink))',
+              color: '#0A0A0A',
               margin: '0 0 8px',
               letterSpacing: '-0.01em',
             }}>
               {activeCategory}
             </h2>
-            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: 'hsl(var(--slate))', margin: '0 0 28px' }}>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: '#6B6B6B', margin: '0 0 28px' }}>
               {activeFAQs.length} {activeFAQs.length === 1 ? 'question' : 'questions'}
             </p>
 

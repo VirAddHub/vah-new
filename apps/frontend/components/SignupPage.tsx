@@ -84,7 +84,7 @@ export function SignupPage({ onNavigate, initialBilling }: SignupPageProps) {
                     onComplete={completeSignup}
                     onBack={goBack}
                     billing={step1Data?.billing || 'monthly'}
-                    price={step1Data?.price || ''}
+                    price={step1Data?.price || '9.99'}
                     step2Data={step2Data}
                     isLoading={isLoading}
                     error={error}

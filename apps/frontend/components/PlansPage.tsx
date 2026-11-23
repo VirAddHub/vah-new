@@ -7,14 +7,13 @@ import { formatPrice } from '@/lib/formatPrice';
 // ── Design tokens ────────────────────────────────────────────
 const T = {
     paper:      '#FFFFFF',
-    paperDeep:  'hsl(var(--mist))',
+    paperDeep:  '#F5F5F5',
     paperLight: '#FFFFFF',
-    ink:        'hsl(var(--ink))',
-    ink2:       'hsl(var(--graphite))',
-    muted:      'hsl(var(--slate))',
-    rule:       'hsl(var(--line))',
-    green:      'hsl(var(--ink))',
-    accent:     'hsl(var(--brand-green-ink))',
+    ink:        '#0A0A0A',
+    ink2:       '#404040',
+    muted:      '#6B6B6B',
+    rule:       '#E5E5E5',
+    green:      '#0A0A0A',
     font:       "'Inter', system-ui, sans-serif",
 } as const;
 
@@ -26,7 +25,7 @@ interface PlansPageProps {
 function CheckItem({ text }: { text: string }) {
     return (
         <li style={{ display: 'grid', gridTemplateColumns: '20px 1fr', gap: 12 }}>
-            <span style={{ color: T.accent, fontStyle: 'normal', fontSize: 18, lineHeight: 1.1, fontWeight: 500 }}>✓</span>
+            <span style={{ color: T.green, fontStyle: 'normal', fontSize: 18, lineHeight: 1.1, fontWeight: 500 }}>✓</span>
             <span style={{ fontFamily: T.font, fontSize: 15, color: T.ink2, lineHeight: 1.5, fontWeight: 400 }}>{text}</span>
         </li>
     );
@@ -151,9 +150,8 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                 .plans-toggle {
                     display: flex;
                     width: 100%;
-                    background: ${T.paperDeep};
-                    border: none;
-                    border-radius: 999px;
+                    background: ${T.paper};
+                    border: 1px solid ${T.rule};
                     padding: 4px;
                 }
                 @media (min-width: 480px) {
@@ -166,9 +164,8 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                     border: none;
                     cursor: pointer;
                     font-family: ${T.font};
-                    font-size: 14px;
-                    font-weight: 600;
-                    border-radius: 999px;
+                    font-size: 13px;
+                    font-weight: 500;
                     transition: all 0.2s;
                     min-height: 44px;
                     white-space: nowrap;
@@ -245,10 +242,6 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                     margin: '0 auto',
                     background: T.paperLight,
                     border: `1px solid ${T.rule}`,
-                    borderRadius: 24,
-                    boxShadow: '0 50px 100px -40px rgba(10, 37, 64, .35)',
-                    position: 'relative',
-                    overflow: 'hidden',
                     padding: 'clamp(24px, 4vw, 48px) clamp(20px, 5vw, 56px)',
                 }}>
                     <div className="plans-grid">

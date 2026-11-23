@@ -41,7 +41,7 @@ export function CertificatePreview({
             {/* Letter card - max width 896px (max-w-4xl) */}
             <div className="w-full max-w-4xl bg-card shadow-lg flex flex-col">
                 {/* Header row - 2px solid black bottom border */}
-                <div className="px-12 py-8 border-b-2 border-primary">
+                <div className="px-12 py-8 border-b-2 border-black">
                     <div className="flex items-center justify-between">
                         {/* Logo placeholder - height 32px */}
                         <div className="h-8 w-auto">

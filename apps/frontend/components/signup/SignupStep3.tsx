@@ -51,13 +51,13 @@ export function SignupStep3({ onComplete, onBack, billing, price, step2Data, isL
     const getPlanPrice = (interval: 'monthly' | 'annual') => {
         const plan = plans?.find(p => p.interval === (interval === 'annual' ? 'year' : 'month'));
         if (plan) return (plan.price_pence / 100).toFixed(2);
-        return '…'; // never show a price that didn't come from Stripe
+        return interval === 'annual' ? '89.99' : '9.99';
     };
 
     const getMonthlyEquivalent = () => {
         const plan = plans?.find(p => p.interval === 'year');
         if (plan) return ((plan.price_pence / 100) / 12).toFixed(2);
-        return '…';
+        return '7.50';
     };
 
     const isAnnual = billing === 'annual';

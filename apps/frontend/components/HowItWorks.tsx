@@ -45,7 +45,7 @@ export default function HowItWorks() {
                             <div className="flex flex-col items-center self-stretch shrink-0 pt-0.5">
                                 <div className="relative z-10 w-2.5 h-2.5 rounded-full bg-success ring-2 ring-white shrink-0" />
                                 {index < steps.length - 1 && (
-                                    <div className="flex-1 w-px bg-border" />
+                                    <div className="flex-1 w-px bg-gray-200" />
                                 )}
                             </div>
 
@@ -71,12 +71,12 @@ export default function HowItWorks() {
                             {/* Dot row — line segments flank each dot, dot-to-dot only */}
                             <div className="flex items-center w-full">
                                 {index > 0
-                                    ? <div className="flex-1 h-px bg-border" />
+                                    ? <div className="flex-1 h-px bg-gray-200" />
                                     : <div className="flex-1" />
                                 }
                                 <div className="relative z-10 w-2.5 h-2.5 rounded-full bg-success ring-2 ring-white shrink-0" />
                                 {index < steps.length - 1
-                                    ? <div className="flex-1 h-px bg-border" />
+                                    ? <div className="flex-1 h-px bg-gray-200" />
                                     : <div className="flex-1" />
                                 }
                             </div>

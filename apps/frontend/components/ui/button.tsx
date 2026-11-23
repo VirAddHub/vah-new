@@ -16,7 +16,7 @@ export interface ButtonProps
 
 // One button set for the whole product: black pills, outlined pills, quiet text buttons.
 const base =
-    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,color,border-color,opacity] duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-40 select-none [&_svg]:shrink-0"
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,color,border-color,opacity] duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:pointer-events-none disabled:opacity-40 select-none [&_svg]:shrink-0"
 
 const sizes: Record<Size, string> = {
     sm: "h-9 px-4 text-[13px]",

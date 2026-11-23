@@ -138,7 +138,7 @@ export function ForwardingRequestModal({ isOpen, onClose, mailItem, forwardingAd
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-primary/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-150">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-150">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6">
           <CardTitle className="text-h3 font-semibold text-foreground">Request Mail Forwarding</CardTitle>

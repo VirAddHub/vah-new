@@ -110,11 +110,6 @@ module.exports = {
                     DEFAULT: "hsl(var(--warning))",
                     foreground: "hsl(var(--warning-foreground))",
                 },
-                green: {
-                    DEFAULT: "hsl(var(--brand-green))",
-                    ink: "hsl(var(--brand-green-ink))",
-                    soft: "hsl(var(--brand-green-soft))",
-                },
                 info: {
                     DEFAULT: "hsl(var(--info))",
                     foreground: "hsl(var(--info-foreground))",
@@ -122,22 +117,22 @@ module.exports = {
             },
             // ── Canonical radius scale (Batch 2) ──
             borderRadius: {
-                sm: "var(--radius-sm)",
-                DEFAULT: "var(--radius)",
-                md: "var(--radius-md)",
-                lg: "var(--radius-lg)",
-                xl: "var(--radius-xl)",
-                "2xl": "var(--radius-2xl)",
+                sm: "4px",
+                DEFAULT: "6px",
+                md: "6px",
+                lg: "8px",
+                xl: "12px",
+                "2xl": "16px",
                 full: "9999px",
             },
             // ── Canonical shadow scale (Batch 2) ──
             boxShadow: {
-                xs: "var(--shadow-xs)",
-                sm: "var(--shadow-sm)",
-                DEFAULT: "var(--shadow-sm)",
-                md: "var(--shadow-md)",
-                lg: "var(--shadow-lg)",
-                xl: "var(--shadow-lg)",
+                xs: "none",
+                sm: "none",
+                DEFAULT: "none",
+                md: "0 8px 24px -12px rgba(0, 0, 0, 0.18)",
+                lg: "0 18px 50px -20px rgba(0, 0, 0, 0.25)",
+                xl: "0 18px 50px -20px rgba(0, 0, 0, 0.25)",
             },
             keyframes: {
                 "accordion-down": {

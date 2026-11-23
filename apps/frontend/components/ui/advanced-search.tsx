@@ -61,7 +61,7 @@ export function AdvancedSearch({
     {
       id: '3',
       title: 'Pricing Plans',
-      description: 'View our virtual address plan and current price.',
+      description: 'View our virtual address pricing plans starting from £9.99/month.',
       url: '/pricing',
       type: 'pricing'
     },
