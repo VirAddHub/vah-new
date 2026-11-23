@@ -7,12 +7,11 @@ const description =
 export const metadata: Metadata = {
     title: 'About Us | VirtualAddressHub',
     description,
-    robots: { index: true, follow: true },
-    alternates: { canonical: 'https://virtualaddresshub.com/about' },
+    alternates: { canonical: 'https://virtualaddresshub.co.uk/about' },
     openGraph: {
         title: 'About Us | VirtualAddressHub',
         description,
-        url: 'https://virtualaddresshub.com/about',
+        url: 'https://virtualaddresshub.co.uk/about',
     },
 };
 
@@ -21,11 +20,11 @@ const aboutPageJsonLd = {
     '@type': 'AboutPage',
     name: 'About VirtualAddressHub',
     description,
-    url: 'https://virtualaddresshub.com/about',
+    url: 'https://virtualaddresshub.co.uk/about',
     isPartOf: {
         '@type': 'WebSite',
         name: 'VirtualAddressHub',
-        url: 'https://virtualaddresshub.com',
+        url: 'https://virtualaddresshub.co.uk',
     },
 };
 

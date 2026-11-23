@@ -6,12 +6,14 @@ import { SignupPageClient } from './SignupPageClient';
 import { getSessionFromCookies } from '@/lib/server/session';
 
 export const metadata: Metadata = {
+    // Sign-in pages are not search results.
+    robots: { index: false, follow: true },
     title: 'Sign Up | VirtualAddressHub',
     description: 'Create your VirtualAddressHub account and get a professional London business address. Start your free trial today.',
     openGraph: {
         title: 'Sign Up | VirtualAddressHub',
         description: 'Create your VirtualAddressHub account and get a professional London business address.',
-        url: 'https://virtualaddresshub.com/signup',
+        url: 'https://virtualaddresshub.co.uk/signup',
     },
 };
 

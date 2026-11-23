@@ -7,7 +7,7 @@ export const SchemaMarkup = {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "VirtualAddressHub",
-    "url": "https://virtualaddresshub.com",
+    "url": "https://virtualaddresshub.co.uk",
     "description": "UK virtual business address service with mail scanning and forwarding.",
     "contactPoint": [
       {

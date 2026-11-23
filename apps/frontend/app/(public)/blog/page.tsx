@@ -1,4 +1,12 @@
+import type { Metadata } from 'next';
 import { BlogPageClient } from './BlogPageClient';
+
+export const metadata: Metadata = {
+    title: 'Blog: Running a UK Business | VirtualAddressHub',
+    description: 'Practical guides for UK company owners: registered office rules, Companies House, business addresses and handling official mail.',
+    alternates: { canonical: '/blog' },
+    openGraph: { title: 'Blog | VirtualAddressHub', url: '/blog' },
+};
 
 /**
  * Blog index — Server Component.

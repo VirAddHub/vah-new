@@ -5,12 +5,13 @@ import { FooterWithNav } from '@/components/layout/FooterWithNav';
 import { KYCPageClient } from './KYCPageClient';
 
 export const metadata: Metadata = {
+    alternates: { canonical: '/kyc' },
     title: 'KYC Policy | VirtualAddressHub',
     description: 'Learn about our Know Your Customer (KYC) verification process. Understand what documents you need and how we ensure compliance with UK regulations.',
     openGraph: {
         title: 'KYC Policy | VirtualAddressHub',
         description: 'Learn about our Know Your Customer (KYC) verification process and compliance requirements.',
-        url: 'https://virtualaddresshub.com/kyc',
+        url: 'https://virtualaddresshub.co.uk/kyc',
     },
 };
 

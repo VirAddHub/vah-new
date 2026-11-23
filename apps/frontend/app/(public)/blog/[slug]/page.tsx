@@ -85,7 +85,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `${post.title} | VirtualAddressHub Blog`,
     description,
-    openGraph: { title: post.title, description, url: `https://virtualaddresshub.co.uk/blog/${slug}` },
+    alternates: { canonical: `/blog/${slug}` },
+    openGraph: { title: post.title, description, url: `/blog/${slug}`, type: 'article' },
   };
 }
 

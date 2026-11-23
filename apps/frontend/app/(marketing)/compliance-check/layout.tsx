@@ -10,7 +10,7 @@ export const metadata: Metadata = {
         title: "Free Business Address Compliance Check | VirtualAddressHub",
         description:
             "Take our 3-minute quiz to see if your business address meets UK Companies House and HMRC rules under the Economic Crime Act.",
-        url: "https://virtualaddresshub.com/compliance-check",
+        url: "https://virtualaddresshub.co.uk/compliance-check",
     },
 };
 

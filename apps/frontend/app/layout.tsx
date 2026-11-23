@@ -1,5 +1,6 @@
 // app/layout.tsx
 import type { Metadata, Viewport } from 'next';
+import { SITE_URL, ALLOW_INDEXING } from '@/lib/site';
 import './globals.css';
 import { inter, plex } from '@/lib/fonts';
 import { ToastRoot } from '@/components/ToastRoot';
@@ -13,7 +14,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
  */
 
 export const metadata: Metadata = {
-    metadataBase: new URL('https://virtualaddresshub.com'),
+    metadataBase: new URL(SITE_URL),
     title: 'VirtualAddressHub - Professional London Business Address & Mail Forwarding',
     description: 'Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services.',
     keywords: [
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
     authors: [{ name: 'VirtualAddressHub' }],
     creator: 'VirtualAddressHub',
     publisher: 'VirtualAddressHub',
-    robots: 'index,follow',
+    robots: ALLOW_INDEXING ? 'index,follow' : 'noindex,nofollow',
     manifest: '/manifest.json',
     icons: {
         icon: '/icons/icon-192.png',
@@ -43,7 +44,7 @@ export const metadata: Metadata = {
     openGraph: {
         type: 'website',
         locale: 'en_GB',
-        url: 'https://virtualaddresshub.com',
+        url: 'https://virtualaddresshub.co.uk',
         title: 'VirtualAddressHub - Professional London Business Address',
         description: 'Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services.',
         siteName: 'VirtualAddressHub',
@@ -62,9 +63,6 @@ export const metadata: Metadata = {
         description: 'Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services.',
         images: ['/images/og-image.jpg'],
         creator: '@VirtualAddressHub',
-    },
-    alternates: {
-        canonical: 'https://virtualaddresshub.com',
     },
     verification: {
         google: process.env.GOOGLE_SITE_VERIFICATION,
@@ -102,8 +100,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             "@type": "Organization",
                             "name": "VirtualAddressHub",
                             "alternateName": "VAH",
-                            "url": "https://virtualaddresshub.com",
-                            "logo": "https://virtualaddresshub.com/images/logo-green.svg",
+                            "url": "https://virtualaddresshub.co.uk",
+                            "logo": "https://virtualaddresshub.co.uk/images/logo-green.svg",
                             "description": "Professional London business address service with secure digital mail forwarding and virtual office solutions.",
                             "contactPoint": {
                                 "@type": "ContactPoint",

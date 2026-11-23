@@ -3,12 +3,13 @@ import { HelpPageClient } from './HelpPageClient';
 
 
 export const metadata: Metadata = {
+    alternates: { canonical: '/help' },
     title: 'Help Centre & FAQs | VirtualAddressHub',
     description: 'Get answers to frequently asked questions about virtual business addresses, mail forwarding, pricing, compliance, and more. Fast answers and friendly support.',
     openGraph: {
         title: 'Help Centre & FAQs | VirtualAddressHub',
         description: 'Get answers to frequently asked questions about virtual business addresses, mail forwarding, pricing, compliance, and more.',
-        url: 'https://virtualaddresshub.com/help',
+        url: 'https://virtualaddresshub.co.uk/help',
     },
 };
 

@@ -5,6 +5,8 @@ import { LoginPageClient } from './LoginPageClient';
 import { isAdminRole } from '@/lib/verifiedAdminSession';
 
 export const metadata: Metadata = {
+    // Sign-in pages are not search results.
+    robots: { index: false, follow: true },
   title: 'Login | VirtualAddressHub',
   description: 'Sign in to your VirtualAddressHub account.',
 };
