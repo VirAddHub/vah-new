@@ -88,7 +88,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
     <div className={styles.home}>
       <section className={`${styles.container} ${styles.hero}`}>
         <div className={styles.heroCopy}>
-          <div className={styles.eyebrow}><span /> A LONDON ADDRESS. A WORLD OF POSSIBILITY.</div>
           <h1>Your business deserves a <span>professional address.</span></h1>
           <p>A Central London address for your business. Your post, managed online. More freedom to work from wherever you call home.</p>
           <div className={styles.heroActions}>
