@@ -135,7 +135,7 @@
 .header { position: sticky; top: 0; z-index: 50; background: #ffffffed; backdrop-filter: blur(14px); border-bottom: 1px solid #e9e9e9; }
 .navInner { min-height: 81px; display: flex; align-items: center; justify-content: space-between; gap: 25px; }
 .brand { flex-shrink: 0; min-width: 0; }
-.brand img { filter: grayscale(1) brightness(0); max-width: 180px; height: 42px; }
+.brand img { max-width: 180px; height: 42px; }
 .desktopNav { display: flex; align-items: center; gap: 28px; }
 .desktopNav a, .loginLink { font-size: 12px; font-weight: 500; color: #555; min-height: 44px; display: flex; align-items: center; }
 .desktopNav a:hover, .loginLink:hover { color: #111; }
@@ -153,7 +153,7 @@
 .mobileMenu > .primaryButton { margin-top: auto; }
 .footer { background: #111; color: #fff; padding: 57px 0 23px; }
 .footerGrid { display: grid; grid-template-columns: 1.7fr 1fr 1fr 1.3fr; gap: 40px; }
-.footer .brand img { filter: grayscale(1) brightness(0) invert(1); max-width: 190px; }
+.footer .brand img { max-width: 190px; }
 .footerBrand p { font-size: 12px; color: #a3a3a3; line-height: 1.9; max-width: 260px; margin-top: 16px; }
 .footer h2 { font-family: inherit; color: #fff; font-size: 12px; font-weight: 500; margin: 10px 0 14px; }
 .footerLinks { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }

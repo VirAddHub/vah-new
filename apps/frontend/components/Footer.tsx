@@ -19,7 +19,7 @@ export function Footer({ onNavigate }: FooterProps) {
     <footer className={styles.footer}>
       <div className={styles.container}>
         <div className={styles.footerGrid}>
-          <div className={styles.footerBrand}><VAHLogo onNavigate={onNavigate} size="lg" className={styles.brand} /><p>A professional London address.<br />For wherever business takes you.</p></div>
+          <div className={styles.footerBrand}><VAHLogo onNavigate={onNavigate} size="lg" variant="onDark" className={styles.brand} /><p>A professional London address.<br />For wherever business takes you.</p></div>
           {columns.map(({ title, links }) => <div key={title}><h2>{title}</h2><div className={styles.footerLinks}>{links.map(([label, href]) => <Link key={href} href={href} onClick={href === '/?section=how' ? (event) => {
             const section = document.getElementById('how');
             if (section) {
