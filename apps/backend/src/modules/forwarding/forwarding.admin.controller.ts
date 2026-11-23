@@ -98,6 +98,9 @@ export async function adminListForwarding(req: Request, res: Response) {
             values.push(`%${q}%`);
             where += ` AND (
         fr.to_name ILIKE $${values.length}
+        OR CONCAT_WS(' ', u.first_name, u.last_name) ILIKE $${values.length}
+        OR fr.id::text ILIKE $${values.length}
+        OR fr.mail_item_id::text ILIKE $${values.length}
         OR fr.postal ILIKE $${values.length}
         OR coalesce(fr.courier,'') ILIKE $${values.length}
         OR coalesce(fr.tracking_number,'') ILIKE $${values.length}
@@ -111,8 +114,8 @@ export async function adminListForwarding(req: Request, res: Response) {
         const pool = getPool();
         // Order by dispatched_at for dispatched requests, otherwise by created_at
         const orderBy = status === 'Dispatched'
-            ? 'ORDER BY COALESCE(fr.dispatched_at, fr.created_at) DESC'
-            : 'ORDER BY fr.created_at DESC';
+            ? 'ORDER BY COALESCE(fr.dispatched_at, fr.created_at) DESC, fr.id DESC'
+            : 'ORDER BY fr.created_at DESC, fr.id DESC';
 
         const sql = `
       SELECT fr.*, mi.subject, mi.tag, u.email, u.first_name, u.last_name,

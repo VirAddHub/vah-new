@@ -1,22 +1,9 @@
-'use client';
+import { getServerPricing } from '@/lib/pricing.server';
+import PricingPageClient from './pricing-page-client';
 
-import { PlansPage } from '@/components/PlansPage';
-import { useRouter } from 'next/navigation';
+export const revalidate = 60;
 
-/**
- * Pricing Page
- * 
- * Uses shared (public) layout - no duplicate header/footer
- * Layout provides: HeaderWithNav, main wrapper, FooterWithNav
- */
-export default function PricingPage() {
-  const router = useRouter();
-  
-  return (
-    <PlansPage onNavigate={(page: string, data?: any) => {
-      if (page === 'signup') {
-        router.push(`/signup${data?.initialBilling ? `?billing=${data.initialBilling}` : ''}`);
-      }
-    }} />
-  );
+export default async function PricingPage() {
+  const initialPricing = await getServerPricing();
+  return <PricingPageClient initialPricing={initialPricing} />;
 }

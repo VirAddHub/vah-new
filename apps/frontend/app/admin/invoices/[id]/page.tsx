@@ -52,8 +52,8 @@ export default function AdminInvoiceDetailPage() {
   const [items, setItems] = useState<any[]>([]);
 
   const moneyFmt = useMemo(
-    () => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }),
-    []
+    () => new Intl.NumberFormat("en-GB", { style: "currency", currency: invoice?.currency || "GBP" }),
+    [invoice?.currency]
   );
 
   async function load() {

@@ -149,7 +149,7 @@ export async function getBillingOverviewData(
   const latestInvoice = latestInvoiceResult.rows[0] || null;
 
   const userResult = await pool.query(`
-    SELECT plan_id, plan_status, payment_failed_at, payment_retry_count, payment_grace_until, account_suspended_at,
+    SELECT status, plan_id, plan_status, payment_failed_at, payment_retry_count, payment_grace_until, account_suspended_at,
            stripe_customer_id
     FROM "user" WHERE id=$1
   `, [userId]);
@@ -253,7 +253,7 @@ export async function getBillingOverviewData(
 
   let accountStatus: 'active' | 'past_due' | 'suspended' | 'grace_period' = 'active';
   let gracePeriodInfo: { days_left: number; retry_count: number; grace_until: number } | null = null;
-  if (user?.account_suspended_at) {
+  if (user?.status === 'suspended' || user?.account_suspended_at) {
     accountStatus = 'suspended';
   } else if (user?.payment_failed_at) {
     const nowMs = now();

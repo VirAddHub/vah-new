@@ -95,7 +95,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <button className={styles.primaryButton} onClick={() => startSignup()}>Get your address <ArrowUpRight size={18} /></button>
             <button className={styles.textButton} onClick={() => document.getElementById('how')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })}>See how it works <ArrowDown size={16} /></button>
           </div>
-          <div className={styles.heroPrice}>From <strong>{formatPrice(monthlyPrice)}/month</strong><span>Monthly and annual plans</span></div>
+          {monthlyPrice !== null && <div className={styles.heroPrice}>From <strong>{formatPrice(monthlyPrice)}/month</strong><span>Monthly and annual plans</span></div>}
         </div>
         <DashboardPreview />
       </section>
@@ -127,7 +127,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
         <div className={styles.pricingCopy}><span className={styles.eyebrow}>ONE ADDRESS. EVERYTHING CONNECTED.</span><h2>A small step.<br />A more professional<br />presence.</h2><p>The address your business needs, with the tools to manage your mail. Choose the billing period that works for you.</p><Link href="/contact" className={styles.textButton}>Have a question? Let’s talk <ArrowUpRight size={17} /></Link></div>
         <div className={styles.priceCard}><div className={styles.planHeading}><span className={styles.planIcon}><Building2 size={22} /></span><div><h3>Your London address</h3><p>For your business and what comes next.</p></div></div>
           <div className={styles.billingToggle} role="group" aria-label="Billing period"><button aria-pressed={!annual} onClick={() => setAnnual(false)}>Monthly</button><button aria-pressed={annual} onClick={() => setAnnual(true)}>Annual{monthlySavingsPct > 0 && <span>Save {monthlySavingsPct}%</span>}</button></div>
-          <div className={styles.priceLine} aria-live="polite" aria-atomic="true"><strong>{formatPrice(annual ? annualPrice : monthlyPrice)}</strong><span>/ {annual ? 'year' : 'month'}</span></div><p className={styles.billingNote}>{annual ? 'Billed annually' : 'Billed monthly'} · One plan, two ways to pay</p>
+          <div className={styles.priceLine} aria-live="polite" aria-atomic="true">{(annual ? annualPrice : monthlyPrice) === null ? <strong>Pricing unavailable</strong> : <><strong>{formatPrice((annual ? annualPrice : monthlyPrice) as number)}</strong><span>/ {annual ? 'year' : 'month'}</span></>}</div><p className={styles.billingNote}>{annual ? 'Billed annually' : 'Billed monthly'} · One plan, two ways to pay</p>
           <ul className={styles.featureList}>{features.map(feature => <li key={feature}><Check size={17} /><span>{feature}</span></li>)}</ul>
           <button className={styles.primaryButton} onClick={() => startSignup(annual ? 'annual' : 'monthly')}>Get started <ArrowUpRight size={18} /></button><p className={styles.priceFootnote}>Address activated after verification and approval.<br />Physical forwarding may incur additional charges.</p>
         </div>

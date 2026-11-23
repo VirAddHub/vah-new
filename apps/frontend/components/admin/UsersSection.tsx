@@ -2,7 +2,8 @@
 
 import { AccountStandingDialog } from './AccountStandingDialog';
 import { AdminUserPanel } from './AdminUserPanel';
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { customerAccessNotes } from './customer-access';
 import { adminApi } from "../../lib/apiClient";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -21,9 +22,9 @@ import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { usePlans } from "../../hooks/usePlans";
 
 const PLAN_STATUS_OPTIONS = [
-  { value: 'active', label: 'Active', description: 'User is fully billable and can receive scans.' },
+  { value: 'active', label: 'Active', description: 'Billing is active. Account access and verification are checked separately.' },
   { value: 'pending_payment', label: 'Pending payment', description: 'User cannot receive new mail until payment is completed.' },
-  { value: 'cancelled', label: 'Cancelled', description: 'Account cancelled. Mail ingest should be blocked.' },
+  { value: 'cancelled', label: 'Cancelled', description: 'Plan cancelled. This does not change account access.' },
   { value: 'trialing', label: 'Trial', description: 'Limited trial access.' },
 ] as const;
 
@@ -35,7 +36,7 @@ const PLAN_STATUS_STYLES: Record<string, string> = {
 };
 
 const formatPlanStatus = (value?: string) => {
-  if (!value) return 'pending payment';
+  if (!value) return 'Not recorded';
   const option = PLAN_STATUS_OPTIONS.find((opt) => opt.value === value);
   return option ? option.label : value.replace(/_/g, ' ');
 };
@@ -66,6 +67,7 @@ interface UsersSectionProps {
   pageSize: number;
   onPageChange: (page: number) => void;
   isValidating: boolean;
+  lastUpdated?: number | null;
   onFiltersChange?: (filters: {
     search: string;
     status: string;
@@ -82,10 +84,11 @@ function statusVariant(label: string | null | undefined, u: { deleted_at?: unkno
   return 'secondary' as const;
 }
 
-export default function UsersSection({ users, loading, error, total, page, pageSize, onPageChange, isValidating, onFiltersChange, onRefreshUsers }: UsersSectionProps) {
+export default function UsersSection({ users, loading, error, total, page, pageSize, onPageChange, isValidating, onFiltersChange, onRefreshUsers, lastUpdated }: UsersSectionProps) {
   const { toast } = useToast();
   // Plan ids differ between databases, so the plan filter is built from the real plans.
-  const { plans } = usePlans();
+  const { plans, error: plansLoadError } = usePlans();
+  const plansError = Boolean(plansLoadError);
 
   // Search state (raw input)
   const [q, setQ] = useState("");
@@ -104,6 +107,8 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   // Additional state for managing deleted users API call
   const [deletedUsers, setDeletedUsers] = useState<any[]>([]);
   const [deletedUsersLoading, setDeletedUsersLoading] = useState(false);
+  const [deletedTotal, setDeletedTotal] = useState(0);
+  const deletedRequest = useRef(0);
 
   // User stats state
   const [stats, setStats] = useState<{ total: number; active: number; suspended: number; pending: number; deleted: number } | null>(null);
@@ -122,8 +127,10 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   });
 
   // Plan status modal state
-  const [planStatusModal, setPlanStatusModal] = useState<null | { id: string | number; email: string; plan_status?: string }>(null);
+  const [planStatusModal, setPlanStatusModal] = useState<null | { id: string | number; email: string; plan_status?: string; status?: string }>(null);
   const [planStatusValue, setPlanStatusValue] = useState<string>('pending_payment');
+  const [accountStatusValue, setAccountStatusValue] = useState('pending');
+  const [deletedError, setDeletedError] = useState<string | null>(null);
   const [kycModal, setKycModal] = useState<null | { id: string | number; email: string; kyc_status?: string | null }>(null);
   const [kycValue, setKycValue] = useState<string>('pending');
 
@@ -179,29 +186,35 @@ export default function UsersSection({ users, loading, error, total, page, pageS
     }
   }, [debouncedQ, statusFilter, planFilter, kycFilter, onFiltersChange]);
 
+  const [refreshing, setRefreshing] = useState(false);
+  const [deletedLastUpdated, setDeletedLastUpdated] = useState<number | null>(null);
+
   // Load user stats
   const loadUserStats = useCallback(async () => {
     const res = await adminApi.userStats();
     if (res.ok) setStats(res.data as any);
   }, []);
 
-  useEffect(() => { loadUserStats(); }, [loadUserStats]);
+  useEffect(() => { void loadUserStats().catch(() => {}); }, [loadUserStats, lastUpdated]);
 
-  // Load deleted users when showDeleted toggle changes
+  // Reload deleted accounts when their search or page changes.
   useEffect(() => {
     if (showDeleted) {
       console.log('[UsersSection] Loading deleted users...');
       loadDeletedUsers();
     } else {
       console.log('[UsersSection] Clearing deleted users...');
+      deletedRequest.current++;
       setDeletedUsers([]);
+      setDeletedUsersLoading(false);
     }
-  }, [showDeleted]);
+  }, [showDeleted, debouncedQ, page, pageSize]);
 
   // Reset plan status value whenever modal opens
   useEffect(() => {
     if (planStatusModal) {
       setPlanStatusValue(planStatusModal.plan_status ?? 'pending_payment');
+      setAccountStatusValue(planStatusModal.status ?? 'pending');
     }
   }, [planStatusModal]);
 
@@ -212,28 +225,67 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   }, [kycModal]);
 
   const loadDeletedUsers = async () => {
+    const request = ++deletedRequest.current;
+    setDeletedUsers([]);
+    setDeletedTotal(0);
+    setDeletedError(null);
     setDeletedUsersLoading(true);
     try {
       console.log('[UsersSection] Fetching deleted users from API...');
-      const params = new URLSearchParams();
+      const params = new URLSearchParams({q:debouncedQ, page:String(page), limit:String(pageSize)});
       const res = await adminApi.deletedUsers(params);
+      if (request !== deletedRequest.current) return;
       console.log('[UsersSection] Deleted users API response:', res);
       if (res.ok && res.data) {
         // Backend returns { items: [...], total: ..., pages: ... }
         const payload: any = res.data;
         const users = Array.isArray(payload) ? payload : payload?.items || [];
         setDeletedUsers(users);
+        setDeletedTotal(Number(payload?.total ?? users.length));
+        setDeletedLastUpdated(Date.now());
         console.log('[UsersSection] Set deleted users:', users.length, 'users');
       } else {
-        console.error('[UsersSection] API returned error:', res);
+        setDeletedError('Could not load deleted accounts. Use Refresh to try again.');
       }
     } catch (error) {
+      if (request !== deletedRequest.current) return;
+      setDeletedError('Could not load deleted accounts. Use Refresh to try again.');
       console.error('Failed to load deleted users:', error);
       toast({ title: 'Error', description: 'Failed to load deleted users', variant: 'destructive' });
     } finally {
-      setDeletedUsersLoading(false);
+      if (request === deletedRequest.current) setDeletedUsersLoading(false);
     }
   };
+
+  async function refreshAccounts() {
+    setRefreshing(true);
+    try {
+      await Promise.all([showDeleted ? loadDeletedUsers() : onRefreshUsers?.(), loadUserStats()]);
+    } catch {
+      toast({ title: 'Refresh failed', description: 'Please try again.', variant: 'destructive' });
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  // SWR refreshes current accounts on focus/reconnect. Deleted accounts use their own endpoint.
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState !== 'visible') return;
+      void loadUserStats().catch(() => {});
+      if (showDeleted) void loadDeletedUsers();
+    };
+    window.addEventListener('focus', refresh);
+    window.addEventListener('online', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('online', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [showDeleted, debouncedQ, page, pageSize, loadUserStats]);
+
+  const displayedLastUpdated = showDeleted ? deletedLastUpdated : lastUpdated;
 
   // Handle user deletion with double confirmation
   async function handleDeleteUser(id: string | number, permanent: boolean = false) {
@@ -340,19 +392,30 @@ export default function UsersSection({ users, loading, error, total, page, pageS
   }, [users, deletedUsers, showDeleted]);
 
   // Pagination helpers - use backend total for accurate counts
-  const totalFiltered = showDeleted ? deletedUsers.length : total; // Use backend total for active users
+  const totalFiltered = showDeleted ? deletedTotal : total; // Use backend total for active users
   const hasNext = useMemo(() => {
     if (showDeleted) {
-      // For deleted users, check if there are more items (no backend pagination yet)
-      return deletedUsers.length >= pageSize;
+      // Use the deleted-account endpoint total, not the current page size.
+      return page * pageSize < deletedTotal;
     }
     // For active users, backend provides accurate pagination info
     return (page * pageSize) < total;
-  }, [page, pageSize, total, deletedUsers.length, showDeleted]);
+  }, [page, pageSize, total, deletedTotal, showDeleted]);
   const hasPrev = useMemo(() => page > 1, [page]);
 
   return (
     <div className="space-y-4">
+      <header className="space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold">Customer accounts</h2>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-neutral-600" role="status">Last updated: {displayedLastUpdated ? new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' }).format(displayedLastUpdated) : 'Not yet loaded'}</span>
+            <Button variant="outline" disabled={refreshing || isValidating || deletedUsersLoading} onClick={refreshAccounts}>{refreshing || isValidating || deletedUsersLoading ? 'Refreshing…' : 'Refresh'}</Button>
+          </div>
+        </div>
+        <label htmlFor="customer-search" className="block text-sm font-medium">Find a customer</label>
+        <Input id="customer-search" type="search" placeholder="Name, company, email or customer ID (e.g. #53)" value={q} onChange={e => setQ(e.target.value)} className="w-full max-w-2xl !text-base !h-11" />
+      </header>
       {/* User stats badges */}
       {stats && (
         <div className="flex flex-wrap gap-3 text-body-sm text-muted-foreground">
@@ -363,15 +426,17 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         </div>
       )}
 
+      {showDeleted && <p className="text-sm text-neutral-600">Search deleted accounts by name, company, email or ID. Status, plan and verification filters apply to current accounts only.</p>}
+      {plansError && <p role="alert" className="text-sm text-destructive">Plan filters could not load. Reload the page to try again.</p>}
       {/* Filters */}
       <div className="flex flex-wrap gap-3 rounded-lg border border-line p-4">
         <div className="flex items-center gap-2">
           <label className="text-body-sm font-medium">Account:</label>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger aria-label="Filter by account standing" className="w-36">
+            <SelectTrigger aria-label="Filter by account standing" disabled={showDeleted} className="w-36">
               <SelectValue placeholder="All" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white text-neutral-900">
               <SelectItem value="__all__">All</SelectItem>
               <SelectItem value="suspended">Suspended</SelectItem>
             </SelectContent>
@@ -381,10 +446,10 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         <div className="flex items-center gap-2">
           <label className="text-body-sm font-medium">Plan:</label>
           <Select value={planFilter} onValueChange={setPlanFilter}>
-            <SelectTrigger aria-label="Filter by plan" className="w-40">
+            <SelectTrigger aria-label="Filter by plan" disabled={showDeleted || plansError || plans.length === 0} className="w-40">
               <SelectValue placeholder="All" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white text-neutral-900">
               <SelectItem value="__all__">All</SelectItem>
               {plans.map((p) => (
                 <SelectItem key={p.id} value={String(p.id)}>{p.interval === 'year' ? 'Annual' : 'Monthly'}</SelectItem>
@@ -394,15 +459,15 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-body-sm font-medium">KYC:</label>
+          <label className="text-body-sm font-medium">Identity check:</label>
           <Select value={kycFilter} onValueChange={setKycFilter}>
-            <SelectTrigger aria-label="Filter by verification" className="w-32">
+            <SelectTrigger aria-label="Filter by verification" disabled={showDeleted} className="w-32">
               <SelectValue placeholder="All" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white text-neutral-900">
               <SelectItem value="__all__">All</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="verified">Verified</SelectItem>
+              <SelectItem value="approved">Approved / verified</SelectItem>
               <SelectItem value="rejected">Rejected</SelectItem>
             </SelectContent>
           </Select>
@@ -427,9 +492,9 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-h4 font-semibold">Users</h2>
+          <h3 className="text-base font-semibold">{showDeleted ? "Deleted accounts" : "Customer results"}</h3>
           <p className="text-body-sm text-muted-foreground">
-            {showDeleted ? `Showing ${users.length + deletedUsers.length} users (${users.length} active + ${deletedUsers.length} deleted)` : `Total: ${users.length}`}
+            {showDeleted ? (deletedError ? 'Deleted accounts unavailable' : `${deletedTotal} matching deleted accounts · Page ${page}`) : `${total} matching customers · Page ${page}`}
           </p>
         </div>
         <div className="flex w-full flex-wrap gap-2 sm:w-auto">
@@ -444,6 +509,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
             variant={showDeleted ? "primary" : "ghost"}
             onClick={() => {
               console.log('[UsersSection] Toggle showDeleted from', showDeleted, 'to', !showDeleted);
+              onPageChange(1);
               setShowDeleted(!showDeleted);
             }}
             size="sm"
@@ -452,12 +518,6 @@ export default function UsersSection({ users, loading, error, total, page, pageS
             {showDeleted ? "Hide Deleted" : "Show Deleted"}
             {deletedUsersLoading && <div className="animate-spin rounded-full h-3 w-3 border-b border-background"></div>}
           </Button>
-          <Input
-            placeholder="Search number, name, email or company…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            className="w-full sm:w-60"
-          />
         </div>
       </div>
 
@@ -467,14 +527,15 @@ export default function UsersSection({ users, loading, error, total, page, pageS
           Loading users…
         </div>
       )}
-      {error && (
+      {showDeleted && deletedError && <p role="alert" className="text-sm text-destructive">{deletedError}</p>}
+      {error && !showDeleted && (
         <div className="text-center py-2">
           <div className="text-body-sm text-destructive mb-2">{error}</div>
         </div>
       )}
-      {!loading && !deletedUsersLoading && !error && displayUsers.length === 0 && (
+      {!loading && !deletedUsersLoading && !(showDeleted ? deletedError : error) && displayUsers.length === 0 && (
         <div className="text-center py-2">
-          <div className="text-body-sm text-muted-foreground mb-2">No users yet.</div>
+          <div className="text-body-sm text-muted-foreground mb-2">No matching customers. Try another search or clear the filters.</div>
         </div>
       )}
 
@@ -521,13 +582,15 @@ export default function UsersSection({ users, loading, error, total, page, pageS
               {displayUsers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
-                    {error ?? "No users found."}
+                    {(showDeleted ? deletedError : error) ?? "No users found."}
                   </TableCell>
                 </TableRow>
               ) : (
                 displayUsers.map((u) => {
+                  const access = customerAccessNotes(u);
                   return (
-                  <TableRow key={u.id} className={u.deleted_at ? "text-graphite" : ""}>
+                  <Fragment key={u.id}>
+                  <TableRow className={u.deleted_at ? "text-graphite" : ""}>
                     <TableCell className="align-top">
                       {/* One column for who the customer is, so status, plan and actions stay visible on laptop screens. */}
                       <button type="button" onClick={() => setPanelUser({ id: u.id, email: u.email, service_label: u.service_label })}
@@ -560,7 +623,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                           {/* No price here: each customer's own rate is in their record (Billing tab). */}
                         </div>
                       ) : (
-                        <span className="text-body-sm text-muted-foreground">No plan</span>
+                        <details className="text-sm text-neutral-600"><summary className="cursor-pointer">Plan not identified</summary><p className="mt-1">A plan name could not be found. Check billing to confirm payment and subscription details.</p></details>
                       )}
                     </TableCell>
                     <TableCell className="sticky right-0 bg-paper text-right align-top shadow-[-1px_0_0_hsl(var(--line))]">
@@ -582,7 +645,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                               onClick={() => { setEditForm({ email: u.email, first_name: u.first_name ?? '', last_name: u.last_name ?? '', company_name: u.company_name ?? '' }); setEditModal(u); }}
                               disabled={isMutating}
                             >
-                              Edit
+                              Edit profile
                             </Button>
                             <Button
                               variant="outline"
@@ -590,15 +653,15 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                               onClick={() => setKycModal({ id: u.id, email: u.email, kyc_status: u.kyc_status })}
                               disabled={isMutating}
                             >
-                              KYC
+                              Verification (KYC)
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="sm" disabled={isMutating}>
-                                  More
+                                  More actions
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-64">
+                              <DropdownMenuContent align="end" className="w-64 max-w-[calc(100vw-2rem)] max-h-[var(--radix-dropdown-menu-content-available-height)] overflow-y-auto bg-white text-neutral-900">
                                 <DropdownMenuItem
                                   onClick={async () => {
                                     setResetSendingId(u.id);
@@ -670,6 +733,16 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                       </div>
                     </TableCell>
                   </TableRow>
+                  <TableRow className="bg-mist">
+                    <TableCell colSpan={4} className="text-body-sm text-graphite">
+                      <div aria-label={`Access explanation for customer ${u.id}`} className="space-y-1">
+                        <p className="font-medium">{access.title}</p>
+                        <p>{access.summary}</p>
+                        <p><span className="font-medium">Next step:</span> {access.next}</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  </Fragment>
                 )})
               )}
             </TableBody>
@@ -685,11 +758,11 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap gap-3 items-center justify-between">
         <div className="text-body-sm text-muted-foreground">
           Page {page} • {totalFiltered} total
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             disabled={!hasPrev || loading || deletedUsersLoading}
@@ -716,7 +789,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       {/* Delete confirmation modal */}
       {deleteModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className={`bg-card border-2 rounded-2xl p-6 w-full max-w-md ${deleteModal.permanent ? 'border-destructive/30' : 'border-line'}`}>
+          <div className={`bg-card max-h-[calc(100dvh-2rem)] overflow-y-auto border-2 rounded-2xl p-6 w-full max-w-md ${deleteModal.permanent ? 'border-destructive/30' : 'border-line'}`}>
             <h3 className={`font-semibold text-body-lg mb-2 ${deleteModal.permanent ? 'text-destructive' : ''}`}>
               {deleteModal.permanent ? '⚠️ Permanent Delete User' : 'Delete User'}
             </h3>
@@ -782,8 +855,8 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
       {/* Restore modal */}
       {restoreModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-card border rounded-2xl p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white text-neutral-900 shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto border rounded-2xl p-6 w-full max-w-md">
             <h3 className="font-semibold text-body-lg mb-2">Restore Deleted User</h3>
             <p className="text-body-sm text-muted-foreground mb-4">
               This will restore the user account and allow them to log in again.
@@ -846,18 +919,19 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       {/* Plan status modal */}
       {planStatusModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-2xl p-6 w-full max-w-md space-y-5">
+          <div className="bg-white text-neutral-900 shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto border rounded-2xl p-6 w-full max-w-md space-y-5">
             <div>
-              <h3 className="font-semibold text-body-lg mb-1">Update plan status</h3>
+              <h3 className="font-semibold text-body-lg mb-1">Account &amp; plan status</h3>
               <p className="text-body-sm text-muted-foreground">
                 Adjust billing/state enforcement for {planStatusModal.email}.
             </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-body-sm font-medium">Plan status</label>
+              <label htmlFor="account-plan-status" className="text-body-sm font-medium">Plan status</label>
                 <select
                   className="w-full border rounded-md px-3 py-2 bg-background"
+                id="account-plan-status"
                 value={planStatusValue}
                 onChange={(e) => setPlanStatusValue(e.target.value)}
                 >
@@ -875,9 +949,20 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                   })()}
                 </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="account-access-status">Account access</Label>
+              <select id="account-access-status" className="w-full border rounded-md px-3 py-2 bg-white" value={accountStatusValue} onChange={e => setAccountStatusValue(e.target.value)}>
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+                <option value="pending">Pending</option>
+                <option value="pending_payment">Pending payment</option>
+                {!["active", "suspended", "pending", "pending_payment"].includes(accountStatusValue) && <option value={accountStatusValue}>{accountStatusValue}</option>}
+              </select>
+              <p className="text-sm text-neutral-600">Changing the plan does not reactivate a suspended account. Set account access to Active only when you intend to restore access.</p>
+            </div>
             <div className="bg-muted/40 rounded-lg px-3 py-2 text-caption text-muted-foreground">
               <p>
-                This value is what the mail ingest worker checks before accepting PDFs.
+                Mail access requires an active account, an active subscription and approved verification.
               </p>
               <p>
                 Set to <strong>pending payment</strong> to block scans until billing is fixed.
@@ -897,25 +982,26 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                   if (!planStatusModal) return;
                   setIsMutating(true);
                   try {
-                    // Update both plan_status and status to keep them in sync
-                    // If setting to pending_payment, also set status to pending_payment
-                    // If setting to active, also set status to active
-                    const statusValue = planStatusValue === 'pending_payment' ? 'pending_payment' : 
-                                       planStatusValue === 'active' ? 'active' : 
-                                       planStatusValue === 'cancelled' ? 'suspended' : undefined;
-                    
-                    const updatePayload: any = { plan_status: planStatusValue };
-                    if (statusValue) {
-                      updatePayload.status = statusValue;
+                    const updatePayload: { plan_status?: string; status?: string } = {};
+                    if (planStatusValue !== (planStatusModal.plan_status ?? 'pending_payment')) {
+                      updatePayload.plan_status = planStatusValue;
                     }
-                    
+                    // Only an explicit access change may lift a suspension.
+                    if (accountStatusValue !== (planStatusModal.status ?? 'pending')) {
+                      updatePayload.status = accountStatusValue;
+                    }
+
+                    if (Object.keys(updatePayload).length === 0) {
+                      setPlanStatusModal(null);
+                      return;
+                    }
                     const res = await adminApi.updateUser(planStatusModal.id, updatePayload);
                     if (!res.ok) {
                       throw new Error(res.error || 'update_failed');
                     }
                     toast({
-                      title: 'Plan status updated',
-                      description: `${planStatusModal.email} is now ${formatPlanStatus(planStatusValue)}.`,
+                      title: 'Account and plan updated',
+                      description: `Plan: ${formatPlanStatus(planStatusValue)}. Account access: ${accountStatusValue.replace(/_/g, ' ')}.`,
                     });
                     setPlanStatusModal(null);
                     if (onRefreshUsers) {
@@ -943,7 +1029,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       {/* KYC modal */}
       {kycModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-2xl p-6 w-full max-w-md space-y-5">
+          <div className="bg-white text-neutral-900 shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto border rounded-2xl p-6 w-full max-w-md space-y-5">
             <div>
               <h3 className="text-body-lg font-semibold mb-1">Update KYC status</h3>
               <p className="text-body-sm text-muted-foreground">
@@ -1012,7 +1098,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       {/* Create user modal */}
       {createModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-2xl p-6 w-full max-w-md space-y-5">
+          <div className="bg-white text-neutral-900 shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto border rounded-2xl p-6 w-full max-w-md space-y-5">
             <div>
               <h3 className="text-body-lg font-semibold mb-1">Create user</h3>
               <p className="text-body-sm text-muted-foreground">
@@ -1039,7 +1125,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 <Label htmlFor="cu-email">Email *</Label>
                 <Input id="cu-email" type="email" value={createForm.email} onChange={(e) => setCreateForm(f => ({ ...f, email: e.target.value }))} placeholder="user@example.com" />
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <div className="flex-1 space-y-1">
                   <Label htmlFor="cu-first">First name</Label>
                   <Input id="cu-first" value={createForm.first_name} onChange={(e) => setCreateForm(f => ({ ...f, first_name: e.target.value }))} placeholder="Jane" />
@@ -1113,7 +1199,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
       {/* Edit profile modal */}
       {editModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-2xl p-6 w-full max-w-md space-y-5">
+          <div className="bg-white text-neutral-900 shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto border rounded-2xl p-6 w-full max-w-md space-y-5">
             <div>
               <h3 className="text-body-lg font-semibold mb-1">Edit profile</h3>
               <p className="text-body-sm text-muted-foreground">User #{editModal.id}</p>
@@ -1123,7 +1209,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 <Label htmlFor="ep-email">Email</Label>
                 <Input id="ep-email" type="email" value={editForm.email} onChange={(e) => setEditForm(f => ({ ...f, email: e.target.value }))} />
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <div className="flex-1 space-y-1">
                   <Label htmlFor="ep-first">First name</Label>
                   <Input id="ep-first" value={editForm.first_name} onChange={(e) => setEditForm(f => ({ ...f, first_name: e.target.value }))} />

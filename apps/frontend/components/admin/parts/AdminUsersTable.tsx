@@ -20,6 +20,7 @@ interface AdminUsersTableProps {
   pageSize: number;
   onPageChange: (page: number) => void;
   isValidating: boolean;
+  lastUpdated?: number | null;
   onRefreshUsers: () => void;
 }
 

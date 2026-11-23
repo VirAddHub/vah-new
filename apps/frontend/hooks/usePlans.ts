@@ -37,9 +37,9 @@ interface UsePlansReturn {
  * Custom hook for fetching and managing plans data
  * Provides cached data with automatic refetching and utility functions
  */
-export function usePlans(): UsePlansReturn {
+export function usePlans({ enabled = true }: { enabled?: boolean } = {}): UsePlansReturn {
     const [plans, setPlans] = useState<Plan[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(enabled);
     const [error, setError] = useState<string | null>(null);
 
     const fetchPlans = useCallback(async () => {
@@ -47,12 +47,7 @@ export function usePlans(): UsePlansReturn {
             setLoading(true);
             setError(null);
 
-            const response = await apiClient.get('/api/bff/plans', {
-                headers: {
-                    'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache'
-                }
-            });
+            const response = await apiClient.get('/api/bff/plans');
 
             if (response.ok && response.data) {
                 // Handle new standardized format: backend returns { ok: true, data: [...] }
@@ -105,8 +100,8 @@ export function usePlans(): UsePlansReturn {
     }, [plans]);
 
     useEffect(() => {
-        fetchPlans();
-    }, [fetchPlans]);
+        if (enabled) void fetchPlans();
+    }, [fetchPlans, enabled]);
 
     return {
         plans,
@@ -119,25 +114,24 @@ export function usePlans(): UsePlansReturn {
     };
 }
 
-const FALLBACK_MONTHLY = 9.99;
-const FALLBACK_ANNUAL = 89.99;
 
 /**
- * Hook for getting pricing information with automatic fallbacks.
+ * Use server-provided prices when present, including an explicit unavailable result.
  * Uses server initialPricing when available so first paint has stable values (no flicker).
  */
 export function usePricing() {
     const initialPricing = useInitialPricing();
-    const { plans, loading, error, getMonthlyPlan, getAnnualPlan } = usePlans();
+    const { plans, loading, error, getMonthlyPlan, getAnnualPlan } = usePlans({ enabled: initialPricing === undefined });
 
     const monthlyPlan = getMonthlyPlan();
     const annualPlan = getAnnualPlan();
 
-    const monthlyPrice = monthlyPlan?.price ?? initialPricing?.monthlyPrice ?? FALLBACK_MONTHLY;
-    const annualPrice = annualPlan?.price ?? initialPricing?.annualPrice ?? FALLBACK_ANNUAL;
+    const validPrice = (plan?: Plan) => plan && Number.isSafeInteger(Number(plan.price_pence)) && Number(plan.price_pence) >= 0 && plan.price_pence != null ? Number(plan.price_pence) / 100 : null;
+    const monthlyPrice = initialPricing !== undefined ? initialPricing?.monthlyPrice ?? null : validPrice(monthlyPlan);
+    const annualPrice = initialPricing !== undefined ? initialPricing?.annualPrice ?? null : validPrice(annualPlan);
     
     const monthlySavingsPct = useMemo(() => {
-        if (monthlyPrice <= 0 || annualPrice <= 0) return 0;
+        if (monthlyPrice === null || annualPrice === null || monthlyPrice <= 0 || annualPrice <= 0) return 0;
         const saved = monthlyPrice * 12 - annualPrice;
         const pct = (saved / (monthlyPrice * 12)) * 100;
         return Math.round(pct);
@@ -149,8 +143,8 @@ export function usePricing() {
         monthlySavingsPct,
         monthlyPlan,
         annualPlan,
-        loading,
-        error,
-        hasApiData: !loading && !error && plans.length > 0
+        loading: initialPricing === undefined && loading,
+        error: initialPricing === null ? 'Pricing temporarily unavailable' : error,
+        hasApiData: initialPricing != null || (!loading && !error && plans.length > 0)
     };
 }

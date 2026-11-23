@@ -5,6 +5,7 @@ import { getAccess } from '../services/access';
 import { clientKey } from '../lib/clientKey';
 import { clearAccount } from '../services/loginThrottle';
 import { Router, Request, Response } from 'express';
+import { adminUserSearch } from '../../lib/adminUserSearch';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { TimestampUtils } from '../../lib/timestamp-utils';
@@ -91,6 +92,7 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
                 u.is_admin,
                 u.status,
                 u.plan_status,
+                s.status AS service_subscription_status,
                 u.plan_id,
                 u.kyc_status,
                 u.created_at,
@@ -143,24 +145,16 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
 
         // Search functionality - optimized for speed
         if (search) {
-            // Check if search is a number (ID search)
-            const searchNum = parseInt(String(search));
-            if (!isNaN(searchNum)) {
-                whereClause += ` AND u.id = $${paramIndex}`;
-                params.push(searchNum);
-            } else {
-                // Simplified search for better performance - use individual field matching
-                const searchTerm = String(search).trim();
-                whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex} OR u.company_name ILIKE $${paramIndex})`;
-                params.push(`%${searchTerm}%`);
-            }
+            const match = adminUserSearch(search, paramIndex);
+            whereClause += ` AND ${match.clause}`;
+            params.push(match.value);
             paramIndex++;
         }
 
         // Status filter (skip if __all__)
         if (status && status !== '__all__') {
-            whereClause += ` AND u.status = $${paramIndex}`;
-            params.push(String(status));
+            whereClause += ` AND (CASE WHEN u.status = 'pending_payment' THEN 'pending' ELSE u.status END) = $${paramIndex}`;
+            params.push(status === 'pending_payment' ? 'pending' : String(status));
             paramIndex++;
         }
 
@@ -176,8 +170,8 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
 
         // KYC status filter (skip if __all__)
         if (kyc_status && kyc_status !== '__all__') {
-            whereClause += ` AND u.kyc_status = $${paramIndex}`;
-            params.push(String(kyc_status));
+            whereClause += ` AND CASE WHEN u.kyc_status = 'verified' THEN 'approved' ELSE COALESCE(NULLIF(u.kyc_status, ''), 'pending') END = $${paramIndex}`;
+            params.push(kyc_status === 'verified' ? 'approved' : String(kyc_status));
             paramIndex++;
         }
 
@@ -204,20 +198,15 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
         let countParamIndex = 1;
 
         if (search) {
-            const searchNum = parseInt(String(search));
-            if (!isNaN(searchNum)) {
-                countQuery += ` AND u.id = $${countParamIndex}`;
-                countParams.push(searchNum);
-            } else {
-                countQuery += ` AND (u.email ILIKE $${countParamIndex} OR u.first_name ILIKE $${countParamIndex} OR u.last_name ILIKE $${countParamIndex} OR u.company_name ILIKE $${countParamIndex})`;
-                countParams.push(`%${String(search).trim()}%`);
-            }
+            const match = adminUserSearch(search, countParamIndex);
+            countQuery += ` AND ${match.clause}`;
+            countParams.push(match.value);
             countParamIndex++;
         }
 
         if (status && status !== '__all__') {
-            countQuery += ` AND u.status = $${countParamIndex}`;
-            countParams.push(String(status));
+            countQuery += ` AND (CASE WHEN u.status = 'pending_payment' THEN 'pending' ELSE u.status END) = $${countParamIndex}`;
+            countParams.push(status === 'pending_payment' ? 'pending' : String(status));
             countParamIndex++;
         }
 
@@ -231,8 +220,8 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
         }
 
         if (kyc_status && kyc_status !== '__all__') {
-            countQuery += ` AND u.kyc_status = $${countParamIndex}`;
-            countParams.push(String(kyc_status));
+            countQuery += ` AND CASE WHEN u.kyc_status = 'verified' THEN 'approved' ELSE COALESCE(NULLIF(u.kyc_status, ''), 'pending') END = $${countParamIndex}`;
+            countParams.push(kyc_status === 'verified' ? 'approved' : String(kyc_status));
             countParamIndex++;
         }
 
@@ -349,7 +338,7 @@ router.get('/users/stats', requireAdmin, async (req: Request, res: Response) => 
         const suspended = parseInt(suspendedResult.rows[0].count);
 
         // Get pending users
-        const pendingResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE status = $1 AND deleted_at IS NULL', ['pending']);
+        const pendingResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE status IN ($1, $2) AND deleted_at IS NULL', ['pending', 'pending_payment']);
         const pending = parseInt(pendingResult.rows[0].count);
 
         // Get deleted users
@@ -396,6 +385,7 @@ router.get('/users/deleted', adminUsersLimiter, requireAdmin, async (req: Reques
                 u.is_admin,
                 'deleted' as status,  -- Override status to show 'deleted' for soft-deleted users
                 u.plan_status,
+                s.status AS service_subscription_status,
                 u.plan_id,
                 u.kyc_status,
                 u.created_at,
@@ -442,16 +432,9 @@ router.get('/users/deleted', adminUsersLimiter, requireAdmin, async (req: Reques
 
         // Search functionality - optimized for speed
         if (search) {
-            const searchNum = parseInt(String(search));
-            if (!isNaN(searchNum)) {
-                whereClause += ` AND u.id = $${paramIndex}`;
-                params.push(searchNum);
-            } else {
-                // Simplified search for better performance
-                const searchTerm = String(search).trim();
-                whereClause += ` AND (u.email ILIKE $${paramIndex} OR u.first_name ILIKE $${paramIndex} OR u.last_name ILIKE $${paramIndex} OR u.company_name ILIKE $${paramIndex})`;
-                params.push(`%${searchTerm}%`);
-            }
+            const match = adminUserSearch(search, paramIndex);
+            whereClause += ` AND ${match.clause}`;
+            params.push(match.value);
             paramIndex++;
         }
 
@@ -466,14 +449,9 @@ router.get('/users/deleted', adminUsersLimiter, requireAdmin, async (req: Reques
         let countParamIndex = 1;
 
         if (search) {
-            const searchNum = parseInt(String(search));
-            if (!isNaN(searchNum)) {
-                countQuery += ` AND u.id = $${countParamIndex}`;
-                countParams.push(searchNum);
-            } else {
-                countQuery += ` AND (u.email ILIKE $${countParamIndex} OR u.first_name ILIKE $${countParamIndex} OR u.last_name ILIKE $${countParamIndex} OR u.company_name ILIKE $${countParamIndex})`;
-                countParams.push(`%${String(search).trim()}%`);
-            }
+            const match = adminUserSearch(search, countParamIndex);
+            countQuery += ` AND ${match.clause}`;
+            countParams.push(match.value);
             countParamIndex++;
         }
 
@@ -561,6 +539,7 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         email,
         first_name,
         last_name,
+        company_name,
         is_admin,
         plan_id,
         plan_status,
@@ -607,6 +586,10 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         if (typeof last_name === 'string') {
             updates.push(`last_name = $${paramIndex++}`);
             values.push(last_name);
+        }
+        if (typeof company_name === 'string') {
+            updates.push(`company_name = $${paramIndex++}`);
+            values.push(company_name.trim());
         }
         if (typeof is_admin === 'boolean') {
             updates.push(`is_admin = $${paramIndex++}`);

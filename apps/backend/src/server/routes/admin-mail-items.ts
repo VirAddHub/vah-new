@@ -76,8 +76,8 @@ router.get('/mail-items', requireAdmin, adminMailItemsLimiter, async (req: Reque
         const pool = getPool();
         const { status, user_id, view, q, limit = '100', offset = '0' } = req.query;
 
-        const limitNum = Math.min(parseInt(limit as string) || 100, 500);
-        const offsetNum = parseInt(offset as string) || 0;
+        const limitNum = Math.max(1, Math.min(500, parseInt(limit as string) || 100));
+        const offsetNum = Math.max(0, parseInt(offset as string) || 0);
 
         try {
             // Filters shared by the list and the counts

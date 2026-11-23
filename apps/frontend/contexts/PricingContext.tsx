@@ -3,11 +3,11 @@
 import React, { createContext, useContext } from 'react';
 
 export interface InitialPricing {
-  monthlyPrice: number;
-  annualPrice: number;
+  monthlyPrice: number | null;
+  annualPrice: number | null;
 }
 
-const PricingContext = createContext<InitialPricing | null>(null);
+const PricingContext = createContext<InitialPricing | null | undefined>(undefined);
 
 export function PricingProvider({
   initialPricing,
@@ -23,6 +23,6 @@ export function PricingProvider({
   );
 }
 
-export function useInitialPricing(): InitialPricing | null {
+export function useInitialPricing(): InitialPricing | null | undefined {
   return useContext(PricingContext);
 }

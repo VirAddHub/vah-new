@@ -92,7 +92,7 @@ export function MailSection() {
         [view, debouncedQuery]
     );
 
-    const { data, isLoading, mutate } = useAuthedSWR<MailListResponse>(["/api/admin/mail-items", params], {
+    const { data, isLoading, mutate, error: loadError } = useAuthedSWR<MailListResponse>(["/api/admin/mail-items", params], {
         dedupingInterval: 5000,
         revalidateOnFocus: true,
         refreshInterval: 60000,
@@ -193,6 +193,13 @@ export function MailSection() {
             </div>
 
             <MailImporterStatus />
+
+            {loadError && (
+                <div role="alert" className="flex flex-wrap items-center gap-3 text-destructive">
+                    Could not load mail.
+                    <Button variant="outline" size="sm" onClick={() => mutate()}>Retry</Button>
+                </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-3">
                 <div className="inline-flex rounded-lg border border-line p-1" role="tablist" aria-label="Which mail to show">

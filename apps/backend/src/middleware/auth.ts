@@ -244,9 +244,12 @@ export function requireActiveSubscription(req: Request, res: Response, next: Nex
     }
     const pool = getPool();
     pool.query(
-        `SELECT status FROM subscription WHERE user_id = $1 LIMIT 1`,
+        `SELECT s.status, u.status AS account_status FROM "user" u LEFT JOIN subscription s ON s.user_id = u.id WHERE u.id = $1 LIMIT 1`,
         [req.user.id]
     ).then(result => {
+        if (result.rows[0]?.account_status === 'suspended') {
+            return res.status(403).json({ ok: false, error: 'account_suspended', message: 'Your account is suspended. Please contact support.' });
+        }
         if (result.rows.length === 0 || result.rows[0].status !== 'active') {
             return res.status(403).json({
                 ok: false,

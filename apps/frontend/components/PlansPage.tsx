@@ -60,10 +60,11 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
         onNavigate('signup', { initialBilling: isAnnual ? 'annual' : 'monthly' });
     };
 
-    const savingsPct  = monthlySavingsPct > 0 ? monthlySavingsPct : 17;
-    const displayPrice = isAnnual
-        ? formatPrice(annualPrice, { interval: 'year' })
-        : formatPrice(monthlyPrice, { interval: 'month' });
+    // No made-up figures: with no price from the server, say so and don't offer checkout.
+    const selectedPrice = isAnnual ? annualPrice : monthlyPrice;
+    const displayPrice = selectedPrice === null
+        ? 'Pricing unavailable'
+        : formatPrice(selectedPrice, { interval: isAnnual ? 'year' : 'month' });
 
     const explanatoryFeatures = [
         'Unlimited same-day digital mail scanning',
@@ -284,7 +285,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                         color: isAnnual ? T.paper : T.ink2,
                                     }}
                                 >
-                                    Annual · save {savingsPct}%
+                                    Annual{monthlySavingsPct > 0 ? ` · save ${monthlySavingsPct}%` : ''}
                                 </button>
                             </div>
 
@@ -326,7 +327,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                             <button
                                 className="plans-cta"
                                 onClick={handleSelectPlan}
-                                disabled={loading}
+                                disabled={loading || selectedPrice === null}
                             >
                                 Get started →
                             </button>
@@ -335,9 +336,9 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                 fontWeight: 400, marginTop: 12, textAlign: 'center',
                                 letterSpacing: '0.05em',
                             }}>
-                                {isAnnual
-                                    ? `Equivalent to ${formatPrice(annualPrice / 12, { interval: 'month' })}`
-                                    : `Switch to annual anytime · save ${savingsPct}%`
+                                {selectedPrice === null ? null : isAnnual
+                                    ? `Equivalent to ${formatPrice(selectedPrice / 12, { interval: 'month' })}`
+                                    : monthlySavingsPct > 0 ? `Switch to annual anytime · save ${monthlySavingsPct}%` : 'Annual billing also available'
                                 }
                             </div>
                         </div>

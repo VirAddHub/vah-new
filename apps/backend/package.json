@@ -91,7 +91,9 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run src/tests/unit",
-    "test:integration": "vitest run src/tests/integration"
+    "test:integration": "vitest run src/tests/integration",
+    "test:audit": "vitest run src/tests/unit/audit-details.test.ts src/tests/integration/adminAudit.routes.test.ts src/tests/integration/adminPages.routes.test.ts",
+    "test:pricing": "vitest run src/tests/unit/public-pricing.test.ts"
   },
   "keywords": [
     "backend",
@@ -149,6 +151,7 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.17",
     "@types/archiver": "^7.0.0",
     "@types/bcrypt": "6.0.0",
     "@types/compression": "1.8.1",

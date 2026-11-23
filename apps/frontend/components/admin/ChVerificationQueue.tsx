@@ -56,7 +56,8 @@ export default function ChVerificationQueue() {
 
   const handleApprove = async (submission: Submission) => {
     const userId = submission.id;
-    const note = window.prompt("Add reviewer note (optional)", "") || undefined;
+    const note = window.prompt("Add reviewer note (optional)", "");
+    if (note === null) return;
     try {
       setActionUserId(userId);
       const response = await apiClient.post(`/api/admin/ch-verification/${userId}/approve`, note ? { notes: note } : {});

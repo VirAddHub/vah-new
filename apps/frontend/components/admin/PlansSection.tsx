@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { adminApi, apiClient } from "../../lib/apiClient";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -36,6 +36,9 @@ export default function PlansSection() {
   const { toast } = useToast();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(false);
+  const savingRef = useRef(false);
+  const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -56,15 +59,17 @@ export default function PlansSection() {
 
   const loadPlans = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       console.log('[PlansSection] Fetching plans from /api/admin/plans...');
       const res = await apiClient.get("/api/admin/plans");
       console.log('[PlansSection] Response:', res);
 
-      if (res.ok && res.data) {
+      if (res.ok && Array.isArray(res.data)) {
         console.log('[PlansSection] Plans data:', res.data);
         setPlans(res.data);
       } else {
+        setLoadError('Could not load plans. Please retry.');
         console.error('[PlansSection] Failed to load plans:', res);
         toast({
           title: "Error",
@@ -73,6 +78,7 @@ export default function PlansSection() {
         });
       }
     } catch (error) {
+      setLoadError('Could not load plans. Please retry.');
       console.error('[PlansSection] Error loading plans:', error);
       toast({
         title: "Error",
@@ -89,6 +95,9 @@ export default function PlansSection() {
   }, []);
 
   const handleCreatePlan = async () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
     try {
       const res = await apiClient.post("/api/admin/plans", formData);
       if (res.ok) {
@@ -111,12 +120,18 @@ export default function PlansSection() {
         description: "Failed to create plan",
         variant: "destructive",
       });
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
     }
   };
 
   const handleUpdatePlan = async () => {
     if (!editingPlan) return;
 
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
     try {
       // The price is set in Stripe, so it is never sent with an edit.
       const { price_pence: _price, ...details } = formData;
@@ -141,12 +156,18 @@ export default function PlansSection() {
         description: "Failed to update plan",
         variant: "destructive",
       });
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
     }
   };
 
   const handleDeletePlan = async (id: number, name: string) => {
     if (!confirm(`Are you sure you want to retire the plan "${name}"?`)) return;
 
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
     try {
       const res = await apiClient.delete(`/api/admin/plans/${id}`);
       if (res.ok) {
@@ -167,6 +188,9 @@ export default function PlansSection() {
         description: "Failed to retire plan",
         variant: "destructive",
       });
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
     }
   };
 
@@ -213,6 +237,7 @@ export default function PlansSection() {
 
   return (
     <div className="space-y-6">
+      {loadError && <div role="alert">{loadError} <Button variant="outline" onClick={loadPlans}>Retry</Button></div>}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-h2 font-bold">Plans Management</h2>
@@ -255,7 +280,7 @@ export default function PlansSection() {
               ) : plans.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground">
-                    No plans found
+                    {loadError ? "Plans unavailable" : "No plans found"}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -308,7 +333,7 @@ export default function PlansSection() {
       {/* Create/Edit Modal */}
       {(showCreateModal || editingPlan) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white text-neutral-900">
             <CardHeader>
               <CardTitle>{editingPlan ? "Edit Plan" : "Create New Plan"}</CardTitle>
               <CardDescription>
@@ -468,8 +493,8 @@ export default function PlansSection() {
                 >
                   Cancel
                 </Button>
-                <Button onClick={editingPlan ? handleUpdatePlan : handleCreatePlan}>
-                  {editingPlan ? "Update Plan" : "Create Plan"}
+                <Button disabled={saving} onClick={editingPlan ? handleUpdatePlan : handleCreatePlan}>
+                  {saving ? "Saving…" : editingPlan ? "Update Plan" : "Create Plan"}
                 </Button>
               </div>
             </CardContent>

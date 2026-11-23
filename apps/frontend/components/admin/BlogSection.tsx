@@ -122,7 +122,7 @@ export function BlogSection() {
     // Fetch blog posts with pagination
     // useAuthedSWR handles { ok: true, items: [...], total, page, pageSize } format
     const { data: postsData, error: postsError, mutate: refetchPosts } = useAuthedSWR<{ items: BlogPost[]; total: number; page: number; pageSize: number }>(
-        ['/api/bff/admin/blog/posts', { includeDrafts: 'true', page: String(page), pageSize: String(pageSize) }]
+        ['/api/bff/admin/blog/posts', { includeDrafts: 'true', page: String(page), pageSize: String(pageSize), q: searchTerm, status: statusFilter, tag: tagFilter }]
     );
 
     // Fetch categories/tags
@@ -136,20 +136,8 @@ export function BlogSection() {
     const totalPages = Math.ceil(totalPosts / pageSize);
     const categories = categoriesData || [];
 
-    // Client-side filtering (for search, status, tags)
-    const filteredPosts = useMemo(() => {
-        return posts.filter(post => {
-            const matchesSearch = !searchTerm || 
-                post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                post.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                post.content?.toLowerCase().includes(searchTerm.toLowerCase());
-
-            const matchesStatus = statusFilter === 'all' || post.status === statusFilter;
-            const matchesTag = tagFilter === 'all' || (post.tags && post.tags.includes(tagFilter));
-
-            return matchesSearch && matchesStatus && matchesTag;
-        });
-    }, [posts, searchTerm, statusFilter, tagFilter]);
+    // Filters are applied on the server before pagination.
+    const filteredPosts = posts;
 
     // Reset to page 1 when filters change
     useEffect(() => {
@@ -797,7 +785,7 @@ export function BlogSection() {
 
             {/* Create/Edit Form Modal */}
             {(showCreateForm || editingPost) && (
-                <Card className="fixed inset-4 z-50 overflow-auto">
+                <Card className="fixed inset-4 z-50 overflow-auto bg-white text-neutral-900">
                     <CardHeader>
                         <CardTitle className="flex items-center justify-between">
                             {editingPost ? 'Edit Post' : 'Create New Post'}
