@@ -65,6 +65,31 @@ async function resolveStripeCustomer(userId: number) {
   return { stripe, pool, user, email, customerId };
 }
 
+/**
+ * The plan to record on the checkout. Uses the plan the page sent, then the customer's saved plan,
+ * and otherwise the active plan whose billing interval matches the period the customer chose
+ * (the same period that already decides the Stripe price). Customers who signed up without a plan
+ * saved on their account could not pay at all before this fallback.
+ */
+export async function resolveCheckoutPlanId(
+  pool: { query: (sql: string, params?: unknown[]) => Promise<{ rows: any[] }> },
+  requested: number | null,
+  saved: number | null | undefined,
+  billingPeriod: 'monthly' | 'annual'
+): Promise<number | null> {
+  if (requested != null && Number.isFinite(requested) && requested > 0) return requested;
+  if (saved != null) return Number(saved);
+  const interval = billingPeriod === 'annual' ? 'year' : 'month';
+  const r = await pool.query(
+    `SELECT id FROM plans
+     WHERE active = true AND retired_at IS NULL AND interval = $1
+     ORDER BY sort ASC, price_pence ASC
+     LIMIT 1`,
+    [interval]
+  );
+  return r.rows?.[0]?.id != null ? Number(r.rows[0].id) : null;
+}
+
 /* ------------------------------------------------------------------ */
 /*  POST /checkout-session  (redirect mode – returns URL)             */
 /* ------------------------------------------------------------------ */
@@ -81,8 +106,8 @@ export async function createStripeCheckoutSession(
   const priceId = getStripePriceId(billingPeriod);
   if (!priceId) throw new Error('missing_price');
 
-  const { stripe, user, customerId } = await resolveStripeCustomer(userId);
-  const effectivePlanId = planId ?? user.plan_id;
+  const { stripe, pool, user, customerId } = await resolveStripeCustomer(userId);
+  const effectivePlanId = await resolveCheckoutPlanId(pool, planId, user.plan_id, billingPeriod);
   if (effectivePlanId == null) throw new Error('plan_required');
 
   const meta = { userId: String(userId), planId: String(effectivePlanId), plan_id: String(effectivePlanId), billingPeriod, billing_period: billingPeriod };
@@ -151,8 +176,8 @@ router.post('/checkout-session-embedded', requireAuth, stripeCheckoutCreateLimit
     if (!priceId) throw new Error('missing_price');
 
     const { appUrl } = getStripeConfig();
-    const { stripe, user, customerId } = await resolveStripeCustomer(userId);
-    const effectivePlanId = planId ?? user.plan_id;
+    const { stripe, pool, user, customerId } = await resolveStripeCustomer(userId);
+    const effectivePlanId = await resolveCheckoutPlanId(pool, planId, user.plan_id, billingPeriod);
     if (effectivePlanId == null) throw new Error('plan_required');
 
     const meta = { userId: String(userId), planId: String(effectivePlanId), plan_id: String(effectivePlanId), billingPeriod, billing_period: billingPeriod };
