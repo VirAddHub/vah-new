@@ -859,8 +859,11 @@ router.post("/login", async (req, res) => {
 /** A throwaway bcrypt hash at the normal cost, computed once, for timing-equalised failures. */
 let dummyHashPromise: Promise<string> | null = null;
 function dummyPasswordHash(): Promise<string> {
-    if (!dummyHashPromise) dummyHashPromise = bcrypt.hash(crypto.randomBytes(18).toString('base64'), BCRYPT_ROUNDS);
-    return dummyHashPromise;
+    const existing = dummyHashPromise;
+    if (existing) return existing;
+    const created = bcrypt.hash(crypto.randomBytes(18).toString('base64'), BCRYPT_ROUNDS);
+    dummyHashPromise = created;
+    return created;
 }
 
 // --- LOGOUT ---

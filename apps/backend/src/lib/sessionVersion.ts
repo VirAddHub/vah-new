@@ -11,8 +11,10 @@ import { logger } from './logger';
 let columnPresent: Promise<boolean> | null = null;
 
 export function hasSessionVersionColumn(): Promise<boolean> {
-    if (!columnPresent) {
-        columnPresent = getPool()
+    const existing = columnPresent;
+    if (existing) return existing;
+    {
+        const probe: Promise<boolean> = getPool()
             .query(
                 `SELECT 1 FROM information_schema.columns
                   WHERE table_name = 'user' AND column_name = 'session_version' LIMIT 1`
@@ -29,8 +31,9 @@ export function hasSessionVersionColumn(): Promise<boolean> {
                 logger.warn('[session] session_version_probe_failed', { message: err?.message });
                 return false;
             });
+        columnPresent = probe;
+        return probe;
     }
-    return columnPresent;
 }
 
 /** Test hook. */
