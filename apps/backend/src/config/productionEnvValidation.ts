@@ -161,6 +161,12 @@ export function collectProductionEnvIssues(): ProductionEnvCheckResult {
     );
   }
 
+  if ((process.env.KYC_AUTO_APPROVE_FOR_TESTING || '').trim().toLowerCase() === 'true') {
+    warnings.push(
+      'KYC_AUTO_APPROVE_FOR_TESTING is ON — identity verification is approved without any check. Testing only: remove this variable before real customers sign up.'
+    );
+  }
+
   // --- Dangerous / debug flags ---
   if (process.env.RUN_STARTUP_MIGRATIONS === 'true') {
     fatal.push('RUN_STARTUP_MIGRATIONS must not be "true" in production.');

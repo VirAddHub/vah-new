@@ -213,6 +213,10 @@ async function fetchSumsubToken(): Promise<string> {
     );
   }
 
+  if (data?.auto_approved === true) {
+    // Testing switch on the server approved verification without Sumsub.
+    throw new Error("AUTO_APPROVED");
+  }
   if (!data.token) {
     throw new Error(data?.error || "No token field in Sumsub token response");
   }
@@ -290,7 +294,11 @@ export function SumsubKycWidget({ hideIntro = false }: SumsubKycWidgetProps) {
       const errorMessage =
         err instanceof Error ? err.message : "Unable to start identity verification. Please try again.";
 
-      if (errorMessage === "SUMSUB_NOT_CONFIGURED") {
+      if (errorMessage === "AUTO_APPROVED") {
+        setAlreadyComplete(true);
+        setError(null);
+        window.location.reload();
+      } else if (errorMessage === "SUMSUB_NOT_CONFIGURED") {
         setNotConfigured(true);
         setError(null);
       } else if (errorMessage.includes("already complete") || errorMessage.includes("already approved")) {

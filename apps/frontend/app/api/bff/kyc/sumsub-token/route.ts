@@ -134,6 +134,11 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // Temporary testing switch on the API: verification was approved without Sumsub.
+    if (data?.auto_approved === true) {
+      return NextResponse.json({ ok: true, auto_approved: true }, { status: 200, headers: { 'Cache-Control': 'no-store' } });
+    }
+
     const token = data?.token;
 
     if (!token) {

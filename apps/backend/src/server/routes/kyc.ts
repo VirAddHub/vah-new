@@ -1,3 +1,4 @@
+import { kycAutoApproveForTesting } from '../../config/testingSwitches';
 // src/server/routes/kyc.ts
 // KYC verification endpoints (Sumsub integration)
 
@@ -86,6 +87,23 @@ router.post('/start', requireAuth, kycWriteUserLimiter, async (req: Request, res
         
         if (!user) {
             return res.status(404).json({ ok: false, error: "user_not_found" });
+        }
+
+        // TEMPORARY testing switch: approve straight away without Sumsub (see config/testingSwitches.ts).
+        if (kycAutoApproveForTesting()) {
+            await pool.query(
+                `UPDATE "user"
+                    SET kyc_status = 'approved',
+                        kyc_approved_at = COALESCE(kyc_approved_at, NOW()),
+                        sumsub_review_status = 'auto_approved_testing',
+                        updated_at = $2
+                  WHERE id = $1`,
+                [userId, Date.now()]
+            );
+            const { logVerificationEvent } = await import('../services/verificationEventLog');
+            await logVerificationEvent('user', userId, 'verified', { reason: 'auto_approved_testing' }).catch(() => undefined);
+            logger.warn('[kyc/start] auto-approved (KYC_AUTO_APPROVE_FOR_TESTING is on)', { userId });
+            return res.json({ ok: true, auto_approved: true });
         }
 
         const apiCfg = resolveSumsubApiConfig();

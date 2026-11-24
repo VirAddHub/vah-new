@@ -1,3 +1,4 @@
+import { kycAutoApproveForTesting } from '../../config/testingSwitches';
 import { hasSessionVersionColumn } from '../../lib/sessionVersion';
 // src/server/routes/admin-users.ts
 // Admin user management endpoints
@@ -1091,6 +1092,14 @@ router.post('/users', requireAdmin, async (req: Request, res: Response) => {
 
         // A test customer already has the password the admin chose: no email.
         if (testAccount) {
+            // TEMPORARY testing switch: test customers start with identity verification approved.
+            if (kycAutoApproveForTesting()) {
+                await pool.query(
+                    `UPDATE "user" SET kyc_status = 'approved', kyc_approved_at = NOW(),
+                            sumsub_review_status = 'auto_approved_testing' WHERE id = $1`,
+                    [newUser.id]
+                );
+            }
             return res.status(201).json({ ok: true, data: { ...newUser, test_account: true } });
         }
 

@@ -1,6 +1,6 @@
 // Server-side session rules (security review F20, F26, F29): revoked sessions, privilege from the
 // database rather than the token, and an absolute lifetime. Uses the fixture users from globalSetup.
-import { describe, it, expect, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import cookieParser from 'cookie-parser';
@@ -14,15 +14,22 @@ app.use(cookieParser());
 app.use(authenticateJWT);
 app.get('/me', requireAuth, (req: any, res) => res.json({ id: req.user.id, is_admin: req.user.is_admin }));
 
-const CUSTOMER = 1001;
+const CUSTOMER = 30002; // own throwaway user: bumping a shared fixture's session would break other test files
 
 async function tokenFor(id: number, extra: Record<string, unknown> = {}) {
     return generateToken({ id, email: 'x@example.com', is_admin: false, role: 'user', sv: await currentSessionVersion(id), ...extra } as any);
 }
 
 describe('session revocation', () => {
+    beforeAll(async () => {
+        const now = Date.now();
+        await getPool().query(
+            `INSERT INTO "user" (id, email, password, first_name, last_name, is_admin, role, status, plan_status, kyc_status, is_sole_controller, created_at, updated_at)
+             VALUES ($1, 'session-test@example.com', 'x', 'Session', 'Test', false, 'user', 'active', 'pending_payment', 'not_started', true, $2, $2)
+             ON CONFLICT (id) DO NOTHING`, [CUSTOMER, now]);
+    });
     afterAll(async () => {
-        await getPool().query('UPDATE "user" SET is_admin = false WHERE id = $1', [CUSTOMER]);
+        await getPool().query('DELETE FROM "user" WHERE id = $1', [CUSTOMER]);
     });
 
     it('accepts a current session', async () => {
