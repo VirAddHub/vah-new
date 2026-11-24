@@ -131,7 +131,7 @@ router.post('/start', requireAuth, kycWriteUserLimiter, async (req: Request, res
                 },
             };
             
-            const created = await sumsubFetch("POST", "/resources/applicants", payload);
+            const created = await sumsubFetch("POST", `/resources/applicants?levelName=${encodeURIComponent(levelName)}`, payload);
             applicantId = created?.id;
             if (!applicantId) throw new Error("No applicant id from Sumsub");
 
