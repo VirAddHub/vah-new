@@ -42,8 +42,8 @@ export function registerProductionFrontendEnvChecks(): void {
   const warnings: string[] = [];
 
   if (trim('NEXT_PUBLIC_SELFTEST_SECRET')) {
-    warnings.push(
-      'NEXT_PUBLIC_SELFTEST_SECRET is exposed to every browser. Use API-only SELFTEST_SECRET on the backend; do not put shared secrets in NEXT_PUBLIC_*.'
+    fatal.push(
+      'NEXT_PUBLIC_SELFTEST_SECRET must not be set — it would be shipped to every browser. The admin self-test proxy reads the server-only SELFTEST_SECRET instead.'
     );
   }
 
@@ -62,7 +62,6 @@ export function registerProductionFrontendEnvChecks(): void {
   for (const key of Object.keys(process.env)) {
     if (!key.startsWith('NEXT_PUBLIC_')) continue;
     if (!/(SECRET|PASSWORD|PRIVATE_KEY)/i.test(key)) continue;
-    if (key === 'NEXT_PUBLIC_SELFTEST_SECRET') continue;
     warnings.push(
       `Review ${key}: name suggests a secret — anything NEXT_PUBLIC_* is shipped to clients.`
     );

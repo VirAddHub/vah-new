@@ -7,6 +7,7 @@ import { logger } from '../../lib/logger';
 import rateLimit from 'express-rate-limit';
 import { sendSimpleEmail } from '../../services/mailer';
 import { ENV } from '../../env';
+import { z } from 'zod';
 
 const router = Router();
 
@@ -23,14 +24,20 @@ const contactLimiter = rateLimit({
     keyGenerator: clientKey,
 });
 
-// Validation schema
-interface ContactFormData {
-    name: string;
-    email: string;
-    subject: string;
-    message: string;
-    inquiryType?: string;
-    website?: string; // honeypot field
+// Runtime validation (security review F32): every field is checked as a bounded string before use.
+const INQUIRY_TYPES = ['general', 'pricing', 'technical', 'billing', 'compliance'] as const;
+const contactSchema = z.object({
+    name: z.string().trim().min(1).max(200),
+    email: z.string().trim().max(254).email(),
+    subject: z.string().trim().min(1).max(200),
+    message: z.string().trim().min(1).max(5000),
+    inquiryType: z.enum(INQUIRY_TYPES).optional(),
+    website: z.string().max(500).optional(), // honeypot field
+});
+
+/** Encode text for an HTML text context; template markup is the only HTML in the email. */
+export function encodeHtmlText(value: string): string {
+    return value.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]!));
 }
 
 /**
@@ -39,35 +46,15 @@ interface ContactFormData {
  */
 router.post('/', contactLimiter, async (req: Request, res: Response) => {
     try {
-        const { name, email, subject, message, inquiryType, website }: ContactFormData = req.body;
-
-        // Validation
-        if (!name || !email || !subject || !message) {
-            return res.status(400).json({ 
-                ok: false, 
-                error: 'Missing required fields: name, email, subject, message' 
+        const parsed = contactSchema.safeParse(req.body ?? {});
+        if (!parsed.success) {
+            const field = String(parsed.error.issues[0]?.path?.[0] ?? '');
+            return res.status(400).json({
+                ok: false,
+                error: field === 'email' ? 'Invalid email format' : 'Please fill in your name, email, subject and message (message up to 5000 characters).',
             });
         }
-
-        // Max length validation
-        if (name.length > 200) {
-            return res.status(400).json({ ok: false, error: 'name must be 200 characters or fewer' });
-        }
-        if (subject.length > 200) {
-            return res.status(400).json({ ok: false, error: 'subject must be 200 characters or fewer' });
-        }
-        if (message.length > 5000) {
-            return res.status(400).json({ ok: false, error: 'message must be 5000 characters or fewer' });
-        }
-
-        // Email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({ 
-                ok: false, 
-                error: 'Invalid email format' 
-            });
-        }
+        const { name, email, subject, message, inquiryType, website } = parsed.data;
 
         // Honeypot spam protection
         if (website && website.trim() !== '') {
@@ -82,15 +69,15 @@ router.post('/', contactLimiter, async (req: Request, res: Response) => {
         const supportEmail = process.env.SUPPORT_EMAIL || process.env.POSTMARK_TO || process.env.OPS_ALERT_EMAIL || 'support@virtualaddresshub.co.uk';
 
         // Build email content
-        const emailSubject = `Contact Form: ${subject}`;
+        const emailSubject = `Contact Form: ${subject.replace(/[\r\n]+/g, ' ')}`;
         const htmlBody = `
                     <h2>New Contact Form Submission</h2>
-                    <p><strong>Name:</strong> ${name}</p>
-                    <p><strong>Email:</strong> ${email}</p>
-                    <p><strong>Subject:</strong> ${subject}</p>
-                    <p><strong>Inquiry Type:</strong> ${inquiryType || 'General'}</p>
+                    <p><strong>Name:</strong> ${encodeHtmlText(name)}</p>
+                    <p><strong>Email:</strong> ${encodeHtmlText(email)}</p>
+                    <p><strong>Subject:</strong> ${encodeHtmlText(subject)}</p>
+                    <p><strong>Inquiry Type:</strong> ${encodeHtmlText(inquiryType || 'general')}</p>
                     <p><strong>Message:</strong></p>
-                    <p>${message.replace(/\n/g, '<br>')}</p>
+                    <p>${encodeHtmlText(message).replace(/\r?\n/g, '<br>')}</p>
                     <hr>
                     <p><em>This message was sent via the VirtualAddressHub contact form.</em></p>
         `;

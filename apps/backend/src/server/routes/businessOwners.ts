@@ -294,11 +294,11 @@ router.post('/verify/start', async (req: Request, res: Response) => {
             });
         }
         
-        // Mark invite as used
-        await businessOwnersService.markBusinessOwnerInviteUsed(token);
-        
-        // Create Sumsub applicant and get access token
+        // Open verification first, and only then consume the invite: if Sumsub fails, the owner can
+        // simply use the same link again (security review F25). Starting is idempotent — an existing
+        // applicant is reused rather than duplicated.
         const { applicantId, accessToken } = await businessOwnersService.createSumsubApplicantForOwner(owner.ownerId);
+        await businessOwnersService.markBusinessOwnerInviteUsed(token);
         const { logVerificationEvent } = await import('../services/verificationEventLog');
         await logVerificationEvent('business_owner', owner.ownerId, 'sumsub_started', { applicantId });
 
@@ -315,11 +315,11 @@ router.post('/verify/start', async (req: Request, res: Response) => {
             },
         });
     } catch (error: any) {
-        logger.error('[POST /api/business-owners/verify/start] error:', error);
+        logger.error('[POST /api/business-owners/verify/start] error:', { message: error?.message });
         return res.status(500).json({
             ok: false,
             error: 'server_error',
-            message: error.message || 'Error starting verification',
+            message: "We couldn't start identity verification just now. Please try the link again in a few minutes.",
         });
     }
 });

@@ -79,17 +79,6 @@ async function legacyReq<T = any>(path: string, init: RequestInit = {}): Promise
         const token = getToken();
         const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
 
-        // Debug logging for API requests
-        if (path.includes('/api/auth/')) {
-            console.log('🌐 API DEBUG - Making request to:', path);
-            console.log('🌐 API DEBUG - Auth header:', authHeader);
-            console.log('🌐 API DEBUG - Full headers:', {
-                'Content-Type': 'application/json',
-                ...authHeader,
-                ...init.headers,
-            });
-        }
-
         // api() now returns HttpApiResponse<T> directly (from http.ts wrapper)
         const result = await api(path, init) as HttpApiResponse<T>;
 
@@ -196,17 +185,6 @@ export const apiClient = {
             body: JSON.stringify({ email, password }),
         });
 
-        // Enhanced debug logging for login response
-        console.log('🔍 LOGIN DEBUG - Full response:', resp);
-        console.log('🔍 LOGIN DEBUG - Response structure:', {
-            ok: resp.ok,
-            status: 'status' in resp ? resp.status : 'N/A',
-            hasData: resp.ok && !!resp.data,
-            hasToken: resp.ok && resp.data && resp.data.data && 'token' in resp.data.data,
-            dataKeys: resp.ok && resp.data ? Object.keys(resp.data) : [],
-            dataDataKeys: resp.ok && resp.data && resp.data.data ? Object.keys(resp.data.data) : [],
-            fullData: resp.ok ? resp.data : null
-        });
 
         // If login successful, store the JWT token
         // Backend returns: { ok: true, data: { user: {...}, token: "..." } }
@@ -214,36 +192,24 @@ export const apiClient = {
         const userObj = (resp.ok ? (resp.data as any)?.data?.user : null) as any;
 
         if (resp.ok && token) {
-            console.log('🔑 TOKEN DEBUG - Storing token:', token ? token.slice(0, 10) + '...' : 'none');
             setToken(token);
-            console.log('✅ JWT token stored successfully in localStorage');
 
             // Also store user data if present
             if (userObj) {
                 setStoredUser(userObj);
-                console.log('✅ User data stored:', userObj);
             }
-
-            // Verify token was stored
-            const storedToken = getToken();
-            console.log('🔍 TOKEN DEBUG - Verification - stored token exists:', !!storedToken);
-            console.log('🔍 TOKEN DEBUG - Stored token matches:', storedToken === token ? 'yes' : 'no');
 
             // Sanity check: verify token works with whoami
             try {
-                console.log('🔍 WHOAMI DEBUG - Testing token with whoami endpoint...');
                 const whoamiResp = await authFetch('auth/whoami', { method: 'GET' });
-                console.log('🔍 WHOAMI DEBUG - Whoami response:', whoamiResp);
                 if (!whoamiResp.ok) {
-                    console.warn('⚠️ Login successful but whoami failed - token may be invalid');
-                } else {
-                    console.log('✅ Whoami check passed - token is valid and working');
+                    console.warn('[auth] whoami_after_login_failed');
                 }
             } catch (error) {
-                console.warn('⚠️ Login successful but whoami check failed:', error);
+                console.warn('[auth] whoami_after_login_error');
             }
         } else {
-            console.error('❌ LOGIN FAILED - No token in response:', resp);
+            console.error('[auth] login_failed', { status: 'status' in resp ? resp.status : undefined });
         }
 
         // Backend returns { ok: true, data: { user: {...}, token: "..." } }

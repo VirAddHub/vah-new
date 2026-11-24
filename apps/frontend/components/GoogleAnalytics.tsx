@@ -22,7 +22,8 @@ export function GoogleAnalytics() {
           gtag('js', new Date());
           gtag('config', '${GA_ID}', {
             page_title: document.title,
-            page_location: window.location.href,
+            // Origin + path only: query strings can carry reset/confirmation tokens (security review R50).
+            page_location: window.location.origin + window.location.pathname,
           });
         `}
             </Script>

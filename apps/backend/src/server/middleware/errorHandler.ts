@@ -35,7 +35,11 @@ export function errorHandler(
     if (err?.statusCode || err?.status) {
         const status = err.statusCode || err.status;
         const code = err.code || err.error || 'request_error';
-        const message = err.message || 'Request failed';
+        // 4xx messages are intentional, actionable validation text. For 5xx in production, never
+        // echo internal/provider error text (security review F17); the request ID links to the log.
+        const message = isProduction && Number(status) >= 500
+            ? 'Something went wrong. Please try again.'
+            : (err.message || 'Request failed');
         const details = isProduction ? undefined : err.details;
 
         fail(res, status, code, message, details);

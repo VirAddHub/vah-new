@@ -1,11 +1,12 @@
+import { jsonLdScript } from '@/lib/jsonLd';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { headers } from 'next/headers';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { parseJsonSafe } from '@/lib/http';
 import { formatBlogDate } from '@/lib/blog-date-formatter';
 import Link from 'next/link';
+import { getBackendOrigin } from '@/lib/server/backendOrigin';
 
 type BlogPost = {
   slug: string;
@@ -33,24 +34,17 @@ type BlogPostListItem = {
   imageUrl: string;
 };
 
-const FALLBACK_ORIGIN = 'http://localhost:3000';
-
-async function resolveAppBaseUrl(): Promise<string> {
-  try {
-    const h = await headers();
-    const host = h.get('x-forwarded-host') || h.get('host');
-    const proto = h.get('x-forwarded-proto') || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
-    if (host) return `${proto === 'https' ? 'https' : 'http'}://${host}`;
-  } catch (_) {}
-  const envUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_BASE_URL || process.env.VERCEL_URL;
-  if (!envUrl) return FALLBACK_ORIGIN;
-  return envUrl.startsWith('http') ? envUrl : `https://${envUrl}`;
+/**
+ * Server-side reads go straight to the API's configured origin, never to a host taken from request
+ * headers (security review R47). The BFF blog routes pass the same JSON through unchanged.
+ */
+function blogApiBase(): string {
+  return `${getBackendOrigin()}/api/blog/posts`;
 }
 
 async function getPost(slug: string): Promise<BlogPost | null> {
   try {
-    const base = await resolveAppBaseUrl();
-    const res = await fetch(`${base}/api/bff/blog/detail?slug=${encodeURIComponent(slug)}`, {
+    const res = await fetch(`${blogApiBase()}/${encodeURIComponent(slug)}`, {
       cache: 'no-store',
       headers: { accept: 'application/json' },
     });
@@ -64,8 +58,7 @@ async function getPost(slug: string): Promise<BlogPost | null> {
 
 async function getRelatedPosts(currentSlug: string): Promise<BlogPostListItem[]> {
   try {
-    const base = await resolveAppBaseUrl();
-    const res = await fetch(`${base}/api/bff/blog/list`, {
+    const res = await fetch(blogApiBase(), {
       cache: 'no-store',
       headers: { accept: 'application/json' },
     });
@@ -97,7 +90,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   if (!post) return notFound();
 
-  const hasHtml = typeof post.html === 'string' && post.html.trim().length > 0;
   const dateLabel = formatBlogDate(post.dateLong || post.date || post.updated);
   const categoryLabel = post.tags && post.tags.length > 0 ? post.tags[0] : null;
 
@@ -163,7 +155,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         .related-title { transition: color 0.15s; }
       `}</style>
 
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(structuredData) }} />
 
       <article style={{ maxWidth: '720px', margin: '0 auto', padding: 'clamp(32px,5vw,64px) clamp(20px,5vw,40px) clamp(60px,8vw,100px)' }}>
 
@@ -231,9 +223,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
         {/* Body */}
         <div className="post-body">
-          {hasHtml ? (
-            <div dangerouslySetInnerHTML={{ __html: post.html as string }} suppressHydrationWarning />
-          ) : (
+          {/* Always Markdown: ReactMarkdown escapes raw HTML, so post content can't inject markup
+              (security review R46). The API does not send a raw-HTML field. */}
+          {(
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{

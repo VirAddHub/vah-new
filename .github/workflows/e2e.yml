@@ -5,6 +5,10 @@ on:
     branches: [ main ]
   workflow_dispatch: {}
 
+# Least privilege for the workflow token (security review F41).
+permissions:
+  contents: read
+
 jobs:
   e2e:
     runs-on: ubuntu-latest

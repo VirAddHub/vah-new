@@ -107,14 +107,27 @@ router.use(express.raw({ type: 'application/json' }), (req: any, res: any, next)
   next();
 });
 
+function safeEqual(x: string, y: string): boolean {
+  const a = Buffer.from(String(x), 'utf8');
+  const b = Buffer.from(String(y), 'utf8');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 router.post('/', async (req: any, res) => {
   const ct = String(req.get('content-type') || '');
   const reqId = req.get('x-request-id');
 
-  // ---- Optional Basic auth ----
+  // ---- Fail closed: this endpoint creates, updates and deletes mail records, so it must never run
+  // without a configured credential. (The OneDrive worker uses the separately authenticated
+  // /api/internal/from-onedrive endpoint.)
+  if (!(BASIC_USER && BASIC_PASS) && !EXPECTED_SHARED_SECRET) {
+    return res.status(503).json({ ok: false, error: 'webhook_not_configured' });
+  }
+
+  // ---- Basic auth (when configured) ----
   if (BASIC_USER && BASIC_PASS) {
     const creds = parseBasic(req.get('authorization'));
-    if (!creds || creds.user !== BASIC_USER || creds.pass !== BASIC_PASS) {
+    if (!creds || !safeEqual(creds.user, BASIC_USER) || !safeEqual(creds.pass, BASIC_PASS)) {
       return res.status(401).json({ ok: false, error: 'unauthorised' });
     }
   }
@@ -127,7 +140,9 @@ router.post('/', async (req: any, res) => {
       return res.status(400).json({ ok: false, error: 'missing_signature_or_raw_body' });
     }
     const h = crypto.createHmac('sha256', EXPECTED_SHARED_SECRET).update(req.rawBody).digest('hex');
-    if (h !== headerSig) {
+    const a = Buffer.from(h, 'utf8');
+    const b = Buffer.from(String(headerSig), 'utf8');
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
       return res.status(400).json({ ok: false, error: 'invalid_signature' });
     }
   }

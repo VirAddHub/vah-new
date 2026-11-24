@@ -1,4 +1,5 @@
 'use client';
+import { jsonLdScript } from '@/lib/jsonLd';
 
 import { useMemo, useEffect, useState } from "react";
 
@@ -161,7 +162,7 @@ export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
 
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(blogStructuredData) }}
+                dangerouslySetInnerHTML={{ __html: jsonLdScript(blogStructuredData) }}
             />
 
             {/* Page header */}

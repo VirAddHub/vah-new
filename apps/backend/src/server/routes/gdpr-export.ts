@@ -116,6 +116,9 @@ async function runGdprExport(jobId: number): Promise<void> {
     throw e;
   }
 
+  let tempDir: string | null = null;
+  let zipPath: string | null = null;
+  let finished = false;
   try {
     const jobResult = await pool.query(`SELECT id, user_id FROM export_job WHERE id = $1`, [jobId]);
     const job = jobResult.rows[0];
@@ -148,8 +151,8 @@ async function runGdprExport(jobId: number): Promise<void> {
     // Write temp JSON files and zip
     await fse.ensureDir(EXPORT_DIR);
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const zipPath = path.join(EXPORT_DIR, `gdpr-u${job.user_id}-${stamp}.zip`);
-    const tempDir = await fse.mkdtemp(path.join(EXPORT_DIR, `tmp-${job.user_id}-`));
+    zipPath = path.join(EXPORT_DIR, `gdpr-u${job.user_id}-${stamp}.zip`);
+    tempDir = await fse.mkdtemp(path.join(EXPORT_DIR, `tmp-${job.user_id}-`));
 
     const files = [
       { name: 'user.json', data: user },
@@ -162,27 +165,24 @@ async function runGdprExport(jobId: number): Promise<void> {
     ];
 
     for (const f of files) {
-      await fse.writeFile(path.join(tempDir, f.name), JSON.stringify(f.data, null, 2), 'utf8');
+      await fse.writeFile(path.join(tempDir!, f.name), JSON.stringify(f.data, null, 2), 'utf8');
     }
 
     // Stream to ZIP
     await new Promise<void>((resolve, reject) => {
-      const output = fs.createWriteStream(zipPath);
+      const output = fs.createWriteStream(zipPath!);
       const archive = archiver('zip', { zlib: { level: 9 } });
       output.on('close', resolve);
       archive.on('error', reject);
       archive.pipe(output);
       for (const f of files) {
-        archive.file(path.join(tempDir, f.name), { name: f.name });
+        archive.file(path.join(tempDir!, f.name), { name: f.name });
       }
       archive.finalize();
     });
 
-    // Cleanup temp dir
-    await fse.remove(tempDir);
-
     // Finalise job row
-    const stat = await fse.stat(zipPath);
+    const stat = await fse.stat(zipPath!);
     const token = newToken(32);
     const expiresAt = Date.now() + TOKEN_TTL_MS;
 
@@ -204,6 +204,7 @@ async function runGdprExport(jobId: number): Promise<void> {
       body: 'Click to download. Link expires in 24 hours.',
       meta: { token, url, size: stat.size },
     });
+    finished = true;
   } catch (err: any) {
     try {
       await pool.query(
@@ -217,7 +218,53 @@ async function runGdprExport(jobId: number): Promise<void> {
         logger.error('[gdpr-export] failed to update error status:', { message: updateErr?.message ?? updateErr });
       }
     }
+  } finally {
+    // Never leave personal-data files behind from a failed or finished run (security review F39).
+    if (tempDir) await fse.remove(tempDir).catch(() => undefined);
+    if (!finished && zipPath) await fse.remove(zipPath).catch(() => undefined);
   }
+}
+
+/**
+ * Deletes export archives whose download link has expired even if nobody ever requested them, plus
+ * stray temp folders, so personal data does not stay on disk (security review F39). Runs hourly.
+ */
+export async function sweepExpiredExports(now = Date.now()): Promise<number> {
+  const pool = getPool();
+  let removed = 0;
+  try {
+    const expired = await pool.query(
+      `SELECT id, file_path FROM export_job
+        WHERE file_path IS NOT NULL AND expires_at IS NOT NULL AND expires_at < $1`,
+      [now],
+    );
+    for (const row of expired.rows) {
+      const resolved = path.resolve(String(row.file_path));
+      if (resolved.startsWith(EXPORT_DIR + path.sep)) {
+        await fse.remove(resolved).catch(() => undefined);
+      }
+      await pool.query(`UPDATE export_job SET file_path = NULL, token = NULL WHERE id = $1`, [row.id]);
+      removed++;
+    }
+  } catch (e: any) {
+    if (e?.code !== '42P01') logger.warn('[gdpr-export] sweep_failed', { message: e?.message });
+  }
+  try {
+    if (await fse.pathExists(EXPORT_DIR)) {
+      for (const name of await fse.readdir(EXPORT_DIR)) {
+        if (!name.startsWith('tmp-')) continue;
+        const full = path.join(EXPORT_DIR, name);
+        const st = await fse.stat(full).catch(() => null);
+        if (st && now - st.mtimeMs > 60 * 60 * 1000) await fse.remove(full).catch(() => undefined);
+      }
+    }
+  } catch { /* best effort */ }
+  return removed;
+}
+
+if (process.env.NODE_ENV !== 'test') {
+  const sweeper = setInterval(() => { void sweepExpiredExports(); }, 60 * 60 * 1000);
+  sweeper.unref?.();
 }
 
 // ─── Routes ───────────────────────────────────────────────────────────────────

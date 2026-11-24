@@ -100,13 +100,16 @@ export function decide(standing: Standing, payment: AccessDecision['payment'], v
 
 export async function getAccess(userId: number, db: Queryable = getPool(), nowMs: number = Date.now()): Promise<AccessDecision | null> {
     const u = await db.query(
-        `SELECT id, status, deleted_at, suspended_at, kyc_status, sumsub_applicant_id FROM "user" WHERE id = $1 LIMIT 1`, [userId]);
+        `SELECT id, status, deleted_at, suspended_at, kyc_status, sumsub_applicant_id, owners_pending_info FROM "user" WHERE id = $1 LIMIT 1`, [userId]);
     if (u.rows.length === 0) return null;
     const s = await db.query(
         `SELECT status, stripe_subscription_id, paid_through_ms, cancel_at_period_end FROM subscription WHERE user_id = $1 LIMIT 1`, [userId]);
     const o = await db.query(
         `SELECT COUNT(*)::int AS n FROM business_owner WHERE user_id = $1 AND requires_verification = true AND status <> 'verified'`, [userId]);
-    return decide(standingOf(u.rows[0]), paymentOf(s.rows[0], nowMs), verificationOf(u.rows[0].kyc_status, Number(o.rows[0]?.n || 0), !!u.rows[0].sumsub_applicant_id));
+    // Owners the customer declared but whose details are not on file yet still count as pending:
+    // a missing owner row must never read as "verified" (security review F21).
+    const pendingOwners = Number(o.rows[0]?.n || 0) + (u.rows[0].owners_pending_info === true ? 1 : 0);
+    return decide(standingOf(u.rows[0]), paymentOf(s.rows[0], nowMs), verificationOf(u.rows[0].kyc_status, pendingOwners, !!u.rows[0].sumsub_applicant_id));
 }
 
 /** Number of mail items held for a customer who is not in full service. A count only: no details. */

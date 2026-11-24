@@ -66,7 +66,7 @@ export async function PATCH(request: NextRequest) {
     const textPreview = text.substring(0, 300);
 
     console.log('[BFF profile/company-details] upstream status', status, 'url', backendUrl);
-    console.log('[BFF profile/company-details] upstream body', textPreview);
+    
 
     let json: unknown = null;
     const contentType = response.headers.get('content-type') || '';

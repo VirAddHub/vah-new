@@ -1,3 +1,7 @@
+-- No passwords live in this file (security review F11). Supply one at run time, e.g.
+--   psql "$DATABASE_URL" -v password="$(openssl rand -base64 24)" -f create-users-direct.sql
+-- and then have each person set their own password with "Forgot password".
+-- Never run this against production.
 -- Enable pgcrypto extension for bcrypt functions
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
@@ -5,7 +9,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 INSERT INTO "user" (email, password, first_name, last_name, role, is_admin, status, created_at, updated_at)
 VALUES (
   'ops@virtualaddresshub.co.uk',
-  crypt('CHANGE_ME_AFTER_FIRST_LOGIN', gen_salt('bf', 10)),  -- bcrypt with cost 10
+  crypt(:'password', gen_salt('bf', 10)),  -- bcrypt with cost 10
   'Site', 
   'Admin',
   'admin', 
@@ -25,7 +29,7 @@ SET
 INSERT INTO "user" (email, password, first_name, last_name, role, is_admin, status, created_at, updated_at)
 VALUES (
   'worker@yourdomain.com',
-  crypt('CHANGE_ME_AFTER_FIRST_LOGIN', gen_salt('bf', 10)),  -- bcrypt with cost 10
+  crypt(:'password', gen_salt('bf', 10)),  -- bcrypt with cost 10
   'Ops', 
   'Worker',
   'worker', 

@@ -6,6 +6,7 @@ import { z } from "zod";
 import rateLimit from 'express-rate-limit';
 import { getPool } from "../db";
 import { generateToken, verifyToken, extractTokenFromHeader } from "../../lib/jwt";
+import { currentSessionVersion, bumpSessionVersion, hasSessionVersionColumn, isPastAbsoluteLifetime, sessionVersionMatches } from "../../lib/sessionVersion";
 import { BCRYPT_ROUNDS, SESSION_IDLE_TIMEOUT_SECONDS } from "../../config/auth";
 import { sendWelcomeKycEmail } from "../../lib/mailer";
 import { sendTemplateEmail } from '../../lib/mailer';
@@ -570,7 +571,7 @@ router.post("/signup", async (req, res) => {
         // Validation already performed above - all owners are valid at this point
         if (!isSoleController && i.additionalOwners && i.additionalOwners.length > 0) {
             const { createBusinessOwner } = await import('../services/businessOwners');
-            await Promise.allSettled(
+            const results = await Promise.allSettled(
                 i.additionalOwners.map((owner) =>
                     createBusinessOwner(row.id, owner.fullName, owner.email, 'director', i.company_name).catch((error) => {
                         logger.error('[auth/signup] failed_to_create_business_owner', {
@@ -579,9 +580,16 @@ router.post("/signup", async (req, res) => {
                             ...(process.env.NODE_ENV !== 'production' ? { email: owner.email } : {}),
                             message: (error as any)?.message ?? String(error),
                         });
+                        return 'failed' as const;
                     })
                 )
             );
+            // If any declared owner could not be saved, keep the account in "owner details needed" so it
+            // cannot reach full service with that owner unverified (security review F21).
+            if (results.some((r) => r.status === 'rejected' || r.value === 'failed')) {
+                await pool.query(`UPDATE "user" SET owners_pending_info = true WHERE id = $1`, [row.id])
+                    .catch((err) => logger.error('[auth/signup] owners_pending_flag_failed', { userId: row.id, message: err?.message }));
+            }
         }
 
         // NOTE: Welcome email is now sent AFTER payment succeeds (in payment completion endpoint)
@@ -592,7 +600,8 @@ router.post("/signup", async (req, res) => {
             id: row.id,
             email: row.email,
             is_admin: false,
-            role: 'user'
+            role: 'user',
+            sv: await currentSessionVersion(row.id),
         });
 
         // Same flags as login (isSecureEnv → Lax+insecure cookie on local HTTP, None+Secure when cross-site HTTPS)
@@ -674,6 +683,9 @@ router.post("/login", async (req, res) => {
             const wait = await throttle.lockedFor(k);
             if (wait) return tooMany(wait);
             await throttle.recordFailure(k, throttle.LIMITS.visitor);
+            // Spend the same bcrypt work as a real account so response timing does not reveal whether
+            // the email exists (security review R26).
+            await bcrypt.compare(String(password), await dummyPasswordHash()).catch(() => false);
             return res.status(401).json({
                 ok: false,
                 error: "invalid_credentials",
@@ -789,6 +801,7 @@ router.post("/login", async (req, res) => {
                 email: emailForJwt,
                 is_admin: Boolean(userData.is_admin),
                 role: userData.role != null ? String(userData.role) : 'user',
+                sv: await currentSessionVersion(Number(userData.id)),
             });
         } catch (jwtErr: unknown) {
             const je = jwtErr as { message?: string };
@@ -843,10 +856,26 @@ router.post("/login", async (req, res) => {
     }
 });
 
+/** A throwaway bcrypt hash at the normal cost, computed once, for timing-equalised failures. */
+let dummyHashPromise: Promise<string> | null = null;
+function dummyPasswordHash(): Promise<string> {
+    if (!dummyHashPromise) dummyHashPromise = bcrypt.hash(crypto.randomBytes(18).toString('base64'), BCRYPT_ROUNDS);
+    return dummyHashPromise;
+}
+
 // --- LOGOUT ---
-router.post("/logout", (req, res) => {
+router.post("/logout", async (req, res) => {
     try {
         const isSecure = isSecureEnv();
+
+        // Sign out everywhere: revoke every token for this account server-side, not just the cookie
+        // in this browser (security review F20). Failure here must not block clearing the cookie.
+        const signedInId = (req as any).user?.id;
+        if (signedInId) {
+            await bumpSessionVersion(signedInId).catch((err) =>
+                logger.warn('[auth/logout] session_revoke_failed', { message: err?.message })
+            );
+        }
 
         // Clear cookies using clearCookie (works for direct browser requests)
         res.clearCookie('vah_session', sessionCookieSecurityOptions());
@@ -916,6 +945,12 @@ router.get("/whoami", async (req, res) => {
         }
 
         const userData = user.rows[0];
+
+        // Same revocation rules as the auth middleware (security review F20/F29).
+        if (isPastAbsoluteLifetime(payload) || (await hasSessionVersionColumn()
+            && !sessionVersionMatches(payload, await currentSessionVersion(userData.id)))) {
+            return unauthorized(res, "Session expired");
+        }
 
         // Payment entitlement is written only by Stripe events (webhooks-stripe.ts). The old
         // "repair" that recreated an active subscription from the display copy on the user row
@@ -1016,7 +1051,11 @@ router.post("/reset-password/confirm", async (req, res) => {
         // Hash the new password
         const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
-        // Clear both hashes so the token can never be replayed
+        // Consume the token and change the password in ONE conditional statement: the WHERE clause
+        // re-checks the same lookup hash, expiry and unused state, so of two concurrent confirmations
+        // only one can succeed, and a newer reset link is never cleared by an older one (F19).
+        // Every existing session is revoked in the same statement when supported (F20).
+        const bumpSql = (await hasSessionVersionColumn()) ? ', session_version = session_version + 1' : '';
         const updateResult = await pool.query(`
             UPDATE "user"
             SET password = $1,
@@ -1024,21 +1063,19 @@ router.post("/reset-password/confirm", async (req, res) => {
                 reset_token_lookup_hash = NULL,
                 reset_token_expires_at = NULL,
                 reset_token_used_at = NOW(),
-                updated_at = $3
+                updated_at = $3${bumpSql}
             WHERE id = $2
-        `, [hashedPassword, candidate.id, Date.now()]);
+              AND reset_token_lookup_hash = $4
+              AND reset_token_expires_at > NOW()
+              AND reset_token_used_at IS NULL
+        `, [hashedPassword, candidate.id, Date.now(), lookupHash]);
 
-        // Verify the update was successful
         if (updateResult.rowCount !== 1) {
-            logger.error('[reset-confirm] database update failed', {
-                userId: candidate.id,
-                rowCount: updateResult.rowCount,
-                expected: 1
-            });
-            return res.status(500).json({
+            // Another request consumed or replaced the token between our check and the update.
+            return res.status(400).json({
                 ok: false,
-                error: "database_error",
-                message: "Failed to update password"
+                error: "invalid_token",
+                message: "Invalid, expired, or already used reset token"
             });
         }
 

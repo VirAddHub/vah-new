@@ -1,3 +1,4 @@
+import { bumpSessionVersion } from '../../lib/sessionVersion';
 // apps/backend/src/server/services/emailChange.ts
 // Email change verification service
 
@@ -161,67 +162,65 @@ export async function requestEmailChange(
  */
 export async function confirmEmailChange(token: string): Promise<{ changed: boolean }> {
     const pool = getPool();
-    
     const tokenHash = hashToken(token);
-    
-    // Find valid request: token matches, not used, not expired
-    const requestResult = await pool.query(
-        `SELECT id, user_id, new_email, expires_at
-         FROM email_change_request
-         WHERE token_hash = $1 
-           AND used_at IS NULL 
-           AND expires_at > NOW()
-         LIMIT 1`,
-        [tokenHash]
-    );
-    
-    if (requestResult.rows.length === 0) {
-        // Token invalid, expired, or already used
-        // Return success but changed=false (no enumeration)
-        return { changed: false };
-    }
-    
-    const request = requestResult.rows[0];
-    const userId = request.user_id;
-    const newEmail = request.new_email;
-    
-    // Get current email and user details for audit log and notification
-    const userResult = await pool.query(
-        'SELECT email, first_name, name FROM "user" WHERE id = $1',
-        [userId]
-    );
-    
-    if (userResult.rows.length === 0) {
-        // User doesn't exist (shouldn't happen due to FK, but handle gracefully)
-        return { changed: false };
-    }
-    
-    const oldEmail = userResult.rows[0].email;
-    const firstName = userResult.rows[0].first_name;
-    const name = userResult.rows[0].name;
-    
-    // Safety check: don't proceed if oldEmail === newEmail
-    if (oldEmail.trim().toLowerCase() === newEmail.trim().toLowerCase()) {
-        // Email already matches, mark request as used and return success
-        await pool.query(
-            'UPDATE email_change_request SET used_at = NOW() WHERE id = $1',
-            [request.id]
+
+    // One transaction: consume the request (conditionally, so only one of two concurrent confirmations
+    // wins) and change the email together; sessions are revoked in the same commit (security review F24).
+    const client = await pool.connect();
+    let userId: number;
+    let oldEmail: string;
+    let newEmail: string;
+    let firstName: string | null;
+    let name: string | null;
+    try {
+        await client.query('BEGIN');
+        const consumed = await client.query(
+            `UPDATE email_change_request
+                SET used_at = NOW()
+              WHERE token_hash = $1
+                AND used_at IS NULL
+                AND expires_at > NOW()
+              RETURNING id, user_id, new_email`,
+            [tokenHash]
         );
-        return { changed: true };
+        if (consumed.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return { changed: false }; // invalid, expired or already used (no enumeration)
+        }
+        const request = consumed.rows[0];
+        userId = request.user_id;
+        newEmail = request.new_email;
+
+        const userResult = await client.query(
+            'SELECT email, first_name, name FROM "user" WHERE id = $1 FOR UPDATE',
+            [userId]
+        );
+        if (userResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return { changed: false };
+        }
+        oldEmail = userResult.rows[0].email;
+        firstName = userResult.rows[0].first_name;
+        name = userResult.rows[0].name;
+
+        if (oldEmail.trim().toLowerCase() === newEmail.trim().toLowerCase()) {
+            await client.query('COMMIT');
+            return { changed: true };
+        }
+
+        await client.query(
+            'UPDATE "user" SET email = $1, updated_at = $2 WHERE id = $3',
+            [newEmail, Date.now(), userId]
+        );
+        await bumpSessionVersion(userId, client);
+        await client.query('COMMIT');
+    } catch (err) {
+        await client.query('ROLLBACK').catch(() => undefined);
+        throw err;
+    } finally {
+        client.release();
     }
-    
-    // Update user email
-    await pool.query(
-        'UPDATE "user" SET email = $1, updated_at = $2 WHERE id = $3',
-        [newEmail, Date.now(), userId]
-    );
-    
-    // Mark request as used
-    await pool.query(
-        'UPDATE email_change_request SET used_at = NOW() WHERE id = $1',
-        [request.id]
-    );
-    
+
     // Send security notification to OLD email address
     // This email is sent AFTER the email has been successfully changed
     // Replies must route to support@virtualaddresshub.co.uk (intentional support workflow)

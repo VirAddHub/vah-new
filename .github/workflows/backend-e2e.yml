@@ -15,6 +15,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Least privilege for the workflow token (security review F41).
+permissions:
+  contents: read
+
 jobs:
   e2e:
     runs-on: ubuntu-latest

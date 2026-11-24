@@ -197,8 +197,6 @@ router.post('/from-onedrive', async (req, res) => {
     // Log user details for verification
     logger.info('[internalMailImport] User verified:', {
       userId: user.id,
-      email: user.email,
-      name: `${user.first_name} ${user.last_name}`,
       fileName: payload.fileName,
       planStatus: user.plan_status,
       kycStatus: user.kyc_status,

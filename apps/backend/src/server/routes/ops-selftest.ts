@@ -1,6 +1,6 @@
 // apps/backend/src/server/routes/ops-selftest.ts
 import { Router, Request, Response } from "express";
-import { requireAuth } from "../../middleware/auth";
+import { requireAuth, requireAdmin } from "../../middleware/auth";
 import axios from "axios";
 import { metrics } from "../../lib/metrics";
 import { logger } from "../../lib/logger";
@@ -102,7 +102,7 @@ async function runSelfTest() {
 // ---- Routes ----
 
 // JSON heartbeat (cheap)
-router.get("/ops/heartbeat", requireAuth, (req: Request, res: Response) => {
+router.get("/ops/heartbeat", requireAuth, requireAdmin, (req: Request, res: Response) => {
   if (!ENABLED) return bad(res, 403, "Self-test disabled");
   
   return ok(res, {
@@ -114,7 +114,7 @@ router.get("/ops/heartbeat", requireAuth, (req: Request, res: Response) => {
 });
 
 // Manual run (admin + optional secret)
-router.post("/ops/self-test", requireAuth, async (req: Request, res: Response) => {
+router.post("/ops/self-test", requireAuth, requireAdmin, async (req: Request, res: Response) => {
   if (!ENABLED) return bad(res, 403, "Self-test disabled");
   
   if (SECRET && req.headers["x-selftest-secret"] !== SECRET) {
@@ -132,15 +132,13 @@ router.post("/ops/self-test", requireAuth, async (req: Request, res: Response) =
       metrics: selfTestMetrics
     });
   } catch (e: any) {
-    return bad(res, 500, "Self-test failed", { 
-      message: e?.message || String(e),
-      metrics: selfTestMetrics
-    });
+    logger.error("[SELFTEST] run_failed", { message: e?.message });
+    return bad(res, 500, "Self-test failed", { metrics: selfTestMetrics });
   }
 });
 
 // Get self-test status
-router.get("/ops/self-test/status", requireAuth, (req: Request, res: Response) => {
+router.get("/ops/self-test/status", requireAuth, requireAdmin, (req: Request, res: Response) => {
   return ok(res, {
     enabled: ENABLED,
     metrics: selfTestMetrics,

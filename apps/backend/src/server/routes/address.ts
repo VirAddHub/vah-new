@@ -1,12 +1,27 @@
 import { Router } from 'express';
 import { performance } from 'node:perf_hooks';
+import rateLimit from 'express-rate-limit';
 import { logger } from '../../lib/logger';
+import { requireAuth } from '../../middleware/auth';
 
 const router = Router();
 
 // In-memory cache to prevent provider 429s
 const cache = new Map<string, { at: number; data: any }>();
 const TTL = 60_000; // 60 seconds
+const MAX_CACHE_ENTRIES = 500;
+
+// Each lookup costs money with the provider: signed-in customers only, with a per-account allowance
+// (security review F44). The forwarding-address form is the only caller.
+const lookupLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => `addr:${req.user?.id ?? 'anon'}`,
+  message: { ok: false, error: 'too_many_lookups', message: 'Too many address lookups. Please wait a few minutes.' },
+});
+const UK_POSTCODE = /^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/;
 
 function getCacheKey(postcode: string, line1: string): string {
   return `${postcode}::${line1}`;
@@ -25,21 +40,24 @@ router.get('/', (req, res) => {
 });
 
 // Hardened lookup route with timeout, caching, and observability
-router.get('/lookup', async (req, res) => {
+router.get('/lookup', requireAuth, lookupLimiter, async (req, res) => {
   const t0 = performance.now();
 
   const API_KEY = process.env.IDEAL_POSTCODES_API_KEY;
   if (!API_KEY) {
     logger.error('[address] missing IDEAL_POSTCODES_API_KEY');
-    return res.status(500).json({ ok: false, error: 'IDEAL_POSTCODES_API_KEY missing' });
+    return res.status(503).json({ ok: false, error: 'lookup_unavailable' });
   }
 
-  const postcode = String(req.query.postcode || '').trim().toUpperCase();
-  const line1 = String(req.query.line1 || '').trim();
+  const postcode = (typeof req.query.postcode === 'string' ? req.query.postcode : '').trim().toUpperCase().slice(0, 12);
+  const line1 = (typeof req.query.line1 === 'string' ? req.query.line1 : '').trim().slice(0, 100);
 
   if (!postcode) {
     logger.debug('[address] postcode required');
     return res.status(400).json({ ok: false, error: 'postcode required' });
+  }
+  if (!UK_POSTCODE.test(postcode)) {
+    return res.status(400).json({ ok: false, error: 'invalid_postcode', message: 'Please enter a valid UK postcode.' });
   }
 
   // Check cache first
@@ -77,9 +95,8 @@ router.get('/lookup', async (req, res) => {
     clearTimeout(timeout);
 
     if (!r.ok) {
-      const errorText = await r.text().catch(() => 'lookup_failed');
       logger.warn('[address] provider error', { status: r.status });
-      return res.status(502).json({ ok: false, error: errorText || 'lookup_failed' });
+      return res.status(r.status === 404 ? 404 : 502).json({ ok: false, error: r.status === 404 ? 'postcode_not_found' : 'lookup_failed' });
     }
 
     const data = await r.json() as { result?: Array<{ line_1?: string; line_2?: string; post_town?: string; postcode?: string }> };
@@ -101,6 +118,10 @@ router.get('/lookup', async (req, res) => {
     const payload = { ok: true, data: { addresses } };
 
     // Cache successful results
+    if (cache.size >= MAX_CACHE_ENTRIES) {
+      const oldest = cache.keys().next().value;
+      if (oldest !== undefined) cache.delete(oldest);
+    }
     cache.set(key, { at: Date.now(), data: payload });
 
     const latency = Math.round(performance.now() - t0);

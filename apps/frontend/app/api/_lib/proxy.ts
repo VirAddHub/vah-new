@@ -48,7 +48,8 @@ export async function proxy(req: NextRequest, targetPath: string) {
 
   // CSRF: Double-submit cookie pattern
   // Backend expects X-CSRF-Token header to match vah_csrf_token cookie.
-  // Since browsers only talk to BFF, we set the header server-side when proxying.
+  // Copying the cookie into the header is only safe because middleware.ts has already refused
+  // cross-site state-changing requests to /api/* before they reach this proxy (security review F28).
   if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && cookie) {
     const m = cookie.match(/(?:^|;\s*)vah_csrf_token=([^;]+)/);
     if (m?.[1]) {
@@ -77,26 +78,29 @@ export async function proxy(req: NextRequest, targetPath: string) {
     r = await fetch(target, init);
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-    console.error('[proxy:fetch-throw]', { target, error: errorMessage });
+    console.error('[proxy:fetch-throw]', { path: apiPath, error: errorMessage });
     return NextResponse.json({ message: 'Upstream fetch failed' }, { status: 502 });
   }
 
-  if (!r.ok) {
-    let body = '';
-    try { body = await r.clone().text(); } catch { }
-    console.error('[proxy:error]', { target, status: r.status, body });
+  if (!r.ok && r.status >= 500) {
+    // Status and path only: response bodies can contain customer data (security review F09/F17).
+    console.error('[proxy:error]', { path: apiPath, status: r.status });
   }
 
   const resp = new NextResponse(r.body, { status: r.status, statusText: r.statusText });
 
-  // pass headers & multiple Set-Cookie
-  const setCookies: string[] = [];
+  // Pass headers. Set-Cookie must be read one cookie at a time: Headers.forEach can join several
+  // cookies into one comma-separated value, which the per-cookie rewrite below would corrupt
+  // (security review F15). getSetCookie() returns each cookie separately.
   r.headers.forEach((val, key) => {
-    const k = key.toLowerCase();
-    if (k === 'set-cookie') { setCookies.push(val); return; }
+    if (key.toLowerCase() === 'set-cookie') return;
     if (/^(content-type|x-|ratelimit-|link|vary)$/i.test(key)) resp.headers.set(key, val);
     // Skip cache-control from backend - we override it below
   });
+  const setCookies: string[] =
+    typeof (r.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie === 'function'
+      ? (r.headers as Headers & { getSetCookie: () => string[] }).getSetCookie()
+      : (r.headers.get('set-cookie') ? [r.headers.get('set-cookie') as string] : []);
   for (const c of setCookies) {
     const parts = c.split(';').map(s => s.trim());
     const filtered = parts.filter(p => !/^domain=/i.test(p));

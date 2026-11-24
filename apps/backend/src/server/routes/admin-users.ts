@@ -1,3 +1,4 @@
+import { hasSessionVersionColumn } from '../../lib/sessionVersion';
 // src/server/routes/admin-users.ts
 // Admin user management endpoints
 
@@ -592,8 +593,15 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
             values.push(company_name.trim());
         }
         if (typeof is_admin === 'boolean') {
+            // An admin cannot change their own admin flag (prevents accidental self-lockout and
+            // removing the last admin); another admin must do it (security review R30).
+            if (Number(userId) === Number(adminId)) {
+                return res.status(400).json({ ok: false, error: 'cannot_change_own_admin', message: 'Ask another administrator to change your admin access.' });
+            }
             updates.push(`is_admin = $${paramIndex++}`);
             values.push(is_admin);
+            // A privilege change signs the account out everywhere so no old token keeps the old role (R33).
+            if (await hasSessionVersionColumn()) updates.push('session_version = session_version + 1');
         }
         if (plan_id !== undefined && plan_id !== null) {
             const planIdNum = parseInt(String(plan_id));
@@ -784,33 +792,31 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
             // PERMANENT DELETE - Remove user completely from database
             // This cannot be undone!
 
-            // First, delete related records (cascade deletes should handle most, but be explicit)
-            // Delete subscriptions
-            await pool.query(`DELETE FROM subscription WHERE user_id = $1`, [userId]);
-
-            // Delete business owners
-            await pool.query(`DELETE FROM business_owner WHERE user_id = $1`, [userId]);
-
-            // Delete mail items (if cascade doesn't work)
-            await pool.query(`DELETE FROM mail_item WHERE user_id = $1`, [userId]);
-
-            // Delete redirect flows
-
-            // Delete admin audit entries for this user
-            await pool.query(`DELETE FROM admin_audit WHERE target_id = $1 AND target_type = 'user'`, [userId]);
-
-            // Finally, delete the user
-            await pool.query(`DELETE FROM "user" WHERE id = $1`, [userId]);
-
-            // Log admin action
-            await pool.query(`
-                INSERT INTO admin_audit (admin_id, action, target_type, target_id, created_at)
-                VALUES ($1, $2, $3, $4, $5)
-            `, [adminId, 'permanent_delete_user', 'user', userId, auditTimestamp]);
+            // All database deletions and the audit entry commit together or not at all, so a failure
+            // part-way cannot leave a half-deleted account (security review F40).
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+                await client.query(`DELETE FROM subscription WHERE user_id = $1`, [userId]);
+                await client.query(`DELETE FROM business_owner WHERE user_id = $1`, [userId]);
+                await client.query(`DELETE FROM mail_item WHERE user_id = $1`, [userId]);
+                await client.query(`DELETE FROM admin_audit WHERE target_id = $1 AND target_type = 'user'`, [userId]);
+                await client.query(`DELETE FROM "user" WHERE id = $1`, [userId]);
+                await client.query(`
+                    INSERT INTO admin_audit (admin_id, action, target_type, target_id, created_at)
+                    VALUES ($1, $2, $3, $4, $5)
+                `, [adminId, 'permanent_delete_user', 'user', userId, auditTimestamp]);
+                await client.query('COMMIT');
+            } catch (txErr) {
+                await client.query('ROLLBACK').catch(() => undefined);
+                throw txErr;
+            } finally {
+                client.release();
+            }
 
             return res.json({
                 ok: true,
-                message: `User ${user.email} has been permanently deleted. This action cannot be undone.`,
+                message: `User ${user.email} has been permanently deleted from the database. This cannot be undone. Scans in OneDrive and records held by Stripe and Sumsub are not removed by this action.`,
                 permanent: true
             });
         } else {

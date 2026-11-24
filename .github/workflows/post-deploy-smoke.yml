@@ -8,6 +8,10 @@ concurrency:
   group: smoke-${{ github.ref }}
   cancel-in-progress: true
 
+# Least privilege for the workflow token (security review F41).
+permissions:
+  contents: read
+
 jobs:
   smoke:
     runs-on: ubuntu-latest

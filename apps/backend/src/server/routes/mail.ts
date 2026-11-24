@@ -117,10 +117,16 @@ router.use((req, res, next) => (MAIL_ROUTER_PATHS.test(req.path) ? noConditional
  * Get all mail items for current user (with pagination support)
  * Query params: ?page=1&pageSize=20&includeArchived=true
  */
+function boundedInt(raw: unknown, fallback: number, min: number, max: number): number {
+    if (typeof raw !== 'string' || !/^\d{1,7}$/.test(raw)) return fallback;
+    return Math.min(max, Math.max(min, Number(raw)));
+}
+
 router.get('/mail-items', requireAuth, requireFullService, async (req: Request, res: Response) => {
     const userId = req.user!.id;
-    const page = parseInt(req.query.page as string) || 1;
-    const pageSize = parseInt(req.query.pageSize as string) || 20;
+    // Bounded paging (security review F33): positive integers only, at most 100 items per page.
+    const page = boundedInt(req.query.page, 1, 1, 10_000);
+    const pageSize = boundedInt(req.query.pageSize, 20, 1, 100);
     const includeArchived = req.query.includeArchived === 'true';
     const businessIdParam = req.query.business_id as string | undefined;
     const pool = getPool();
@@ -131,11 +137,16 @@ router.get('/mail-items', requireAuth, requireFullService, async (req: Request, 
             const primaryRow = await pool.query<{ id: number }>('SELECT id FROM business WHERE user_id = $1 AND is_primary = true LIMIT 1', [userId]);
             if (primaryRow.rows[0]) businessId = primaryRow.rows[0].id;
         } else if (businessIdParam) {
-            const bid = parseInt(businessIdParam, 10);
-            if (!Number.isNaN(bid)) {
-                const own = await pool.query('SELECT 1 FROM business WHERE id = $1 AND user_id = $2', [bid, userId]);
-                if (own.rows.length > 0) businessId = bid;
+            const bid = /^\d+$/.test(businessIdParam) ? Number(businessIdParam) : NaN;
+            const own = Number.isSafeInteger(bid)
+                ? await pool.query('SELECT 1 FROM business WHERE id = $1 AND user_id = $2', [bid, userId])
+                : { rows: [] as unknown[] };
+            if (own.rows.length === 0) {
+                // Unknown or someone else's business: return nothing rather than silently widening the
+                // filter to all of this account's mail (security review R39).
+                return res.json({ ok: true, items: [], total: 0, page, pageSize });
             }
+            businessId = bid;
         }
 
         // Build the query based on whether to include archived items
@@ -285,6 +296,7 @@ router.patch('/mail-items/:id', requireAuth, requireFullService, async (req: Req
         values.push(Date.now());
 
         values.push(mailId);
+        values.push(userId);
 
         if (updates.length === 1) { // Only updated_at
             return res.status(400).json({
@@ -295,7 +307,7 @@ router.patch('/mail-items/:id', requireAuth, requireFullService, async (req: Req
         }
 
         const result = await pool.query(
-            `UPDATE mail_item SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
+            `UPDATE mail_item SET ${updates.join(', ')} WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1} RETURNING *`,
             values
         );
 
@@ -339,8 +351,8 @@ router.post('/mail-items/:id/tag', requireAuth, requireFullService, async (req: 
 
         // Update tag
         const result = await pool.query(
-            'UPDATE mail_item SET tag = $1, updated_at = $2 WHERE id = $3 RETURNING *',
-            [normalizedTag, Date.now(), mailId]
+            'UPDATE mail_item SET tag = $1, updated_at = $2 WHERE id = $3 AND user_id = $4 RETURNING *',
+            [normalizedTag, Date.now(), mailId, userId]
         );
 
         return res.json({ ok: true, data: result.rows[0] });
@@ -376,8 +388,8 @@ router.delete('/mail-items/:id', requireAuth, requireFullService, async (req: Re
 
         // Soft delete (archive)
         const result = await pool.query(
-            'UPDATE mail_item SET deleted = true, updated_at = $1 WHERE id = $2 RETURNING *',
-            [Date.now(), mailId]
+            'UPDATE mail_item SET deleted = true, updated_at = $1 WHERE id = $2 AND user_id = $3 RETURNING *',
+            [Date.now(), mailId, userId]
         );
 
         return res.json({ ok: true, data: result.rows[0] });
@@ -413,8 +425,8 @@ router.post('/mail-items/:id/restore', requireAuth, requireFullService, async (r
 
         // Restore (unarchive)
         const result = await pool.query(
-            'UPDATE mail_item SET deleted = false, updated_at = $1 WHERE id = $2 RETURNING *',
-            [Date.now(), mailId]
+            'UPDATE mail_item SET deleted = false, updated_at = $1 WHERE id = $2 AND user_id = $3 RETURNING *',
+            [Date.now(), mailId, userId]
         );
 
         return res.json({ ok: true, data: result.rows[0] });

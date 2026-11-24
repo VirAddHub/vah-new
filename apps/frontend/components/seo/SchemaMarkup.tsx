@@ -1,4 +1,5 @@
 'use client';
+import { jsonLdScript } from '@/lib/jsonLd';
 
 // Structured data for the homepage. Only facts we can stand behind: no ratings, review counts,
 // prices, phone numbers, street addresses or founding dates until confirmed details are supplied.
@@ -35,7 +36,7 @@ export function SchemaInjection({ schema }: { schema: Record<string, unknown> })
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: jsonLdScript(schema) }}
     />
   );
 }

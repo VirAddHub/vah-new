@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 // apps/backend/src/server/routes/profileEmailChange.ts
 // Email change verification routes
 
@@ -204,8 +205,28 @@ router.patch('/contact', requireAuth, phoneChangeRateLimiter, async (req: Reques
             }
         }
 
-        // Handle email update (verification flow)
+        // Handle email update (verification flow). Changing the account's recovery email needs the
+        // current password, exactly like PATCH /api/profile (security review F30).
         if (email !== undefined) {
+            const currentPassword = typeof req.body?.currentPassword === 'string' ? req.body.currentPassword : '';
+            if (!currentPassword) {
+                return res.status(400).json({
+                    ok: false,
+                    error: 'current_password_required',
+                    message: 'Your current password is required to change your email address.',
+                });
+            }
+            const pwRow = await pool.query('SELECT password FROM "user" WHERE id = $1', [userId]);
+            const passwordOk = pwRow.rows[0]?.password
+                ? await bcrypt.compare(currentPassword, pwRow.rows[0].password)
+                : false;
+            if (!passwordOk) {
+                return res.status(401).json({
+                    ok: false,
+                    error: 'incorrect_current_password',
+                    message: 'The password you entered is incorrect.',
+                });
+            }
             try {
                 await requestEmailChange(
                     userId,

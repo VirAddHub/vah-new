@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, extractTokenFromHeader, generateToken } from '../lib/jwt';
+import { hasSessionVersionColumn, isPastAbsoluteLifetime, sessionVersionMatches } from '../lib/sessionVersion';
 import { getPool } from '../server/db';
 import { SESSION_IDLE_TIMEOUT_SECONDS, SESSION_REFRESH_THRESHOLD_SECONDS } from '../config/auth';
 import { logger } from '../lib/logger';
@@ -81,23 +82,22 @@ export async function authenticateJWT(req: Request, res: Response, next: NextFun
         return next();
     }
 
-    // Valid token - attach user data to request
-    // Convert id to number if it's a string
-    const userId = typeof payload.id === 'string' ? parseInt(payload.id) : payload.id;
-    const user = {
-        id: userId,
-        email: payload.email || '',
-        is_admin: payload.is_admin,
-        // Include role from JWT so requireAdmin can check it without a DB round-trip
-        role: typeof (payload as any).role === 'string' ? (payload as any).role : undefined,
-    };
+    // Absolute lifetime: a session cannot be extended forever by activity (security review F29).
+    if (isPastAbsoluteLifetime(payload, nowSeconds)) {
+        res.clearCookie('vah_session', sessionCookieSecurityOptions());
+        return next();
+    }
 
-    // DB check: ensure user is still active (not suspended, deleted, or inactive)
-    // This prevents suspended/deleted users from retaining API access via a valid JWT.
+    const userId = typeof payload.id === 'string' ? parseInt(payload.id) : payload.id;
+
+    // DB check: the account must still be active, and privilege comes from the database, never from
+    // the token, so a demoted admin's old token carries no admin power (security review F26/R33).
+    // The session version check revokes tokens after logout, password reset, email or role change (F20).
+    const withVersion = await hasSessionVersionColumn();
     let statusResult;
     try {
         statusResult = await getPool().query(
-            `SELECT id FROM "user"
+            `SELECT id, email, is_admin, role${withVersion ? ', session_version' : ''} FROM "user"
              WHERE id = $1
                AND deleted_at IS NULL
                AND (suspended_at IS NULL OR suspended_at > NOW())
@@ -115,47 +115,38 @@ export async function authenticateJWT(req: Request, res: Response, next: NextFun
         return res.status(401).json({ ok: false, error: 'unauthorized' });
     }
 
+    const dbUser = statusResult.rows[0];
+    if (withVersion && !sessionVersionMatches(payload, dbUser.session_version)) {
+        res.clearCookie('vah_session', sessionCookieSecurityOptions());
+        return res.status(401).json({ ok: false, error: 'session_revoked' });
+    }
+
+    const user = {
+        id: userId,
+        email: dbUser.email || payload.email || '',
+        is_admin: Boolean(dbUser.is_admin),
+        role: typeof dbUser.role === 'string' ? dbUser.role : undefined,
+    };
+
     req.user = user;
     if (process.env.NODE_ENV !== 'production') {
         logger.debug('[jwt] authenticated', { userId: user.id, is_admin: Boolean(user.is_admin) });
     }
 
-    // Rolling session refresh: if token has less than REFRESH_THRESHOLD_SECONDS remaining, issue a new token
-    if (secondsLeft > 0 && secondsLeft < SESSION_REFRESH_THRESHOLD_SECONDS) {
-        // Fetch user data to create new token
-        getPool().query(
-            'SELECT id, email, is_admin, role FROM "user" WHERE id = $1',
-            [userId]
-        ).then((result) => {
-            // Guard: don't set cookies if headers already sent
-            if (res.headersSent) {
-                logger.warn('[jwt] cannot_refresh_headers_sent', { userId });
-                return;
-            }
-
-            if (result.rows.length > 0) {
-                const user = result.rows[0];
-                const newToken = generateToken({
-                    id: user.id,
-                    email: user.email,
-                    is_admin: user.is_admin,
-                    role: user.role || (user.is_admin ? 'admin' : 'user')
-                });
-
-                // Set new cookie with refreshed token (only if headers not sent)
-                if (!res.headersSent) {
-                    res.cookie('vah_session', newToken, {
-                        ...sessionCookieSecurityOptions(),
-                        maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000,
-                    });
-                    if (process.env.NODE_ENV !== 'production') {
-                        logger.debug('[jwt] token_refreshed', { userId });
-                    }
-                }
-            }
-        }).catch((err) => {
-            logger.warn('[jwt] refresh_failed_nonfatal', { message: errorMessage(err) });
-            // Don't fail the request if refresh fails
+    // Rolling session refresh: if the token has less than REFRESH_THRESHOLD_SECONDS left, issue a new
+    // one from current database values, keeping the original sign-in time and session version.
+    if (secondsLeft > 0 && secondsLeft < SESSION_REFRESH_THRESHOLD_SECONDS && !res.headersSent) {
+        const newToken = generateToken({
+            id: dbUser.id,
+            email: dbUser.email,
+            is_admin: Boolean(dbUser.is_admin),
+            role: dbUser.role || (dbUser.is_admin ? 'admin' : 'user'),
+            sv: withVersion ? Number(dbUser.session_version ?? 0) : undefined,
+            auth_time: typeof payload.auth_time === 'number' ? payload.auth_time : payload.iat,
+        });
+        res.cookie('vah_session', newToken, {
+            ...sessionCookieSecurityOptions(),
+            maxAge: SESSION_IDLE_TIMEOUT_SECONDS * 1000,
         });
     }
 

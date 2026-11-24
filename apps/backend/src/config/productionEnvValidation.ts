@@ -157,7 +157,7 @@ export function collectProductionEnvIssues(): ProductionEnvCheckResult {
   const odSecret = trim('ONEDRIVE_WEBHOOK_SECRET');
   if (odImportLikely && !odBasic && !odSecret) {
     warnings.push(
-      'OneDrive/Graph mail import appears configured but neither ONEDRIVE_WEBHOOK_SECRET nor ONEDRIVE_WEBHOOK_BASIC_USER/PASS is set — /api/webhooks-onedrive may be unauthenticated.'
+      'Neither ONEDRIVE_WEBHOOK_SECRET nor ONEDRIVE_WEBHOOK_BASIC_USER/PASS is set — the legacy /api/webhooks/onedrive endpoint refuses all requests (503). The worker import (/api/internal/from-onedrive) is unaffected.'
     );
   }
 

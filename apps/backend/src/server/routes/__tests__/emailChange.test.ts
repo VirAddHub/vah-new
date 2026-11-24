@@ -1,9 +1,10 @@
 // Email/phone change routes. The email-change service is mocked here (its own behaviour is tested
 // against the real database in server/services/__tests__/emailChange.service.test.ts).
 // Converted from Jest to Vitest; previously this file could not load under the project's runner.
-import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import express from 'express';
+import bcrypt from 'bcrypt';
 
 vi.mock('../../services/emailChange', () => ({
     requestEmailChange: vi.fn(),
@@ -24,9 +25,11 @@ app.use(express.json());
 app.use('/api/profile', profileEmailChangeRouter);
 
 const USER = 1001; // fixture user created by src/tests/globalSetup.ts
+const PASSWORD = 'Fixture-Pass1'; // synthetic test password set below
 
 describe('Email change routes', () => {
     let originalPhone: string | null = null;
+    let originalPasswordHash: string | null = null;
 
     beforeEach(async () => {
         vi.mocked(requestEmailChange).mockReset();
@@ -34,17 +37,34 @@ describe('Email change routes', () => {
         const r = await getPool().query('SELECT phone FROM "user" WHERE id = $1', [USER]);
         originalPhone = r.rows[0]?.phone ?? null;
     });
+    beforeAll(async () => {
+        const r = await getPool().query('SELECT password FROM "user" WHERE id = $1', [USER]);
+        originalPasswordHash = r.rows[0]?.password ?? null;
+        await getPool().query('UPDATE "user" SET password = $2 WHERE id = $1', [USER, await bcrypt.hash(PASSWORD, 4)]);
+    });
     afterAll(async () => {
-        await getPool().query('UPDATE "user" SET phone = $2 WHERE id = $1', [USER, originalPhone]);
+        await getPool().query('UPDATE "user" SET phone = $2, password = $3 WHERE id = $1', [USER, originalPhone, originalPasswordHash]);
     });
 
     describe('PATCH /api/profile/contact', () => {
         it('starts an email change (confirmation link) when an email is given', async () => {
             vi.mocked(requestEmailChange).mockResolvedValue(undefined as any);
-            const res = await request(app).patch('/api/profile/contact').send({ email: 'newemail@example.com' }).expect(200);
+            const res = await request(app).patch('/api/profile/contact').send({ email: 'newemail@example.com', currentPassword: PASSWORD }).expect(200);
             expect(res.body.ok).toBe(true);
             expect(res.body.data.email_change_started).toBe(true);
             expect(vi.mocked(requestEmailChange).mock.calls[0].slice(0, 3)).toEqual([USER, 'newemail@example.com', 'test@example.com']);
+        });
+
+        it('refuses an email change without the current password (security review F30)', async () => {
+            const res = await request(app).patch('/api/profile/contact').send({ email: 'newemail@example.com' }).expect(400);
+            expect(res.body.error).toBe('current_password_required');
+            expect(vi.mocked(requestEmailChange)).not.toHaveBeenCalled();
+        });
+
+        it('refuses an email change with the wrong password', async () => {
+            const res = await request(app).patch('/api/profile/contact').send({ email: 'newemail@example.com', currentPassword: 'Wrong-Pass1' }).expect(401);
+            expect(res.body.error).toBe('incorrect_current_password');
+            expect(vi.mocked(requestEmailChange)).not.toHaveBeenCalled();
         });
 
         it('updates the phone number straight away', async () => {
@@ -62,7 +82,7 @@ describe('Email change routes', () => {
 
         it('gives the same reply when the email is already in use (no enumeration)', async () => {
             vi.mocked(requestEmailChange).mockResolvedValue(undefined as any);
-            const res = await request(app).patch('/api/profile/contact').send({ email: 'admin@example.com' }).expect(200);
+            const res = await request(app).patch('/api/profile/contact').send({ email: 'admin@example.com', currentPassword: PASSWORD }).expect(200);
             expect(res.body.ok).toBe(true);
             expect(res.body.data.email_change_started).toBe(true);
         });

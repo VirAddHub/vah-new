@@ -80,7 +80,8 @@ describe('Ops/health routes', () => {
   it('GET /api/__version returns 200 with version info', async () => {
     const res = await request(app).get('/api/__version');
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('nodeEnv');
+    expect(res.body).toHaveProperty('commit');
+    expect(res.body).not.toHaveProperty('nodeEnv');
   });
 
   it('GET /api/metrics/ returns 200 or 401', async () => {

@@ -45,7 +45,7 @@ function hasPlausibleUnverifiedSessionCookieShape(raw: string | undefined): bool
 function applySecurityHeaders(response: NextResponse, _request: NextRequest) {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('Referrer-Policy', 'origin-when-cross-origin');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   // Allow Sumsub WebSDK iframe (in.sumsub.com) to use camera/mic for liveness checks.
   // camera=() / microphone=() blocks *all* contexts, including cross-origin iframes — breaks KYC on every device.
   response.headers.set(
@@ -140,22 +140,54 @@ function applyBffCorsHeaders(response: NextResponse, request: NextRequest) {
   );
 }
 
+const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+/** Server-to-server endpoints authenticated by their own secret, not by browser cookies. */
+const MACHINE_API_PATHS = ['/api/revalidate'];
+
+/**
+ * CSRF boundary for every BFF route (security review F28).
+ *
+ * BFF handlers forward the browser's cookies (and, for the API's double-submit check, its CSRF
+ * cookie) upstream, so the decision that a state-changing request really came from our own pages
+ * must be made here, before any proxying. Browsers always send `Origin` on cross-site POST/PUT/
+ * PATCH/DELETE, and `Sec-Fetch-Site` on modern browsers, so a cross-site form or fetch is refused.
+ * Requests with neither header come from non-browser clients, which carry no ambient cookies.
+ */
+export function isCrossSiteMutation(request: NextRequest): boolean {
+  if (!UNSAFE_METHODS.has(request.method)) return false;
+  const { pathname } = request.nextUrl;
+  if (MACHINE_API_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) return false;
+
+  const origin = request.headers.get('origin');
+  if (origin) {
+    if (origin === request.nextUrl.origin) return false;
+    return !isAllowedBffCorsOrigin(origin, process.env.NODE_ENV === 'production');
+  }
+  return request.headers.get('sec-fetch-site') === 'cross-site';
+}
+
+/** API responses that are genuinely public and may be cached by shared caches. */
+const PUBLIC_CACHEABLE_API = ['/api/bff/plans', '/api/bff/blog/list', '/api/bff/blog/detail'];
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // `/api` before `includes('.')` so paths like `/api/v1.0/...` always get BFF cache + security
   // headers here instead of only the generic static branch.
   if (pathname.startsWith('/api')) {
+    if (isCrossSiteMutation(request)) {
+      const denied = NextResponse.json({ ok: false, error: 'cross_site_request_blocked' }, { status: 403 });
+      denied.headers.set('Cache-Control', 'no-store');
+      applySecurityHeaders(denied, request);
+      return denied;
+    }
     const response = NextResponse.next();
     if (pathname.startsWith('/api/')) {
-      if (
-        pathname.includes('/auth/') ||
-        pathname.includes('/webhooks/') ||
-        pathname.includes('/analytics/')
-      ) {
-        response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      } else {
+      // Private by default (security review F06/R24); only known-public data may be shared-cached.
+      if (PUBLIC_CACHEABLE_API.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
         response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600');
+      } else {
+        response.headers.set('Cache-Control', 'private, no-store');
       }
     }
     applySecurityHeaders(response, request);

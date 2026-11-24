@@ -1,4 +1,5 @@
 "use client";
+import { jsonLdScript } from '@/lib/jsonLd';
 
 import { useState, useEffect } from "react";
 import { MDXRemote, type MDXRemoteSerializeResult } from "next-mdx-remote";
@@ -44,12 +45,11 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
                 }
 
                 const postData = data.data;
-                const content = typeof postData?.content === 'string' ? postData.content : '';
-
+                // The server compiles the published post itself; only the slug is sent.
                 const compileRes = await fetch('/api/blog/compile-mdx', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ source: content }),
+                    body: JSON.stringify({ slug }),
                 });
 
                 if (cancelled) return;
@@ -167,7 +167,7 @@ export function BlogPostPage({ slug, onNavigate, onBack }: BlogPostPageProps) {
             `}</style>
 
             {structuredData && (
-                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(structuredData) }} />
             )}
 
             <div className="post-inner" style={{ maxWidth: '720px', margin: '0 auto', padding: 'clamp(32px,5vw,64px) clamp(20px,5vw,40px) clamp(60px,8vw,100px)' }}>

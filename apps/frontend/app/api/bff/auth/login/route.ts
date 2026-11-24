@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     if (process.env.NODE_ENV !== 'production') {
       console.log(`[BFF auth/login] Backend response: ${status}`);
       if (status >= 500) {
-        console.error('[BFF auth/login] Backend error body (debug):', textPreview);
+        console.error('[BFF auth/login] backend error', { status });
       }
     }
 

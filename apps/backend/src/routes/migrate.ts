@@ -1,11 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { getPool } from '../server/db';
 import { getPgSslOption } from '../lib/pgSslConfig';
 import { requireAdmin } from '../middleware/auth';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 const router = Router();
 
 /**
@@ -15,26 +15,25 @@ const router = Router();
  */
 router.post('/migrate/run', requireAdmin, async (req: Request, res: Response) => {
     try {
-        const { from, to, dryRun = false } = req.body;
-
-        // Build command
-        let command = 'node dist/src/scripts/migrate-sql.js migrations';
-
-        if (from) {
-            command += ` --from=${from}`;
+        // Strictly typed arguments, passed to a fixed script with no shell (security review F37).
+        const body = req.body ?? {};
+        const isVersion = (v: unknown) => v === undefined || (Number.isSafeInteger(v) && (v as number) >= 0);
+        if (!isVersion(body.from) || !isVersion(body.to) || (body.dryRun !== undefined && typeof body.dryRun !== 'boolean')) {
+            return res.status(400).json({ ok: false, error: 'invalid_arguments', message: 'from/to must be whole numbers; dryRun must be true or false.' });
         }
-        if (to) {
-            command += ` --to=${to}`;
-        }
-        if (dryRun) {
-            command += ' --dry-run';
-        }
+        const args = ['dist/src/scripts/migrate-sql.js', 'migrations'];
+        if (body.from !== undefined) args.push(`--from=${body.from}`);
+        if (body.to !== undefined) args.push(`--to=${body.to}`);
+        if (body.dryRun) args.push('--dry-run');
 
-        console.log(`[Migration] Running command: ${command}`);
+        console.log('[Migration] Running migrate-sql', { from: body.from, to: body.to, dryRun: Boolean(body.dryRun) });
 
-        const { stdout, stderr } = await execAsync(command, {
+        const { stdout, stderr } = await execFileAsync(process.execPath, args, {
             cwd: process.cwd(),
-            env: process.env
+            env: process.env,
+            shell: false,
+            timeout: 10 * 60 * 1000,
+            maxBuffer: 5 * 1024 * 1024,
         });
 
         if (stderr) {

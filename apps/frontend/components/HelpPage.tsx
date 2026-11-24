@@ -1,4 +1,5 @@
 'use client';
+import { jsonLdScript } from '@/lib/jsonLd';
 
 import { useMemo, ReactNode, useState, useEffect, useRef } from "react";
 
@@ -604,7 +605,7 @@ export function HelpPage({ onNavigate, onGoBack }: HelpPageProps) {
       {/* JSON-LD */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(faqJsonLd) }}
       />
 
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: 'clamp(40px,6vw,80px) clamp(20px,5vw,60px)' }}>

@@ -1,3 +1,4 @@
+import { jsonLdScript } from '@/lib/jsonLd';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -160,7 +161,7 @@ export default function AboutPage() {
 
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageJsonLd) }}
+                dangerouslySetInnerHTML={{ __html: jsonLdScript(aboutPageJsonLd) }}
             />
         </>
     );

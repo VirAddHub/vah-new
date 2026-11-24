@@ -1,3 +1,5 @@
+import { z } from 'zod';
+import { isAllowedDocumentUrl } from '../../controllers/pdfProxy';
 /**
  * File Routes
  *
@@ -12,6 +14,12 @@
 import { Router, Request, Response } from 'express';
 import { logger } from '../../lib/logger';
 import { getPool } from '../db';
+
+const MAX_SIGNED_URL_LIFETIME_MS = 24 * 60 * 60 * 1000;
+const signerResponseSchema = z.object({
+  url: z.string().max(4096).url().refine((u) => isAllowedDocumentUrl(u), 'unapproved storage host'),
+  expires_at: z.number().finite().positive().optional(),
+});
 
 const router = Router();
 
@@ -189,23 +197,27 @@ router.post('/:id/signed-url', async (req: Request, res: Response) => {
       }),
     });
 
-    const j = (await resp.json()) as { url?: string; expires_at?: number };
-
-    if (!resp.ok || !j?.url) {
+    // Validate the signer's reply before caching or returning it (security review F35).
+    const raw = resp.ok ? await resp.json().catch(() => null) : null;
+    const signed = signerResponseSchema.safeParse(raw);
+    if (!signed.success) {
       await auditLink({ userId, fileId, cached: 0, ok: 0, err: 'sign_failed', ip });
-      return res.status(502).json({ ok: false, error: 'sign_failed', detail: j });
+      return res.status(502).json({ ok: false, error: 'sign_failed' });
     }
-
-    const expires = Number(j.expires_at ?? 0) || Date.now() + 15 * 60_000;
+    const url = signed.data.url;
+    const now = Date.now();
+    // Signer sends ms epoch; fall back to 15 min, and never accept more than 24 h.
+    const requested = signed.data.expires_at ?? now + 15 * 60_000;
+    const expires = Math.min(Math.max(requested, now), now + MAX_SIGNED_URL_LIFETIME_MS);
 
     // Persist the new signed URL for caching
     await pool.query(
       `UPDATE file SET share_url = $1, share_expires_at = $2, updated_at = $3 WHERE id = $4`,
-      [String(j.url), expires, Date.now(), f.id],
+      [url, expires, Date.now(), f.id],
     );
 
     await auditLink({ userId, fileId, cached: 0, ok: 1, err: null, ip });
-    return res.json({ ok: true, url: j.url, expires_at: expires, cached: false });
+    return res.json({ ok: true, url, expires_at: expires, cached: false });
   } catch (err) {
     logger.error('[files] POST /:id/signed-url error:', err);
     await auditLink({ userId, fileId, cached: 0, ok: 0, err: 'sign_error', ip }).catch(() => {});

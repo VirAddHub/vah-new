@@ -22,6 +22,7 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [confirmEmail, setConfirmEmail] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [isChangingEmail, setIsChangingEmail] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const { toast } = useToast();
@@ -40,6 +41,7 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
     confirmEmail && 
     emailsMatch && 
     newEmail !== currentEmail &&
+    currentPassword.length > 0 &&
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail);
 
   const handleEmailChange = async () => {
@@ -55,6 +57,7 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
         credentials: 'include',
         body: JSON.stringify({
           email: newEmail,
+          currentPassword,
         }),
       });
 
@@ -70,6 +73,7 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
         setIsDialogOpen(false);
         setNewEmail('');
         setConfirmEmail('');
+        setCurrentPassword('');
         
         toast({
           title: 'Confirmation email sent',
@@ -237,6 +241,18 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
                 <p className="text-caption text-destructive">This is your current email address</p>
               )}
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Current password</Label>
+              <Input
+                id="current-password"
+                type="password"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                disabled={isChangingEmail}
+              />
+              <p className="text-caption text-muted-foreground">For your security, confirm it's you before changing the email we use to reach you.</p>
+            </div>
             <div className="bg-muted/50 border border-muted rounded-lg p-3">
               <p className="text-caption text-muted-foreground">
                 We'll send a confirmation link to your new email address. Your email won't update until you confirm.
@@ -250,6 +266,8 @@ export function EmailChangeCard({ onEmailChangeRequested }: EmailChangeCardProps
                 setIsDialogOpen(false);
                 setNewEmail('');
                 setConfirmEmail('');
+                setCurrentPassword('');
+        setCurrentPassword('');
               }}
               disabled={isChangingEmail}
             >

@@ -44,6 +44,6 @@ describe('Public routes', () => {
     const res = await request(app)
       .get('/api/address/lookup')
       .set('Authorization', `Bearer ${token}`);
-    expect([200, 400, 422, 401, 500]).toContain(res.status);
+    expect([200, 400, 422, 401, 500, 503]).toContain(res.status);
   });
 });

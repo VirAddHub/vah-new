@@ -34,7 +34,11 @@ export function buildNonProductionOnlyOrigins(): Set<string> {
   ]);
 }
 
-/** Local browser dev against a remote API (e.g. Next on :3001 → Render). Safe: browsers only send these for true local pages. */
+/**
+ * Local browser dev origins. Only allowed outside production (security review F16): in production a
+ * credentialed CORS grant to plain-http localhost is broader than the site needs. To develop locally
+ * against a deployed API, list the origin explicitly in that environment's ALLOWED_ORIGINS.
+ */
 const LOCALHOST_DEV_ORIGINS = new Set([
   'http://localhost:3000',
   'http://localhost:3001',
@@ -45,7 +49,7 @@ const LOCALHOST_DEV_ORIGINS = new Set([
 export function isCorsOriginAllowed(origin: string | undefined, isProduction: boolean): boolean {
   if (!origin) return true;
 
-  if (LOCALHOST_DEV_ORIGINS.has(origin)) return true;
+  if (!isProduction && LOCALHOST_DEV_ORIGINS.has(origin)) return true;
 
   const trusted = buildTrustedProductionOrigins();
   if (trusted.has(origin)) return true;

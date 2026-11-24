@@ -155,8 +155,8 @@ router.post('/tickets/:id/close', requireAuth, async (req: Request, res: Respons
 
         // Close the ticket
         await pool.query(`
-            UPDATE support_ticket SET status = $1, updated_at = $2 WHERE id = $3
-        `, ['closed', Date.now(), ticketId]);
+            UPDATE support_ticket SET status = $1, updated_at = $2 WHERE id = $3 AND user_id = $4
+        `, ['closed', Date.now(), ticketId, userId]);
 
         // Send confirmation email to user (non-blocking)
         try {

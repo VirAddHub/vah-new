@@ -155,25 +155,24 @@ router.post('/start', requireAuth, kycWriteUserLimiter, async (req: Request, res
 
         return res.json({ ok: true, token: tokenResp.token, applicantId });
     } catch (e) {
-        logger.error('[kyc/start] error', { error: e });
+        // Provider error text stays in the server log; the customer gets a fixed message
+        // (security review F17).
         const raw = e instanceof Error ? e.message : String(e);
-        /** Short, user-facing hint (Sumsub errors often include JSON in the message). */
-        let message = raw;
+        let providerCode: string | undefined;
         try {
             const jsonMatch = raw.match(/\{[\s\S]*\}\s*$/);
             if (jsonMatch) {
-                const parsed = JSON.parse(jsonMatch[0]) as { description?: string; errorCode?: string; errorName?: string };
-                if (parsed.description) message = parsed.description;
-                else if (parsed.errorName && parsed.errorCode) message = `${parsed.errorName} (${parsed.errorCode})`;
+                const parsed = JSON.parse(jsonMatch[0]) as { errorCode?: string | number; errorName?: string };
+                providerCode = [parsed.errorName, parsed.errorCode].filter(Boolean).join(':') || undefined;
             }
         } catch {
-            /* keep raw */
+            /* not JSON */
         }
-        if (message.length > 400) message = `${message.slice(0, 400)}…`;
+        logger.error('[kyc/start] error', { message: raw.slice(0, 500), providerCode });
         return res.status(500).json({
             ok: false,
             error: "sumsub_error",
-            message,
+            message: "We couldn't start identity verification just now. Please try again in a few minutes.",
         });
     }
 });

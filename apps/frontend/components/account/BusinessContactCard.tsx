@@ -25,6 +25,7 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [confirmEmail, setConfirmEmail] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [isChangingEmail, setIsChangingEmail] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const newEmailInputRef = useRef<HTMLInputElement>(null);
@@ -67,12 +68,13 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
   };
 
   const emailsMatch = newEmail === confirmEmail;
-  const isEmailFormValid = isValidEmail(newEmail) && emailsMatch && newEmail !== contact.email;
+  const isEmailFormValid = isValidEmail(newEmail) && emailsMatch && newEmail !== contact.email && currentPassword.length > 0;
 
   // Open email change dialog
   const handleOpenEmailDialog = () => {
     setNewEmail('');
     setConfirmEmail('');
+    setCurrentPassword('');
     setIsEmailDialogOpen(true);
     // Focus first input when dialog opens
     setTimeout(() => {
@@ -90,7 +92,7 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email: newEmail }),
+        body: JSON.stringify({ email: newEmail, currentPassword }),
       });
 
       const result = await response.json();
@@ -105,6 +107,7 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
         setIsEmailDialogOpen(false);
         setNewEmail('');
         setConfirmEmail('');
+        setCurrentPassword('');
 
         // Store pending email for UI display
         setPendingEmail(newEmail);
@@ -327,6 +330,18 @@ export function BusinessContactCard({ contact: initialContact, onSave }: Busines
               {newEmail && newEmail === contact.email && (
                 <p className="text-caption text-destructive">This is your current email address</p>
               )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Current password</Label>
+              <Input
+                id="current-password"
+                type="password"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                disabled={isChangingEmail}
+              />
+              <p className="text-caption text-muted-foreground">For your security, confirm it's you before changing the email we use to reach you.</p>
             </div>
             <div className="bg-muted/50 border border-muted rounded-lg p-3">
               <p className="text-caption text-muted-foreground">

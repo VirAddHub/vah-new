@@ -1,7 +1,18 @@
 // scripts/seed_users_only.ts
 // Run with: npx tsx scripts/seed_users_only.ts
-const API_BASE = process.env.API_BASE ?? "https://vah-api-staging.onrender.com";
-const ORIGIN = process.env.ORIGIN ?? "https://vah-frontend-final.vercel.app";
+// Local by default; never point this at production. The password comes from the environment,
+// not from source (security review F11).
+const API_BASE = process.env.API_BASE ?? "http://localhost:4000";
+const ORIGIN = process.env.ORIGIN ?? "http://localhost:3000";
+const SEED_PASSWORD = process.env.SEED_USER_PASSWORD ?? "";
+if (!SEED_PASSWORD) {
+    console.error("Set SEED_USER_PASSWORD (a throwaway test password) before running this script.");
+    process.exit(1);
+}
+if (/virtualaddresshub\.co\.uk/i.test(API_BASE)) {
+    console.error("Refusing to seed test users against the production domain.");
+    process.exit(1);
+}
 const COUNT = Number(process.env.COUNT ?? 50);
 
 type Resp =
@@ -14,7 +25,7 @@ async function createUser(i: number) {
     const email = `seeduser${String(i).padStart(2, "0")}@example.com`;
     const body = {
         email,
-        password: "Password123!",
+        password: SEED_PASSWORD,
         first_name: `Seed${i}`,
         last_name: `User${i}`,
         is_admin: false,

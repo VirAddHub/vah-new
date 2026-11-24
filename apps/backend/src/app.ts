@@ -56,7 +56,6 @@ import adminInvoicesRouter from './server/routes/admin-invoices';
 import adminExportsRouter from './server/routes/admin-exports';
 import companiesHouseRouter from './server/routes/companies-house';
 import opsSelfTestRouter from './server/routes/ops-selftest';
-import idealPostcodesRouter from './server/routes/ideal-postcodes';
 import internalBillingRouter from './server/routes/internal-billing';
 import internalDailySummaryRouter from './server/routes/internal-daily-summary';
 import { errorHandler } from './server/middleware/errorHandler';
@@ -325,24 +324,19 @@ export function createApp() {
         app.use('/api', limiter);
     }
 
-    // Version info
+    // Version info: just enough to confirm which build is live (security review F07 —
+    // branch and runtime mode are no longer published).
     app.get('/api/__version', (_req, res) => {
+        let builtAt = 'unknown';
+        let commit = 'unknown';
         try {
             const buildMeta = require('../../dist/build-meta.json');
-            res.json({
-                builtAt: buildMeta.builtAt,
-                commit: buildMeta.commit || 'unknown',
-                branch: buildMeta.branch || 'unknown',
-                nodeEnv: process.env.NODE_ENV || 'development'
-            });
+            builtAt = buildMeta.builtAt || 'unknown';
+            commit = String(buildMeta.commit || 'unknown').slice(0, 7);
         } catch {
-            res.json({
-                builtAt: 'unknown',
-                commit: 'unknown',
-                branch: 'unknown',
-                nodeEnv: process.env.NODE_ENV || 'development'
-            });
+            // build metadata not present (local/dev)
         }
+        res.json({ builtAt, commit });
     });
 
     // Global parsers
@@ -484,8 +478,8 @@ export function createApp() {
     logger.info('[mount] /api/admin (media) mounted (TS handler)');
     app.use('/api/companies-house', companiesHouseRouter);
     logger.info('[mount] /api/companies-house mounted');
-    app.use('/api', idealPostcodesRouter);
-    logger.info('[mount] /api (ideal-postcodes) mounted');
+    // /api/ideal-postcodes-key removed: it handed the provider key to any visitor and nothing used it
+    // (security review R04/R59). Address lookup goes through the signed-in /api/address/lookup proxy.
 
     app.use('/api', opsSelfTestRouter);
     logger.info('[mount] /api (ops-self-test) mounted');

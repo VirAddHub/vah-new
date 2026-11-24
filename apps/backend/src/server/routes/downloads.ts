@@ -73,6 +73,9 @@ async function cleanupExportFile(jobId: number, filePath: string): Promise<void>
  * No authentication middleware — the token itself is the credential.
  */
 router.get('/export/:token', gdprExportDownloadIpLimiter, async (req: Request, res: Response) => {
+  // Private, token-authorised export: never store in browser or shared caches (security review F18).
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.setHeader('Referrer-Policy', 'no-referrer');
   const token = String(req.params.token ?? '').trim();
   if (!token) return res.status(400).send('Missing token');
 

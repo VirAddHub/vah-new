@@ -58,7 +58,7 @@ export async function PATCH(request: NextRequest) {
     const textPreview = text.substring(0, 300);
 
     // Log backend response for debugging
-    console.error(`[BFF profile/contact] Backend response: ${status} from ${backendUrl}, body preview: ${textPreview}`);
+    if (status >= 400) console.error('[BFF profile/contact] backend status', status);
 
     // Attempt JSON parse only if content looks like JSON
     let json: any = null;

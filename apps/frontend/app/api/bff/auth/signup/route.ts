@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     if (status < 200 || status >= 300) {
       if (process.env.NODE_ENV !== 'production') {
-        console.error('[BFF auth/signup] upstream error', { status, url: backendUrl, data: json ?? textPreview });
+        console.error('[BFF auth/signup] upstream error', { status, error: typeof json?.error === 'string' ? json.error : undefined });
       } else {
         console.error('[BFF auth/signup] upstream error', { status });
       }

@@ -893,24 +893,37 @@ router.post('/mail-items/bulk', requireAdmin, async (req: Request, res: Response
     const adminId = Number(req.user!.id);
 
     const rawIds = Array.isArray(req.body?.ids) ? req.body.ids : [];
-    const ids: number[] = rawIds.map(Number).filter((n: number) => Number.isFinite(n) && n > 0);
+    // Whole positive ids, de-duplicated, at most 500 per request (security review F31/R40).
+    const ids: number[] = Array.from(new Set<number>(
+        rawIds.map(Number).filter((n: number) => Number.isSafeInteger(n) && n > 0)
+    ));
     if (!ids.length) {
         return res.status(400).json({ ok: false, error: 'empty_ids' });
     }
+    if (ids.length > 500) {
+        return res.status(400).json({ ok: false, error: 'too_many_ids', message: 'Update at most 500 items at a time.' });
+    }
 
     const set: Record<string, unknown> = req.body?.set ?? {};
+    for (const [field, max] of [['tag', 100], ['status', 50], ['notes', 2000]] as const) {
+        if (typeof set[field] === 'string' && (set[field] as string).length > max) {
+            return res.status(400).json({ ok: false, error: 'value_too_long', field });
+        }
+    }
+    const applied: Record<string, unknown> = {};
 
     // Build SET clauses — only accept known, safe fields
     const updates: string[] = [];
     const values: unknown[] = [];
     let p = 1;
 
-    if (typeof set.tag === 'string')    { updates.push(`tag = $${p++}`);    values.push(set.tag); }
-    if (typeof set.status === 'string') { updates.push(`status = $${p++}`); values.push(set.status); }
-    if (typeof set.notes === 'string')  { updates.push(`notes = $${p++}`);  values.push(set.notes); }
+    if (typeof set.tag === 'string')    { updates.push(`tag = $${p++}`);    values.push(set.tag); applied.tag = set.tag; }
+    if (typeof set.status === 'string') { updates.push(`status = $${p++}`); values.push(set.status); applied.status = set.status; }
+    if (typeof set.notes === 'string')  { updates.push(`notes = $${p++}`);  values.push(set.notes); applied.notes = set.notes; }
     if (set.deleted === true || set.deleted === false) {
         updates.push(`deleted = $${p++}`);
         values.push(set.deleted);
+        applied.deleted = set.deleted;
     }
 
     // Always stamp who edited and when
@@ -929,25 +942,27 @@ router.post('/mail-items/bulk', requireAdmin, async (req: Request, res: Response
         const updateResult = await pool.query(
             `UPDATE mail_item
              SET ${updates.join(', ')}
-             WHERE id = ANY($${p}::int[])`,
+             WHERE id = ANY($${p}::int[])
+             RETURNING id`,
             [...values, ids],
         );
+        // Audit exactly the rows that changed, with only the fields actually applied.
+        const changedIds: number[] = updateResult.rows.map((r: { id: number }) => Number(r.id));
 
-        // Write one audit row per item (mirrors original JS behaviour)
         const now = Date.now();
-        const afterJson = JSON.stringify(set).slice(0, 50_000);
+        const afterJson = JSON.stringify(applied).slice(0, 50_000);
 
         // Use unnest to insert all audit rows in one statement
         await pool.query(
             `INSERT INTO mail_audit (item_id, user_id, action, before_json, after_json, created_at)
              SELECT unnest($1::int[]), $2, 'bulk_update', NULL, $3, $4`,
-            [ids, adminId, afterJson, now],
+            [changedIds, adminId, afterJson, now],
         ).catch((err) => {
-            // mail_audit may not exist in all environments — non-fatal, log and continue
-            logger.warn('[admin-mail-bulk] mail_audit insert failed (non-fatal):', err?.message ?? err);
+            // mail_audit may not exist in all environments — non-fatal, but loud.
+            logger.error('[admin-mail-bulk] mail_audit insert failed', { message: err?.message, changed: changedIds.length });
         });
 
-        return res.json({ ok: true, updated: updateResult.rowCount ?? 0, ids });
+        return res.json({ ok: true, updated: changedIds.length, ids: changedIds });
     } catch (error: any) {
         logger.error('[POST /api/admin/mail-items/bulk] error:', error);
         return res.status(500).json({ ok: false, error: 'database_error', message: safeErrorMessage(error) });

@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
     const textPreview = text.substring(0, 300);
 
     console.log(`[${routePath}] Backend response: ${backendRes.status} from ${backendUrl}`);
-    console.log(`[${routePath}] Response preview: ${textPreview}`);
+    
 
     let data: any;
     try {

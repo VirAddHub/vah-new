@@ -54,10 +54,7 @@ export default function ForwardingHealthCard() {
       const r = await fetch("/api/bff/ops/self-test", {
         method: "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "x-selftest-secret": process.env.NEXT_PUBLIC_SELFTEST_SECRET || ""
-        }
+        headers: { "Content-Type": "application/json" }
       });
       
       const j = await r.json();

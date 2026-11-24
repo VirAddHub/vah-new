@@ -48,6 +48,10 @@ export interface JWTPayload {
   email: string;
   is_admin?: boolean;
   role?: string;
+  /** session_version at sign-in; a mismatch with the database means the session was revoked. */
+  sv?: number;
+  /** Original sign-in time (seconds). Kept across refreshes to enforce an absolute lifetime. */
+  auth_time?: number;
   iat?: number;
   exp?: number;
 }
@@ -57,6 +61,7 @@ export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string 
 
   const tokenPayload = {
     ...payload,
+    auth_time: payload.auth_time ?? nowSeconds,
     iat: nowSeconds,
     exp: nowSeconds + SESSION_IDLE_TIMEOUT_SECONDS, // 60 minutes from now
   };
