@@ -600,6 +600,9 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
             }
             updates.push(`is_admin = $${paramIndex++}`);
             values.push(is_admin);
+            // Keep the role column in step, so every check that reads either field agrees.
+            updates.push(`role = $${paramIndex++}`);
+            values.push(is_admin ? 'admin' : 'user');
             // A privilege change signs the account out everywhere so no old token keeps the old role (R33).
             if (await hasSessionVersionColumn()) updates.push('session_version = session_version + 1');
         }

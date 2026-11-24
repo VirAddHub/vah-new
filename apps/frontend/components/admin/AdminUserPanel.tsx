@@ -2,8 +2,8 @@
 
 /**
  * Side panel for one customer: Profile, Mail, Billing and Audit tabs, read from existing admin
- * endpoints. Opened by clicking a row in the Users table. Actions that change the account stay in
- * the Account standing dialog, which this panel can open.
+ * endpoints. Opened by clicking a row in the Users table. Standing changes (suspend, restore, close)
+ * stay in the Account standing dialog; admin access is granted or removed here.
  */
 import * as Dialog from '@radix-ui/react-dialog';
 import useSWR from 'swr';
@@ -12,6 +12,7 @@ import { X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { AdminAccessControl } from './AdminAccessControl';
 
 type Tab = 'profile' | 'mail' | 'billing' | 'audit';
 const TABS: { id: Tab; label: string }[] = [
@@ -115,11 +116,20 @@ export function AdminUserPanel({ user, onClose, onOpenStanding }: {
                   <Row label="Identity">{s?.access?.verification?.state?.replace(/_/g, ' ') ?? p?.kyc_status ?? '—'}</Row>
                   <Row label="Payment">{s?.access?.payment?.state?.replace(/_/g, ' ') ?? '—'}</Row>
                   <Row label="Standing">{s?.standing === 'good' ? 'Active' : s?.standing ?? '—'}</Row>
+                  <Row label="Role">{p?.is_admin ? 'Admin' : 'Customer'}</Row>
                 </dl>
                 {user && (
                   <Button variant="outline" className="mt-6" onClick={() => onOpenStanding({ id: user.id, email: user.email })}>
                     Suspend, restore or close…
                   </Button>
+                )}
+                {user && p && (
+                  <AdminAccessControl
+                    userId={user.id}
+                    email={user.email}
+                    isAdmin={Boolean(p.is_admin)}
+                    onChanged={() => { void profile.mutate(); }}
+                  />
                 )}
               </State>
             )}
