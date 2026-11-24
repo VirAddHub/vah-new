@@ -136,7 +136,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
 
   // Create user modal state
   const [createModal, setCreateModal] = useState(false);
-  const [createForm, setCreateForm] = useState({ email: '', first_name: '', last_name: '', company_name: '', plan_status: 'pending_payment', test_account: false, password: '' });
+  const [createForm, setCreateForm] = useState({ email: '', first_name: '', last_name: '', company_name: '', plan_status: 'pending_payment', test_account: false, password: '', account_type: 'customer' as 'customer' | 'test' | 'admin' });
   const [createError, setCreateError] = useState('');
 
   // Edit profile modal state
@@ -501,9 +501,9 @@ export default function UsersSection({ users, loading, error, total, page, pageS
           <Button
             variant="primary"
             size="sm"
-            onClick={() => { setCreateForm({ email: '', first_name: '', last_name: '', company_name: '', plan_status: 'pending_payment', test_account: false, password: '' }); setCreateError(''); setCreateModal(true); }}
+            onClick={() => { setCreateForm({ email: '', first_name: '', last_name: '', company_name: '', plan_status: 'pending_payment', test_account: false, password: '', account_type: 'customer' as 'customer' | 'test' | 'admin' }); setCreateError(''); setCreateModal(true); }}
           >
-            + Create user
+            + Create account
           </Button>
           <Button
             variant={showDeleted ? "primary" : "ghost"}
@@ -1100,45 +1100,59 @@ export default function UsersSection({ users, loading, error, total, page, pageS
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white text-neutral-900 shadow-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto border rounded-2xl p-6 w-full max-w-md space-y-5">
             <div>
-              <h3 className="text-body-lg font-semibold mb-1">Create user</h3>
+              <h3 className="text-body-lg font-semibold mb-1">Create account</h3>
               <p className="text-body-sm text-muted-foreground">
-                {createForm.test_account
-                  ? 'A test customer for checking the service. You set the password here; no email is sent.'
-                  : 'A password-reset email will be sent so they can set their own password.'}
+                {createForm.account_type === 'admin'
+                  ? 'A new admin. They get an email with a link to choose their own password (valid for 72 hours).'
+                  : createForm.test_account
+                    ? 'A test customer for checking the service. You set the password here; no email is sent.'
+                    : 'They get an email with a link to choose their own password.'}
               </p>
             </div>
             {createError && <p className="text-body-sm text-destructive">{createError}</p>}
             <div className="space-y-3">
-              <label className="flex items-start gap-2 rounded-lg border p-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={createForm.test_account}
-                  onChange={(e) => setCreateForm(f => ({ ...f, test_account: e.target.checked, password: '' }))}
-                />
-                <span className="text-body-sm">
-                  <span className="font-medium">Test customer</span>
-                  <span className="block text-muted-foreground">Labelled as a test account. Use an email address you can read, so you can see what customers receive.</span>
-                </span>
-              </label>
+              <fieldset className="space-y-2">
+                <legend className="text-body-sm font-medium mb-1">Account type</legend>
+                {([
+                  { v: 'customer', title: 'Customer', hint: 'A real customer. They set their own password from the email.' },
+                  { v: 'test', title: 'Test customer', hint: 'Labelled as a test account. You choose the password; no email is sent.' },
+                  { v: 'admin', title: 'Admin', hint: 'Full access to the admin area, including every customer\'s account, mail and billing.' },
+                ] as const).map(opt => (
+                  <label key={opt.v} className={`flex items-start gap-2 rounded-lg border p-3 cursor-pointer ${createForm.account_type === opt.v ? 'border-foreground' : ''}`}>
+                    <input
+                      type="radio"
+                      name="cu-type"
+                      className="mt-1"
+                      checked={createForm.account_type === opt.v}
+                      onChange={() => setCreateForm(f => ({ ...f, account_type: opt.v, test_account: opt.v === 'test', password: '' }))}
+                    />
+                    <span className="text-body-sm">
+                      <span className="font-medium">{opt.title}</span>
+                      <span className="block text-muted-foreground">{opt.hint}</span>
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
               <div className="space-y-1">
                 <Label htmlFor="cu-email">Email *</Label>
                 <Input id="cu-email" type="email" value={createForm.email} onChange={(e) => setCreateForm(f => ({ ...f, email: e.target.value }))} placeholder="user@example.com" />
               </div>
               <div className="flex flex-wrap gap-2">
                 <div className="flex-1 space-y-1">
-                  <Label htmlFor="cu-first">First name</Label>
+                  <Label htmlFor="cu-first">First name{createForm.account_type === 'admin' ? ' *' : ''}</Label>
                   <Input id="cu-first" value={createForm.first_name} onChange={(e) => setCreateForm(f => ({ ...f, first_name: e.target.value }))} placeholder="Jane" />
                 </div>
                 <div className="flex-1 space-y-1">
-                  <Label htmlFor="cu-last">Last name</Label>
+                  <Label htmlFor="cu-last">Last name{createForm.account_type === 'admin' ? ' *' : ''}</Label>
                   <Input id="cu-last" value={createForm.last_name} onChange={(e) => setCreateForm(f => ({ ...f, last_name: e.target.value }))} placeholder="Smith" />
                 </div>
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="cu-company">Company name</Label>
-                <Input id="cu-company" value={createForm.company_name} onChange={(e) => setCreateForm(f => ({ ...f, company_name: e.target.value }))} placeholder="Acme Ltd" />
-              </div>
+              {createForm.account_type !== 'admin' && (
+                <div className="space-y-1">
+                  <Label htmlFor="cu-company">Company name</Label>
+                  <Input id="cu-company" value={createForm.company_name} onChange={(e) => setCreateForm(f => ({ ...f, company_name: e.target.value }))} placeholder="Acme Ltd" />
+                </div>
+              )}
               {createForm.test_account && (
                 <div className="space-y-1">
                   <Label htmlFor="cu-password">Password *</Label>
@@ -1148,7 +1162,9 @@ export default function UsersSection({ users, loading, error, total, page, pageS
               )}
               {/* No plan-status choice: access comes from a Stripe payment, so "Active" here would only
                   have changed a label. New accounts start awaiting payment. */}
-              <p className="text-caption text-muted-foreground">The account starts as awaiting payment. Service begins once they pay at checkout.</p>
+              {createForm.account_type !== 'admin' && (
+                <p className="text-caption text-muted-foreground">The account starts as awaiting payment. Service begins once they pay at checkout.</p>
+              )}
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setCreateModal(false)} disabled={isMutating}>Cancel</Button>
@@ -1156,6 +1172,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 onClick={async () => {
                   if (!createForm.email.includes('@')) { setCreateError('Enter a valid email address.'); return; }
                   if (createForm.test_account && !createForm.password) { setCreateError('Choose a password for the test customer.'); return; }
+                  if (createForm.account_type === 'admin' && (!createForm.first_name.trim() || !createForm.last_name.trim())) { setCreateError('Enter the new admin\'s first and last name.'); return; }
                   setIsMutating(true);
                   setCreateError('');
                   try {
@@ -1163,14 +1180,21 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                       method: 'POST',
                       credentials: 'include',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(createForm.test_account
-                        ? createForm
-                        : { email: createForm.email, first_name: createForm.first_name, last_name: createForm.last_name, company_name: createForm.company_name }),
+                      body: JSON.stringify(
+                        createForm.account_type === 'admin'
+                          ? { account_type: 'admin', email: createForm.email, first_name: createForm.first_name, last_name: createForm.last_name }
+                          : createForm.test_account
+                            ? { email: createForm.email, first_name: createForm.first_name, last_name: createForm.last_name, company_name: createForm.company_name, test_account: true, password: createForm.password }
+                            : { email: createForm.email, first_name: createForm.first_name, last_name: createForm.last_name, company_name: createForm.company_name }),
                     });
                     const json = await res.json().catch(() => ({}));
                     if (!res.ok) throw new Error(json.message || json.error || 'Failed to create user');
                     const newId = json?.data?.id;
-                    if (createForm.test_account) {
+                    if (createForm.account_type === 'admin') {
+                      toast(json?.data?.email_sent === false
+                        ? { title: `Admin #${newId} created`, description: `The email to ${createForm.email} could not be sent. Use "Send password reset" on their account to try again.`, variant: 'destructive' }
+                        : { title: `Admin #${newId} created`, description: `${createForm.email} has been sent a link to choose a password (valid 72 hours).` });
+                    } else if (createForm.test_account) {
                       toast({
                         title: `Test customer #${newId} created`,
                         description: `Sign in as ${createForm.email} with the password you chose. Name test scans user${newId}_DD-MM-YY_Type.pdf.`,
@@ -1189,7 +1213,7 @@ export default function UsersSection({ users, loading, error, total, page, pageS
                 }}
                 disabled={isMutating}
               >
-                {isMutating ? 'Creating…' : 'Create user'}
+                {isMutating ? 'Creating…' : createForm.account_type === 'admin' ? 'Create admin' : 'Create user'}
               </Button>
             </div>
           </div>

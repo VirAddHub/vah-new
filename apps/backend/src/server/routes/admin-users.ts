@@ -18,6 +18,7 @@ import { Templates } from '../../lib/postmark-templates';
 import { logger } from '../../lib/logger';
 import { getSubscriptionRate } from '../../services/stripePrices';
 import { passwordSchema } from '../../lib/passwordSchema';
+import { sendPasswordLink } from '../services/passwordSetupLink';
 
 const router = Router();
 
@@ -981,9 +982,23 @@ router.post('/users', requireAdmin, async (req: Request, res: Response) => {
     // is labelled so it can't be mistaken for a real customer. Like every new account it starts
     // unpaid, so it has restricted access until a real (test-mode) payment and identity check.
     const testAccount = req.body?.test_account === true;
+    // An admin account: created by a current admin, no business or plan, and the person sets their
+    // own password from an emailed link (the creating admin never knows it).
+    const adminAccount = req.body?.account_type === 'admin';
+    if (adminAccount && testAccount) {
+        return res.status(400).json({ ok: false, error: 'invalid_account_type' });
+    }
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {
         return res.status(400).json({ ok: false, error: 'valid_email_required' });
+    }
+    if (adminAccount) {
+        first_name = typeof first_name === 'string' ? first_name.trim() : '';
+        last_name = typeof last_name === 'string' ? last_name.trim() : '';
+        if (!first_name || !last_name) {
+            return res.status(400).json({ ok: false, error: 'name_required', message: 'Enter the new admin\'s first and last name.' });
+        }
+        company_name = null;
     }
     if (testAccount) {
         const pw = passwordSchema.safeParse(password);
@@ -1009,7 +1024,7 @@ router.post('/users', requireAdmin, async (req: Request, res: Response) => {
             return res.status(409).json({ ok: false, error: 'email_exists', message: 'An account with that email already exists.' });
         }
 
-        const rawPassword = (typeof password === 'string' && password.length >= 8)
+        const rawPassword = (!adminAccount && typeof password === 'string' && password.length >= 8)
             ? password
             : crypto.randomBytes(20).toString('hex');
         const passwordHash = await bcrypt.hash(rawPassword, 10);
@@ -1018,6 +1033,32 @@ router.post('/users', requireAdmin, async (req: Request, res: Response) => {
         // status is account standing ('active'), and the primary business is created in the same
         // statement. Payment state always starts unpaid: an admin cannot grant paid access here.
         // (This insert used a password_hash column and NOW() for a millisecond column, and failed.)
+        if (adminAccount) {
+            const created = await pool.query(
+                `INSERT INTO "user"
+                   (email, first_name, last_name, plan_status, password, status, is_admin, role, is_sole_controller, created_at, updated_at)
+                 VALUES ($1, $2, $3, 'pending_payment', $4, 'active', true, 'admin', true, $5, $5)
+                 RETURNING id, email, first_name, last_name, status, created_at`,
+                [email.toLowerCase().trim(), first_name, last_name, passwordHash, nowMs()]
+            );
+            const admin = created.rows[0];
+            await pool.query(
+                `INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
+                 VALUES ($1, 'create_admin', 'user', $2, $3, NOW())`,
+                [adminId, admin.id, JSON.stringify({ email: admin.email })]
+            );
+            // 72-hour link to choose their own password. Sent now (not in the background) so the
+            // creating admin knows whether it went.
+            let emailSent = true;
+            try {
+                await sendPasswordLink(admin, 72 * 60);
+            } catch (e: any) {
+                emailSent = false;
+                logger.warn('[admin create_admin] password_link_email_failed', { userId: admin.id, message: e?.message });
+            }
+            return res.status(201).json({ ok: true, data: { ...admin, is_admin: true, email_sent: emailSent } });
+        }
+
         const result = await pool.query(
             `WITH new_user AS (
                INSERT INTO "user"
@@ -1053,28 +1094,10 @@ router.post('/users', requireAdmin, async (req: Request, res: Response) => {
             return res.status(201).json({ ok: true, data: { ...newUser, test_account: true } });
         }
 
-        // Send password-reset so user can set their own password on first login
+        // Email a link so they can set their own password on first sign-in.
         queueMicrotask(async () => {
             try {
-                const resetCrypto = await import('crypto');
-                const bcryptLib = await import('bcrypt');
-                const raw = resetCrypto.randomBytes(32).toString('hex');
-                const hash = await bcryptLib.hash(raw, 10);
-                const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000);
-                await pool.query(
-                    `UPDATE "user" SET reset_token_hash=$1, reset_token_expires_at=$2, reset_token_used_at=NULL WHERE id=$3`,
-                    [hash, expiresAt.toISOString(), newUser.id]
-                );
-                const APP_BASE_URL = buildAppUrl('');
-                await sendTemplateEmail({
-                    to: newUser.email,
-                    templateAlias: Templates.PasswordReset,
-                    model: {
-                        firstName: newUser.first_name || 'there',
-                        resetLink: `${APP_BASE_URL}/reset-password/confirm?token=${encodeURIComponent(raw)}`,
-                        expiryMinutes: 72 * 60,
-                    },
-                });
+                await sendPasswordLink(newUser, 72 * 60);
             } catch (e: any) {
                 logger.warn('[admin create_user] welcome email failed (non-fatal):', { message: e?.message });
             }
@@ -1108,27 +1131,8 @@ router.post('/users/:id/send-password-reset', requireAdmin, async (req: Request,
         }
         const user = userResult.rows[0];
 
-        const crypto = await import('crypto');
-        const bcrypt = await import('bcrypt');
-        const raw = crypto.randomBytes(32).toString('hex');
-        const hash = await bcrypt.hash(raw, 10);
-        const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
-
-        await pool.query(
-            `UPDATE "user" SET reset_token_hash=$1, reset_token_expires_at=$2, reset_token_used_at=NULL WHERE id=$3`,
-            [hash, expiresAt.toISOString(), userId]
-        );
-
-        const APP_BASE_URL = buildAppUrl('');
-        await sendTemplateEmail({
-            to: user.email,
-            templateAlias: Templates.PasswordReset,
-            model: {
-                firstName: user.first_name || 'there',
-                resetLink: `${APP_BASE_URL}/reset-password/confirm?token=${encodeURIComponent(raw)}`,
-                expiryMinutes: 30,
-            },
-        });
+        // Same token format as "Forgot password", so the link actually works.
+        await sendPasswordLink(user, 30);
 
         await pool.query(
             `INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
