@@ -3,11 +3,11 @@
 
 import { Router, Request, Response } from 'express';
 import { logger } from '../../lib/logger';
+import { loadProof } from '../services/chProofStore';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 import { param } from '../../lib/express-params';
 import { safeErrorMessage } from '../../lib/safeError';
-import fs from 'fs';
 import path from 'path';
 
 const router = Router();
@@ -36,18 +36,13 @@ router.get('/ch-verification/:userId/proof', requireAdmin, async (req: Request, 
         if (!proofUrl) return res.status(404).json({ ok: false, error: 'no_proof' });
         // Stored as a URL/path ending in the file name; only the base name is used, so no path can escape the folder.
         const filename = path.basename(String(proofUrl).split('?')[0]);
-        const dir = path.join(process.cwd(), 'data', 'ch-verification');
-        const filePath = path.join(dir, filename);
-        if (!filename || !filePath.startsWith(dir + path.sep) || !fs.existsSync(filePath)) {
-            return res.status(404).json({ ok: false, error: 'file_not_found' });
-        }
-        const ext = path.extname(filename).toLowerCase();
-        const type = ext === '.pdf' ? 'application/pdf' : /\.(jpe?g|png|gif|webp)$/.test(ext) ? `image/${ext === '.jpg' ? 'jpeg' : ext.slice(1)}` : 'application/octet-stream';
-        res.setHeader('Content-Type', type);
+        const proof = filename ? await loadProof(filename) : null;
+        if (!proof) return res.status(404).json({ ok: false, error: 'file_not_found' });
+        res.setHeader('Content-Type', proof.mime);
         res.setHeader('Content-Disposition', `inline; filename="${filename.replace(/"/g, '')}"`);
         res.setHeader('Cache-Control', 'private, no-store');
         res.setHeader('X-Content-Type-Options', 'nosniff');
-        fs.createReadStream(filePath).pipe(res);
+        return res.end(proof.data);
     } catch (error: any) {
         logger.error('[GET /api/admin/ch-verification/:userId/proof] error', { message: error?.message });
         return res.status(500).json({ ok: false, error: 'file_serve_error' });
