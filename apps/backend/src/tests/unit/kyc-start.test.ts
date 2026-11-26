@@ -46,6 +46,7 @@ it('records an actionable error string instead of an empty Error object',async()
  mocks.fetch.mockRejectedValue(new Error('Sumsub POST /resources/applicants 400: Existing level should be specified'));
  const res=await request(app).post('/api/kyc/start');
  expect(res.status).toBe(500);
- expect(mocks.error).toHaveBeenCalledWith('[kyc/start] error',expect.objectContaining({error:expect.stringContaining('Existing level should be specified'),errorName:'Error'}));
+ expect(mocks.error).toHaveBeenCalledWith('[kyc/start] error',expect.objectContaining({message:expect.stringContaining('Existing level should be specified')}));
+ expect(res.body.message).not.toContain('Existing level'); // provider text stays in the log (security review F17)
  expect(mocks.query).toHaveBeenCalledTimes(1);
 });

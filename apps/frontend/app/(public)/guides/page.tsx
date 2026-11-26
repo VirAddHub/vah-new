@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { InformationPage } from '@/components/marketing/InformationPage';
 export const metadata: Metadata = {
   title: 'Make an informed start' + ' | VirtualAddressHub',
@@ -42,9 +43,9 @@ export default function Page() {
       </p>
       <h2>More practical help</h2>
       <p>
-        <a href="/blog">Browse business articles →</a>
+        <Link href="/blog">Browse business articles →</Link>
         <br />
-        <a href="/help">Visit the help centre →</a>
+        <Link href="/help">Visit the help centre →</Link>
       </p>
     </InformationPage>
   );
