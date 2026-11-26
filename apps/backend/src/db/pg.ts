@@ -1,18 +1,11 @@
-import { Pool, PoolClient } from 'pg';
+import type { PoolClient } from 'pg';
+import { getPool } from '../lib/db';
 import { logger } from '../lib/logger';
 import { BOOTSTRAP_SQL } from './schema';
-import { getPgSslOption } from '../lib/pgSslConfig';
 
-// Fix database connection configuration
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: getPgSslOption(),
-  // Add proper connection settings
-  connectionTimeoutMillis: 10000,
-  idleTimeoutMillis: 30000,
-  max: 20, // Maximum number of clients in the pool
-  min: 2,  // Minimum number of clients in the pool
-});
+// One pool per process: use the shared pool from lib/db (max PGPOOL_MAX, default 20). This module
+// used to create a second pool of 20, so one API instance could open up to 40 connections.
+const pool = { connect: () => getPool().connect() };
 
 async function withClient<T>(fn: (c: PoolClient) => Promise<T>) {
   const c = await pool.connect();

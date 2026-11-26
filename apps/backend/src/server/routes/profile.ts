@@ -3,6 +3,7 @@
 
 import { Router, Request, Response } from "express";
 import { requireFullService } from "../services/access";
+import { saveProof, loadProof } from "../services/chProofStore";
 import { getPool } from '../db';
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
@@ -1639,22 +1640,11 @@ router.post("/ch-verification", requireAuth, chVerificationUpload.single('file')
             });
         }
 
-        // File is valid - save to disk
-        const uploadDir = path.join(process.cwd(), 'data', 'ch-verification');
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-
+        // File is valid: store it where it survives deploys (services/chProofStore.ts)
         const timestamp = Date.now();
-        const ext = path.extname(req.file.originalname);
+        const ext = path.extname(req.file.originalname).toLowerCase();
         const filename = `ch-verification-${userId}-${timestamp}${ext}`;
-        const filePath = path.join(uploadDir, filename);
-
-        // Write validated file to disk
-        // req.file.buffer is already a Buffer from multer memoryStorage
-        // Convert to Uint8Array for TypeScript compatibility
-        const fileData = new Uint8Array(req.file.buffer);
-        await fs.promises.writeFile(filePath, fileData);
+        await saveProof(Number(userId), filename, req.file.buffer);
 
         // Build the proof URL (relative path or full URL depending on your setup)
         const proofUrl = `/api/profile/media/ch-verification/${filename}`;
@@ -1711,29 +1701,18 @@ router.get("/media/ch-verification/:filename", requireAuth, async (req: Request,
         }
 
         const proofUrl = userResult.rows[0].ch_verification_proof_url;
-        if (!proofUrl || !proofUrl.includes(filename)) {
+        if (!req.user?.is_admin && (!proofUrl || !proofUrl.includes(filename))) {
             return res.status(403).json({ ok: false, error: 'forbidden', message: 'File does not belong to this user' });
         }
 
-        const filePath = path.join(process.cwd(), 'data', 'ch-verification', filename);
-
-        if (!fs.existsSync(filePath)) {
+        const proof = await loadProof(filename);
+        if (!proof) {
             return res.status(404).json({ ok: false, error: 'file_not_found' });
         }
-
-        // Determine content type
-        const ext = path.extname(filename).toLowerCase();
-        const contentType = ext === '.pdf'
-            ? 'application/pdf'
-            : ext.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-                ? `image/${ext.slice(1)}`
-                : 'application/octet-stream';
-
-        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Type', proof.mime);
         res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-
-        const fileStream = fs.createReadStream(filePath);
-        fileStream.pipe(res);
+        res.setHeader('Cache-Control', 'private, no-store');
+        return res.end(proof.data);
     } catch (error: any) {
         logger.error('[GET /api/media/ch-verification/:filename] error', { message: error?.message ?? String(error) });
         return res.status(500).json({ ok: false, error: 'file_serve_error', message: safeErrorMessage(error) });

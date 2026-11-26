@@ -42,6 +42,9 @@ const CLOUDINARY_CONFIGURED =
     !!(process.env.CLOUDINARY_CLOUD_NAME &&
        process.env.CLOUDINARY_API_KEY &&
        process.env.CLOUDINARY_API_SECRET);
+// Logged once at start (no values) so it is visible whether blog images go to Cloudinary or to
+// this server's disk, which matters before the attached disk is removed.
+logger.info('[admin-media] image_storage', { cloudinary: CLOUDINARY_CONFIGURED, disk_dir: process.env.DATA_DIR ? 'DATA_DIR' : 'app_folder' });
 
 if (CLOUDINARY_CONFIGURED) {
     cloudinary.config({
