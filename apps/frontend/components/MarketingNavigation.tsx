@@ -1,55 +1,74 @@
 'use client';
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import * as Dialog from '@radix-ui/react-dialog';
-import { ArrowUpRight, Menu, X } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { VAHLogo } from './VAHLogo';
-import styles from './marketing.module.css';
-
-interface MarketingNavigationProps {
-  onNavigate?: (page: string) => void;
-}
-
-const links = [
-  { label: 'Pricing', href: '/pricing' },
-  { label: 'About', href: '/about' },
-  { label: 'Blog', href: '/blog' },
-  { label: 'Help', href: '/help' },
-];
-
-export function MarketingNavigation({ onNavigate }: MarketingNavigationProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+import { services } from '@/lib/marketing';
+import styles from './marketing/Navigation.module.css';
+export function MarketingNavigation({ onNavigate }: { onNavigate?: (page: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const path = usePathname();
+  useEffect(() => {
+    setOpen(false);
+  }, [path]);
   return (
     <header className={styles.header}>
-      <div className={`${styles.container} ${styles.navInner}`}>
-        <VAHLogo onNavigate={onNavigate} size="lg" className={styles.brand} />
-        <nav aria-label="Main navigation" className={styles.desktopNav}>
-          {links.map(({ label, href }) => <Link key={href} href={href}>{label}</Link>)}
+      <div className={styles.bar}>
+        <VAHLogo onNavigate={onNavigate} size="lg" />
+        <button
+          className={styles.toggle}
+          aria-expanded={open}
+          aria-controls="public-navigation"
+          onClick={() => setOpen(!open)}
+        >
+          {open ? 'Close menu' : 'Menu'}
+        </button>
+        <nav
+          id="public-navigation"
+          aria-label="Main navigation"
+          className={`${styles.nav} ${open ? styles.open : ''}`}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setOpen(false);
+              (e.currentTarget.previousElementSibling as HTMLElement)?.focus();
+            }
+          }}
+        >
+          <details className={styles.dropdown}>
+            <summary>Services</summary>
+            <div>
+              {services.map((v) => (
+                <Link
+                  onClick={(e) => {
+                    e.currentTarget.closest('details')?.removeAttribute('open');
+                    setOpen(false);
+                  }}
+                  key={v.slug}
+                  href={`/${v.slug}`}
+                >
+                  {v.title}
+                </Link>
+              ))}
+            </div>
+          </details>
+          <Link href="/london-address">Our London address</Link>
+          <Link href="/pricing">Pricing</Link>
+          <Link href="/how-it-works">How it works</Link>
+          <details className={styles.dropdown}>
+            <summary>Resources</summary>
+            <div>
+              <Link href="/guides">Business guides</Link>
+              <Link href="/help">Help centre</Link>
+              <Link href="/blog">Blog</Link>
+              <Link href="/#faq">FAQs</Link>
+            </div>
+          </details>
+          <Link href="/about">About</Link>
+          <Link href="/login">Log in</Link>
+          <Link className={styles.cta} href="/signup">
+            Get your address ↗
+          </Link>
         </nav>
-        <div className={styles.authNav}>
-          <Link href="/login" className={styles.loginLink}>Log in</Link>
-          <Link href="/signup" className={styles.primaryButton}>Get started <ArrowUpRight size={16} /></Link>
-          <Dialog.Root open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-            <Dialog.Trigger className={styles.menuTrigger} aria-label="Open menu"><Menu size={19} /></Dialog.Trigger>
-            <Dialog.Portal>
-              <Dialog.Overlay className={styles.mobileOverlay} />
-              <Dialog.Content className={styles.mobileMenu}>
-                <div className={styles.menuHeading}>
-                  <Dialog.Title>Explore VirtualAddressHub</Dialog.Title>
-                  <Dialog.Close className={styles.closeMenu} aria-label="Close menu"><X size={20} /></Dialog.Close>
-                </div>
-                <Dialog.Description className={styles.menuDescription}>A professional address. A simpler way to manage your post.</Dialog.Description>
-                <nav aria-label="Mobile navigation">
-                  {[...links, { label: 'Contact', href: '/contact' }].map(({ label, href }) => <Link key={href} href={href} onClick={() => setIsMenuOpen(false)}>{label}</Link>)}
-                </nav>
-                <Link href="/signup" className={styles.primaryButton} onClick={() => setIsMenuOpen(false)}>Get started <ArrowUpRight size={18} /></Link>
-                <Link href="/login" className={styles.textButton} onClick={() => setIsMenuOpen(false)}>Log in to your account</Link>
-              </Dialog.Content>
-            </Dialog.Portal>
-          </Dialog.Root>
-        </div>
       </div>
     </header>
   );

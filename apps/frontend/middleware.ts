@@ -233,7 +233,9 @@ export function middleware(request: NextRequest) {
     '/billing',
     '/business-owners',
   ];
+  const isPublicMailServicePage = ['/mail-scanning', '/mail-forwarding'].includes(pathname.replace(/\/$/, ''));
   const isProtectedRoute =
+    !isPublicMailServicePage &&
     !isPublicAccountRoute &&
     !isPublicVerifyRoute &&
     !isPublicEmailChangeRoute &&
@@ -252,6 +254,9 @@ export function middleware(request: NextRequest) {
   }
 
   const response = NextResponse.next();
+  if (isProtectedRoute || /^\/(admin|dashboard|login|signup|reset-password|forgot-password|verify-email-change|account|kyc)(?:\/|$)/.test(pathname)) {
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  }
 
   if (pathname === '/' ||
     pathname === '/about' ||

@@ -118,7 +118,9 @@ export default function AdminMetricsGrowthCard() {
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip
                 labelFormatter={(value) => {
+                  if (typeof value !== "string" && typeof value !== "number") return "";
                   const date = new Date(value);
+                  if (Number.isNaN(date.getTime())) return "";
                   return date.toLocaleDateString();
                 }}
               />

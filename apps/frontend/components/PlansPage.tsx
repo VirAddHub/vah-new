@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import marketing from './marketing/Marketing.module.css';
 import { usePricing } from '@/hooks/usePlans';
 import { formatPrice } from '@/lib/formatPrice';
 
@@ -67,7 +68,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
         : formatPrice(selectedPrice, { interval: isAnnual ? 'year' : 'month' });
 
     const explanatoryFeatures = [
-        'Unlimited same-day digital mail scanning',
+        'Digital mail scanning and secure online access',
         'HMRC & Companies House forwarding free (UK)',
         'Other UK mail forwarded at £2 per item',
         'International forwarding available on request',
@@ -75,271 +76,139 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
 
     const trustFeatures = [
         'Central London address (never a PO Box)',
-        'Companies House compliant',
-        'ICO registered · HMRC AML supervised',
-        'Digital delivery same business day',
+        'Registered office and director’s service address use, subject to eligibility',
+        'Identity and business verification before approval',
+        'View and download available scans online'
     ];
 
     return (
-        <div className="plans-page" style={{ background: T.paper, minWidth: 0 }}>
+        <div className={`${marketing.site} ${marketing.pricingPage}`}>
+            <section className="py-8 sm:py-12 lg:py-16 overflow-x-hidden">
+                <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 min-w-0">
+                    {/* Header */}
+                    <div className="mb-8 sm:mb-12">
+                        <h1 className="text-h2 sm:text-h1 lg:text-display text-foreground leading-tight tracking-tight">
+                            Pricing
+                        </h1>
+                        <p className="mt-2 text-body-sm sm:text-body text-muted-foreground">
+                            Address services and digital mail management. One subscription.
+                        </p>
+                    </div>
 
-            {/* ── Responsive styles ── */}
-            <style>{`
-                .plans-page { font-family: ${T.font}; }
+                    {/* Pricing card container */}
+                    <div className="rounded-xl sm:rounded-2xl border border-border bg-card shadow-sm overflow-hidden min-w-0">
+                        {/* Brand accent line */}
+                        <div className="h-0.5 bg-primary" />
+                        <div className="p-5 sm:p-8 lg:p-12 min-w-0">
+                            {/* Two-column layout */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+                                {/* LEFT: Decision */}
+                                <div className="min-w-0">
+                                    <h2 className="text-h4 sm:text-h3 text-foreground mb-4 sm:mb-6">
+                                        Your London address package
+                                    </h2>
 
-                /* Page header */
-                .plans-header {
-                    padding: 48px 20px 28px;
-                }
-                @media (min-width: 640px) {
-                    .plans-header { padding: 56px 40px 32px; }
-                }
-                @media (min-width: 1024px) {
-                    .plans-header { padding: 64px 56px 32px; }
-                }
+                                    {/* Billing toggle - full width on mobile for easier tap */}
+                                    <div role="group" aria-label="Billing period" className="bg-muted flex h-11 sm:h-10 w-full sm:w-fit items-center rounded-lg p-1 mb-6 sm:mb-8">
+                                        <button
+                                            aria-pressed={!isAnnual}
+                                            onClick={() => setIsAnnual(false)}
+                                            className={`flex-1 sm:flex-none h-full rounded-md px-4 sm:px-6 text-body-sm font-medium transition-all min-h-[44px] sm:min-h-0 ${!isAnnual
+                                                ? 'bg-card text-foreground shadow-sm'
+                                                : 'text-muted-foreground hover:text-foreground'
+                                                }`}
+                                        >
+                                            Monthly
+                                        </button>
+                                        <button
+                                            aria-pressed={isAnnual}
+                                            onClick={() => setIsAnnual(true)}
+                                            className={`flex-1 sm:flex-none h-full rounded-md px-4 sm:px-6 text-body-sm font-medium transition-all min-h-[44px] sm:min-h-0 ${isAnnual
+                                                ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary'
+                                                : 'text-muted-foreground hover:text-foreground'
+                                                }`}
+                                        >
+                                            Annual
+                                        </button>
+                                    </div>
 
-                /* Card outer section */
-                .plans-section {
-                    padding: 24px 16px 64px;
-                }
-                @media (min-width: 640px) {
-                    .plans-section { padding: 32px 40px 80px; }
-                }
-                @media (min-width: 1024px) {
-                    .plans-section { padding: 40px 56px 110px; }
-                }
+                                    {/* Error Display */}
+                                    {error && (
+                                        <p className="text-body-sm text-muted-foreground mb-4 sm:mb-6">
+                                            Pricing temporarily unavailable. Please refresh.
+                                        </p>
+                                    )}
 
-                /* Card inner grid */
-                .plans-grid {
-                    display: grid;
-                    grid-template-columns: 1fr;
-                    gap: 40px;
-                }
-                @media (min-width: 1024px) {
-                    .plans-grid {
-                        grid-template-columns: 1fr 1px 1.3fr;
-                        gap: 56px;
-                        align-items: start;
-                    }
-                }
+                                    {/* Price - responsive size, no min-width overflow on mobile */}
+                                    <div className="mb-6 sm:mb-8">
+                                        <div className="flex items-baseline gap-2 mb-2 min-w-0">
+                                            <span className="text-h1 sm:text-display lg:text-display font-semibold text-foreground tabular-nums break-words">
+                                                {displayPrice}
+                                            </span>
+                                        </div>
+                                        <div className="inline-block border-b-2 border-primary/20 pb-0.5">
+                                            <p className="text-caption sm:text-body-sm text-muted-foreground">
+                                                {isAnnual ? 'Billed annually.' : 'Billed monthly. Cancellation conditions apply.'}
+                                            </p>
+                                        </div>
+                                    </div>
 
-                /* Hairline divider — only visible on desktop */
-                .plans-divider {
-                    display: none;
-                    background: ${T.rule};
-                    width: 1px;
-                    align-self: stretch;
-                    min-height: 400px;
-                }
-                @media (min-width: 1024px) {
-                    .plans-divider { display: block; }
-                }
+                                    {/* CTA - full width on mobile, touch-friendly */}
+                                    <Button
+                                        onClick={handleSelectPlan}
+                                        disabled={selectedPrice === null}
+                                        size="lg"
+                                        className="h-12 min-h-[48px] px-6 sm:px-8 w-full sm:w-auto font-medium mb-2"
+                                    >
+                                        Get Started
+                                    </Button>
 
-                /* Horizontal rule between price and features on mobile */
-                .plans-mobile-rule {
-                    display: block;
-                    border: none;
-                    border-top: 1px solid ${T.rule};
-                    margin: 8px 0 32px;
-                }
-                @media (min-width: 1024px) {
-                    .plans-mobile-rule { display: none; }
-                }
+                                    <p className="text-caption sm:text-body-sm text-muted-foreground tabular-nums">
+                                        {selectedPrice !== null && (isAnnual
+                                            ? `Equivalent to ${formatPrice(selectedPrice / 12, { interval: 'month' })}`
+                                            : monthlySavingsPct > 0 ? `Save ${monthlySavingsPct}% with annual billing` : 'Annual billing also available')}
+                                    </p>
+                                </div>
 
-                /* Toggle — full-width on mobile */
-                .plans-toggle {
-                    display: flex;
-                    width: 100%;
-                    background: ${T.paper};
-                    border: 1px solid ${T.rule};
-                    padding: 4px;
-                }
-                @media (min-width: 480px) {
-                    .plans-toggle { width: auto; display: inline-flex; }
-                }
+                                {/* RIGHT: Understanding */}
+                                <div className="space-y-8 sm:space-y-10 min-w-0">
+                                    {/* What's included */}
+                                    <div>
+                                        <h3 className="text-label sm:text-body font-semibold text-foreground mb-3 sm:mb-4">
+                                            What's included
+                                        </h3>
+                                        <ul className="space-y-2.5 sm:space-y-3">
+                                            {explanatoryFeatures.map((feature, index) => (
+                                                <li key={index} className="flex items-start gap-2.5 sm:gap-3 text-body-sm text-muted-foreground leading-relaxed">
+                                                    <svg className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                    </svg>
+                                                    <span>{feature}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <p className="mt-3 sm:mt-4 text-caption text-muted-foreground leading-relaxed">
+                                            Physical forwarding has separate conditions and charges. Address use begins only after required checks and approval.
+                                        </p>
+                                    </div>
 
-                .plans-toggle button {
-                    flex: 1;
-                    padding: 12px 18px;
-                    border: none;
-                    cursor: pointer;
-                    font-family: ${T.font};
-                    font-size: 13px;
-                    font-weight: 500;
-                    transition: all 0.2s;
-                    min-height: 44px;
-                    white-space: nowrap;
-                }
-
-                /* CTA — full width always */
-                .plans-cta {
-                    display: block;
-                    width: 100%;
-                    text-align: center;
-                    background: ${T.green};
-                    color: ${T.paper};
-                    padding: 15px 28px;
-                    font-family: ${T.font};
-                    font-size: 15px;
-                    font-weight: 500;
-                    border: none;
-                    border-radius: 999px;
-                    cursor: pointer;
-                    min-height: 48px;
-                    transition: opacity 0.15s;
-                }
-                .plans-cta:hover { opacity: 0.88; }
-                .plans-cta:disabled { opacity: 0.5; cursor: not-allowed; }
-
-                /* Price skeleton loader */
-                .plans-skeleton {
-                    display: inline-block;
-                    background: ${T.rule};
-                    border-radius: 4px;
-                    animation: plans-pulse 1.4s ease-in-out infinite;
-                }
-                @keyframes plans-pulse {
-                    0%, 100% { opacity: 1; }
-                    50% { opacity: 0.4; }
-                }
-            `}</style>
-
-            {/* ── Page header ── */}
-            <div className="plans-header">
-                <div style={{ maxWidth: 1080, margin: '0 auto' }}>
-                    <h1 style={{
-                        fontFamily: T.font,
-                        fontSize: 'clamp(2.25rem, 5vw, 4rem)',
-                        color: T.ink,
-                        margin: 0,
-                        letterSpacing: '-0.045em',
-                        fontWeight: 600,
-                        lineHeight: 1.05,
-                    }}>
-                        One plan.{' '}
-                        <span style={{ color: T.muted, fontWeight: 600 }}>
-                            Everything in it.
-                        </span>
-                    </h1>
-                    <p style={{
-                        fontFamily: T.font,
-                        fontSize: 'clamp(0.9rem, 1.5vw, 1.1rem)',
-                        color: T.ink2,
-                        fontWeight: 400,
-                        margin: '16px 0 0',
-                        maxWidth: 560,
-                        lineHeight: 1.65,
-                    }}>
-                        No tiers, no unnecessary add-ons, no surprise charges. The whole service is the whole service.
-                    </p>
-                </div>
-            </div>
-
-            {/* ── Pricing card ── */}
-            <section className="plans-section">
-                <div style={{
-                    maxWidth: 1080,
-                    margin: '0 auto',
-                    background: T.paperLight,
-                    border: `1px solid ${T.rule}`,
-                    padding: 'clamp(24px, 4vw, 48px) clamp(20px, 5vw, 56px)',
-                }}>
-                    <div className="plans-grid">
-
-                        {/* ── Left: price + CTA ── */}
-                        <div>
-                            <div style={{
-                                fontFamily: T.font, fontSize: 11, color: T.muted,
-                                fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase',
-                            }}>
-                                Virtual mailbox · London
-                            </div>
-
-                            <h2 style={{
-                                fontFamily: T.font,
-                                fontSize: 'clamp(1.25rem, 2.5vw, 1.875rem)',
-                                color: T.ink, margin: '12px 0 24px',
-                                fontWeight: 600, letterSpacing: '-0.045em', lineHeight: 1.2,
-                            }}>
-                                Everything you need,<br />
-                                <span style={{ color: T.muted, fontWeight: 600 }}>
-                                    one honest price.
-                                </span>
-                            </h2>
-
-                            {/* Toggle */}
-                            <div className="plans-toggle" role="group" aria-label="Billing period">
-                                <button
-                                    onClick={() => setIsAnnual(false)}
-                                    style={{
-                                        background: !isAnnual ? T.green : 'transparent',
-                                        color: !isAnnual ? T.paper : T.ink2,
-                                    }}
-                                >
-                                    Monthly
-                                </button>
-                                <button
-                                    onClick={() => setIsAnnual(true)}
-                                    style={{
-                                        background: isAnnual ? T.green : 'transparent',
-                                        color: isAnnual ? T.paper : T.ink2,
-                                    }}
-                                >
-                                    Annual{monthlySavingsPct > 0 ? ` · save ${monthlySavingsPct}%` : ''}
-                                </button>
-                            </div>
-
-                            {/* Error */}
-                            {error && (
-                                <p style={{
-                                    fontFamily: T.font, fontSize: 13, color: T.muted,
-                                    margin: '16px 0 0',
-                                }}>
-                                    Pricing temporarily unavailable. Please refresh.
-                                </p>
-                            )}
-
-                            {/* Price */}
-                            <div style={{ margin: '28px 0 6px', minHeight: 80, display: 'flex', alignItems: 'baseline' }}>
-                                {loading ? (
-                                    <span className="plans-skeleton" style={{ width: 160, height: 72 }} />
-                                ) : (
-                                    <span style={{
-                                        fontFamily: T.font,
-                                        fontSize: 'clamp(3rem, 10vw, 5rem)',
-                                        color: T.ink,
-                                        lineHeight: 1,
-                                        letterSpacing: '-0.04em',
-                                        fontWeight: 600,
-                                    }}>
-                                        {displayPrice}
-                                    </span>
-                                )}
-                            </div>
-                            <div style={{
-                                fontFamily: T.font, fontSize: 12, color: T.muted,
-                                fontWeight: 400, letterSpacing: '0.05em', marginBottom: 28,
-                            }}>
-                                {isAnnual ? 'per year, billed once' : 'per month, billed monthly'}
-                            </div>
-
-                            {/* CTA */}
-                            <button
-                                className="plans-cta"
-                                onClick={handleSelectPlan}
-                                disabled={loading || selectedPrice === null}
-                            >
-                                Get started →
-                            </button>
-                            <div style={{
-                                fontFamily: T.font, fontSize: 11, color: T.muted,
-                                fontWeight: 400, marginTop: 12, textAlign: 'center',
-                                letterSpacing: '0.05em',
-                            }}>
-                                {selectedPrice === null ? null : isAnnual
-                                    ? `Equivalent to ${formatPrice(selectedPrice / 12, { interval: 'month' })}`
-                                    : monthlySavingsPct > 0 ? `Switch to annual anytime · save ${monthlySavingsPct}%` : 'Annual billing also available'
-                                }
+                                    {/* Compliance */}
+                                    <div>
+                                        <h3 className="text-label sm:text-body font-semibold text-foreground mb-3 sm:mb-4">
+                                            Compliance & trust
+                                        </h3>
+                                        <ul className="space-y-2.5 sm:space-y-3">
+                                            {atAGlanceFeatures.map((feature, index) => (
+                                                <li key={index} className="flex items-start gap-2.5 sm:gap-3 text-body-sm text-muted-foreground leading-relaxed">
+                                                    <svg className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                    </svg>
+                                                    <span>{feature}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

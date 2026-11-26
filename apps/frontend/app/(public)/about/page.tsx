@@ -8,7 +8,10 @@ const description =
 export const metadata: Metadata = {
     title: 'About Us | VirtualAddressHub',
     description,
-    alternates: { canonical: 'https://virtualaddresshub.co.uk/about' },
+    robots: { index: true, follow: true },
+    alternates: {
+        canonical: 'https://virtualaddresshub.co.uk/about',
+    },
     openGraph: {
         title: 'About Us | VirtualAddressHub',
         description,

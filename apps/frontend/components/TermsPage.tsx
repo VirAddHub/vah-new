@@ -101,8 +101,8 @@ export function TermsPage({ onNavigate }: TermsPageProps) {
         <section className="space-y-2">
           <h2 className="text-h3 text-foreground">8. Billing</h2>
           <ul className="list-disc pl-6 space-y-1">
-            <li>Monthly plan: £9.99</li>
-            <li>Annual plan: £89.99</li>
+            <li>Monthly subscription: see the current pricing page and checkout.</li>
+            <li>Annual subscription: see the current pricing page and checkout.</li>
             <li>30-day cancellation notice</li>
             <li>Failed payments may suspend service</li>
             <li>Annual subscriptions auto-renew</li>

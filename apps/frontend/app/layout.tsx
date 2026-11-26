@@ -16,7 +16,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 export const metadata: Metadata = {
     metadataBase: new URL(SITE_URL),
     title: 'VirtualAddressHub - Professional London Business Address & Mail Forwarding',
-    description: 'Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services.',
+    description: 'Get a professional London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services.',
     keywords: [
         'virtual business address',
         'London business address',
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
         locale: 'en_GB',
         url: 'https://virtualaddresshub.co.uk',
         title: 'VirtualAddressHub - Professional London Business Address',
-        description: 'Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services.',
+        description: 'Get a professional London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services.',
         siteName: 'VirtualAddressHub',
         images: [
             {
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     twitter: {
         card: 'summary_large_image',
         title: 'VirtualAddressHub - Professional London Business Address',
-        description: 'Get a prestigious London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services.',
+        description: 'Get a professional London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services.',
         images: ['/images/og-image.jpg'],
         creator: '@VirtualAddressHub',
     },

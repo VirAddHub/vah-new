@@ -43,7 +43,7 @@ export function Header({ onNavigate }: HeaderProps) {
     };
 
     return (
-        <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-neutral-200">
+        <header className="sticky top-0 z-30 bg-white border-b border-neutral-200">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     {/* Logo - explicit min size so it never renders small (200x50) */}

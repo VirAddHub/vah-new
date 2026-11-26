@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { SITE_URL } from '@/lib/site';
+import { services } from '@/lib/marketing';
 
 export const revalidate = 3600;
 
@@ -39,14 +40,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
   return [
     page('', 'weekly', 1),
+    ...services.map((s) => page(`/${s.slug}`, 'monthly', 0.8)),
+    page('/london-address', 'monthly', 0.8),
     page('/pricing', 'weekly', 0.9),
-    page('/about', 'monthly', 0.8),
-    page('/blog', 'weekly', 0.8),
+    page('/how-it-works', 'monthly', 0.7),
+    page('/guides', 'monthly', 0.7),
+    page('/about', 'monthly', 0.7),
+    page('/blog', 'weekly', 0.7),
     page('/help', 'weekly', 0.7),
     page('/contact', 'monthly', 0.6),
     page('/kyc', 'yearly', 0.3),
     page('/terms', 'yearly', 0.3),
     page('/privacy', 'yearly', 0.3),
+    page('/cookies', 'yearly', 0.3),
     ...(await blogPosts()),
   ];
 }

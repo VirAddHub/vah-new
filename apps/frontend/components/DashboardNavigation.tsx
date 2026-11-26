@@ -42,7 +42,7 @@ export function DashboardNavigation({ onNavigate }: DashboardNavigationProps = {
     const handleLogout = () => performLogout();
 
     return (
-        <header className="w-full shrink-0 border-b border-border/80 bg-card">
+        <header className="w-full shrink-0 border-b border-border/80 bg-white">
             {/* Inner: same max-width/padding as dashboard shell; single row, justify-between */}
             <div className="flex h-12 w-full items-center justify-between gap-4 px-4 sm:h-16 sm:px-6">
                 {/* Left: hamburger (mobile only) + logo */}

@@ -3,10 +3,10 @@ import { getServerPricing } from '@/lib/pricing.server';
 import PricingPageClient from './pricing-page-client';
 
 export const metadata: Metadata = {
-    title: 'Pricing | VirtualAddressHub',
-    description: 'One simple plan for a professional London business address: registered office and director service address, mail scanning and forwarding. Pay monthly or annually.',
+    title: 'London Virtual Office Pricing | VirtualAddressHub',
+    description: 'Compare monthly and annual subscriptions for a London business address and digital mail management. View included services and forwarding conditions.',
     alternates: { canonical: '/pricing' },
-    openGraph: { title: 'Pricing | VirtualAddressHub', url: '/pricing' },
+    openGraph: { title: 'London Virtual Office Pricing | VirtualAddressHub', url: '/pricing' },
 };
 
 export const revalidate = 60;
