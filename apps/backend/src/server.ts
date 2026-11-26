@@ -12,6 +12,7 @@ import { logSumsubConfigAtStartup } from './lib/sumsubConfig';
 
 // Database adapters
 import { ensureSchema, getPool } from './server/db';
+import { applyBootMigrations } from './server/bootMigrations';
 import { selectOne, selectMany, execute, insertReturningId } from './server/db-helpers';
 
 import { stopForwardingLocksCleanup } from './server/routes/admin-forwarding-locks';
@@ -51,6 +52,13 @@ async function initializeDatabase() {
 // Initialize database and start server
 async function start() {
     await initializeDatabase();
+
+    try {
+        await applyBootMigrations();
+    } catch (e) {
+        logger.error('[boot] migration_failed', { message: e instanceof Error ? e.message : String(e) });
+        process.exit(1);
+    }
 
     try {
         validateProductionConfigOrThrow();
