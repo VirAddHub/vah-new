@@ -2,7 +2,6 @@
 import Link from 'next/link';
 import { VAHLogo } from './VAHLogo';
 import { services } from '@/lib/marketing';
-import { VAH_ADDRESS_LINES } from '@/lib/address';
 export function Footer({ onNavigate }: { onNavigate?: (page: string) => void }) {
   return (
     <footer className="bg-white text-[#123d30] border-t border-[#dce4dc] px-6 py-14">
@@ -48,9 +47,7 @@ export function Footer({ onNavigate }: { onNavigate?: (page: string) => void }) 
         <div>
           <h2 className="font-semibold mb-5">Get in touch</h2>
           <address className="text-sm leading-7 not-italic">
-            {VAH_ADDRESS_LINES.map((v) => (
-              <div key={v}>{v}</div>
-            ))}
+            Central London, United Kingdom
           </address>
           <p className="mt-4 text-sm">
             <a href="mailto:support@virtualaddresshub.co.uk">support@virtualaddresshub.co.uk</a>

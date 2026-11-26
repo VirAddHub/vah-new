@@ -1,0 +1,76 @@
+/* Route-scoped tokens reach portals without persisting onto admin routes. */
+body:has([data-customer-theme]) {
+  --background: 44 44% 95%;
+  --foreground: 137 12% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 137 12% 14%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 137 12% 14%;
+  --primary: 162 54% 15%;
+  --primary-foreground: 0 0% 100%;
+  --primary-hover: 153 45% 24%;
+  --secondary: 107 22% 91%;
+  --secondary-foreground: 162 54% 15%;
+  --muted: 107 22% 91%;
+  --muted-foreground: 137 12% 35%;
+  --accent: 107 22% 91%;
+  --accent-foreground: 162 54% 15%;
+  --border: 120 15% 80%;
+  --input: 120 15% 72%;
+  --ring: 153 45% 24%;
+  font-family: var(--font-dmsans), Arial, sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+[data-account-area='true'] h1 {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(1.9rem, 3vw, 2.6rem);
+  line-height: 1.15;
+  letter-spacing: -.025em;
+}
+[data-account-area='true'] :where(input:not([type='checkbox']):not([type='radio']), textarea, select) {
+  border-color: hsl(var(--input));
+  border-radius: 6px;
+}
+[data-account-area='true'] :where(input, textarea, select):focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+[data-account-area='true'] :where(header, footer) { border-color: hsl(var(--border)); }
+/* Neutral surfaces only: preserve meaningful warning, error and success colours. */
+[data-account-area='true'] :where(.bg-gray-50, .bg-neutral-50, .bg-slate-50) { background-color: hsl(var(--background)); }
+[data-account-area='true'] :where(.bg-gray-100, .bg-neutral-100, .bg-slate-100) { background-color: hsl(var(--muted)); }
+[data-account-area='true'] :where(a[aria-current='page'], button[role='tab'][aria-selected='true']) {
+  background-color: hsl(var(--accent)); color: hsl(var(--accent-foreground));
+}
+[data-account-area='true'] [class~='bg-[#1a6b3c]'] {
+  background-color: hsl(var(--primary));
+}
+[data-account-area='true'] [class~='bg-[#1a6b3c]']:hover {
+  background-color: hsl(var(--primary-hover));
+}
+/* The authenticated customer workspace uses the same brand, with compact controls. */
+.customer-dashboard-shell { background: #f8f5ed; }
+.customer-workspace-content { max-width: 1440px; margin-inline: auto; padding: 0 28px 32px; }
+.customer-workspace-bar { display:flex; justify-content:space-between; gap:20px; align-items:center; padding:20px 0; margin-bottom:10px; border-bottom:1px solid #d5dfd0; font-size:12px; color:#52634f; }
+.customer-workspace-bar nav { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+.customer-workspace-bar a { color:#24563e; text-underline-offset:4px; }
+.customer-workspace-bar [aria-current='page'] { font-weight:600; color:#193e2e; }
+.customer-workspace-help { white-space:nowrap; }
+.customer-dashboard-shell aside { background:#fff; }
+.customer-sidebar-heading { padding:22px 24px 15px; border-bottom:1px solid #e1e8dc; }
+.customer-sidebar-heading p { margin:0; font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:#65765d; }
+.customer-sidebar-heading strong { display:block; margin-top:7px; font-family:var(--font-newsreader),Georgia,serif; font-weight:400; font-size:25px; color:#123d30; }
+.customer-dashboard-shell aside nav :where(a,button) { border-radius:6px; }
+.customer-dashboard-shell main :where(.bg-card) { border-color:#d1ddcd; box-shadow:0 2px 5px #193e2e03; }
+.customer-dashboard-shell main :where(table) { font-variant-numeric:tabular-nums; }
+.customer-dashboard-shell main :where(thead) { background:#edf2e8; color:#264731; }
+.customer-dashboard-shell main :where(th) { font-weight:600; }
+.customer-dashboard-shell main :where(h2) { letter-spacing:-.015em; }
+.customer-dashboard-shell main :where(button,a,input,select,textarea):focus-visible { outline:2px solid #36744e; outline-offset:3px; }
+@media(max-width:640px) {
+  .customer-workspace-content { padding:0 16px 24px; }
+  .customer-workspace-bar { padding:15px 0; gap:12px; align-items:flex-start; font-size:11px; }
+  .customer-workspace-bar nav { gap:7px; }
+}

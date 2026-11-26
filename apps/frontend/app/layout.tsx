@@ -2,7 +2,9 @@
 import type { Metadata, Viewport } from 'next';
 import { SITE_URL, ALLOW_INDEXING } from '@/lib/site';
 import './globals.css';
-import { inter, plex } from '@/lib/fonts';
+import './customer-theme.css';
+import { CustomerTheme } from '@/components/CustomerTheme';
+import { inter, plex, dmsans, newsreader } from '@/lib/fonts';
 import { ToastRoot } from '@/components/ToastRoot';
 import { SWRProvider } from '@/components/SWRProvider';
 import { Providers } from '@/components/Providers';
@@ -73,8 +75,6 @@ export const metadata: Metadata = {
     other: {
         'geo.region': 'GB',
         'geo.placename': 'London',
-        'geo.position': '51.5074;-0.1278',
-        'ICBM': '51.5074, -0.1278',
     },
 };
 
@@ -87,7 +87,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="en" className={`${inter.variable} ${plex.variable}`} suppressHydrationWarning>
+        <html lang="en" className={`${inter.variable} ${plex.variable} ${dmsans.variable} ${newsreader.variable}`} suppressHydrationWarning>
             <head>
                 <meta name="format-detection" content="telephone=no" />
                 <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -103,6 +103,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             "url": "https://virtualaddresshub.co.uk",
                             "logo": "https://virtualaddresshub.co.uk/images/logo-green.svg",
                             "description": "Professional London business address service with secure digital mail forwarding and virtual office solutions.",
+                            "foundingDate": "2024",
                             "contactPoint": {
                                 "@type": "ContactPoint",
                                 "email": "support@virtualaddresshub.co.uk",
@@ -142,7 +143,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <WebVitalsProvider>
                         <SWRProvider>
                             <Providers>
-                                <ToastRoot>{children}</ToastRoot>
+                                <CustomerTheme><ToastRoot>{children}</ToastRoot></CustomerTheme>
                             </Providers>
                         </SWRProvider>
                     </WebVitalsProvider>

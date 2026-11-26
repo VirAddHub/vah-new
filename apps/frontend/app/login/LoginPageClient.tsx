@@ -308,85 +308,158 @@ export function LoginPageClient() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-paper font-sans text-ink">
-      <header className="mx-auto flex w-full max-w-6xl items-center px-6 py-6 sm:px-10">
-        <LoginBrandMark />
-      </header>
+    <div className="flex min-h-screen flex-col bg-background lg:flex-row">
+      {/* Left — branding (wide screens only) */}
+      <div className="hidden flex-col justify-between bg-[#123d30] p-10 text-white lg:flex lg:w-[45%] xl:w-[40%]">
+        <LoginBrandMark variant="onDark" />
+        <div>
+          <h2 className="font-newsreader text-4xl font-normal leading-snug text-white/95">
+            Everything you need to manage your account,
+            <br />
+            in one dashboard.
+          </h2>
+        </div>
+        <p className="text-xs text-white/75">© 2026 VirtualAddressHub</p>
+      </div>
 
-      <main id="main-content" className="flex flex-1 items-start justify-center px-6 pb-16 pt-8 sm:items-center sm:pt-0">
-        <form onSubmit={handleSubmit} noValidate={false} className="w-full max-w-[400px]" aria-describedby={error ? 'login-error' : undefined}>
-          <h1 className="text-[40px] font-semibold leading-[1.05] tracking-[-0.045em]">Log in</h1>
-          <p className="mt-3 text-[16px] text-graphite">Pick up where you left off in your mailbox.</p>
+      {/* Right — form */}
+      <div className="flex flex-1 flex-col bg-background">
+        <div className="flex items-center px-5 pb-2 pt-5 lg:hidden">
+          <LoginBrandMark />
+        </div>
 
-          {emailChanged && (
-            <p role="status" className="mt-8 rounded-md border border-success/25 bg-success/[0.06] px-4 py-3 text-[14px] text-success">
-              Your email address has been updated. Please log in with your new address.
-            </p>
-          )}
+        <div className="flex flex-1 flex-col items-center justify-center px-5 py-10 sm:px-10">
+          <div className="w-full max-w-[420px]">
+            <div className="mb-6 text-left">
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                Welcome back
+              </h1>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                Sign in to your account
+              </p>
+            </div>
 
-          {error && (
-            <div id="login-error" role="alert" className="mt-8 rounded-md border border-destructive/25 bg-destructive/[0.06] px-4 py-3 text-[14px] text-destructive">
-              <p className="font-medium">{error}</p>
-              {showResetHint && (
-                <p className="mt-1 text-graphite">
-                  Forgotten it? <Link href="/reset-password" className="font-medium text-ink underline underline-offset-4">Reset your password</Link>.
-                </p>
+            <div className="rounded-xl border border-border/80 bg-card p-6 shadow-[0_4px_24px_-6px_rgba(15,23,42,0.08),0_2px_8px_-4px_rgba(15,23,42,0.04)] sm:p-8">
+              {/* Success Alert - Email Changed */}
+              {emailChanged && (
+                <Alert className="mb-6 border-green-500/50 bg-green-50 dark:bg-green-900/20">
+                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <AlertDescription className="text-green-800 dark:text-green-200">
+                    Your email address has been updated successfully. Please log
+                    in with your new email address.
+                  </AlertDescription>
+                </Alert>
               )}
-            </div>
-          )}
 
-          <div className="mt-8 space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="username"
-                placeholder="you@yourbusiness.co.uk"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={loading}
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-baseline justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link href="/reset-password" className="text-[14px] text-graphite underline-offset-4 hover:text-ink hover:underline">
-                  Forgot it?
-                </Link>
+              {/* Error Alert */}
+              {error && (
+                <Alert className="mb-6 border-destructive/50 text-destructive">
+                  <AlertDescription className="space-y-2">
+                    <div className="font-medium">{error}</div>
+                    {showResetHint && (
+                      <div className="mt-2 text-body-sm text-muted-foreground">
+                        Use <span className="font-medium text-foreground">Forgot password?</span> next to Password to reset it.
+                      </div>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Login Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-foreground">
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                    className="h-10 w-full rounded-md border-border bg-background px-3 text-body-sm shadow-sm"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="password" className="text-foreground">
+                      Password
+                    </Label>
+                    <Link
+                      href="/reset-password"
+                      className="shrink-0 text-body-sm font-medium text-primary transition-colors hover:text-primary/90"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                    className="h-10 w-full rounded-md border-border bg-background px-3 text-body-sm shadow-sm"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  size="sm"
+                  className="h-10 w-full rounded-md text-body-sm font-semibold bg-primary text-primary-foreground transition-[filter,background] hover:bg-primary/90 hover:brightness-95"
+                >
+                  {loading ? 'Signing in...' : 'Sign In'}
+                </Button>
+              </form>
+
+              <div className="mt-6 space-y-3 border-t border-border pt-4 text-left">
+                <div>
+                  <span className="text-body-sm text-muted-foreground">
+                    Don&apos;t have an account?{' '}
+                  </span>
+                  <Link
+                    href="/signup"
+                    className="text-body-sm font-medium text-primary hover:underline"
+                  >
+                    Sign up
+                  </Link>
+                </div>
+                <div>
+                  <Link
+                    href="/contact"
+                    className="text-body-sm font-medium text-primary transition-colors hover:text-primary/90 hover:underline"
+                  >
+                    Can&apos;t log in?
+                  </Link>
+                </div>
               </div>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-              />
             </div>
           </div>
+        </div>
 
-          <Button type="submit" size="lg" fullWidth loading={loading} className="mt-8">
-            {loading ? 'Signing in…' : 'Log in'}
-          </Button>
-
-          <p className="mt-8 text-center text-[14px] text-graphite">
-            Don&apos;t have an account yet?{' '}
-            <Link href="/signup" className="font-medium text-ink underline underline-offset-4">Start one</Link>
-          </p>
-        </form>
-      </main>
-
-      <footer className="mx-auto flex w-full max-w-6xl flex-wrap justify-between gap-2 border-t border-line px-6 py-6 text-[12px] text-slate sm:px-10">
-        <span>© {new Date().getFullYear()} VirtualAddressHub Ltd</span>
-        <span>
-          <Link href="/privacy" className="hover:text-ink">Privacy</Link>
-          <span aria-hidden> · </span>
-          <Link href="/terms" className="hover:text-ink">Terms</Link>
-        </span>
-      </footer>
+        <footer className="bg-white flex flex-wrap justify-center gap-x-3 gap-y-1 py-4 text-xs text-muted-foreground">
+          <Link
+            href="/terms"
+            className="transition-colors hover:text-foreground hover:underline"
+          >
+            Terms of Service
+          </Link>
+          <span aria-hidden className="text-muted-foreground/50">
+            ·
+          </span>
+          <Link
+            href="/privacy"
+            className="transition-colors hover:text-foreground hover:underline"
+          >
+            Privacy Policy
+          </Link>
+        </footer>
+      </div>
     </div>
   );
 }

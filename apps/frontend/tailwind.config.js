@@ -26,6 +26,8 @@ module.exports = {
                 mono: ['var(--font-plex)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
                 // MIX homepage editorial fonts
                 plex: ['var(--font-plex)', 'ui-monospace', 'monospace'],
+                newsreader: ['var(--font-newsreader)', 'Georgia', 'serif'],
+                dmsans: ['var(--font-dmsans)', 'Arial', 'sans-serif'],
             },
             screens: {
                 xs: "360px",

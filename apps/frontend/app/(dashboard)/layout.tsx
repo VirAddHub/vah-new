@@ -1,3 +1,4 @@
+import { CustomerWorkspaceBar } from '@/components/dashboard/CustomerWorkspaceBar';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { DashboardNavigation } from '@/components/DashboardNavigation';
 import { DashboardViewProvider } from '@/contexts/DashboardViewContext';
@@ -17,7 +18,7 @@ export default function DashboardLayout({
         <DashboardViewProvider>
             <ActiveBusinessProvider>
                 <OnboardingGate>
-                    <div className="flex h-[100dvh] min-h-0 w-full flex-col overflow-hidden bg-background">
+                    <div className="customer-dashboard-shell flex h-[100dvh] min-h-0 w-full flex-col overflow-hidden bg-background">
                         <div className="sticky top-0 z-50 shrink-0">
                             <DashboardNavigation />
                         </div>
@@ -30,7 +31,8 @@ export default function DashboardLayout({
                                 role="main"
                                 className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto"
                             >
-                                <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-4 sm:px-6 md:px-8 md:pt-8 lg:pb-10">
+                                <div className="customer-workspace-content w-full">
+                                    <CustomerWorkspaceBar />
                                     <AccessNoticeSlot />
                                     <RestrictedContent>{children}</RestrictedContent>
                                 </div>

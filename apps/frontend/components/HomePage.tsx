@@ -1,7 +1,7 @@
 'use client';
+import { LondonShowcase } from './marketing/LondonShowcase';
 import Link from 'next/link';
 import { usePricing } from '@/hooks/usePlans';
-import { VAH_ADDRESS_LINES } from '@/lib/address';
 import { services, faqs } from '@/lib/marketing';
 import { LondonIllustration } from './marketing/LondonIllustration';
 import s from './marketing/Marketing.module.css';
@@ -46,7 +46,7 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
       </section>
       <div className={s.band}>
         <div className={s.wrap}>
-          <span>London SE1 business address</span>
+          <span>Central London business address</span>
           <span>Registered office & director’s address</span>
           <span>Digital mail scanning</span>
           <span>Secure online account</span>
@@ -132,38 +132,7 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
           </div>
         </div>
       </section>
-      <section className={`${s.section} ${s.sage}`}>
-        <div className={`${s.wrap} ${s.split}`}>
-          <div>
-            <p className={s.kicker}>A genuine London address</p>
-            <h2>
-              Your business correspondence.
-              <br />
-              London SE1.
-            </h2>
-            <p>
-              Our Tanner Street address brings your approved business correspondence together in
-              London. Use it for eligible company and director correspondence, your website and
-              invoices.
-            </p>
-            <Link href="/london-address" className={s.textlink}>
-              Get to know the address →
-            </Link>
-            <p className={s.note}>
-              An address service, not a workspace or customer meeting location.
-            </p>
-          </div>
-          <div className={s.address}>
-            <p className={s.kicker}>Your business name</p>
-            <address>
-              {VAH_ADDRESS_LINES.map((line) => (
-                <div key={line}>{line}</div>
-              ))}
-            </address>
-            <p className={s.note}>Use only after your account has been approved.</p>
-          </div>
-        </div>
-      </section>
+      <LondonShowcase />
       <section className={s.section} id="how">
         <div className={s.wrap}>
           <p className={s.kicker}>Start with confidence</p>

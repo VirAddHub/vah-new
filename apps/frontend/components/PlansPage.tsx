@@ -4,82 +4,40 @@ import React, { useState } from 'react';
 import marketing from './marketing/Marketing.module.css';
 import { usePricing } from '@/hooks/usePlans';
 import { formatPrice } from '@/lib/formatPrice';
-
-// ── Design tokens ────────────────────────────────────────────
-const T = {
-    paper:      '#FFFFFF',
-    paperDeep:  '#F5F5F5',
-    paperLight: '#FFFFFF',
-    ink:        '#0A0A0A',
-    ink2:       '#404040',
-    muted:      '#6B6B6B',
-    rule:       '#E5E5E5',
-    green:      '#0A0A0A',
-    font:       "'Inter', system-ui, sans-serif",
-} as const;
+import { Button } from './ui/button';
 
 interface PlansPageProps {
     onNavigate: (page: string, data?: any) => void;
 }
 
-// ── Checkmark list item ──────────────────────────────────────
-function CheckItem({ text }: { text: string }) {
-    return (
-        <li style={{ display: 'grid', gridTemplateColumns: '20px 1fr', gap: 12 }}>
-            <span style={{ color: T.green, fontStyle: 'normal', fontSize: 18, lineHeight: 1.1, fontWeight: 500 }}>✓</span>
-            <span style={{ fontFamily: T.font, fontSize: 15, color: T.ink2, lineHeight: 1.5, fontWeight: 400 }}>{text}</span>
-        </li>
-    );
-}
-
-// ── Section label ────────────────────────────────────────────
-function SectionLabel({ children }: { children: React.ReactNode }) {
-    return (
-        <div style={{
-            fontFamily: T.font, fontSize: 11, color: T.muted, fontWeight: 500,
-            letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 18,
-        }}>
-            {children}
-        </div>
-    );
-}
-
-// ── Main component ───────────────────────────────────────────
 export function PlansPage({ onNavigate }: PlansPageProps) {
     const [isAnnual, setIsAnnual] = useState(false);
 
-    const {
-        monthlyPrice,
-        annualPrice,
-        monthlySavingsPct,
-        loading,
-        error,
-        hasApiData,
-    } = usePricing();
+    const { monthlyPrice, annualPrice, loading, error, monthlySavingsPct } = usePricing();
+    const selectedPrice = isAnnual ? annualPrice : monthlyPrice;
 
+    // Handle plan selection
     const handleSelectPlan = () => {
         onNavigate('signup', { initialBilling: isAnnual ? 'annual' : 'monthly' });
     };
 
-    // No made-up figures: with no price from the server, say so and don't offer checkout.
-    const selectedPrice = isAnnual ? annualPrice : monthlyPrice;
-    const displayPrice = selectedPrice === null
-        ? 'Pricing unavailable'
-        : formatPrice(selectedPrice, { interval: isAnnual ? 'year' : 'month' });
-
+    // Explanatory block features
     const explanatoryFeatures = [
         'Digital mail scanning and secure online access',
         'HMRC & Companies House forwarding free (UK)',
         'Other UK mail forwarded at £2 per item',
-        'International forwarding available on request',
+        'International forwarding available on request'
     ];
 
-    const trustFeatures = [
+    // At a glance features
+    const atAGlanceFeatures = [
         'Central London address (never a PO Box)',
         'Registered office and director’s service address use, subject to eligibility',
         'Identity and business verification before approval',
         'View and download available scans online'
     ];
+
+    const displayPrice = selectedPrice === null ? (loading ? 'Loading pricing…' : 'Pricing unavailable') : formatPrice(selectedPrice, {interval: isAnnual ? 'year' : 'month'});
 
     return (
         <div className={`${marketing.site} ${marketing.pricingPage}`}>
@@ -211,35 +169,6 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                                 </div>
                             </div>
                         </div>
-
-                        {/* ── Hairline divider (desktop only) ── */}
-                        <div className="plans-divider" />
-
-                        {/* ── Horizontal rule (mobile only) ── */}
-                        <hr className="plans-mobile-rule" style={{ display: 'none' }} />
-
-                        {/* ── Right: features + trust ── */}
-                        <div>
-                            <SectionLabel>What's included</SectionLabel>
-                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                                {explanatoryFeatures.map((item) => <CheckItem key={item} text={item} />)}
-                            </ul>
-                            <p style={{
-                                fontFamily: T.font, fontStyle: 'normal', fontSize: 13,
-                                color: T.muted, fontWeight: 400,
-                                margin: '14px 0 0', paddingLeft: 32, maxWidth: 380,
-                            }}>
-                                You only pay for physical forwarding when you actually need it.
-                            </p>
-
-                            <div style={{ marginTop: 32 }}>
-                                <SectionLabel>Compliance & trust</SectionLabel>
-                                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                                    {trustFeatures.map((item) => <CheckItem key={item} text={item} />)}
-                                </ul>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </section>

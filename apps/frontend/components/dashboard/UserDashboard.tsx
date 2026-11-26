@@ -37,7 +37,7 @@ import PDFViewerModal from "@/components/PDFViewerModal";
 import { useToast } from "@/components/ui/use-toast";
 import { usePDFPreloader } from "@/hooks/usePDFPreloader";
 import type { Compliance } from "@/components/dashboard/IdentityComplianceCard";
-import { VAH_ADDRESS_LINES } from "@/lib/address";
+import { VAH_ADDRESS_LINES } from "@/lib/config/address";
 import { DashboardHeader } from "@/components/dashboard/user/DashboardHeader";
 import { DashboardSummary } from "@/components/dashboard/user/DashboardSummary";
 import { MailList } from "@/components/dashboard/user/MailList";

@@ -28,3 +28,28 @@ export const plex = localFont({
     display: 'swap',
     fallback: ['ui-monospace', 'Menlo', 'monospace'],
 });
+
+/** Customer pages and marketing: body text and UI (customer-theme.css, marketing modules). */
+export const dmsans = localFont({
+    src: [
+        { path: './font-files/dm-sans-latin-400-normal.woff2', weight: '400', style: 'normal' },
+        { path: './font-files/dm-sans-latin-500-normal.woff2', weight: '500', style: 'normal' },
+        { path: './font-files/dm-sans-latin-600-normal.woff2', weight: '600', style: 'normal' },
+        { path: './font-files/dm-sans-latin-700-normal.woff2', weight: '700', style: 'normal' },
+    ],
+    variable: '--font-dmsans',
+    display: 'swap',
+    fallback: ['Arial', 'sans-serif'],
+});
+
+/** Customer pages and marketing: editorial headings. */
+export const newsreader = localFont({
+    src: [
+        { path: './font-files/newsreader-latin-400-normal.woff2', weight: '400', style: 'normal' },
+        { path: './font-files/newsreader-latin-400-italic.woff2', weight: '400', style: 'italic' },
+        { path: './font-files/newsreader-latin-500-normal.woff2', weight: '500', style: 'normal' },
+    ],
+    variable: '--font-newsreader',
+    display: 'swap',
+    fallback: ['Georgia', 'serif'],
+});
