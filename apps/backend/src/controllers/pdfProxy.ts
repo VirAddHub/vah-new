@@ -32,8 +32,11 @@ function allowedHosts(): string[] {
 export function isAllowedDocumentUrl(raw: string): boolean {
   let u: URL;
   try { u = new URL(raw); } catch { return false; }
-  if (u.protocol !== 'https:' || u.username || u.password) return false;
+  if (u.username || u.password) return false;
   const host = u.hostname.toLowerCase();
+  // Local development and tests serve scans from a plain local server. Never in production.
+  if (process.env.NODE_ENV !== 'production' && (host === '127.0.0.1' || host === 'localhost') && (u.protocol === 'http:' || u.protocol === 'https:')) return true;
+  if (u.protocol !== 'https:') return false;
   return allowedHosts().some((h) => (h.startsWith('.') ? host.endsWith(h) && host.length > h.length : host === h));
 }
 
@@ -93,7 +96,7 @@ export async function streamPdfFromUrl(
   filename: string,
   disposition: 'inline' | 'attachment' = 'inline'
 ) {
-  if (!/^https:\/\//i.test(fileUrl)) {
+  if (!isAllowedDocumentUrl(fileUrl)) {
     res.status(400).send('Invalid file URL');
     return;
   }

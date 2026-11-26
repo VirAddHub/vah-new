@@ -84,6 +84,22 @@ function getLoginErrorMessage(
   };
 }
 
+/**
+ * Where a customer lands after signing in: the mail inbox when the account is in full service,
+ * otherwise the account overview, which lists what is outstanding and how much mail is waiting.
+ */
+async function customerLanding(): Promise<string> {
+  try {
+    const res = await fetch('/api/bff/access', { credentials: 'include', cache: 'no-store' });
+    const json = await res.json().catch(() => null);
+    if (res.ok && json?.ok && json.data?.level === 'full') return '/mail';
+    if (res.ok && json?.ok) return '/account/overview';
+  } catch {
+    // fall through to the inbox; the dashboard explains any restriction there too
+  }
+  return '/mail';
+}
+
 export function LoginPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -113,7 +129,7 @@ export function LoginPageClient() {
         if (!cancelled && authenticated) {
           const user = data.data.user;
           const isAdmin = user?.is_admin === true || isAdminRole(user?.role);
-          router.replace(isAdmin ? '/admin/dashboard' : '/mail');
+          router.replace(isAdmin ? '/admin/dashboard' : await customerLanding());
         }
       } catch {
         // Ignore errors - server-side guard is the source of truth
@@ -280,7 +296,7 @@ export function LoginPageClient() {
       } else if (isAdmin) {
         router.replace('/admin/dashboard');
       } else {
-        router.replace('/mail');
+        router.replace(await customerLanding());
       }
     } catch (err: any) {
       console.error('Login error:', err);

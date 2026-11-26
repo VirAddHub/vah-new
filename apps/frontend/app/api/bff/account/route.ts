@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendOrigin } from '@/lib/server/backendOrigin';
 import { isBackendOriginConfigError } from '@/lib/server/isBackendOriginError';
-import { REGISTERED_OFFICE_ADDRESS } from '@/lib/config/address';
 
 /**
  * BFF endpoint that aggregates account data from multiple backend endpoints
@@ -172,17 +171,9 @@ export async function GET(request: NextRequest) {
         `${addr.city} ${addr.postcode}`,
       ].filter(Boolean).join('\n');
       business_address = { formatted };
-    } else {
-      // Fallback: if registered office endpoint fails (e.g., KYC not approved),
-      // use the config directly for display purposes
-      business_address = {
-        formatted: [
-          REGISTERED_OFFICE_ADDRESS.line1,
-          REGISTERED_OFFICE_ADDRESS.line2,
-          `${REGISTERED_OFFICE_ADDRESS.city} ${REGISTERED_OFFICE_ADDRESS.postcode}`,
-        ].filter(Boolean).join('\n'),
-      };
     }
+    // No fallback: the backend only returns the registered address to customers in full service.
+    // Showing it from config here would bypass that rule.
 
     // Transform invoices - always use BFF download route if PDF exists
     // Never use raw pdf_url or pdf_path from backend - always use BFF route for authentication

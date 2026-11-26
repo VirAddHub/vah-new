@@ -17,6 +17,7 @@ import { Router, Request, Response } from 'express';
 import { getPool } from '../db';
 import { gdprExportHttpUserLimiter } from '../../lib/routeGroupRateLimits';
 import { logger } from '../../lib/logger';
+import { getAccess, heldMailCount } from '../services/access';
 
 // Dynamically import archiver and fs-extra at call time to avoid top-level import errors
 // if those deps are missing from some environments. Both are already in package.json.
@@ -136,11 +137,18 @@ async function runGdprExport(jobId: number): Promise<void> {
     );
     const user = userResult.rows[0] ?? {};
 
-    const mailItemsResult = await pool.query(
-      `SELECT id, created_at, subject, sender_name, notes, tag, status, scanned, deleted
-       FROM mail_item WHERE user_id = $1 ORDER BY created_at DESC`,
-      [job.user_id],
-    );
+    // Mail details follow the same rule as the dashboard: only in full service. While the account
+    // is restricted (payment overdue, identity not verified) the export says how many items are held
+    // and nothing about them. A formal subject access request is handled by support.
+    const access = await getAccess(Number(job.user_id), pool).catch(() => null);
+    const mailItemsResult = access?.level === 'full'
+      ? await pool.query(
+          `SELECT id, created_at, subject, sender_name, notes, tag, status, scanned, deleted
+           FROM mail_item WHERE user_id = $1 ORDER BY created_at DESC`,
+          [job.user_id],
+        )
+      : { rows: [{ held_items: await heldMailCount(Number(job.user_id), pool),
+          note: 'Mail details are available once your account is fully active. Contact support for a subject access request.' }] };
 
     const postmarkEventsResult = await pool.query(
       `SELECT id, created_at, type, email

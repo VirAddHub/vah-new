@@ -55,8 +55,13 @@ export function paymentOf(sub: any | undefined, nowMs: number): AccessDecision['
     const state: PaymentState = raw === 'active' || raw === 'past_due' || raw === 'cancelled' ? raw : 'pending';
     const paidThroughMs = sub.paid_through_ms != null ? Number(sub.paid_through_ms) : null;
     const hasStripe = !!sub.stripe_subscription_id;
-    const entitled = hasStripe && (state === 'active' || (state === 'past_due' && paidThroughMs != null && paidThroughMs > nowMs));
-    return { state, entitled, paidThroughMs, cancelAtPeriodEnd: sub.cancel_at_period_end === true };
+    const cancelAtPeriodEnd = sub.cancel_at_period_end === true;
+    // A subscription set to cancel at period end ends at that date even if Stripe's final
+    // "subscription deleted" event is late or lost.
+    const endedByCancellation = cancelAtPeriodEnd && paidThroughMs != null && paidThroughMs <= nowMs;
+    const entitled = hasStripe && !endedByCancellation
+        && (state === 'active' || (state === 'past_due' && paidThroughMs != null && paidThroughMs > nowMs));
+    return { state, entitled, paidThroughMs, cancelAtPeriodEnd };
 }
 
 export function verificationOf(kycStatus: string | null | undefined, pendingOwners: number, hasSubmitted = true): AccessDecision['verification'] {

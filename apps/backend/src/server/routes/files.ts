@@ -164,6 +164,14 @@ router.post('/:id/signed-url', async (req: Request, res: Response) => {
       return res.status(410).json({ ok: false, error: 'gone' });
     }
 
+    // Signed share links work without signing in until they expire, so they could outlive a
+    // customer's access. They are off unless FILES_SIGNED_URLS_ENABLED=true; the website opens scans
+    // through /api/mail-items/:id/download, which checks access on every request.
+    if ((process.env.FILES_SIGNED_URLS_ENABLED || '').trim().toLowerCase() !== 'true') {
+      await auditLink({ userId, fileId, cached: 0, ok: 0, err: 'signed_urls_disabled', ip });
+      return res.status(410).json({ ok: false, error: 'signed_urls_disabled' });
+    }
+
     // Cache hit: return existing signed URL if still valid (with 60s safety window)
     const soon = Date.now() + 60_000;
     if (f.share_url && f.share_expires_at && Number(f.share_expires_at) > soon) {

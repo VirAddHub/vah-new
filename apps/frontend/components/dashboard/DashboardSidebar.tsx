@@ -14,6 +14,7 @@ import {
     LogOut,
     Settings,
     Send,
+    Lock,
     type LucideIcon
 } from 'lucide-react';
 import { performLogout } from "@/lib/logout";
@@ -27,6 +28,7 @@ import { isPrimaryVerificationRequiredForNav } from '@/lib/verification-state';
 import { useToast } from '@/components/ui/use-toast';
 import { useAccess } from '@/hooks/useAccess';
 import { navAttention } from '@/components/account/AccessNotice';
+import { isBlockedPath } from '@/components/OnboardingGate';
 
 // Lazy load CertificateDownload to avoid unnecessary bundle size
 // Only load when sidebar is rendered (not on every page)
@@ -92,6 +94,14 @@ export function DashboardSidebar() {
 
     const { access } = useAccess();
     const attention = access ? navAttention(access) : { billing: false, verification: verificationNavRequired };
+    // Pages that open only once setup is complete show a small lock. They still open: the page
+    // explains what is outstanding instead of bouncing the customer elsewhere.
+    const lockMark = (href: string) => isBlockedPath(access, href) ? (
+        <span className="ml-auto inline-flex shrink-0 items-center text-muted-foreground" title="Opens once setup is complete">
+            <Lock className="h-3.5 w-3.5" aria-hidden />
+            <span className="sr-only">(opens once setup is complete)</span>
+        </span>
+    ) : null;
     const needsAttention = (href: string) =>
         (href === '/account/verification' && attention.verification) || (href === '/account/billing' && attention.billing);
 
@@ -154,6 +164,7 @@ export function DashboardSidebar() {
                         >
                             <Mail className="w-5 h-5 opacity-60" strokeWidth={1.5} />
                             Mail Inbox
+                            {lockMark('/mail')}
                         </button>
                         <Link
                             href="/forwarding"
@@ -166,6 +177,7 @@ export function DashboardSidebar() {
                         >
                             <Send className="w-5 h-5 opacity-60" strokeWidth={1.5} />
                             Forwarding
+                            {lockMark('/forwarding')}
                         </Link>
                     </div>
                 </div>
@@ -197,6 +209,7 @@ export function DashboardSidebar() {
                                                         <Icon className="w-5 h-5 shrink-0 opacity-60" strokeWidth={1.5} />
                                                         <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                                                             <span className="truncate">{item.label}</span>
+                                                            {lockMark(item.href)}
                                                             {needsAttention(item.href) && (
                                                                 <span className="shrink-0 text-caption font-semibold text-destructive">
                                                                     Required
@@ -381,6 +394,7 @@ export function DashboardSidebar() {
                                             >
                                                 <Mail className="w-4 h-4 shrink-0 opacity-60" strokeWidth={1.5} />
                                                 Mail Inbox
+                                                {lockMark('/mail')}
                                             </button>
                                             <Link
                                                 href="/forwarding"
@@ -394,6 +408,7 @@ export function DashboardSidebar() {
                                             >
                                                 <Send className="w-4 h-4 shrink-0 opacity-60" strokeWidth={1.5} />
                                                 Forwarding
+                                                {lockMark('/forwarding')}
                                             </Link>
                                         </div>
                                     </div>
@@ -424,6 +439,7 @@ export function DashboardSidebar() {
                                                         <Icon className="w-4 h-4 shrink-0 opacity-60" strokeWidth={1.5} />
                                                         <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
                                                             <span className="truncate">{item.label}</span>
+                                                            {lockMark(item.href)}
                                                             {needsAttention(item.href) && (
                                                                 <span className="shrink-0 text-caption font-semibold text-destructive">
                                                                     Required

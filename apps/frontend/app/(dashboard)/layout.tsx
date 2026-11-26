@@ -2,7 +2,7 @@ import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { DashboardNavigation } from '@/components/DashboardNavigation';
 import { DashboardViewProvider } from '@/contexts/DashboardViewContext';
 import { ActiveBusinessProvider } from '@/contexts/ActiveBusinessContext';
-import { OnboardingGate } from '@/components/OnboardingGate';
+import { OnboardingGate, RestrictedContent } from '@/components/OnboardingGate';
 import { AccessNoticeSlot } from '@/components/account/AccessNotice';
 import { MobileTabBar } from '@/components/dashboard/MobileTabBar';
 
@@ -32,7 +32,7 @@ export default function DashboardLayout({
                             >
                                 <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-4 sm:px-6 md:px-8 md:pt-8 lg:pb-10">
                                     <AccessNoticeSlot />
-                                    {children}
+                                    <RestrictedContent>{children}</RestrictedContent>
                                 </div>
                             </main>
                         </div>

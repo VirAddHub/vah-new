@@ -33,6 +33,16 @@ describe('F34 document proxy destinations', () => {
         expect(isAllowedDocumentUrl('https://169.254.169.254/latest/meta-data')).toBe(false);
         expect(isAllowedDocumentUrl('https://user:pass@contoso.sharepoint.com/a.pdf')).toBe(false);
     });
+    it('allows a local scan server only outside production', () => {
+        const prev = process.env.NODE_ENV;
+        try {
+            process.env.NODE_ENV = 'test';
+            expect(isAllowedDocumentUrl('http://127.0.0.1:4011/scan.pdf')).toBe(true);
+            process.env.NODE_ENV = 'production';
+            expect(isAllowedDocumentUrl('http://127.0.0.1:4011/scan.pdf')).toBe(false);
+            expect(isAllowedDocumentUrl('https://localhost/scan.pdf')).toBe(false);
+        } finally { process.env.NODE_ENV = prev; }
+    });
 });
 
 describe('F32 contact email encoding', () => {

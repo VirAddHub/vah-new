@@ -107,7 +107,7 @@ export default function AccountOverviewPage() {
         let businessAddress = null;
         if (accountData?.ok && accountData.data?.business_address) {
             businessAddress = accountData.data.business_address;
-        } else {
+        } else if (access?.level === 'full' || access?.isAdmin) {
             businessAddress = {
                 formatted: [
                     REGISTERED_OFFICE_ADDRESS.line1,
@@ -169,7 +169,9 @@ export default function AccountOverviewPage() {
                         </div>
                     ) : (
                         <p className="text-caption sm:text-body-sm text-muted-foreground">
-                            No business address configured
+                            {access && !access.isAdmin && access.level !== 'full'
+                                ? 'Your registered address appears here once setup is complete.'
+                                : 'No business address configured'}
                         </p>
                     )}
                 </CardContent>

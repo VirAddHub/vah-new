@@ -1,7 +1,7 @@
 // Stripe event reliability: duplicates, retries, concurrency, ordering, renewal failure, recovery,
 // cancellation, resubscription. MOCK tests: events are built and signed locally, not sent by Stripe.
 // Run with the API up:  node apps/backend/tests/journey/stripe-events.mjs
-import { Session, db, step, expect, report, stripeEvent, sendStripe, sendSumsub, sumsubReview, stripeFixture, uid } from './lib.mjs';
+import { Session, db, step, expect, report, stripeEvent, sendStripe, sendSumsub, sumsubReview, stripeFixture, uid, importMail, setScanUrl, startPdfServer, TEST_PDF } from './lib.mjs';
 
 const pg = await db();
 const one = async (sql, args) => (await pg.query(sql, args)).rows[0];
@@ -198,5 +198,59 @@ await step('E19', 'Upgrade invoice (proration credit first) pays through the end
   expect(Math.abs(Number(sub?.paid_through_ms) - year * 1000) < 1000, `paid through ${new Date(Number(sub?.paid_through_ms)).toISOString()}, expected ${new Date(year * 1000).toISOString()}`);
 });
 
+
+// The launch test: a verified customer misses a renewal (monthly and annual), loses access to mail
+// scans and details everywhere, can still pay, and regains access once payment is confirmed.
+const scanServer = await startPdfServer(4014);
+for (const period of ['monthly', 'annual']) {
+  await step(period === 'monthly' ? 'L1' : 'L2', `Launch test (${period}): missed renewal locks mail everywhere, billing stays open, payment restores it`, async () => {
+    const c = await newCustomer(), fx = stripeFixture(c.id, period === 'annual' ? annual.id : plan.id, period);
+    const len = period === 'annual' ? 365 * 86400 : 30 * 86400;
+    await pay(c, fx, { start: T - len, end: T - 60 });                                // paid period has just ended
+    const m = await importMail({ userId: c.id, sourceSlug: 'hmrc', fileName: `user${c.id}_2026-11-26_HMRC.pdf`, oneDriveFileId: uid('od'), oneDriveDownloadUrl: scanServer.url, receivedAt: new Date().toISOString() });
+    const mailId = Number(m.json?.data?.mailId);
+    expect(m.status < 300 && mailId > 0, `mail import ${m.status} ${JSON.stringify(m.json)}`);
+    await setScanUrl(mailId, scanServer.url);
+    const okBefore = await c.s.get(`/api/mail-items/${mailId}/download`);
+    expect(okBefore.status === 200 && okBefore.text.startsWith('%PDF'), `scan not readable while paid: ${okBefore.status}`);
+
+    await sendStripe(stripeEvent('invoice.payment_failed', fx.invoice(), { created: T + 10 }));
+    await sendStripe(stripeEvent('customer.subscription.updated', fx.sub('past_due'), { created: T + 11 }));
+    const a = await c.access();
+    expect(a.level === 'onboarding' && a.missing.includes('payment_overdue') && a.next === 'billing', `access while overdue ${JSON.stringify(a)}`);
+    expect(a.mailWaiting === 1 && !JSON.stringify(a).includes('HMRC'), `access shows more than a count: ${JSON.stringify(a)}`);
+    const blocked = [`/api/mail-items`, `/api/mail-items/${mailId}`, `/api/mail-items/${mailId}/scan-url`, `/api/mail-items/${mailId}/download`,
+      `/api/bff/mail/scan-url?mailItemId=${mailId}`, `/api/files`, `/api/mail-search/search?q=HMRC`, `/api/tags`, `/api/forwarding/requests`,
+      `/api/profile/registered-office-address`, `/api/profile/certificate-url`];
+    for (const path of blocked) {
+      const r = await c.s.get(path);
+      expect(r.status === 403 && !r.text.includes('HMRC') && !r.text.includes('%PDF'), `${path} → ${r.status} ${r.text.slice(0, 80)}`);
+    }
+    const fwd = await c.s.post('/api/forwarding/requests', { mail_item_id: mailId });
+    expect(fwd.status === 403, `forwarding request while overdue → ${fwd.status}`);
+    for (const path of ['/api/billing/overview', '/api/billing/invoices', '/api/access', '/api/auth/whoami']) {
+      const r = await c.s.get(path); expect(r.status === 200, `${path} blocked while overdue → ${r.status}`);
+    }
+    const notes = await c.s.get('/api/notifications');
+    expect(notes.status === 200 && !notes.text.includes('HMRC'), 'notifications reveal mail details');
+
+    // An older "active" event delivered late must not restore access on its own.
+    await sendStripe(stripeEvent('customer.subscription.updated', fx.sub('active'), { created: T + 5 }));
+    expect((await c.access()).level === 'onboarding', 'a late, older event restored access');
+
+    // Customer pays: Stripe sends the paid invoice (duplicated) and the subscription update.
+    const paid = stripeEvent('invoice.paid', fx.invoice({ start: T, end: T + len }), { created: T + 30 });
+    await sendStripe(paid); const dup = await sendStripe(paid);
+    expect(dup.json?.duplicate === true, 'duplicate not detected');
+    await sendStripe(stripeEvent('customer.subscription.updated', fx.sub('active'), { created: T + 31 }));
+    const after = await c.access();
+    expect(after.level === 'full' && after.payment.paidThroughMs >= (T + len) * 1000, `not restored ${JSON.stringify(after.payment)}`);
+    const okAfter = await c.s.get(`/api/mail-items/${mailId}/download`);
+    expect(okAfter.status === 200 && okAfter.text.startsWith('%PDF'), `scan not readable after payment: ${okAfter.status}`);
+    expect(await count('invoices', c.id) === 2, `${await count('invoices', c.id)} invoices (expected 2)`);
+  });
+}
+scanServer.close();
 await pg.end();
+
 process.exit(report() ? 0 : 1);

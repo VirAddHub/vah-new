@@ -64,8 +64,10 @@ export function AccessNotice({ access, currentPath }: { access: AccessDecision; 
         <p className="mt-4 flex items-start gap-3 rounded-xl border border-border bg-muted/40 p-4 text-body-sm text-foreground" role="status">
           <Mail className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <span>
-            <strong className="font-semibold">Mail is waiting.</strong>{' '}
-            You will be able to view it once the steps below are complete.
+            <strong className="font-semibold">
+              {access.mailWaiting === 1 ? '1 item of mail is waiting.' : `${access.mailWaiting} items of mail are waiting.`}
+            </strong>{' '}
+            You will be able to view {access.mailWaiting === 1 ? 'it' : 'them'} once the steps below are complete.
           </span>
         </p>
       )}
