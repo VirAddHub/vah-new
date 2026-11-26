@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 // Email change verification routes
 
 import { Router, Request, Response } from 'express';
+import { SUPPORT_REQUIRED } from '../lib/customerDetailsLock';
 import { requireAuth } from '../../middleware/auth';
 import { getPool } from '../db';
 import { requestEmailChange, confirmEmailChange, resendEmailChangeConfirmation } from '../services/emailChange';
@@ -142,6 +143,11 @@ router.patch('/contact', requireAuth, phoneChangeRateLimiter, async (req: Reques
     const userId = Number(req.user!.id);
     const pool = getPool();
     const { phone, email } = req.body;
+
+    // Only the email address can be changed by the customer; the phone number is fixed at sign-up.
+    if (phone !== undefined && !(req as any).user?.is_admin) {
+        return res.status(403).json(SUPPORT_REQUIRED);
+    }
 
     if (!phone && !email) {
         return res.status(400).json({

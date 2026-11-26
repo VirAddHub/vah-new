@@ -1,79 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
-import { User, Lock, Phone } from 'lucide-react';
+import { User, Lock } from 'lucide-react';
 import { useProfile } from '@/hooks/useDashboardData';
 
+/**
+ * The customer's details as entered at sign-up. Customers cannot change them here (the API refuses
+ * it too); support makes changes. Email and password are changed in their own cards.
+ */
 export function ProfileCard() {
-  const { data: profileData, mutate: mutateProfile } = useProfile();
+  const { data: profileData } = useProfile();
   const profile = profileData?.data;
-  
-  const [phone, setPhone] = useState(profile?.phone || '');
-  const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
 
-  // Update phone state when profile data changes
-  useEffect(() => {
-    if (profile?.phone !== undefined) {
-      setPhone(profile.phone || '');
-    }
-  }, [profile?.phone]);
+  const show = (value: string | null | undefined): string => (value && value.trim() ? value.trim() : 'Not provided');
 
-  // Check if phone has changed
-  const phoneChanged = phone !== (profile?.phone || '');
-  const canSave = phoneChanged && !isSaving;
-
-  const handleSave = async () => {
-    if (!canSave) return;
-
-    setIsSaving(true);
-    try {
-      const response = await fetch('/api/bff/profile/contact', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          phone: phone.trim() || null, // Send null if empty to clear phone
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.ok) {
-        throw new Error(result.error?.message || result.message || 'Failed to update phone number');
-      }
-
-      toast({
-        title: 'Phone number updated',
-        description: 'Your phone number has been updated successfully.',
-        durationMs: 5000,
-      });
-
-      // Refresh profile data
-      mutateProfile();
-    } catch (error) {
-      console.error('Phone update error:', error);
-      toast({
-        title: 'Update failed',
-        description: error instanceof Error ? error.message : 'Failed to update phone number. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Format display value for read-only fields
-  const formatReadOnlyValue = (value: string | null | undefined): string => {
-    return value && value.trim() ? value.trim() : 'Not provided';
-  };
+  const fields = [
+    { id: 'first-name', label: 'First name', value: profile?.first_name },
+    { id: 'last-name', label: 'Last name', value: profile?.last_name },
+    { id: 'company-name', label: 'Company name', value: profile?.company_name },
+    { id: 'company-number', label: 'Company number', value: profile?.company_number },
+    { id: 'phone', label: 'Phone number', value: profile?.phone },
+  ];
 
   return (
     <Card className="rounded-xl sm:rounded-2xl border border-border bg-card min-w-0">
@@ -86,112 +35,26 @@ export function ProfileCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-5 sm:space-y-6 p-4 sm:p-6 pt-0">
-        {/* First Name - Read-only */}
-        <div className="space-y-2">
-          <Label htmlFor="first-name" className="flex items-center gap-2 text-body-sm text-foreground">
-            <Lock className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={2} />
-            First name
-          </Label>
-          <Input
-            id="first-name"
-            type="text"
-            value={formatReadOnlyValue(profile?.first_name)}
-            disabled
-            className="bg-muted/50 text-muted-foreground cursor-not-allowed"
-            readOnly
-            tabIndex={-1}
-            aria-label="First name (verification-locked)"
-          />
-          <p className="text-caption text-muted-foreground leading-relaxed">
-            This field is verification-locked. Contact support to request changes.
-          </p>
-        </div>
-
-        {/* Last Name - Read-only */}
-        <div className="space-y-2">
-          <Label htmlFor="last-name" className="flex items-center gap-2 text-body-sm text-foreground">
-            <Lock className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={2} />
-            Last name
-          </Label>
-          <Input
-            id="last-name"
-            type="text"
-            value={formatReadOnlyValue(profile?.last_name)}
-            disabled
-            className="bg-muted/50 text-muted-foreground cursor-not-allowed"
-            readOnly
-            tabIndex={-1}
-            aria-label="Last name (verification-locked)"
-          />
-          <p className="text-caption text-muted-foreground leading-relaxed">
-            This field is verification-locked. Contact support to request changes.
-          </p>
-        </div>
-
-        {/* Company Name - Read-only */}
-        <div className="space-y-2">
-          <Label htmlFor="company-name" className="flex items-center gap-2 text-body-sm text-foreground">
-            <Lock className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={2} />
-            Company name
-          </Label>
-          <Input
-            id="company-name"
-            type="text"
-            value={formatReadOnlyValue(profile?.company_name)}
-            disabled
-            className="bg-muted/50 text-muted-foreground cursor-not-allowed"
-            readOnly
-            tabIndex={-1}
-            aria-label="Company name (verification-locked)"
-          />
-          <p className="text-caption text-muted-foreground leading-relaxed">
-            This field is verification-locked. Contact support to request changes.
-          </p>
-        </div>
-
-        {/* Phone Number - Editable */}
-        <div className="space-y-2">
-          <Label htmlFor="phone" className="flex items-center gap-2 text-body-sm text-foreground">
-            <Phone className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={2} />
-            Phone number
-          </Label>
-          <Input
-            id="phone"
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+44 20 1234 5678"
-            disabled={isSaving}
-            className="bg-card"
-            aria-label="Phone number"
-          />
-          <p className="text-caption text-muted-foreground leading-relaxed">
-            Update your phone number for account verification and notifications.
-          </p>
-        </div>
-
-        {/* Save Button */}
-        {canSave && (
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <Button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="w-full sm:w-auto min-h-[44px] sm:min-h-0 touch-manipulation"
-            >
-              {isSaving ? 'Saving...' : 'Save changes'}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setPhone(profile?.phone || '');
-              }}
-              disabled={isSaving}
-              className="w-full sm:w-auto min-h-[44px] sm:min-h-0 touch-manipulation"
-            >
-              Cancel
-            </Button>
+        {fields.map((f) => (
+          <div key={f.id} className="space-y-2">
+            <Label htmlFor={f.id} className="flex items-center gap-2 text-body-sm text-foreground">
+              <Lock className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={2} aria-hidden />
+              {f.label}
+            </Label>
+            <Input
+              id={f.id}
+              type="text"
+              value={show(f.value)}
+              disabled
+              readOnly
+              tabIndex={-1}
+              className="bg-muted/50 text-muted-foreground cursor-not-allowed"
+            />
           </div>
-        )}
+        ))}
+        <p className="text-caption text-muted-foreground leading-relaxed">
+          These details come from your sign-up. To change any of them, contact support. You can change your email address and password below.
+        </p>
       </CardContent>
     </Card>
   );

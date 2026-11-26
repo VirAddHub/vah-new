@@ -4,6 +4,7 @@
 import { Router, Request, Response } from "express";
 import { requireFullService } from "../services/access";
 import { saveProof, loadProof } from "../services/chProofStore";
+import { customerDetailsLocked, SUPPORT_REQUIRED } from "../lib/customerDetailsLock";
 import { getPool } from '../db';
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
@@ -310,7 +311,7 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
  * PATCH /api/profile
  * Update current user's profile
  */
-router.patch("/", requireAuth, async (req: Request, res: Response) => {
+router.patch("/", requireAuth, customerDetailsLocked, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
 
@@ -564,6 +565,13 @@ router.patch("/company-details", requireAuth, async (req: Request, res: Response
         logger.debug('[PATCH /api/profile/company-details] payload', { body: req.body });
     }
 
+    // Customers may add a company number they did not have at sign-up (e.g. incorporated later),
+    // never replace one already on file.
+    if (!req.user?.is_admin) {
+        const cur = await pool.query(`SELECT COALESCE(NULLIF(TRIM(company_number), ''), NULL) AS n FROM "user" WHERE id = $1`, [userId]);
+        if (cur.rows[0]?.n) return res.status(403).json(SUPPORT_REQUIRED);
+    }
+
     const company_name = typeof req.body?.company_name === 'string' ? req.body.company_name.trim() : undefined;
     const company_number =
         (typeof req.body?.company_number === 'string' ? req.body.company_number.trim() : undefined) ||
@@ -663,7 +671,7 @@ router.patch("/company-details", requireAuth, async (req: Request, res: Response
  * PATCH /api/profile/me (legacy endpoint)
  * Update current user's profile (same as PATCH /api/profile)
  */
-router.patch("/me", requireAuth, async (req: Request, res: Response) => {
+router.patch("/me", requireAuth, customerDetailsLocked, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
 
@@ -1733,7 +1741,7 @@ router.get("/media/ch-verification/:filename", requireAuth, async (req: Request,
  * - If isSoleController === true: additionalControllersCount must be null or 0
  * - If isSoleController === false: additionalControllersCount can be null (unknown) or >= 1
  */
-router.patch("/controllers", requireAuth, async (req: Request, res: Response) => {
+router.patch("/controllers", requireAuth, customerDetailsLocked, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const pool = getPool();
     const { isSoleController, additionalControllersCount } = req.body;

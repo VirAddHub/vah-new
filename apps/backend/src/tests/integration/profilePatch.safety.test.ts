@@ -3,18 +3,19 @@
 import { describe, it, expect, afterAll } from 'vitest';
 import request from 'supertest';
 import { createTestApp } from '../helpers/createTestApp';
-import { makeUserToken } from '../helpers/authHelper';
+import { makeAdminToken } from '../helpers/authHelper';
 import { getPool } from '../../server/db';
 
 const app = createTestApp();
-const token = makeUserToken(); // fixture user 1001 (src/tests/globalSetup.ts)
+// Customers are refused outright (customerDetailsLocked); these rules still guard admin edits.
+const token = makeAdminToken(); // fixture admin 9999 (src/tests/globalSetup.ts)
 const patch = (body: Record<string, unknown>) =>
   request(app).patch('/api/profile').set('Authorization', `Bearer ${token}`).send(body);
 
 describe('PATCH /api/profile — safety rules', () => {
   let original: Record<string, unknown> | undefined;
   afterAll(async () => {
-    if (original) await getPool().query('UPDATE "user" SET first_name=$2, last_name=$3, phone=$4 WHERE id=$1', [1001, original.first_name, original.last_name, original.phone]);
+    if (original) await getPool().query('UPDATE "user" SET first_name=$2, last_name=$3, phone=$4 WHERE id=$1', [9999, original.first_name, original.last_name, original.phone]);
   });
 
   it('refuses registered-office fields', async () => {
@@ -30,10 +31,10 @@ describe('PATCH /api/profile — safety rules', () => {
   });
 
   it('never changes the email address (that needs the confirmed email-change flow)', async () => {
-    const before = (await getPool().query('SELECT email FROM "user" WHERE id=1001')).rows[0].email;
+    const before = (await getPool().query('SELECT email FROM "user" WHERE id=9999')).rows[0].email;
     const res = await patch({ email: 'newemail@example.com' });
     expect(res.status).toBe(400);
-    const after = (await getPool().query('SELECT email FROM "user" WHERE id=1001')).rows[0].email;
+    const after = (await getPool().query('SELECT email FROM "user" WHERE id=9999')).rows[0].email;
     expect(after).toBe(before);
   });
 
@@ -44,7 +45,7 @@ describe('PATCH /api/profile — safety rules', () => {
   });
 
   it('updates allowed fields and never returns secrets', async () => {
-    original = (await getPool().query('SELECT first_name, last_name, phone FROM "user" WHERE id=1001')).rows[0];
+    original = (await getPool().query('SELECT first_name, last_name, phone FROM "user" WHERE id=9999')).rows[0];
     const res = await patch({ first_name: 'John', last_name: 'Doe', phone: '+44 20 1234 5678' });
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual(expect.objectContaining({ first_name: 'John', last_name: 'Doe' }));

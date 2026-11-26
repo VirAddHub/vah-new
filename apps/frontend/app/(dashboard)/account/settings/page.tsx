@@ -2,6 +2,7 @@
 
 import { EmailChangeCard } from '@/components/account/EmailChangeCard';
 import { ProfileCard } from '@/components/account/ProfileCard';
+import { PasswordChangeCard } from '@/components/account/PasswordChangeCard';
 import { Settings } from 'lucide-react';
 
 export default function AccountSettingsPage() {
@@ -16,7 +17,7 @@ export default function AccountSettingsPage() {
                     </h1>
                 </div>
                 <p className="text-body-sm sm:text-body text-muted-foreground leading-relaxed">
-                    Manage your account settings and preferences
+                    Your details from sign-up, your email address and your password
                 </p>
             </div>
 
@@ -27,6 +28,10 @@ export default function AccountSettingsPage() {
 
             {/* Email Change Card */}
             <EmailChangeCard />
+
+            <div className="mt-4 sm:mt-6">
+                <PasswordChangeCard />
+            </div>
         </div>
     );
 }

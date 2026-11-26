@@ -150,6 +150,7 @@ export default function AccountAddressesPage() {
                     address={addresses.forwardingAddress || null}
                     businessAddress={addresses.businessAddress || null}
                     onSave={handleSaveAddress}
+                    readOnly
                 />
             </div>
         </div>

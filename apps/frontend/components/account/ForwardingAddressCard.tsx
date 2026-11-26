@@ -16,9 +16,11 @@ interface ForwardingAddressCardProps {
   address: Address | null;
   businessAddress?: Address | null; // Kept for backward compatibility but not displayed
   onSave: (address: Address) => Promise<void>;
+  /** Customers cannot change it themselves: shown as entered at sign-up, changes go through support. */
+  readOnly?: boolean;
 }
 
-export function ForwardingAddressCard({ address: initialAddress, businessAddress, onSave }: ForwardingAddressCardProps) {
+export function ForwardingAddressCard({ address: initialAddress, businessAddress, onSave, readOnly = false }: ForwardingAddressCardProps) {
   const [address, setAddress] = useState<Address | null>(initialAddress);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -228,7 +230,7 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
               Mail Forwarding Address
             </h3>
             {/* Edit/Add button moved to top-right for better visibility and affordance */}
-            {address ? (
+            {readOnly ? null : address ? (
                 <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
                   <DialogTrigger asChild>
                   <Button 
@@ -468,6 +470,11 @@ export function ForwardingAddressCard({ address: initialAddress, businessAddress
                   No forwarding address configured
                 </p>
               </div>
+            )}
+            {readOnly && (
+              <p className="text-caption text-muted-foreground">
+                To change this address, contact support.
+              </p>
             )}
           </div>
         </div>

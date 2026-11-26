@@ -2,6 +2,7 @@
 // Account businesses API: list, create, update, set-primary. All require auth and ownership.
 
 import { Router, Request, Response } from 'express';
+import { customerDetailsLocked } from '../lib/customerDetailsLock';
 import { getPool } from '../db';
 import { getMonthlyPricePenceForNextBusiness } from '../../lib/business-pricing';
 import { logger } from '../../lib/logger';
@@ -107,7 +108,7 @@ router.get('/businesses/:businessId', requireAuth, async (req: Request, res: Res
 });
 
 /** PATCH /api/account/businesses/:businessId — update editable fields */
-router.patch('/businesses/:businessId', requireAuth, async (req: Request, res: Response) => {
+router.patch('/businesses/:businessId', requireAuth, customerDetailsLocked, async (req: Request, res: Response) => {
   const userId = req.user!.id;
   const businessId = param(req, 'businessId');
   const id = businessId ? parseInt(businessId, 10) : NaN;

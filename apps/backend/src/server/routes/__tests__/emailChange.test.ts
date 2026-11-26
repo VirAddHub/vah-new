@@ -67,11 +67,12 @@ describe('Email change routes', () => {
             expect(vi.mocked(requestEmailChange)).not.toHaveBeenCalled();
         });
 
-        it('updates the phone number straight away', async () => {
-            const res = await request(app).patch('/api/profile/contact').send({ phone: '+44 20 1234 5678' }).expect(200);
-            expect(res.body.ok).toBe(true);
-            const u = await getPool().query('SELECT phone FROM "user" WHERE id = $1', [USER]);
-            expect(String(u.rows[0].phone).replace(/\s+/g, '')).toBe('+442012345678');
+        it('refuses a phone change: the phone number is fixed at sign-up', async () => {
+            const before = await getPool().query('SELECT phone FROM "user" WHERE id = $1', [USER]);
+            const res = await request(app).patch('/api/profile/contact').send({ phone: '+44 20 1234 5678' }).expect(403);
+            expect(res.body.error).toBe('support_required');
+            const after = await getPool().query('SELECT phone FROM "user" WHERE id = $1', [USER]);
+            expect(after.rows[0].phone).toBe(before.rows[0].phone);
         });
 
         it('rejects a request with neither email nor phone', async () => {
