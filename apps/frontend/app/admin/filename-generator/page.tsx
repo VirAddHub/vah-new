@@ -349,7 +349,7 @@ export default function FilenameGeneratorPage() {
                 <Input id="date" type="date" value={dateIso} max={isoToday()} onChange={(e) => setDateIso(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="letter-number">Letter number (same customer, type and day)</Label>
+                <Label htmlFor="letter-number">Second letter of the same type today?</Label>
                 <div className="flex items-center gap-2">
                   <Button type="button" variant="outline" size="sm" onClick={() => { setLetterNumber((n) => Math.max(1, n - 1)); setCopied(false); }} aria-label="One less">
                     <Minus className="h-4 w-4" aria-hidden />
@@ -360,7 +360,7 @@ export default function FilenameGeneratorPage() {
                   </Button>
                 </div>
                 <p className="text-caption text-muted-foreground">
-                  Use 2, 3… for a second or third letter of the same type for the same customer on the same day, so no two scans share a name.
+                  Leave at 1 for most letters. Set to 2 (or 3…) only when this customer already has a letter of this type from today, so the new scan doesn’t overwrite it.
                 </p>
               </div>
             </section>
