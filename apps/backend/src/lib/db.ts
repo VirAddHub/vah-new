@@ -24,7 +24,7 @@ export function getPool() {
             // Production safety defaults (tunable via env)
             max: Number(process.env.PGPOOL_MAX || 20),
             idleTimeoutMillis: Number(process.env.PGPOOL_IDLE_TIMEOUT_MS || 30_000),
-            connectionTimeoutMillis: Number(process.env.PGPOOL_CONN_TIMEOUT_MS || 2_000),
+            connectionTimeoutMillis: Number(process.env.PGPOOL_CONN_TIMEOUT_MS || 5_000),
             // Fail-fast on long-running queries from the client side (server-side statement_timeout can be added later)
             query_timeout: Number(process.env.PG_QUERY_TIMEOUT_MS || 10_000),
             // Allow process to exit if this is the only thing keeping it alive (useful for scripts)

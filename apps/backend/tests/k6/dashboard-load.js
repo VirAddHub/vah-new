@@ -9,6 +9,8 @@
 // Each signed-in customer repeats one dashboard visit (8 requests) every ~15 s, which stays under the
 // per-user limit of 600 requests per 15 minutes. Accounts are not paid, so mail routes answer 403
 // after the full access check (same database work as a paid customer, without the mail query).
+// Measured on staging 26 Nov 2026 (Starter plan, 50 accounts, 5 min): ~23 req/s, median 83 ms,
+// p95 1.3 s, p99 3.3 s, API CPU ~25% of 0.5, memory ~200 MB, database connections 20 (pool max).
 // Never point this at production.
 import http from 'k6/http';
 import { check, sleep } from 'k6';
