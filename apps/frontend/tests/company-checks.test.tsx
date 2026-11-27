@@ -34,6 +34,7 @@ const detail = (over: any = {}) => ({
     },
     next: { key: 'resolve_discrepancies', priority: 4, text: 'Resolve 2 discrepancy(ies)' },
     judgement_items: JUDGEMENT,
+    shared_with: [{ check_id: 8, user_id: 54, email: 'other@example.com', status: 'in_progress' }],
     satisfactory_blockers: ['Resolve 2 discrepancy(ies).', 'Choose a risk rating.'],
     ...over,
   },
@@ -48,7 +49,7 @@ beforeEach(() => {
     calls.push({ url, init });
     let body: any = { ok: true };
     if (url.startsWith('/api/admin/company-checks?')) body = { ok: true, data: { counts: { action: 1, waiting: 3, satisfactory: 5, all: 9 }, items: [
-      { id: 7, company_number: '12345678', company_name: 'EXAMPLE TRADING LTD', customer_name: 'Test User', email: 'customer@example.com', status: 'in_progress', open_alerts: 0, risk_rating: null, next: { key: 'resolve_discrepancies', priority: 4, text: 'Resolve 2 discrepancy(ies)' } }] } };
+      { id: 7, company_number: '12345678', company_name: 'EXAMPLE TRADING LTD', customer_name: 'Test User', email: 'customer@example.com', status: 'in_progress', open_alerts: 0, risk_rating: null, shared_count: 3, next: { key: 'resolve_discrepancies', priority: 4, text: 'Resolve 2 discrepancy(ies)' } }] } };
     else if (url === '/api/admin/company-checks/7') body = detail();
     else if (url === '/api/bff/company-declaration' && (!init || init.method !== 'POST')) body = { ok: true, data: declarationState };
     else if (url === '/api/bff/company-declaration') body = { ok: true, data: { owners_invited: [] } };
@@ -57,14 +58,21 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const wrap = (el: React.ReactElement) => render(<SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>{el}</SWRConfig>);
-const openCheck = async () => { wrap(<CompanyChecksSection />); fireEvent.click(await screen.findByText('EXAMPLE TRADING LTD')); await screen.findByText('Automated results'); };
+const openCheck = async () => { wrap(<CompanyChecksSection />); fireEvent.click(await screen.findByText('Test User')); await screen.findByText('Automated results'); };
 
 describe('Company checks: admin', () => {
   it('the queue shows counts and the next action for each company', async () => {
     wrap(<CompanyChecksSection />);
-    expect(await screen.findByRole('button', { name: /Needs action\s*1/ })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: /Waiting for customer\s*3/ })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /To do\s*1/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /Waiting on customer\s*3/ })).toBeInTheDocument();
     expect(screen.getAllByText('Resolve 2 discrepancy(ies)').length).toBeGreaterThan(0);
+    expect(screen.getByText('Test User')).toBeInTheDocument(); // customer first
+    expect(screen.getByText(/on 4 accounts/)).toBeInTheDocument();
+  });
+
+  it('warns when the company number is on other accounts', async () => {
+    await openCheck();
+    expect(screen.getByText(/also on 1 other account/)).toBeInTheDocument();
   });
 
   it('opens with the next action, automated results kept apart from the judgements, and nothing automated to tick', async () => {

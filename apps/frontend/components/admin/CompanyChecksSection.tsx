@@ -31,9 +31,9 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   satisfactory: { label: "Satisfactory", cls: "bg-primary/10 text-primary border-primary/20" },
 };
 const VIEWS = [
-  { id: "action", label: "Needs action" },
-  { id: "waiting", label: "Waiting for customer" },
-  { id: "satisfactory", label: "Satisfactory" },
+  { id: "action", label: "To do" },
+  { id: "waiting", label: "Waiting on customer" },
+  { id: "satisfactory", label: "Done" },
   { id: "all", label: "All" },
 ] as const;
 const AUTO: Record<string, { icon: React.ReactNode; cls: string; label: string }> = {
@@ -49,6 +49,7 @@ const fmtDate = (v: unknown) => (v ? new Date(String(v)).toLocaleString("en-GB",
 const day = (v: unknown) => (v ? new Date(String(v)).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—");
 const addr = (a: any) => (a ? [a.premises, a.address_line_1, a.address_line_2, a.locality, a.region, a.postal_code, a.country].filter(Boolean).join(", ") : "—");
 const human = (s: unknown) => String(s ?? "—").replace(/-/g, " ").replace(/_/g, " ");
+const isRecent = (v: unknown) => !!v && Date.now() - new Date(String(v)).getTime() < 3 * 864e5;
 const by = (id: unknown) => (Number(id) === 0 ? "system" : `admin #${id}`);
 
 function StatusBadge({ status }: { status: string }) {
@@ -129,10 +130,13 @@ export default function CompanyChecksSection() {
                     <button type="button" onClick={() => { setSelected(i.id); setLinking(false); }} aria-current={selected === i.id}
                       className={cn("w-full px-3 py-2.5 text-left hover:bg-mist", selected === i.id && "bg-mist")}>
                       <div className="flex items-start justify-between gap-2">
-                        <span className="truncate text-[13px] font-medium text-ink">{i.company_name || i.company_number}</span>
-                        {i.open_alerts > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-1.5 text-[11px] font-medium text-amber-900"><Bell className="h-3 w-3" aria-hidden />{i.open_alerts}</span>}
+                        <span className="truncate text-[13px] font-medium text-ink">{i.customer_name || i.email}</span>
+                        <span className="flex shrink-0 items-center gap-1">
+                          {isRecent(i.declaration_at) && <span className="rounded-full bg-primary/10 px-1.5 text-[11px] font-medium text-primary">New details</span>}
+                          {i.open_alerts > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-1.5 text-[11px] font-medium text-amber-900"><Bell className="h-3 w-3" aria-hidden />{i.open_alerts}</span>}
+                        </span>
                       </div>
-                      <p className="truncate text-[12px] text-graphite"><span className="figure-mono">{i.company_number}</span> · {i.customer_name || i.email}</p>
+                      <p className="truncate text-[12px] text-graphite">{i.company_name || "Company"} · <span className="figure-mono">{i.company_number}</span>{i.shared_count > 0 && <span className="text-amber-800"> · on {i.shared_count + 1} accounts</span>}</p>
                       <p className="mt-1 flex items-center gap-1.5 text-[12px] text-ink">
                         <span className={cn("h-2 w-2 shrink-0 rounded-full", PRIORITY_DOT(i.next.priority))} aria-hidden />
                         <span className="truncate">{i.next.text}</span>
@@ -231,8 +235,8 @@ function CheckDetail({ id, onChanged }: { id: number; onChanged: () => void }) {
     <div className="space-y-3">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="truncate text-[17px] font-semibold text-ink">{p.company_name || c.company_name || c.company_number}</h2>
-          <p className="text-[12px] text-graphite"><span className="figure-mono">{c.company_number}</span> · {d.customer?.first_name} {d.customer?.last_name} ({d.customer?.email}) · extract {day(c.fetched_at)}{c.monitoring && " · monitored daily"}</p>
+          <h2 className="truncate text-[17px] font-semibold text-ink">{[d.customer?.first_name, d.customer?.last_name].filter(Boolean).join(" ") || d.customer?.email} <span className="font-normal text-graphite">· {p.company_name || c.company_name || c.company_number}</span></h2>
+          <p className="text-[12px] text-graphite">{d.customer?.email} · customer #{c.user_id} · company <span className="figure-mono">{c.company_number}</span> · extract {day(c.fetched_at)}{c.monitoring && " · monitored daily"}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={c.status} />
@@ -248,6 +252,14 @@ function CheckDetail({ id, onChanged }: { id: number; onChanged: () => void }) {
         {c.fetch_error && <p className="mt-1 text-[13px] text-amber-900">Last retrieval failed: {c.fetch_error}</p>}
       </div>
       {msg && <p role={msg.ok ? "status" : "alert"} className={cn("text-[13px]", msg.ok ? "text-primary" : "text-destructive")}>{msg.text}</p>}
+
+      {(d.shared_with?.length ?? 0) > 0 && (
+        <details className="rounded-md border border-amber-200 bg-amber-50/60 px-3 py-2 text-[13px] text-amber-950">
+          <summary className="cursor-pointer font-medium">This company number is also on {d.shared_with.length} other account{d.shared_with.length === 1 ? "" : "s"}</summary>
+          <p className="mt-1 text-[12px]">Several customers claiming the same company can be legitimate (two directors) or a warning sign. Check how each is connected to the company.</p>
+          <ul className="mt-1 text-[12px]">{d.shared_with.map((x: any) => <li key={x.check_id}>{x.email} · customer #{x.user_id} · {STATUS[x.status]?.label ?? x.status}</li>)}</ul>
+        </details>
+      )}
 
       {openAlerts.map((al: any) => <AlertCard key={al.id} alert={al} onAck={note => act(`ack${al.id}`, `${API}/${id}/alerts/${al.id}/ack`, { note }, "Alert reviewed.")} />)}
 
@@ -274,7 +286,9 @@ function CheckDetail({ id, onChanged }: { id: number; onChanged: () => void }) {
         </div>
       )}
 
-      <Review d={d} busy={busy} act={act} id={id} />
+      {d.next.key === "await_customer"
+        ? <p className="rounded-md border border-line px-3 py-2 text-[13px] text-graphite">Your review opens here once the customer's company details arrive. The comparison with Companies House runs automatically.</p>
+        : <Review d={d} busy={busy} act={act} id={id} />}
 
       <Section title="Declaration compared with the register" count={a.comparison.length} open={!!decl && c.status !== "satisfactory"}>
         {decl ? (

@@ -87,6 +87,7 @@ describe('company checks', () => {
         expect(disc).toHaveLength(1);
         expect(disc[0]).toMatchObject({ source: 'system', category: 'other', detected_key: 'director_not_registered:new director' });
         expect(d.next.key).toBe('resolve_discrepancies');
+        expect(Array.isArray((await get(`/${checkId}`)).body.data.shared_with)).toBe(true);
         expect(d.analysis.automated.find((a: any) => a.id === 'screening').status).toBe('not_available');
         expect(d.analysis.automated.find((a: any) => a.id === 'individual_identity').status).toBe('missing');
     });

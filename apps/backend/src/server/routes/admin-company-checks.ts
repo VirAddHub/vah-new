@@ -85,7 +85,9 @@ router.get('/company-checks', async (req, res) => {
                    c.updated_at, c.checklist, c.snapshot, u.email, u.first_name, u.last_name,
                    (SELECT COUNT(*)::int FROM company_check_alert a WHERE a.check_id = c.id AND a.acknowledged_at IS NULL) AS open_alerts,
                    (SELECT COUNT(*)::int FROM company_check_entry e WHERE e.check_id = c.id AND e.kind = 'discrepancy' AND e.resolved_at IS NULL) AS open_discrepancies,
-                   (SELECT COUNT(*)::int FROM company_check_evidence v WHERE v.check_id = c.id AND v.kind = 'beneficial_ownership') AS bo_evidence
+                   (SELECT COUNT(*)::int FROM company_check_evidence v WHERE v.check_id = c.id AND v.kind = 'beneficial_ownership') AS bo_evidence,
+                   (SELECT COUNT(*)::int FROM company_check o JOIN "user" ou ON ou.id = o.user_id WHERE o.company_number = c.company_number AND o.id <> c.id AND ou.deleted_at IS NULL) AS shared_count,
+                   (SELECT MAX(d.submitted_at) FROM company_declaration d WHERE d.user_id = c.user_id AND d.company_number = c.company_number) AS declaration_at
               FROM company_check c JOIN "user" u ON u.id = c.user_id
              WHERE u.deleted_at IS NULL ${userId ? 'AND c.user_id = $1' : ''}
              ORDER BY c.updated_at DESC LIMIT 500`, userId ? [userId] : [])).rows;
@@ -103,7 +105,7 @@ router.get('/company-checks', async (req, res) => {
                 id: Number(c.id), user_id: Number(c.user_id), email: c.email, customer_name: [c.first_name, c.last_name].filter(Boolean).join(' '),
                 company_number: c.company_number, company_name: c.company_name || c.snapshot?.profile?.company_name || null,
                 status: c.status, risk_rating: c.risk_rating, monitoring: c.monitoring, fetched_at: c.fetched_at, updated_at: c.updated_at,
-                open_alerts: c.open_alerts, open_discrepancies: c.open_discrepancies,
+                open_alerts: c.open_alerts, open_discrepancies: c.open_discrepancies, shared_count: c.shared_count, declaration_at: c.declaration_at,
                 counts: { attention: a.attention, missing: a.automated.filter(x => x.status === 'missing').length, pass: a.automated.filter(x => x.status === 'pass').length, total: a.automated.length },
                 next,
             });
@@ -169,7 +171,11 @@ router.get('/company-checks/:id', async (req, res) => {
     try {
         const d = await detail(getPool(), id);
         if (!d) return res.status(404).json({ ok: false, error: 'not_found' });
-        return res.json({ ok: true, data: { ...d, judgement_items: JUDGEMENT, satisfactory_blockers: d.blockers, identity_provider: identityProviderStatus() } });
+        // Other accounts that gave the same company number: a risk indicator in its own right.
+        const shared = (await getPool().query(
+            `SELECT o.id AS check_id, o.user_id, u.email, o.status FROM company_check o JOIN "user" u ON u.id = o.user_id
+              WHERE o.company_number = $1 AND o.id <> $2 AND u.deleted_at IS NULL ORDER BY o.id LIMIT 25`, [d.check.company_number, id])).rows;
+        return res.json({ ok: true, data: { ...d, shared_with: shared, judgement_items: JUDGEMENT, satisfactory_blockers: d.blockers, identity_provider: identityProviderStatus() } });
     } catch (e) { return chFailure(res, e); }
 });
 
