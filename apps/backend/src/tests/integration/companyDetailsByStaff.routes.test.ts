@@ -90,3 +90,26 @@ describe('one open account per company', () => {
         await getPool().query(`UPDATE "user" SET deleted_at = NULL WHERE id = $1`, [CUSTOMER]);
     });
 });
+
+describe('company checks register download', () => {
+    const app = createTestApp();
+    const admin = `Bearer ${makeAdminToken()}`;
+
+    it('gives one row per check, opens in Excel, and shows where the details came from', async () => {
+        await getPool().query(`UPDATE "user" SET first_name = '=HYPERLINK("x")' WHERE id = $1`, [OTHER]);
+        await request(app).post('/api/admin/company-checks').set('Authorization', admin).send({ userId: OTHER, companyNumber: '07654322' });
+        const r = await request(app).get('/api/admin/exports/company-checks-register').set('Authorization', admin);
+        expect(r.status).toBe(200);
+        expect(r.headers['content-type']).toMatch(/text\/csv/);
+        expect(r.headers['content-disposition']).toMatch(/company-checks-register-\d{4}-\d{2}-\d{2}\.csv/);
+        const text = String(r.text).replace(/^﻿/, '');
+        expect(text.split('\n')[0]).toMatch(/^Check ID,Customer ID,Customer,Customer email/);
+        expect(text).toMatch(/07654321.*Entered by .*\(Phone call\)/);
+        expect(text).toContain(`"'=HYPERLINK(""x"") User"`);
+    });
+
+    it('is for administrators only', async () => {
+        const user = `Bearer ${makeUserToken({ id: CUSTOMER, email: `staffentry-${CUSTOMER}@example.com` })}`;
+        expect([401, 403]).toContain((await request(app).get('/api/admin/exports/company-checks-register').set('Authorization', user)).status);
+    });
+});

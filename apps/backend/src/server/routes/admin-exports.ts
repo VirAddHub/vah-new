@@ -197,5 +197,85 @@ router.get('/destruction-log', requireAdmin, adminExportsLimiter, async (req: Re
     }
 });
 
+/** A spreadsheet cell: text that starts like a formula is prefixed so Excel shows it rather than runs it. */
+function cell(v: unknown): string {
+    const t = v == null ? '' : String(v);
+    return /^[=+\-@\t\r]/.test(t) ? `'${t}` : t;
+}
+
+const CHECK_STATUS: Record<string, string> = { in_progress: 'Under review', further_investigation: 'Investigating', satisfactory: 'Satisfactory', unsatisfactory: 'Unsatisfactory' };
+const ENTRY_SOURCE: Record<string, string> = { phone: 'Phone call', email: 'Email', meeting: 'Meeting or video call', document: 'Documents', other: 'Other' };
+
+/**
+ * GET /api/admin/exports/company-checks-register
+ * One row per company check: the customer, the company, the decision and who made it, where the
+ * company details came from, mismatches with Companies House and how they were dealt with,
+ * monitoring, and the latest saved report. CSV (opens in Excel), built fresh from the database.
+ */
+router.get('/company-checks-register', async (_req: Request, res: Response) => {
+    try {
+        const pool = getPool();
+        const ok = (await pool.query(`SELECT to_regclass('public.company_check') IS NOT NULL AS ok`)).rows[0]?.ok;
+        if (!ok) return res.status(503).json({ ok: false, error: 'not_ready' });
+        const hasEntered = (await pool.query(`SELECT 1 FROM information_schema.columns WHERE table_name = 'company_declaration' AND column_name = 'entered_by_admin'`)).rows.length > 0;
+        const r = await pool.query(`
+            SELECT c.id, c.user_id, u.email, u.first_name, u.last_name, u.deleted_at,
+                   c.company_number, COALESCE(c.snapshot->'profile'->>'company_name', c.company_name) AS company_name,
+                   c.snapshot->'profile'->>'company_status' AS company_status,
+                   c.status, c.risk_rating, c.decided_at, c.decision_reason, da.email AS decided_by_email,
+                   c.monitoring, c.fetched_at, c.created_at,
+                   d.submitted_at AS details_at, d.returned_at AS details_returned_at,
+                   ${hasEntered ? `d.entered_source, ea.email AS entered_by_email` : `NULL AS entered_source, NULL AS entered_by_email`},
+                   (SELECT count(*) FROM company_check_entry e WHERE e.check_id = c.id AND e.kind = 'discrepancy') AS mismatches,
+                   (SELECT count(*) FROM company_check_entry e WHERE e.check_id = c.id AND e.kind = 'discrepancy' AND e.resolved_at IS NULL) AS mismatches_open,
+                   (SELECT string_agg(e.report_reference, '; ') FROM company_check_entry e WHERE e.check_id = c.id AND e.reported_to_ch) AS reported_refs,
+                   (SELECT count(*) FROM company_check_evidence v WHERE v.check_id = c.id) AS evidence_files,
+                   (SELECT max(created_at) FROM company_check_report rp WHERE rp.check_id = c.id) AS last_report_at
+              FROM company_check c
+              JOIN "user" u ON u.id = c.user_id
+              LEFT JOIN "user" da ON da.id = c.decided_by
+              LEFT JOIN LATERAL (SELECT * FROM company_declaration x WHERE x.user_id = c.user_id AND x.company_number = c.company_number ORDER BY x.submitted_at DESC, x.id DESC LIMIT 1) d ON true
+              ${hasEntered ? `LEFT JOIN "user" ea ON ea.id = d.entered_by_admin` : ''}
+             ORDER BY c.company_number, c.id`);
+        const rows = r.rows.map((x: any) => ({
+            'Check ID': x.id,
+            'Customer ID': x.user_id,
+            'Customer': cell([x.first_name, x.last_name].filter(Boolean).join(' ')),
+            'Customer email': cell(x.email),
+            'Account closed': x.deleted_at ? formatDate(x.deleted_at) : '',
+            'Company number': cell(x.company_number),
+            'Company name': cell(x.company_name),
+            'Companies House status': cell(x.company_status),
+            'Check status': CHECK_STATUS[x.status] ?? cell(x.status),
+            'Risk rating': cell(x.risk_rating),
+            'Decided on': formatDate(x.decided_at),
+            'Decided by': cell(x.decided_by_email),
+            'Decision reason': cell(x.decision_reason),
+            'Company details from': !x.details_at ? 'Not received' : x.entered_by_email ? `Entered by ${x.entered_by_email} (${ENTRY_SOURCE[x.entered_source] ?? x.entered_source})` : 'Customer',
+            'Company details dated': formatDate(x.details_at),
+            'Sent back to customer': formatDate(x.details_returned_at),
+            'Mismatches found': Number(x.mismatches),
+            'Mismatches still open': Number(x.mismatches_open),
+            'Reported to Companies House (refs)': cell(x.reported_refs),
+            'Evidence files': Number(x.evidence_files),
+            'Monitoring': x.monitoring ? 'On' : 'Off',
+            'Last Companies House check': formatDate(x.fetched_at),
+            'Latest report saved': formatDate(x.last_report_at),
+            'Check opened': formatDate(x.created_at),
+        }));
+        const csv = stringify(rows, { header: true, columns: rows.length ? Object.keys(rows[0]) : ['Check ID'], bom: true });
+        const filename = `company-checks-register-${new Date().toISOString().split('T')[0]}.csv`;
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        await pool.query(`INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at) VALUES ($1, 'company_checks_register_exported', 'export', 0, $2, NOW())`,
+            [Number((_req as any).user?.id) || 0, JSON.stringify({ rows: rows.length })]).catch(() => {});
+        return res.send(Buffer.from(csv, 'utf8'));
+    } catch (error: any) {
+        logger.error('[GET /api/admin/exports/company-checks-register] error', { message: error?.message });
+        return res.status(500).json({ ok: false, error: 'export_failed', message: 'Could not build the register. Please try again.' });
+    }
+});
+
 export default router;
 

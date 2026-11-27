@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { StaffDeclarationForm } from "./StaffDeclarationForm";
 import useSWR from "swr";
-import { AlertTriangle, Bell, Building2, Check, CircleDashed, Download, ExternalLink, Loader2, Minus, Plus, RefreshCcw, Search, X } from "lucide-react";
+import { AlertTriangle, Bell, Building2, Check, CircleDashed, Download, ExternalLink, FileText, Loader2, Minus, Plus, RefreshCcw, Search, X } from "lucide-react";
 import { ADMIN_SESSION_GONE, cn } from "@/lib/utils";
 
 const API = "/api/admin/company-checks";
@@ -103,7 +103,12 @@ export default function CompanyChecksSection() {
           <h1 className="flex items-center gap-2 text-[20px] font-semibold tracking-[-0.02em] text-ink"><Building2 className="h-5 w-5" aria-hidden /> Company checks</h1>
           <p className="text-[13px] text-graphite">Companies House checks run automatically. You review exceptions, make the judgements and decide. Identity, address and screening are separate.</p>
         </div>
-        <Btn variant="ghost" onClick={() => { setLinking(true); setSelected(null); }}><Plus className="h-4 w-4" aria-hidden /> Link a company by hand</Btn>
+        <div className="flex flex-wrap gap-2">
+          <a href="/api/bff/admin/exports/company-checks-register" className="inline-flex h-8 items-center gap-1.5 rounded-md border border-line bg-paper px-3 text-[13px] font-medium text-ink hover:bg-mist">
+            <Download className="h-4 w-4" aria-hidden /> Download register (Excel)
+          </a>
+          <Btn variant="ghost" onClick={() => { setLinking(true); setSelected(null); }}><Plus className="h-4 w-4" aria-hidden /> Link a company by hand</Btn>
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(280px,340px)_1fr]">
@@ -265,6 +270,17 @@ function CheckDetail({ id, onChanged }: { id: number; onChanged: () => void }) {
       </div>
       {msg && <p role={msg.ok ? "status" : "alert"} className={cn("text-[13px]", msg.ok ? "text-primary" : "text-destructive")}>{msg.text}</p>}
 
+      {/* Everything you can download for this check, in one place */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-line bg-mist/40 px-3 py-2 text-[13px]">
+        <span className="text-[12px] font-medium uppercase tracking-wide text-graphite">Downloads</span>
+        {d.reports.length > 0
+          ? <a className="inline-flex items-center gap-1 font-medium text-ink underline" href={`${API}/${id}/reports/${d.reports[0].id}`}><Download className="h-4 w-4" aria-hidden /> Latest report (PDF, {day(d.reports[0].created_at)})</a>
+          : <span className="text-graphite">No report yet</span>}
+        <Btn variant="ghost" disabled={!!busy} onClick={() => act("report", `${API}/${id}/reports`, { reason: "Saved by administrator" }, "Report saved. Download it from Latest report.")}>{busy === "report" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <FileText className="h-4 w-4" aria-hidden />} Save a new report</Btn>
+        {d.evidence.length > 0 && <a className="text-ink underline" href="#evidence">{d.evidence.length} evidence file{d.evidence.length === 1 ? "" : "s"}</a>}
+        {d.reports.length > 1 && <a className="text-ink underline" href="#reports">All {d.reports.length} reports</a>}
+      </div>
+
       {(d.shared_with?.length ?? 0) > 0 && (
         <details className="rounded-md border border-amber-200 bg-amber-50/60 px-3 py-2 text-[13px] text-amber-950">
           <summary className="cursor-pointer font-medium">This company number is also on {d.shared_with.length} other account{d.shared_with.length === 1 ? "" : "s"}</summary>
@@ -348,7 +364,8 @@ function CheckDetail({ id, onChanged }: { id: number; onChanged: () => void }) {
       <Evidence d={d} act={act} id={id} busy={busy} />
       <Notes notes={notes} onAdd={(kind, body, extra) => act("entry", `${API}/${id}/entries`, { kind, body, ...extra }, kind === "note" ? "Note added." : "Discrepancy recorded.")} />
 
-      <Section title="Reports" count={d.reports.length}>
+      <div id="reports" className="scroll-mt-24" />
+      <Section title="Reports" count={d.reports.length} open={d.reports.length > 0}>
         {!d.reports.length ? <p className="text-graphite">A dated report is saved automatically when the review is completed and at every decision.</p> : (
           <ul className="divide-y divide-line">{d.reports.map((r: any) => (
             <li key={r.id} className="flex items-center justify-between gap-2 py-1.5"><span>{fmtDate(r.created_at)} · {r.reason}</span>
@@ -557,7 +574,9 @@ function Evidence({ d, act, id, busy }: { d: any; act: any; id: number; busy: st
     if (await act("evidence", `${API}/${id}/evidence`, { kind, description, filename: file.name, dataBase64 }, "Evidence uploaded.")) { setDescription(""); setFile(null); }
   };
   return (
-    <Section title="Supporting evidence" count={d.evidence.length}>
+    <>
+    <div id="evidence" className="scroll-mt-24" />
+    <Section title="Supporting evidence" count={d.evidence.length} open={d.evidence.length > 0}>
       <ul className="mb-2 divide-y divide-line empty:hidden">{d.evidence.map((e: any) => (
         <li key={e.id} className="flex items-center justify-between gap-2 py-1.5"><span className="min-w-0">{human(e.kind)}: {e.description}<span className="block text-[12px] text-graphite">{e.filename} · {day(e.created_at)} · admin #{e.admin_id}</span></span>
           <a className="shrink-0 text-ink underline" href={`${API}/${id}/evidence/${e.id}`}>Download</a></li>))}
@@ -576,6 +595,7 @@ function Evidence({ d, act, id, busy }: { d: any; act: any; id: number; busy: st
       <p className="mt-1 text-[12px] text-graphite">PDF, PNG or JPEG up to 3 MB. Evidence cannot be changed or deleted.</p>
       {err && <p role="alert" className="text-[13px] text-destructive">{err}</p>}
     </Section>
+    </>
   );
 }
 
