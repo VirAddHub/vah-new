@@ -5,6 +5,8 @@
  *   standing      user.status / suspended_at / deleted_at     changed only by an admin
  *   payment       subscription row (Stripe events only)
  *   verification  primary identity + every required business owner (Sumsub events, admin override)
+ *   company       a satisfactory company check (admin Company checks) for every company number the
+ *                 customer has given us; customers with no company number are not affected
  *
  * Three access levels:
  *   none        cannot sign in (suspended or closed)
@@ -17,13 +19,15 @@
 import type { Request, Response, NextFunction } from 'express';
 import { getPool } from '../db';
 import { logger } from '../../lib/logger';
+import { companyAccessState } from './companyChecks/store';
 
 export type AccessLevel = 'none' | 'onboarding' | 'full';
 export type Standing = 'good' | 'suspended' | 'closed';
 export type PaymentState = 'none' | 'active' | 'past_due' | 'cancelled' | 'pending';
 export type VerificationState = 'not_started' | 'in_review' | 'action_required' | 'rejected' | 'owners_pending' | 'complete';
 export type MissingReason = 'account_suspended' | 'account_closed' | 'payment_required' | 'payment_overdue'
-    | 'subscription_cancelled' | 'identity_required' | 'identity_in_review' | 'identity_rejected' | 'owners_required';
+    | 'subscription_cancelled' | 'identity_required' | 'identity_in_review' | 'identity_rejected' | 'owners_required'
+    | 'company_checks_pending';
 export type NextStep = 'none' | 'payment' | 'billing' | 'verification' | 'owners' | 'support' | 'mail';
 
 export interface AccessDecision {
@@ -31,9 +35,14 @@ export interface AccessDecision {
     standing: Standing;
     payment: { state: PaymentState; entitled: boolean; paidThroughMs: number | null; cancelAtPeriodEnd: boolean };
     verification: { state: VerificationState; primaryApproved: boolean; pendingOwners: number };
+    /** Company due diligence: how many company numbers need a check, and how many are satisfactory. */
+    company: CompanyAccess;
     missing: MissingReason[];
     next: NextStep;
 }
+
+export type CompanyAccess = { required: number; satisfactory: number; investigating: number };
+const NO_COMPANY: CompanyAccess = { required: 0, satisfactory: 0, investigating: 0 };
 
 type Queryable = { query: (sql: string, args?: unknown[]) => Promise<{ rows: any[] }> };
 
@@ -78,11 +87,11 @@ export function verificationOf(kycStatus: string | null | undefined, pendingOwne
     return { state, primaryApproved, pendingOwners };
 }
 
-export function decide(standing: Standing, payment: AccessDecision['payment'], verification: AccessDecision['verification']): AccessDecision {
+export function decide(standing: Standing, payment: AccessDecision['payment'], verification: AccessDecision['verification'], company: CompanyAccess = NO_COMPANY): AccessDecision {
     const missing: MissingReason[] = [];
     if (standing !== 'good') {
         missing.push(standing === 'closed' ? 'account_closed' : 'account_suspended');
-        return { level: 'none', standing, payment, verification, missing, next: 'none' };
+        return { level: 'none', standing, payment, verification, company, missing, next: 'none' };
     }
     if (!payment.entitled) {
         missing.push(payment.state === 'past_due' ? 'payment_overdue' : payment.state === 'cancelled' ? 'subscription_cancelled' : 'payment_required');
@@ -94,13 +103,14 @@ export function decide(standing: Standing, payment: AccessDecision['payment'], v
         case 'in_review': missing.push('identity_in_review'); break;
         default: missing.push('identity_required');
     }
+    if (company.satisfactory < company.required) missing.push('company_checks_pending');
     let next: NextStep = 'mail';
     if (missing.includes('payment_required')) next = 'payment';
     else if (missing.includes('payment_overdue') || missing.includes('subscription_cancelled')) next = 'billing';
     else if (missing.includes('identity_rejected')) next = 'support';
     else if (missing.includes('identity_required') || missing.includes('identity_in_review')) next = 'verification';
     else if (missing.includes('owners_required')) next = 'owners';
-    return { level: missing.length === 0 ? 'full' : 'onboarding', standing, payment, verification, missing, next };
+    return { level: missing.length === 0 ? 'full' : 'onboarding', standing, payment, verification, company, missing, next };
 }
 
 export async function getAccess(userId: number, db: Queryable = getPool(), nowMs: number = Date.now()): Promise<AccessDecision | null> {
@@ -114,7 +124,8 @@ export async function getAccess(userId: number, db: Queryable = getPool(), nowMs
     // Owners the customer declared but whose details are not on file yet still count as pending:
     // a missing owner row must never read as "verified" (security review F21).
     const pendingOwners = Number(o.rows[0]?.n || 0) + (u.rows[0].owners_pending_info === true ? 1 : 0);
-    return decide(standingOf(u.rows[0]), paymentOf(s.rows[0], nowMs), verificationOf(u.rows[0].kyc_status, pendingOwners, !!u.rows[0].sumsub_applicant_id));
+    const company = await companyAccessState(db, userId);
+    return decide(standingOf(u.rows[0]), paymentOf(s.rows[0], nowMs), verificationOf(u.rows[0].kyc_status, pendingOwners, !!u.rows[0].sumsub_applicant_id), company);
 }
 
 /** Number of mail items held for a customer who is not in full service. A count only: no details. */

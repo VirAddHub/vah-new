@@ -20,6 +20,7 @@ import { stopSelfTestScheduler } from './server/routes/ops-selftest';
 
 // Import maintenance service
 import { systemMaintenance } from './server/services/maintenance';
+import { startCompanyMonitoring } from './server/services/companyChecks/monitor';
 
 // App factory — all route mounting lives here
 import { createApp } from './app';
@@ -125,6 +126,7 @@ async function start() {
         // Start maintenance service
         systemMaintenance.start();
         logger.info('[boot] system_maintenance_started');
+        logger.info('[boot] company_monitoring', { started: !!startCompanyMonitoring(getPool) });
 
         logger.info('[boot] deployment_info', {
             renderExternalUrl: process.env.RENDER_EXTERNAL_URL || '(unknown)',

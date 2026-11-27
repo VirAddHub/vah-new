@@ -42,6 +42,13 @@ export function stepsFor(access: AccessDecision): Step[] {
       done: false, href: '/business-owners', action: 'View owners',
     });
   }
+  if (access.missing.includes('company_checks_pending')) {
+    steps.push({
+      key: 'company', label: 'Company checks',
+      detail: 'We are checking your company\'s details on the Companies House register. You do not need to do anything unless we contact you.',
+      done: false, href: '/account/support', action: 'Contact support',
+    });
+  }
   return steps;
 }
 
@@ -129,6 +136,7 @@ export function sidebarStatusFor(access: AccessDecision): { title: string; detai
     const n = access.verification.pendingOwners;
     return { title: 'Owners to verify', detail: `${n || 'Some'} business owner${n === 1 ? '' : 's'} still need${n === 1 ? 's' : ''} to verify.`, href: '/business-owners' };
   }
+  if (m.includes('company_checks_pending')) return { title: 'Company checks in progress', detail: 'We are checking your company on Companies House.', href: '/account' };
   return { title: 'Setup not finished', detail: 'Complete the steps on your dashboard.', href: '/account' };
 }
 

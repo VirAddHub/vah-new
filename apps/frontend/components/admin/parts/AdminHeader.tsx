@@ -4,7 +4,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import type { ReactNode } from "react";
 import { VAHLogo } from "@/components/VAHLogo";
-import { ClipboardList, Clipboard, FileText, LogOut, Mail, Menu, Package, Receipt, ShieldCheck, Truck, Users, X } from "lucide-react";
+import { Building2, ClipboardList, Clipboard, FileText, LogOut, Mail, Menu, Package, Receipt, ShieldCheck, Truck, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type MenuItem = { id: string; label: string; icon: ReactNode };
@@ -14,7 +14,9 @@ export const ADMIN_SECTIONS: readonly MenuItem[] = [
   { id: "users", label: "Users", icon: <Users className="h-4 w-4" aria-hidden /> },
   { id: "mail", label: "Mail", icon: <Mail className="h-4 w-4" aria-hidden /> },
   { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" aria-hidden /> },
-  { id: "companies-house", label: "Companies House", icon: <ShieldCheck className="h-4 w-4" aria-hidden /> },
+  // Individual Companies House identity proofs (a person check), kept separate from company checks.
+  { id: "companies-house", label: "CH identity", icon: <ShieldCheck className="h-4 w-4" aria-hidden /> },
+  { id: "company-checks", label: "Company checks", icon: <Building2 className="h-4 w-4" aria-hidden /> },
   { id: "plans", label: "Plans", icon: <Package className="h-4 w-4" aria-hidden /> },
   { id: "blog", label: "Blog", icon: <FileText className="h-4 w-4" aria-hidden /> },
   { id: "audit", label: "Audit log", icon: <ClipboardList className="h-4 w-4" aria-hidden /> },
@@ -126,7 +128,10 @@ function useActionCounts() {
   const c = fwd?.counts ?? {};
   const forwarding = (c.requested ?? 0) + (c.reviewed ?? 0) + (c.processing ?? 0);
   const chItems = Array.isArray(ch?.data) ? ch.data.length : Array.isArray(ch?.data?.items) ? ch.data.items.length : 0;
-  return { forwarding, "companies-house": chItems } as Record<string, number>;
+  const { data: cc } = useSWR("/api/admin/company-checks/summary", fetchJson, { refreshInterval: 120_000 });
+  // Open monitoring alerts are what needs an administrator now.
+  const companyAlerts = Number(cc?.data?.open_alerts ?? 0) || 0;
+  return { forwarding, "companies-house": chItems, "company-checks": companyAlerts } as Record<string, number>;
 }
 
 /** Left navigation on large screens (white, black active marker), as on the customer dashboard. */

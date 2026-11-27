@@ -94,7 +94,7 @@ export async function proxy(req: NextRequest, targetPath: string) {
   // (security review F15). getSetCookie() returns each cookie separately.
   r.headers.forEach((val, key) => {
     if (key.toLowerCase() === 'set-cookie') return;
-    if (/^(content-type|x-|ratelimit-|link|vary)$/i.test(key)) resp.headers.set(key, val);
+    if (/^(content-type|content-disposition|x-|ratelimit-|link|vary)$/i.test(key)) resp.headers.set(key, val);
     // Skip cache-control from backend - we override it below
   });
   const setCookies: string[] =

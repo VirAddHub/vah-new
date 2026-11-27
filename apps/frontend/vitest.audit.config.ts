@@ -12,6 +12,7 @@ export default defineConfig({
       'tests/purchase-journey.test.tsx',
       'tests/customer-theme.test.tsx',
       'tests/services-architecture.test.tsx',
+      'tests/company-checks.test.tsx',
     ],
   },
 });

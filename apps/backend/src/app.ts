@@ -67,6 +67,7 @@ import supportRouter from './server/routes/support';
 import contactRouter from './server/routes/contact';
 import addressRouterImport from './server/routes/address';
 import adminChVerificationRouter from './server/routes/admin-ch-verification';
+import adminCompanyChecksRouter from './server/routes/admin-company-checks';
 import bffMailScanRouter from './routes/bff-mail-scan';
 import { quizRouter } from './server/routes/quiz';
 import internalMailImportRouter from './server/routes/internalMailImport';
@@ -493,6 +494,8 @@ export function createApp() {
     logger.info('[mount] /api/address mounted');
     app.use('/api/admin', adminChVerificationRouter);
     logger.info('[mount] /api/admin (ch-verification) mounted');
+    app.use('/api/admin', adminCompanyChecksRouter);
+    logger.info('[mount] /api/admin/company-checks mounted');
 
     app.use('/api/quiz', quizRouter);
     logger.info('[mount] /api/quiz mounted');

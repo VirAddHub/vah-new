@@ -115,6 +115,14 @@ export function AdminUserPanel({ user, onClose, onOpenStanding }: {
                   <Row label="Last sign-in"><span className="figure-mono">{fmtDate(p?.last_login_at)}</span></Row>
                   <Row label="Identity">{s?.access?.verification?.state?.replace(/_/g, ' ') ?? p?.kyc_status ?? '—'}</Row>
                   <Row label="Payment">{s?.access?.payment?.state?.replace(/_/g, ' ') ?? '—'}</Row>
+                  <Row label="Company checks">
+                    {s?.access?.company
+                      ? s.access.company.required === 0
+                        ? 'Not required (no company number)'
+                        : `${s.access.company.satisfactory} of ${s.access.company.required} satisfactory${s.access.company.investigating ? ` · ${s.access.company.investigating} under investigation` : ''}`
+                      : '—'}
+                    {user && <a className="ml-2 text-ink underline" href={`/admin/dashboard?section=company-checks`}>Open</a>}
+                  </Row>
                   <Row label="Standing">{s?.standing === 'good' ? 'Active' : s?.standing ?? '—'}</Row>
                   <Row label="Role">{p?.is_admin ? 'Admin' : 'Customer'}</Row>
                 </dl>

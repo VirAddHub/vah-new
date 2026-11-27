@@ -797,6 +797,14 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
             // PERMANENT DELETE - Remove user completely from database
             // This cannot be undone!
 
+            // Company due-diligence records must be kept for five years after the relationship ends
+            // (MLR 2017 reg 40). The database also refuses this; say so plainly instead of failing.
+            const cdd = await pool.query(`SELECT to_regclass('public.company_check') IS NOT NULL AS ok`);
+            if (cdd.rows[0]?.ok && (await pool.query(`SELECT 1 FROM company_check WHERE user_id = $1 LIMIT 1`, [userId])).rows.length) {
+                return res.status(409).json({ ok: false, error: 'records_must_be_retained',
+                    message: 'This customer has company check records that must be kept for five years. Close the account instead.' });
+            }
+
             // All database deletions and the audit entry commit together or not at all, so a failure
             // part-way cannot leave a half-deleted account (security review F40).
             const client = await pool.connect();

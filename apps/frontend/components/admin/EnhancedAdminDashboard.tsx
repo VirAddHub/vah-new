@@ -48,6 +48,9 @@ const MailSection = dynamic(() => import('@/components/admin/MailSection').then(
     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
 
+const CompanyChecksSection = dynamic(() => import('@/components/admin/CompanyChecksSection'), {
+    loading: () => <div className="p-6 text-graphite">Loading…</div>,
+});
 const AuditLogSection = dynamic(() => import('@/components/admin/AuditLogSection').then(mod => ({ default: mod.AuditLogSection })), {
     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
 });
@@ -74,7 +77,7 @@ interface AdminDashboardProps {
     verifiedAdminUser: WhoamiUser | null;
 }
 
-type AdminSection = "users" | "mail" | "forwarding" | "companies-house" | "plans" | "blog" | "audit";
+type AdminSection = "users" | "mail" | "forwarding" | "companies-house" | "company-checks" | "plans" | "blog" | "audit";
 
 export function EnhancedAdminDashboard({
     onLogout,
@@ -90,7 +93,7 @@ export function EnhancedAdminDashboard({
     // Sync activeSection with URL query param
     useEffect(() => {
         const sectionParam = searchParams.get('section');
-        setActiveSection(sectionParam && ['users', 'mail', 'forwarding', 'companies-house', 'plans', 'blog', 'audit'].includes(sectionParam) ? sectionParam as AdminSection : 'users');
+        setActiveSection(sectionParam && ['users', 'mail', 'forwarding', 'companies-house', 'company-checks', 'plans', 'blog', 'audit'].includes(sectionParam) ? sectionParam as AdminSection : 'users');
     }, [searchParams]);
 
     // Update URL when activeSection changes
@@ -205,6 +208,8 @@ export function EnhancedAdminDashboard({
                 );
             case "companies-house":
                 return <ChVerificationQueue />;
+            case "company-checks":
+                return <CompanyChecksSection />;
             case "plans":
                 return <PlansSection />;
             case "blog":
