@@ -42,7 +42,16 @@ export function stepsFor(access: AccessDecision): Step[] {
       done: false, href: '/business-owners', action: 'View owners',
     });
   }
-  if (access.missing.includes('company_checks_pending')) {
+  const pre = access.company?.preIncorporation;
+  if (access.missing.includes('company_number_overdue')) {
+    steps.push({ key: 'company', label: 'Add your company number', detail: 'The 30 days to register your company have passed, so the address is paused. Add the company number once it is registered and we will check it.', done: false, href: '/account/verification#company', action: 'Add company number' });
+  } else if (access.missing.includes('pre_incorporation_refused')) {
+    steps.push({ key: 'company', label: 'Company not accepted', detail: 'We could not accept your proposed company. Contact support if you have questions.', done: false, href: '/account/support', action: 'Contact support' });
+  } else if (access.missing.includes('company_checks_pending') && pre === 'needed') {
+    steps.push({ key: 'company', label: 'Tell us about your company', detail: 'Not registered yet? Tell us about the company you are forming: its name, activity, directors and owners.', done: false, href: '/account/verification#company', action: 'Add company details' });
+  } else if (access.missing.includes('company_checks_pending') && pre === 'in_review') {
+    steps.push({ key: 'company', label: 'Proposed company in review', detail: 'We are reviewing the company you are forming. We will email you when we have decided.', done: false, href: '/account/verification#company', action: 'View details' });
+  } else if (access.missing.includes('company_checks_pending')) {
     const needDeclaration = !!access.company?.declarationNeeded;
     steps.push(needDeclaration
       ? { key: 'company', label: 'Tell us about your company', detail: 'Your business activity, directors and owners. We check them against Companies House.', done: false, href: '/account/verification#company', action: 'Add company details' }
@@ -135,6 +144,9 @@ export function sidebarStatusFor(access: AccessDecision): { title: string; detai
     const n = access.verification.pendingOwners;
     return { title: 'Owners to verify', detail: `${n || 'Some'} business owner${n === 1 ? '' : 's'} still need${n === 1 ? 's' : ''} to verify.`, href: '/business-owners' };
   }
+  if (m.includes('company_number_overdue')) return { title: 'Company number needed', detail: 'Add your new company\'s number to restore service.', href: '/account/verification#company' };
+  if (m.includes('pre_incorporation_refused')) return { title: 'Company not accepted', detail: 'Contact support.', href: '/account/support' };
+  if (m.includes('company_checks_pending') && access.company?.preIncorporation === 'in_review') return { title: 'Proposed company in review', detail: 'We will email you when we have decided.', href: '/account/verification#company' };
   if (m.includes('company_checks_pending')) return access.company?.declarationNeeded
     ? { title: 'Company details needed', detail: 'Tell us about your company and its owners.', href: '/account/verification#company' }
     : { title: 'Company checks in progress', detail: 'We are checking your company on Companies House.', href: '/account' };
@@ -147,6 +159,6 @@ export function navAttention(access: AccessDecision | null): { billing: boolean;
   const m = access.missing;
   return {
     billing: m.some(x => x === 'payment_required' || x === 'payment_overdue' || x === 'subscription_cancelled'),
-    verification: m.some(x => x === 'identity_required' || x === 'identity_rejected' || x === 'owners_required') || (m.includes('company_checks_pending') && !!access.company?.declarationNeeded),
+    verification: m.some(x => x === 'identity_required' || x === 'identity_rejected' || x === 'owners_required') || (m.includes('company_checks_pending') && !!access.company?.declarationNeeded) || m.includes('company_number_overdue'),
   };
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import useSWR from 'swr';
+import useSWR, { mutate as mutateKey } from 'swr';
 import { swrFetcher } from '@/services/http';
 import { useDashboardBootstrap } from '@/hooks/useDashboardData';
 import { Badge } from '@/components/ui/badge';
@@ -302,6 +302,9 @@ export default function AccountVerificationPage() {
             }
             toast({ title: 'Companies House details saved', description: 'Your company number and name have been saved.' });
             mutateBootstrap();
+            // The company card and access change once a number is on file (e.g. after pre-incorporation).
+            void mutateKey('/api/bff/company-declaration');
+            void mutateKey('access-decision');
             setCompanyModalOpen(false);
         } catch (e) {
             devError('Save company details failed:', e);

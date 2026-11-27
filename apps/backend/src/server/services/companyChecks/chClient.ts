@@ -87,3 +87,8 @@ export function addressLine(a: any): string {
     return [a.care_of, a.po_box, a.premises, a.address_line_1, a.address_line_2, a.locality, a.region, a.postal_code, a.country]
         .filter(Boolean).join(', ');
 }
+
+/** The client used by routes and services; tests replace it with a fake (never the real API). */
+let clientFactory: () => ChClient = () => createChClient();
+export function setChClientFactory(f: () => ChClient) { clientFactory = f; }
+export function chClient(): ChClient { return clientFactory(); }

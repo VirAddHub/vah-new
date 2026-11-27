@@ -6,7 +6,8 @@ export type AccessLevel = 'none' | 'onboarding' | 'full';
 export type NextStep = 'none' | 'payment' | 'billing' | 'verification' | 'owners' | 'company' | 'support' | 'mail';
 export type MissingReason =
   | 'account_suspended' | 'account_closed' | 'payment_required' | 'payment_overdue' | 'subscription_cancelled'
-  | 'identity_required' | 'identity_in_review' | 'identity_rejected' | 'owners_required' | 'company_checks_pending';
+  | 'identity_required' | 'identity_in_review' | 'identity_rejected' | 'owners_required' | 'company_checks_pending'
+  | 'company_number_overdue' | 'pre_incorporation_refused';
 
 export interface AccessDecision {
   level: AccessLevel;
@@ -14,7 +15,9 @@ export interface AccessDecision {
   payment: { state: 'none' | 'active' | 'past_due' | 'cancelled' | 'pending'; entitled: boolean; paidThroughMs: number | null; cancelAtPeriodEnd: boolean };
   verification: { state: 'not_started' | 'in_review' | 'action_required' | 'rejected' | 'owners_pending' | 'complete'; primaryApproved: boolean; pendingOwners: number };
   /** Company checks: present when the API includes it (older responses may not). */
-  company?: { required: number; satisfactory: number; investigating: number; declarationNeeded?: boolean };
+  company?: { required: number; satisfactory: number; investigating: number; declarationNeeded?: boolean;
+    /** Set while the customer's company is being formed (no company number yet). */
+    preIncorporation?: 'needed' | 'in_review' | 'approved' | 'refused' | 'lapsed'; deadline?: string | null };
   missing: MissingReason[];
   next: NextStep;
   /** How many items are waiting while service is restricted. A count only. Null when in full service. */

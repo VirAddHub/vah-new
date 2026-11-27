@@ -7,7 +7,8 @@
  *   verification  primary identity + every required business owner (identity results: provider when
  *                 connected, or an administrator's recorded result)
  *   company       a satisfactory company check (admin Company checks) for every company number the
- *                 customer has given us; customers with no company number are not affected
+ *                 customer has given us. A company customer with no number yet (being formed) needs an
+ *                 approved pre-incorporation application, and must give the number within 30 days
  *
  * Three access levels:
  *   none        cannot sign in (suspended or closed)
@@ -28,7 +29,7 @@ export type PaymentState = 'none' | 'active' | 'past_due' | 'cancelled' | 'pendi
 export type VerificationState = 'not_started' | 'in_review' | 'action_required' | 'rejected' | 'owners_pending' | 'complete';
 export type MissingReason = 'account_suspended' | 'account_closed' | 'payment_required' | 'payment_overdue'
     | 'subscription_cancelled' | 'identity_required' | 'identity_in_review' | 'identity_rejected' | 'owners_required'
-    | 'company_checks_pending';
+    | 'company_checks_pending' | 'company_number_overdue' | 'pre_incorporation_refused';
 export type NextStep = 'none' | 'payment' | 'billing' | 'verification' | 'owners' | 'company' | 'support' | 'mail';
 
 export interface AccessDecision {
@@ -42,7 +43,9 @@ export interface AccessDecision {
     next: NextStep;
 }
 
-export type CompanyAccess = { required: number; satisfactory: number; investigating: number; declarationNeeded?: boolean };
+export type CompanyAccess = { required: number; satisfactory: number; investigating: number; declarationNeeded?: boolean;
+    /** Set when the customer is forming a company that does not exist yet. */
+    preIncorporation?: 'needed' | 'in_review' | 'approved' | 'refused' | 'lapsed'; deadline?: string | null };
 const NO_COMPANY: CompanyAccess = { required: 0, satisfactory: 0, investigating: 0, declarationNeeded: false };
 
 type Queryable = { query: (sql: string, args?: unknown[]) => Promise<{ rows: any[] }> };
@@ -104,13 +107,16 @@ export function decide(standing: Standing, payment: AccessDecision['payment'], v
         case 'in_review': missing.push('identity_in_review'); break;
         default: missing.push('identity_required');
     }
-    if (company.satisfactory < company.required) missing.push('company_checks_pending');
+    if (company.preIncorporation === 'lapsed') missing.push('company_number_overdue');
+    else if (company.preIncorporation === 'refused') missing.push('pre_incorporation_refused');
+    else if (company.satisfactory < company.required) missing.push('company_checks_pending');
     let next: NextStep = 'mail';
     if (missing.includes('payment_required')) next = 'payment';
     else if (missing.includes('payment_overdue') || missing.includes('subscription_cancelled')) next = 'billing';
-    else if (missing.includes('identity_rejected')) next = 'support';
+    else if (missing.includes('identity_rejected') || missing.includes('pre_incorporation_refused')) next = 'support';
     else if (missing.includes('identity_required') || missing.includes('identity_in_review')) next = 'verification';
     else if (missing.includes('owners_required')) next = 'owners';
+    else if (missing.includes('company_number_overdue')) next = 'company';
     else if (missing.includes('company_checks_pending') && company.declarationNeeded) next = 'company';
     return { level: missing.length === 0 ? 'full' : 'onboarding', standing, payment, verification, company, missing, next };
 }

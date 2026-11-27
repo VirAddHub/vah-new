@@ -49,8 +49,16 @@ beforeEach(() => {
     calls.push({ url, init });
     let body: any = { ok: true };
     if (url.startsWith('/api/admin/company-checks?')) body = { ok: true, data: { counts: { action: 1, waiting: 3, satisfactory: 5, all: 9 }, items: [
-      { id: 7, company_number: '12345678', company_name: 'EXAMPLE TRADING LTD', customer_name: 'Test User', email: 'customer@example.com', status: 'in_progress', open_alerts: 0, risk_rating: null, shared_count: 3, next: { key: 'resolve_discrepancies', priority: 4, text: 'Resolve 2 discrepancy(ies)' } }] } };
+      { id: 7, company_number: '12345678', company_name: 'EXAMPLE TRADING LTD', customer_name: 'Test User', email: 'customer@example.com', status: 'in_progress', open_alerts: 0, risk_rating: null, shared_count: 3, next: { key: 'resolve_discrepancies', priority: 4, text: 'Resolve 2 discrepancy(ies)' } },
+      { id: 'pre-4', kind: 'pre_incorporation', company_number: null, company_name: 'Example Newco Ltd', customer_name: 'Pre Customer', email: 'pre@example.com', status: 'submitted', open_alerts: 0, shared_count: 0, next: { key: 'review_proposed', priority: 4, text: 'Review the proposed company' } }] } };
     else if (url === '/api/admin/company-checks/7') body = detail();
+    else if (url === '/api/admin/company-checks/pre/4') body = { ok: true, data: { deadline_days: 30, history: [], flags: ['Anna Other lives outside the UK (France).'],
+      identity: { account_holder: 'approved', others: [{ name: 'Anna Other', status: 'not_started' }] },
+      customer: { first_name: 'Pre', last_name: 'Customer', email: 'pre@example.com', owners: [] },
+      pre: { id: 4, user_id: 60, proposed_name: 'Example Newco Ltd', status: 'submitted', submitted_at: '2026-11-27T09:00:00Z', deadline_at: null,
+        declaration: { nature_of_business: 'Software consultancy for small firms', applicant_role: 'director_and_beneficial_owner', expected_monthly_mail: '0-10', principal_place_of_business: { same_as_registered_office: true },
+          people: [{ full_name: 'Pre Customer', is_account_holder: true, is_director: true, is_beneficial_owner: true, ownership_percent: 60, voting_percent: 60, country_of_residence: 'United Kingdom' },
+                   { full_name: 'Anna Other', is_account_holder: false, is_director: true, is_beneficial_owner: true, ownership_percent: 40, voting_percent: 40, country_of_residence: 'France' }] } } } };
     else if (url === '/api/bff/company-declaration' && (!init || init.method !== 'POST')) body = { ok: true, data: declarationState };
     else if (url === '/api/bff/company-declaration') body = { ok: true, data: { owners_invited: [] } };
     return { ok: true, status: url.endsWith('/resolve') ? 200 : 200, json: async () => body } as any;
@@ -160,6 +168,52 @@ describe('Company declaration: customer', () => {
   });
 });
 
+describe('pre-incorporation', () => {
+  it('a customer without a company number tells us about the company they are forming', async () => {
+    declarationState = { required: true, mode: 'proposed', deadline_days: 30, account_holder: { full_name: 'Test User', email: 't@example.com' }, pre_incorporation: null, declaration: null, editable: true };
+    wrap(<CompanyDeclarationCard />);
+    const nameField = await screen.findByLabelText(/Proposed company name/);
+    expect(screen.getByText(/30 days to register it/)).toBeInTheDocument();
+    fireEvent.submit(nameField.closest('form')!); // the browser's required-field check is bypassed: our own check must catch it
+    expect(await screen.findByText('Enter the name you plan to register the company under.')).toBeInTheDocument();
+    expect(calls.some(c => c.init?.method === 'POST')).toBe(false);
+    fireEvent.change(nameField, { target: { value: 'Example Newco Ltd' } });
+    expect((nameField as HTMLInputElement).value).toBe('Example Newco Ltd');
+  });
+
+  it('after approval it shows the company and the date the number is due', async () => {
+    declarationState = { required: true, mode: 'proposed', deadline_days: 30, account_holder: { full_name: 'Test User', email: 't@example.com' }, editable: false,
+      pre_incorporation: { status: 'approved', proposed_name: 'Example Newco Ltd', deadline_at: '2026-12-27T12:00:00Z', reason: null }, declaration: { data: {}, submitted_at: '2026-11-27T09:00:00Z' } };
+    wrap(<CompanyDeclarationCard />);
+    expect(await screen.findByText(/Approved for/)).toHaveTextContent('Approved for Example Newco Ltd. Register the company and add its company number in Companies House details above by 27 December 2026.');
+    expect(screen.queryByLabelText(/Proposed company name/)).toBeNull();
+  });
+
+  it('administrators review the proposed company from the queue and approve it for that company only', async () => {
+    wrap(<CompanyChecksSection />);
+    fireEvent.click(await screen.findByText('Pre Customer'));
+    expect(await screen.findByText(/Approval lets the customer use the address/)).toBeInTheDocument();
+    expect(await screen.findByText('Anna Other lives outside the UK (France).')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Approve for Example Newco Ltd/ }));
+    await waitFor(() => expect(calls.find(c => c.url === '/api/admin/company-checks/pre/4/decision')).toBeTruthy());
+    expect(JSON.parse(String(calls.find(c => c.url === '/api/admin/company-checks/pre/4/decision')!.init!.body))).toEqual({ decision: 'approve' });
+    expect(await screen.findByText(/Approved. The customer has 30 days/)).toBeInTheDocument();
+  });
+
+  it('returning it needs a reason the customer will see', async () => {
+    wrap(<CompanyChecksSection />);
+    fireEvent.click(await screen.findByText('Pre Customer'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Ask the customer to correct it…' }));
+    const confirm = screen.getByRole('button', { name: 'Confirm' });
+    expect(confirm).toBeDisabled();
+    fireEvent.change(screen.getByLabelText(/What should the customer correct/), { target: { value: 'Add the second shareholder.' } });
+    fireEvent.click(confirm);
+    await waitFor(() => expect(calls.some(c => c.url === '/api/admin/company-checks/pre/4/decision')).toBe(true));
+    expect(JSON.parse(String(calls.find(c => c.url === '/api/admin/company-checks/pre/4/decision')!.init!.body))).toEqual({ decision: 'return', reason: 'Add the second shareholder.' });
+    expect(await screen.findByText('Returned to the customer.')).toBeInTheDocument();
+  });
+});
+
 describe('customer notice', () => {
   const access = (missing: AccessDecision['missing'], declarationNeeded = false): AccessDecision => ({
     level: 'onboarding', standing: 'good', payment: { state: 'active', entitled: true, paidThroughMs: null, cancelAtPeriodEnd: false },
@@ -170,6 +224,14 @@ describe('customer notice', () => {
     expect(stepsFor(access(['company_checks_pending'], true)).find(s => s.key === 'company')).toMatchObject({ label: 'Tell us about your company', href: '/account/verification#company' });
     expect(stepsFor(access(['company_checks_pending'], false)).find(s => s.key === 'company')?.label).toBe('Company checks');
     expect(sidebarStatusFor(access(['company_checks_pending'], true))?.title).toBe('Company details needed');
+  });
+  it('explains each pre-incorporation stage', () => {
+    const pre = (state: any, missing: AccessDecision['missing']) => ({ ...access(missing, state === 'needed'), company: { required: 1, satisfactory: 0, investigating: 0, declarationNeeded: state === 'needed', preIncorporation: state } });
+    expect(stepsFor(pre('needed', ['company_checks_pending'])).find(s => s.key === 'company')?.detail).toMatch(/company you are forming/);
+    expect(stepsFor(pre('in_review', ['company_checks_pending'])).find(s => s.key === 'company')?.label).toBe('Proposed company in review');
+    expect(stepsFor(pre('lapsed', ['company_number_overdue'])).find(s => s.key === 'company')).toMatchObject({ label: 'Add your company number', href: '/account/verification#company' });
+    expect(stepsFor(pre('refused', ['pre_incorporation_refused'])).find(s => s.key === 'company')?.href).toBe('/account/support');
+    expect(sidebarStatusFor(pre('lapsed', ['company_number_overdue']))?.title).toBe('Company number needed');
   });
   it('identity wording does not promise an online check that is not connected', () => {
     const a = { ...access(['identity_required']), verification: { state: 'not_started' as const, primaryApproved: false, pendingOwners: 0 } };

@@ -200,7 +200,14 @@ export async function requiredCompanyNumbers(db: Queryable, userId: number): Pro
 
 export async function companyAccessState(db: Queryable, userId: number) {
     const numbers = await requiredCompanyNumbers(db, userId);
-    if (!numbers.length) return { required: 0, satisfactory: 0, investigating: 0, declarationNeeded: false };
+    if (!numbers.length) {
+        // A company customer with no company number yet: the pre-incorporation route applies.
+        const { preIncorporationAccess } = await import('./preIncorporation');
+        const pre = await preIncorporationAccess(db, userId);
+        if (!pre) return { required: 0, satisfactory: 0, investigating: 0, declarationNeeded: false };
+        return { required: 1, satisfactory: pre.state === 'approved' ? 1 : 0, investigating: 0,
+            declarationNeeded: pre.state === 'needed', preIncorporation: pre.state, deadline: pre.deadline };
+    }
     // Fail closed: until the company_check table exists, no company can count as checked.
     const t = (await db.query(`SELECT to_regclass('public.company_check') IS NOT NULL AS ok, to_regclass('public.company_declaration') IS NOT NULL AS decl`)).rows[0];
     if (!t?.ok) return { required: numbers.length, satisfactory: 0, investigating: 0, declarationNeeded: false };

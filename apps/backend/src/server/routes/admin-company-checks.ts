@@ -14,16 +14,18 @@ import { requireAdmin } from '../../middleware/auth';
 import { getPool } from '../db';
 import { logger } from '../../lib/logger';
 import { param } from '../../lib/express-params';
-import { ChError, createChClient, normaliseCompanyNumber, searchCompanies, type ChClient } from '../services/companyChecks/chClient';
+import { ChError, chClient, normaliseCompanyNumber, searchCompanies, type ChClient } from '../services/companyChecks/chClient';
 import { analyse, JUDGEMENT, JUDGEMENT_IDS, nextAction, satisfactoryBlockers } from '../services/companyChecks/analysis';
 import { audit, detail, ensureCheck, getCheck, loadCustomer, loadCustomersBulk, refreshSnapshot, saveReport, syncDiscrepancies } from '../services/companyChecks/store';
 import { ensureAllChecks } from '../services/companyChecks/automation';
 import { latestDeclaration } from '../services/companyChecks/declaration';
 import { identityProviderStatus } from '../services/identityVerification';
+import { DEADLINE_DAYS, tableReady as preTableReady } from '../services/companyChecks/preIncorporation';
+import { isBeneficialOwner } from '../services/companyChecks/declaration';
 
-let clientFactory: () => ChClient = () => createChClient();
 /** For tests: replace the Companies House client. */
-export function setChClientFactory(f: () => ChClient) { clientFactory = f; }
+export { setChClientFactory } from '../services/companyChecks/chClient';
+const clientFactory = () => chClient();
 
 const router = Router();
 router.use('/company-checks', requireAdmin);
@@ -110,7 +112,23 @@ router.get('/company-checks', async (req, res) => {
                 next,
             });
         }
-        const group = (i: any) => i.next.key === 'await_customer' ? 'waiting' : i.next.key === 'none' ? 'satisfactory' : 'action';
+        if (!userId && await preTableReady(db)) {
+            const pre = (await db.query(`
+                SELECT p.*, u.email, u.first_name, u.last_name FROM pre_incorporation p JOIN "user" u ON u.id = p.user_id
+                 WHERE u.deleted_at IS NULL ORDER BY p.updated_at DESC LIMIT 200`)).rows;
+            for (const p of pre) {
+                const overdue = p.status === 'lapsed' || (p.status === 'approved' && p.deadline_at && new Date(p.deadline_at).getTime() < Date.now());
+                const next = p.status === 'submitted' ? { key: 'review_proposed', priority: 4, text: 'Review the proposed company' }
+                    : p.status === 'returned' ? { key: 'await_customer', priority: 7, text: 'Waiting for the customer to correct the proposed company' }
+                    : overdue && !p.lapse_reviewed_at ? { key: 'lapsed', priority: 2, text: 'Not incorporated in time: confirm the address was not used' }
+                    : p.status === 'approved' ? { key: 'await_incorporation', priority: 8, text: `Waiting for incorporation (due ${new Date(p.deadline_at).toISOString().slice(0, 10)})` }
+                    : { key: 'none', priority: 9, text: p.status === 'incorporated' ? `Incorporated: company ${p.company_number} has its own check` : p.status === 'refused' ? 'Refused' : 'Lapsed: reviewed' };
+                items.push({ id: `pre-${p.id}`, kind: 'pre_incorporation', user_id: Number(p.user_id), email: p.email, customer_name: [p.first_name, p.last_name].filter(Boolean).join(' '),
+                    company_number: null, company_name: p.proposed_name, status: p.status, updated_at: p.updated_at, open_alerts: 0, shared_count: 0,
+                    declaration_at: p.status === 'submitted' ? p.submitted_at : null, next });
+            }
+        }
+        const group = (i: any) => ['await_customer', 'await_incorporation'].includes(i.next.key) ? 'waiting' : i.next.key === 'none' ? 'satisfactory' : 'action';
         const counts = { action: 0, waiting: 0, satisfactory: 0, all: items.length };
         for (const i of items) counts[group(i) as 'action' | 'waiting' | 'satisfactory']++;
         const filtered = items
@@ -161,6 +179,74 @@ router.post('/company-checks', chLimiter, async (req, res) => {
             return res.status(201).json({ ok: true, data: { id: Number(check.id) }, warning: e instanceof ChError && e.code === 'not_found' ? 'Company not found at Companies House. Check the number.' : (e as Error).message });
         }
         return res.status(201).json({ ok: true, data: { id: Number(check.id) } });
+    } catch (e) { return chFailure(res, e); }
+});
+
+/** GET /pre/:id — a pre-incorporation application (a company being formed). */
+router.get('/company-checks/pre/:id', async (req, res) => {
+    const id = idParam(req);
+    if (!id) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    const db = getPool();
+    try {
+        const p = (await db.query(`SELECT * FROM pre_incorporation WHERE id = $1`, [id])).rows[0];
+        if (!p) return res.status(404).json({ ok: false, error: 'not_found' });
+        const customer = await loadCustomer(db, Number(p.user_id));
+        const history = (await db.query(`SELECT id, user_id, proposed_name, status, submitted_at, decided_at, decision_reason, company_number FROM pre_incorporation WHERE user_id = $1 AND id <> $2 ORDER BY id DESC`, [p.user_id, id])).rows;
+        const people = (p.declaration?.people ?? []);
+        const identity = {
+            account_holder: customer?.kyc_status ?? null,
+            others: people.filter((x: any) => !x.is_account_holder && (x.is_director || isBeneficialOwner(x))).map((x: any) => {
+                const o = customer?.owners.find(ow => (x.email && ow.email === x.email) || String(ow.full_name).toLowerCase() === String(x.full_name).toLowerCase());
+                return { name: x.full_name, status: o?.status ?? 'not invited' };
+            }),
+        };
+        const flags: string[] = [];
+        for (const x of people) if (x.country_of_residence && !/united kingdom|england|scotland|wales|northern ireland|^uk$/i.test(x.country_of_residence)) flags.push(`${x.full_name} lives outside the UK (${x.country_of_residence}).`);
+        for (const c of p.declaration?.corporate_owners ?? []) flags.push(`Owned in part by a company (${c.name}): the individuals behind it are "${c.ultimate_owners}".`);
+        if (p.declaration?.no_beneficial_owner_explanation) flags.push(`No one owns or controls more than 25%: ${p.declaration.no_beneficial_owner_explanation}`);
+        return res.json({ ok: true, data: { pre: p, customer, history, identity, flags, deadline_days: DEADLINE_DAYS } });
+    } catch (e) { return chFailure(res, e); }
+});
+
+/** POST /pre/:id/decision { decision: approve|return|refuse, reason } */
+router.post('/company-checks/pre/:id/decision', async (req, res) => {
+    const id = idParam(req);
+    const decision = text(req.body?.decision, 20);
+    const reason = text(req.body?.reason, 2000);
+    if (!id) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    if (!['approve', 'return', 'refuse'].includes(decision)) return res.status(400).json({ ok: false, error: 'invalid_decision' });
+    if (decision !== 'approve' && reason.length < 10) return res.status(400).json({ ok: false, error: 'reason_required', message: decision === 'return' ? 'Tell the customer what to correct (at least 10 characters).' : 'Give the reason for refusing (at least 10 characters).' });
+    const db = getPool();
+    try {
+        const p = (await db.query(`SELECT * FROM pre_incorporation WHERE id = $1`, [id])).rows[0];
+        if (!p) return res.status(404).json({ ok: false, error: 'not_found' });
+        if (p.status !== 'submitted') return res.status(409).json({ ok: false, error: 'not_awaiting_decision', message: 'This application is not waiting for a decision.' });
+        const a = admin(req);
+        const status = decision === 'approve' ? 'approved' : decision === 'return' ? 'returned' : 'refused';
+        await db.query(
+            `UPDATE pre_incorporation SET status = $2, decided_by = $3, decided_at = NOW(), decision_reason = $4,
+                    deadline_at = CASE WHEN $2 = 'approved' THEN NOW() + ($5 || ' days')::interval ELSE deadline_at END, updated_at = NOW() WHERE id = $1`,
+            [id, status, a.id, reason || null, String(DEADLINE_DAYS)]);
+        await db.query(`INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at) VALUES ($1, $2, 'pre_incorporation', $3, $4, NOW())`,
+            [a.id, `pre_incorporation_${status}`, id, JSON.stringify({ user_id: Number(p.user_id), proposed_name: p.proposed_name, reason: reason || null })]);
+        return res.json({ ok: true, data: { status } });
+    } catch (e) { return chFailure(res, e); }
+});
+
+/** POST /pre/:id/lapse-review { note } — after the deadline passed: record that the address was not used. */
+router.post('/company-checks/pre/:id/lapse-review', async (req, res) => {
+    const id = idParam(req);
+    const note = text(req.body?.note, 2000);
+    if (!id) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    if (note.length < 10) return res.status(400).json({ ok: false, error: 'note_required', message: 'Record what you checked (for example a Companies House search) and the outcome.' });
+    const db = getPool();
+    try {
+        const r = await db.query(`UPDATE pre_incorporation SET status = 'lapsed', lapse_reviewed_at = NOW(), lapse_review_note = $2, updated_at = NOW()
+                                   WHERE id = $1 AND lapse_reviewed_at IS NULL AND (status = 'lapsed' OR (status = 'approved' AND deadline_at < NOW())) RETURNING user_id`, [id, note]);
+        if (!r.rows.length) return res.status(409).json({ ok: false, error: 'not_lapsed', message: 'This application has not lapsed, or was already reviewed.' });
+        await db.query(`INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at) VALUES ($1, 'pre_incorporation_lapse_reviewed', 'pre_incorporation', $2, $3, NOW())`,
+            [admin(req).id, id, JSON.stringify({ user_id: Number(r.rows[0].user_id), note })]);
+        return res.json({ ok: true });
     } catch (e) { return chFailure(res, e); }
 });
 

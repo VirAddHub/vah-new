@@ -85,7 +85,7 @@ export default function CompanyChecksSection() {
   const [view, setView] = useState<string>("action");
   const [q, setQ] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | string | null>(null);
   const [linking, setLinking] = useState(false);
   // Search once typing pauses, and keep the current list on screen while the next one loads.
   useEffect(() => { const t = setTimeout(() => setDebouncedQ(q.trim()), 300); return () => clearTimeout(t); }, [q]);
@@ -136,7 +136,7 @@ export default function CompanyChecksSection() {
                           {i.open_alerts > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-1.5 text-[11px] font-medium text-amber-900"><Bell className="h-3 w-3" aria-hidden />{i.open_alerts}</span>}
                         </span>
                       </div>
-                      <p className="truncate text-[12px] text-graphite">{i.company_name || "Company"} · <span className="figure-mono">{i.company_number}</span>{i.shared_count > 0 && <span className="text-amber-800"> · on {i.shared_count + 1} accounts</span>}</p>
+                      <p className="truncate text-[12px] text-graphite">{i.company_name || "Company"} · {i.kind === "pre_incorporation" ? <span className="text-ink">being formed</span> : <span className="figure-mono">{i.company_number}</span>}{i.shared_count > 0 && <span className="text-amber-800"> · on {i.shared_count + 1} accounts</span>}</p>
                       <p className="mt-1 flex items-center gap-1.5 text-[12px] text-ink">
                         <span className={cn("h-2 w-2 shrink-0 rounded-full", PRIORITY_DOT(i.next.priority))} aria-hidden />
                         <span className="truncate">{i.next.text}</span>
@@ -151,6 +151,7 @@ export default function CompanyChecksSection() {
 
         <section className="min-w-0 rounded-lg border border-line bg-paper p-4">
           {linking ? <LinkCompany onCreated={id => { setLinking(false); setSelected(id); void list.mutate(); }} onCancel={() => setLinking(false)} />
+            : typeof selected === "string" ? <PreIncorporationDetail id={Number(selected.replace("pre-", ""))} onChanged={() => void list.mutate()} />
             : selected ? <CheckDetail id={selected} onChanged={() => void list.mutate()} />
             : <p className="py-10 text-center text-[13px] text-graphite">{items.length ? "Select a company. The most urgent is at the top." : "Nothing to review."}</p>}
         </section>
@@ -591,6 +592,120 @@ function MonitoringOff({ onOff }: { onOff: (reason: string) => void }) {
     <div className="flex gap-2">
       <input className={inputCls} placeholder="Reason for turning monitoring off" value={reason} onChange={e => setReason(e.target.value)} aria-label="Reason for turning monitoring off" />
       <Btn disabled={!reason.trim()} onClick={() => onOff(reason.trim())}>Turn off</Btn>
+    </div>
+  );
+}
+
+const PRE_STATUS: Record<string, string> = { submitted: "Waiting for your decision", returned: "Returned to the customer", approved: "Approved", refused: "Refused", incorporated: "Incorporated", lapsed: "Lapsed" };
+
+/** A company being formed: the customer's declaration, approve / return / refuse, and the 30-day follow-up. */
+function PreIncorporationDetail({ id, onChanged }: { id: number; onChanged: () => void }) {
+  const { data, error, isLoading, mutate } = useSWR(`${API}/pre/${id}`, getJson);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [open, setOpen] = useState<null | "return" | "refuse" | "lapse">(null);
+  const [reason, setReason] = useState("");
+  const act = async (key: string, url: string, body: unknown, done: string) => {
+    setBusy(key); setMsg(null);
+    try { await send(url, body); setMsg({ ok: true, text: done }); setOpen(null); setReason(""); await mutate(); onChanged(); }
+    catch (e) { setMsg({ ok: false, text: (e as Error).message }); }
+    finally { setBusy(null); }
+  };
+  if (isLoading) return <p className="text-[13px] text-graphite">Loading…</p>;
+  if (error || !data?.data) return <p className="text-[13px] text-destructive">{error ? String(error.message) : "Not found"}</p>;
+  const { pre, customer, identity, flags, history, deadline_days } = data.data;
+  const d = pre.declaration ?? {};
+  const overdue = pre.status === "lapsed" || (pre.status === "approved" && pre.deadline_at && new Date(pre.deadline_at).getTime() < Date.now());
+  const name = [customer?.first_name, customer?.last_name].filter(Boolean).join(" ") || customer?.email;
+
+  return (
+    <div className="space-y-3">
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="truncate text-[17px] font-semibold text-ink">{name} <span className="font-normal text-graphite">· {pre.proposed_name}</span></h2>
+          <p className="text-[12px] text-graphite">{customer?.email} · customer #{pre.user_id} · company being formed · submitted {day(pre.submitted_at)}</p>
+        </div>
+        <span className="inline-flex shrink-0 items-center rounded-full border border-line bg-mist px-2 py-0.5 text-[12px] font-medium text-ink">{PRE_STATUS[pre.status] ?? pre.status}</span>
+      </header>
+
+      <div className={cn("rounded-md border p-3", pre.status === "submitted" || (overdue && !pre.lapse_reviewed_at) ? "border-amber-200 bg-amber-50/60" : "border-line bg-mist/40")} role="status">
+        <p className="text-[12px] font-medium uppercase tracking-wide text-graphite">Next</p>
+        {pre.status === "submitted" && <><p className="text-[15px] font-semibold text-ink">Review the proposed company</p>
+          <p className="mt-1 text-[13px] text-graphite">Approval lets the customer use the address for this one company only. They must register it and give us the company number within {deadline_days} days; we then run a full company check and hold mail until it is satisfactory.</p></>}
+        {pre.status === "returned" && <p className="text-[15px] font-semibold text-ink">Waiting for the customer to correct it</p>}
+        {pre.status === "approved" && !overdue && <p className="text-[15px] font-semibold text-ink">Waiting for incorporation: company number due by {day(pre.deadline_at)}</p>}
+        {overdue && !pre.lapse_reviewed_at && <><p className="text-[15px] font-semibold text-ink">Not incorporated in time ({day(pre.deadline_at)})</p>
+          <p className="mt-1 text-[13px] text-graphite">Access is paused. Search Companies House for the name, check whether any mail arrived for it, and record what you found.</p></>}
+        {pre.lapse_reviewed_at && <p className="text-[15px] font-semibold text-ink">Lapsed and reviewed {day(pre.lapse_reviewed_at)}: {pre.lapse_review_note}</p>}
+        {pre.status === "incorporated" && <p className="text-[15px] font-semibold text-ink">Incorporated as <span className="figure-mono">{pre.company_number}</span>: it has its own company check, which compares the register with this declaration.</p>}
+        {pre.status === "refused" && <p className="text-[15px] font-semibold text-ink">Refused: {pre.decision_reason}</p>}
+      </div>
+      {msg && <p role={msg.ok ? "status" : "alert"} className={cn("text-[13px]", msg.ok ? "text-primary" : "text-destructive")}>{msg.text}</p>}
+
+      {flags.length > 0 && (
+        <div className="rounded-md border border-amber-200 bg-amber-50/60">
+          <Heading>Look at these</Heading>
+          <ul className="list-disc space-y-1 py-2 pl-8 pr-3 text-[13px] text-amber-950">{flags.map((f: string) => <li key={f}>{f}</li>)}</ul>
+        </div>
+      )}
+
+      <div className="rounded-md border border-line">
+        <Heading>What the customer told us</Heading>
+        <dl className="grid gap-x-4 gap-y-1 px-3 py-2 text-[13px] sm:grid-cols-[180px_1fr]">
+          <dt className="text-graphite">Activity</dt><dd>{d.nature_of_business || "—"}</dd>
+          <dt className="text-graphite">Trading name</dt><dd>{d.trading_name || "—"}</dd>
+          <dt className="text-graphite">Website</dt><dd>{d.website || "—"}</dd>
+          <dt className="text-graphite">Place of business</dt><dd>{d.principal_place_of_business?.same_as_registered_office ? "Same as the registered office" : d.principal_place_of_business?.address || "—"}</dd>
+          <dt className="text-graphite">Applicant</dt><dd>{human(d.applicant_role)}{d.applicant_authority ? ` (${d.applicant_authority})` : ""}</dd>
+          <dt className="text-graphite">Expected mail a month</dt><dd>{d.expected_monthly_mail || "—"}</dd>
+        </dl>
+      </div>
+
+      <div className="rounded-md border border-line">
+        <Heading note="Identity is checked separately for each person">Directors and owners</Heading>
+        <table className="w-full text-[13px]">
+          <thead><tr className="text-left text-[12px] text-graphite"><th className="px-3 py-1 font-normal">Name</th><th className="px-3 py-1 font-normal">Role</th><th className="px-3 py-1 font-normal">Shares / votes</th><th className="px-3 py-1 font-normal">Lives in</th><th className="px-3 py-1 font-normal">Identity</th></tr></thead>
+          <tbody className="divide-y divide-line">
+            {(d.people ?? []).map((x: any) => (
+              <tr key={x.full_name}>
+                <td className="px-3 py-1.5">{x.full_name}{x.is_account_holder && <span className="text-graphite"> (account holder)</span>}</td>
+                <td className="px-3 py-1.5">{[x.is_director && "Director", (x.is_beneficial_owner || x.other_control) && "Owner / controller"].filter(Boolean).join(", ")}</td>
+                <td className="px-3 py-1.5 tabular-nums">{x.ownership_percent != null ? `${x.ownership_percent}%` : "—"} / {x.voting_percent != null ? `${x.voting_percent}%` : "—"}{x.other_control ? " · other control" : ""}</td>
+                <td className="px-3 py-1.5">{x.country_of_residence || "—"}</td>
+                <td className="px-3 py-1.5">{x.is_account_holder ? human(identity.account_holder) : human(identity.others.find((o: any) => o.name === x.full_name)?.status ?? "not needed")}</td>
+              </tr>))}
+          </tbody>
+        </table>
+        {(d.corporate_owners ?? []).length > 0 && <ul className="border-t border-line px-3 py-2 text-[13px]">{d.corporate_owners.map((c: any) => <li key={c.name}>Company owner: {c.name} ({c.country}, {c.ownership_percent}%) · individuals behind it: {c.ultimate_owners}</li>)}</ul>}
+      </div>
+
+      {pre.status === "submitted" && (
+        <div className="space-y-2 rounded-md border border-line p-3">
+          <div className="flex flex-wrap gap-2">
+            <Btn variant="solid" disabled={!!busy} onClick={() => act("approve", `${API}/pre/${id}/decision`, { decision: "approve" }, `Approved. The customer has ${deadline_days} days to give the company number.`)}>{busy === "approve" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Check className="h-4 w-4" aria-hidden />} Approve for {pre.proposed_name}</Btn>
+            <Btn disabled={!!busy} onClick={() => setOpen("return")}>Ask the customer to correct it…</Btn>
+            <Btn variant="ghost" disabled={!!busy} onClick={() => setOpen("refuse")}>Refuse…</Btn>
+          </div>
+          <p className="text-[12px] text-graphite">Approve only if the people named meet the same requirements as for a registered company. Identity checks for each person still have to pass separately.</p>
+        </div>
+      )}
+      {overdue && !pre.lapse_reviewed_at && <Btn onClick={() => setOpen("lapse")}>Record the follow-up…</Btn>}
+      {open && (
+        <form className="space-y-2 rounded-md border border-line p-3" onSubmit={e => { e.preventDefault();
+          if (open === "lapse") void act("lapse", `${API}/pre/${id}/lapse-review`, { note: reason }, "Follow-up recorded.");
+          else void act(open, `${API}/pre/${id}/decision`, { decision: open, reason }, open === "return" ? "Returned to the customer." : "Refused."); }}>
+          <label className="block text-[13px] font-medium text-ink">{open === "return" ? "What should the customer correct? (they will see this)" : open === "refuse" ? "Reason for refusing (the customer will see this)" : "What did you check, and what did you find?"}
+            <textarea className={cn(inputCls, "mt-1 h-20 py-1.5")} value={reason} onChange={e => setReason(e.target.value)} minLength={10} required />
+          </label>
+          <div className="flex gap-2"><Btn type="submit" variant="solid" disabled={reason.trim().length < 10 || !!busy}>Confirm</Btn><Btn variant="ghost" onClick={() => setOpen(null)}>Cancel</Btn></div>
+        </form>
+      )}
+
+      {history.length > 0 && (
+        <Section title="Earlier applications" count={history.length}>
+          <ul className="space-y-1">{history.map((h: any) => <li key={h.id}>{h.proposed_name} · {PRE_STATUS[h.status] ?? h.status} · {day(h.submitted_at)}{h.company_number ? ` · ${h.company_number}` : ""}</li>)}</ul>
+        </Section>
+      )}
     </div>
   );
 }

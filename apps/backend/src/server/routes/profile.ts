@@ -568,7 +568,8 @@ router.patch("/company-details", requireAuth, async (req: Request, res: Response
     // Customers may add a company number they did not have at sign-up (e.g. incorporated later),
     // never replace one already on file.
     if (!req.user?.is_admin) {
-        const cur = await pool.query(`SELECT COALESCE(NULLIF(TRIM(company_number), ''), NULL) AS n FROM "user" WHERE id = $1`, [userId]);
+        // Either column counts: a number added here is stored in companies_house_number.
+        const cur = await pool.query(`SELECT COALESCE(NULLIF(TRIM(companies_house_number), ''), NULLIF(TRIM(company_number), '')) AS n FROM "user" WHERE id = $1`, [userId]);
         if (cur.rows[0]?.n) return res.status(403).json(SUPPORT_REQUIRED);
     }
 
@@ -644,6 +645,15 @@ router.patch("/company-details", requireAuth, async (req: Request, res: Response
 
         if (result.rows.length === 0) {
             return res.status(404).json({ ok: false, error: 'user_not_found' });
+        }
+
+        // Approved before incorporation? The company now becomes a new customer: a company check
+        // compares the register with what they declared, and full service waits for it.
+        try {
+            const { onCompanyNumberAdded } = await import('../services/companyChecks/preIncorporation');
+            await onCompanyNumberAdded(pool, Number(userId), company_number);
+        } catch (e) {
+            logger.error('[PATCH /api/profile/company-details] pre-incorporation hand-over failed', { message: (e as Error)?.message });
         }
 
         return res.json({

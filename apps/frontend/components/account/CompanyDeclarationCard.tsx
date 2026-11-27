@@ -17,7 +17,7 @@ type Person = { full_name: string; email: string; is_account_holder: boolean; is
 type Corp = { name: string; registration_number: string; country: string; ownership_percent: string; ultimate_owners: string };
 type Form = { nature_of_business: string; trading_name: string; website: string; same_as_registered_office: boolean; address: string;
   applicant_role: string; applicant_authority: string; people: Person[]; corporate_owners: Corp[]; no_beneficial_owner_explanation: string;
-  expected_monthly_mail: string; confirmation: boolean };
+  expected_monthly_mail: string; confirmation: boolean; proposed_company_name: string };
 
 const getJson = (u: string) => fetch(u, { credentials: 'include', cache: 'no-store' }).then(r => r.json());
 const blankPerson = (o: Partial<Person> = {}): Person => ({ full_name: '', email: '', is_account_holder: false, is_director: false, is_beneficial_owner: false,
@@ -31,14 +31,14 @@ function fromData(d: any, holder: { full_name: string; email: string }): Form {
   if (!d) {
     return { nature_of_business: '', trading_name: '', website: '', same_as_registered_office: true, address: '', applicant_role: 'director_and_beneficial_owner',
       applicant_authority: '', people: [blankPerson({ full_name: holder.full_name, email: holder.email, is_account_holder: true, is_director: true, is_beneficial_owner: true })],
-      corporate_owners: [], no_beneficial_owner_explanation: '', expected_monthly_mail: '0-10', confirmation: false };
+      corporate_owners: [], no_beneficial_owner_explanation: '', expected_monthly_mail: '0-10', confirmation: false, proposed_company_name: '' };
   }
   return { nature_of_business: d.nature_of_business ?? '', trading_name: d.trading_name ?? '', website: d.website ?? '',
     same_as_registered_office: !!d.principal_place_of_business?.same_as_registered_office, address: d.principal_place_of_business?.address ?? '',
     applicant_role: d.applicant_role, applicant_authority: d.applicant_authority ?? '',
     people: (d.people ?? []).map((p: any) => blankPerson({ ...p, email: str(p.email), ownership_percent: str(p.ownership_percent), voting_percent: str(p.voting_percent), date_of_birth: str(p.date_of_birth), country_of_residence: str(p.country_of_residence) })),
     corporate_owners: (d.corporate_owners ?? []).map((c: any) => ({ name: str(c.name), registration_number: str(c.registration_number), country: str(c.country), ownership_percent: str(c.ownership_percent), ultimate_owners: str(c.ultimate_owners) })),
-    no_beneficial_owner_explanation: d.no_beneficial_owner_explanation ?? '', expected_monthly_mail: d.expected_monthly_mail ?? '0-10', confirmation: false };
+    no_beneficial_owner_explanation: d.no_beneficial_owner_explanation ?? '', expected_monthly_mail: d.expected_monthly_mail ?? '0-10', confirmation: false, proposed_company_name: '' };
 }
 
 export function CompanyDeclarationCard() {
@@ -53,10 +53,13 @@ export function CompanyDeclarationCard() {
   const [done, setDone] = useState<string | null>(null);
 
   useEffect(() => {
-    if (info?.required && info.editable && !form) setForm(fromData(info.declaration?.data, info.account_holder ?? { full_name: '', email: '' }));
+    if (info?.required && info.editable && !form) setForm({ ...fromData(info.declaration?.data, info.account_holder ?? { full_name: '', email: '' }), proposed_company_name: info.pre_incorporation?.proposed_name ?? '' });
   }, [info, form]);
 
   if (!info?.required) return null;
+  const proposed = info.mode === 'proposed';
+  const pre = info.pre_incorporation as null | { status: string; proposed_name: string; deadline_at: string | null; reason: string | null };
+  const date = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   const set = (patch: Partial<Form>) => setForm(f => (f ? { ...f, ...patch } : f));
   const setPerson = (i: number, patch: Partial<Person>) => setForm(f => (f ? { ...f, people: f.people.map((p, j) => (j === i ? { ...p, ...patch } : p)) } : f));
   const setCorp = (i: number, patch: Partial<Corp>) => setForm(f => (f ? { ...f, corporate_owners: f.corporate_owners.map((c, j) => (j === i ? { ...c, ...patch } : c)) } : f));
@@ -64,6 +67,7 @@ export function CompanyDeclarationCard() {
   const submit = async () => {
     if (!form) return;
     setError(null);
+    if (proposed && form.proposed_company_name.trim().length < 2) { setError('Enter the name you plan to register the company under.'); return; }
     const missingEmail = form.people.find(p => !p.is_account_holder && (p.is_director || p.is_beneficial_owner) && !p.email.trim());
     if (missingEmail) { setError(`Add an email address for ${missingEmail.full_name || 'each person you listed'}: we ask them to verify their identity.`); return; }
     const unnamed = form.people.findIndex(p => !p.full_name.trim());
@@ -73,6 +77,7 @@ export function CompanyDeclarationCard() {
     setBusy(true);
     try {
     const body = {
+      ...(proposed ? { proposed_company_name: form.proposed_company_name.trim() } : {}),
       nature_of_business: form.nature_of_business, trading_name: form.trading_name || null, website: form.website || null,
       principal_place_of_business: { same_as_registered_office: form.same_as_registered_office, address: form.same_as_registered_office ? null : form.address },
       applicant_role: form.applicant_role, applicant_authority: form.applicant_role === 'authorised_person' ? form.applicant_authority : null,
@@ -93,7 +98,8 @@ export function CompanyDeclarationCard() {
         return;
       }
       const invited: string[] = json.data?.owners_invited ?? [];
-      setDone(invited.length ? `Thank you. We have emailed ${invited.join(', ')} to verify their identity.` : 'Thank you. We will check your company details.');
+      const thanks = proposed ? 'Thank you. We will review your proposed company and let you know.' : 'Thank you. We will check your company details.';
+      setDone(invited.length ? `${thanks} We have emailed ${invited.join(', ')} to verify their identity.` : thanks);
       setForm(null);
       await mutate(); await refreshAccess();
     } catch {
@@ -101,16 +107,34 @@ export function CompanyDeclarationCard() {
     } finally { setBusy(false); }
   };
 
-  const submitted = info.declaration && !info.declaration.returned_at;
+  const submitted = !proposed && info.declaration && !info.declaration.returned_at;
   const anyOwner = form ? form.people.some(p => p.is_beneficial_owner) || form.corporate_owners.length > 0 : true;
 
   return (
     <section id="company" className="w-full min-w-0 max-w-full scroll-mt-24 rounded-xl border border-border/80 bg-card p-5 shadow-sm sm:max-w-2xl sm:rounded-2xl sm:p-8">
       <h3 className="text-h4 text-foreground sm:text-h3">Your company</h3>
-      <p className="mt-1 text-body-sm text-muted-foreground">
-        {info.company_name ? `${info.company_name} · ` : ''}<span className="tabular-nums">{info.company_number}</span>.
-        We check these details against the Companies House register, as the law requires.
-      </p>
+      {proposed ? (
+        <p className="mt-1 text-body-sm text-muted-foreground">
+          Not registered at Companies House yet? Tell us about the company you are forming. Once we approve it, you can use
+          the address for that company, and you then have {info.deadline_days ?? 30} days to register it and give us its company number.
+          If you already have a company number, add it in Companies House details above instead.
+        </p>
+      ) : (
+        <p className="mt-1 text-body-sm text-muted-foreground">
+          {info.company_name ? `${info.company_name} · ` : ''}<span className="tabular-nums">{info.company_number}</span>.
+          We check these details against the Companies House register, as the law requires.
+        </p>
+      )}
+      {proposed && pre && !form && (
+        <div role="status" className={cn('mt-4 rounded-lg border p-3 text-body-sm',
+          pre.status === 'approved' ? 'border-emerald-200 bg-emerald-50 text-emerald-950' : ['refused', 'lapsed'].includes(pre.status) ? 'border-amber-200 bg-amber-50 text-amber-950' : 'border-border bg-muted/40')}>
+          {pre.status === 'submitted' && <>We are reviewing <strong>{pre.proposed_name}</strong>. We will email you when we have decided.</>}
+          {pre.status === 'approved' && pre.deadline_at && <>Approved for <strong>{pre.proposed_name}</strong>. Register the company and add its company number in Companies House details above by <strong>{date(pre.deadline_at)}</strong>. We then check it against the register before full service starts.</>}
+          {pre.status === 'lapsed' && <>The {info.deadline_days ?? 30} days to register <strong>{pre.proposed_name}</strong> have passed, so the address can no longer be used. If the company is now registered, add its company number in Companies House details above.</>}
+          {pre.status === 'refused' && <>We cannot accept <strong>{pre.proposed_name}</strong>{pre.reason ? `: ${pre.reason}` : '.'} Contact support if you have questions.</>}
+          {pre.status === 'incorporated' && <>Thank you: we are checking your new company against the Companies House register.</>}
+        </div>
+      )}
       {done && <p role="status" className="mt-4 rounded-lg border border-border bg-muted/40 p-3 text-body-sm">{done}</p>}
 
       {submitted && !form && (
@@ -121,6 +145,13 @@ export function CompanyDeclarationCard() {
 
       {form && (
         <form className="mt-5 space-y-5" onSubmit={e => { e.preventDefault(); void submit(); }}>
+          {proposed && (
+            <label className="block">
+              <span className="text-body-sm font-medium text-foreground">Proposed company name</span>
+              <input className={cn(field, 'mt-1')} value={form.proposed_company_name} onChange={e => set({ proposed_company_name: e.target.value })} required minLength={2} maxLength={160} placeholder="The name you will register at Companies House" />
+              <span className="mt-1 block text-caption text-muted-foreground">Our approval covers this one company. List below everyone who will be a director, or own or control more than 25%.</span>
+            </label>
+          )}
           {info.declaration?.returned_at && (
             <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-body-sm text-amber-950">We need you to update these details: {info.declaration.returned_reason}</p>
           )}

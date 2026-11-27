@@ -13,6 +13,7 @@ import { ChError, createChClient, type ChClient } from './chClient';
 import { diffSnapshots, fetchSnapshot, snapshotHash } from './snapshot';
 import { audit, syncDiscrepancies, type Queryable } from './store';
 import { ensureAllChecks, refreshPending } from './automation';
+import { lapseOverdue } from './preIncorporation';
 
 const LOCK_KEY = 72_631_127; // pg advisory lock: one runner across instances
 const DUE_AFTER_HOURS = 24;
@@ -73,6 +74,8 @@ export function startCompanyMonitoring(getDb: () => any): (() => void) | null {
             const t = (await getDb().query(`SELECT to_regclass('public.company_check') IS NOT NULL AS ok`)).rows[0];
             if (!t?.ok) return;
             const created = await ensureAllChecks(getDb());
+            const lapsed = await lapseOverdue(getDb());
+            if (lapsed) logger.info('[companyChecks] pre-incorporation approvals lapsed', { lapsed });
             const pending = await refreshPending(getDb(), createChClient());
             const r = await runMonitoringOnce(getDb(), createChClient());
             if (created || pending.refreshed || pending.failed || r.checked || r.alerts || r.errors) logger.info('[companyChecks] automation run', { created, ...pending, ...r });
