@@ -30,7 +30,7 @@ async function send(url: string, body: unknown = {}) {
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   in_progress: { label: "Under review", cls: "bg-mist text-ink border-line" },
-  further_investigation: { label: "Investigating", cls: "bg-amber-50 text-amber-900 border-amber-200" },
+  further_investigation: { label: "On hold", cls: "bg-red-50 text-red-800 border-red-200" },
   satisfactory: { label: "Satisfactory", cls: "bg-primary/10 text-primary border-primary/20" },
 };
 const VIEWS = [
@@ -531,7 +531,6 @@ function Review({ d, busy, act, id }: { d: any; busy: string | null; act: any; i
   const [note, setNote] = useState("");
   const [rating, setRating] = useState<string>(c.risk_rating ?? "");
   const [ratingReason, setRatingReason] = useState<string>(c.risk_reason ?? "");
-  const [reason, setReason] = useState("");
   const decided = c.status === "satisfactory";
   const blockers: string[] = d.satisfactory_blockers ?? [];
   const boEvidence = d.evidence.filter((e: any) => e.kind === "beneficial_ownership").length;
@@ -582,15 +581,67 @@ function Review({ d, busy, act, id }: { d: any; busy: string | null; act: any; i
         </li>
       </ul>
       <div className="border-t border-line bg-mist/40 p-3">
-        {!decided && blockers.length > 0 && <ul className="mb-2 list-disc space-y-0.5 pl-5 text-[12px] text-graphite">{blockers.map((b, i) => <li key={i}>{b}</li>)}</ul>}
-        <div className="flex flex-wrap items-center gap-2">
-          {!decided && <Btn variant="solid" disabled={!!busy || blockers.length > 0} onClick={() => act("decide", `${API}/${id}/decision`, { status: "satisfactory" }, "Review completed. Report saved; monitoring on.")}><Check className="h-4 w-4" aria-hidden /> Complete review: satisfactory</Btn>}
-          <input className={cn(inputCls, "min-w-[180px] flex-1")} placeholder="Reason (for investigation or reopening)" value={reason} onChange={e => setReason(e.target.value)} aria-label="Reason" />
-          {c.status !== "further_investigation" && <Btn disabled={!!busy || !reason.trim()} onClick={async () => { if (await act("decide", `${API}/${id}/decision`, { status: "further_investigation", reason }, "Moved to investigation. Report saved.")) setReason(""); }}>Investigate</Btn>}
-          {c.status !== "in_progress" && <Btn variant="ghost" disabled={!!busy || !reason.trim()} onClick={async () => { if (await act("decide", `${API}/${id}/decision`, { status: "in_progress", reason }, "Reopened.")) setReason(""); }}>Reopen</Btn>}
-        </div>
-        <p className="mt-2 text-[12px] text-graphite">Completing the review does not approve the customer on its own: identity, payment and every other condition still apply. Investigating pauses their service.</p>
+        {!decided && blockers.length > 0 && <ul className="mb-2 list-disc space-y-0.5 pl-5 text-[12px] font-medium text-red-700">{blockers.map((b, i) => <li key={i}>{b}</li>)}</ul>}
+        <Decision c={c} blockers={blockers} busy={busy} onDecide={(status, reasonText, done) => act("decide", `${API}/${id}/decision`, reasonText ? { status, reason: reasonText } : { status }, done)} />
       </div>
+    </div>
+  );
+}
+
+/**
+ * One main button for each state. Putting a check on hold, taking it off hold and reopening are
+ * rarer, so each sits behind its own link with its own reason box.
+ */
+function Decision({ c, blockers, busy, onDecide }: { c: any; blockers: string[]; busy: string | null;
+  onDecide: (status: string, reason: string | null, done: string) => Promise<boolean> }) {
+  const [panel, setPanel] = useState<null | "hold" | "unhold" | "reopen">(null);
+  const [reason, setReason] = useState("");
+  const st = c.status as string;
+  const open = (p: "hold" | "unhold" | "reopen") => { setPanel(p); setReason(""); };
+  const submit = async (status: string, done: string) => { if (await onDecide(status, reason.trim(), done)) { setPanel(null); setReason(""); } };
+  const panels = {
+    hold: { title: "Put on hold to investigate", help: "The customer's service is paused until you complete the review. Say what you are looking into.", button: "Put on hold", status: "further_investigation", done: "On hold. The customer's service is paused." },
+    unhold: { title: "Take off hold without completing", help: "Use this only if the hold was a mistake. The review goes back to Under review; it is not completed.", button: "Take off hold", status: "in_progress", done: "Taken off hold. Back to Under review." },
+    reopen: { title: "Reopen the completed review", help: "Use this if something has changed. Say why.", button: "Reopen", status: "in_progress", done: "Reopened." },
+  } as const;
+  return (
+    <div className="space-y-2">
+      {st === "further_investigation" && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-900" role="status">
+          <p className="font-semibold">On hold since {day(c.decided_at)}. The customer&apos;s service is paused.</p>
+          {c.decision_reason && <p>Reason: {c.decision_reason}</p>}
+          <p className="mt-0.5 text-[12px]">When you have finished, complete the review below. That ends the hold.</p>
+        </div>
+      )}
+      {st === "satisfactory" ? (
+        <p className="flex items-center gap-1.5 text-[13px] font-medium text-primary"><Check className="h-4 w-4" aria-hidden /> Completed {day(c.decided_at)}. Monitored daily.</p>
+      ) : (
+        <div>
+          <Btn variant="solid" disabled={!!busy || blockers.length > 0} onClick={() => onDecide("satisfactory", null, "Review completed. Report saved; monitoring on.")}>
+            <Check className="h-4 w-4" aria-hidden /> {st === "further_investigation" ? "Complete review and end the hold" : "Complete review: satisfactory"}
+          </Btn>
+          {blockers.length > 0 && <p className="mt-1 text-[12px] font-medium text-red-700">Not yet: {blockers.length} thing{blockers.length === 1 ? "" : "s"} left (listed in red at the top).</p>}
+        </div>
+      )}
+      {!panel && (
+        <p className="text-[12px] text-graphite">
+          {st === "in_progress" && <button type="button" className="underline" onClick={() => open("hold")}>Something not right? Put on hold to investigate</button>}
+          {st === "further_investigation" && <button type="button" className="underline" onClick={() => open("unhold")}>Put on hold by mistake? Take it off hold</button>}
+          {st === "satisfactory" && <button type="button" className="underline" onClick={() => open("reopen")}>Reopen this review</button>}
+        </p>
+      )}
+      {panel && (
+        <div className="rounded-md border border-line bg-mist/40 p-2.5 text-[13px]">
+          <p className="font-medium text-ink">{panels[panel].title}</p>
+          <p className="text-[12px] text-graphite">{panels[panel].help}</p>
+          <div className="mt-1.5 flex flex-wrap gap-2">
+            <input autoFocus className={cn(inputCls, "min-w-[220px] flex-1")} placeholder="Reason" value={reason} onChange={e => setReason(e.target.value)} aria-label={`Reason: ${panels[panel].title}`} />
+            <Btn variant="solid" disabled={!!busy || reason.trim().length < 5} onClick={() => submit(panels[panel].status, panels[panel].done)}>{panels[panel].button}</Btn>
+            <Btn variant="ghost" onClick={() => setPanel(null)}>Cancel</Btn>
+          </div>
+        </div>
+      )}
+      <p className="text-[12px] text-graphite">Completing the review does not approve the customer on its own: identity, payment and every other condition still apply.</p>
     </div>
   );
 }

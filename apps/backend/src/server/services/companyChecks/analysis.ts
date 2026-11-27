@@ -322,7 +322,7 @@ export function nextAction(x: { status: string; hasSnapshot: boolean; fetchError
     automated: AutoResult[]; blockers: string[] }): { key: string; priority: number; text: string } {
     const st = (id: string) => x.automated.find(a => a.id === id)?.status;
     if (x.openAlerts) return { key: 'review_alert', priority: 1, text: 'Review the change found on the register' };
-    if (x.status === 'further_investigation') return { key: 'investigate', priority: 2, text: 'Finish the investigation and record the outcome' };
+    if (x.status === 'further_investigation') return { key: 'investigate', priority: 2, text: 'On hold: finish checking, then complete the review' };
     if (x.status === 'satisfactory') return { key: 'none', priority: 9, text: 'No action: monitored daily' };
     if (!x.hasSnapshot || x.fetchError || st('register_extract') !== 'pass') return { key: 'retrieve', priority: 3, text: x.fetchError ? 'Retrieval failed: retry' : 'Refresh the Companies House extract' };
     if (x.unresolved) return { key: 'resolve_discrepancies', priority: 4, text: `Resolve ${x.unresolved} discrepancy(ies)` };
