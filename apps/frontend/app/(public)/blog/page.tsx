@@ -2,10 +2,11 @@ import type { Metadata } from 'next';
 import { BlogPageClient } from './BlogPageClient';
 
 export const metadata: Metadata = {
-    title: 'Blog: Running a UK Business | VirtualAddressHub',
-    description: 'Practical guides for UK company owners: registered office rules, Companies House, business addresses and handling official mail.',
-    alternates: { canonical: '/blog' },
-    openGraph: { title: 'Blog | VirtualAddressHub', url: '/blog' },
+  title: 'Business Address Guides & Articles | VirtualAddressHub',
+  description:
+    'Practical guides for UK company owners: registered office rules, Companies House, business addresses and handling official mail.',
+  alternates: { canonical: '/blog' },
+  openGraph: { title: 'Guides & articles | VirtualAddressHub', url: '/blog' },
 };
 
 /**
@@ -15,7 +16,9 @@ export const metadata: Metadata = {
  */
 async function fetchBlogPosts() {
   try {
-    const backend = (process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN || 'https://vah-api-staging.onrender.com')
+    const backend = (
+      process.env.NEXT_PUBLIC_BACKEND_API_ORIGIN || 'https://vah-api-staging.onrender.com'
+    )
       .replace(/\/api\/?$/, '')
       .replace(/\/$/, '');
 

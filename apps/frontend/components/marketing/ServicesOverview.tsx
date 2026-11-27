@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LondonIllustration } from './LondonIllustration';
+import e from './ResourceEditorial.module.css';
 import { SITE_URL } from '@/lib/marketing';
 import s from './ServicesOverview.module.css';
 
@@ -135,23 +135,23 @@ export function ServicesOverview() {
               from historical public records.
             </p>
           </div>
-          <div className={s.location}>
-            <LondonIllustration variant="privacy" />
-            <div className={s.example}>
-              <span>EXAMPLE BUSINESS ADDRESS</span>
+          <figure className={e.stationery}>
+            <div className={e.stationeryPaper}>
+              <small>BUSINESS CORRESPONDENCE</small>
+              <p className={e.company}>Your Company Ltd</p>
               <p>
-                Your Company Ltd
-                <br />
                 Central London
                 <br />
                 United Kingdom
               </p>
-              <small>Full details are supplied after payment, required checks and approval.</small>
+              <hr />
+              <p>One address for the way your business works.</p>
             </div>
-            <Link href="/london-address" className={s.link}>
-              Explore your Central London presence →
-            </Link>
-          </div>
+            <p>
+              Example stationery. Full address details are released after payment, required checks
+              and approval.
+            </p>
+          </figure>
         </div>
       </section>
       <section id="digital-mail" className={`${s.section} ${s.dark}`}>

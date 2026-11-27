@@ -42,6 +42,8 @@ const nextConfig = {
   // Legacy / mistaken paths (SPA hash route name used as a URL segment)
   async redirects() {
     return [
+      { source: '/guides', destination: '/blog', permanent: true },
+      { source: '/london-address', destination: '/services#london-presence', permanent: true },
       { source: '/virtual-office-london', destination: '/services', permanent: true },
       {
         source: '/business-address-london',

@@ -41,10 +41,8 @@ export function MarketingNavigation({ onNavigate }: { onNavigate?: (page: string
           <details className={styles.dropdown}>
             <summary>Resources</summary>
             <div>
-              <Link href="/guides">Business guides</Link>
+              <Link href="/blog">Guides & articles</Link>
               <Link href="/help">Help centre</Link>
-              <Link href="/blog">Blog</Link>
-              <Link href="/#faq">FAQs</Link>
             </div>
           </details>
           <Link href="/about">About</Link>

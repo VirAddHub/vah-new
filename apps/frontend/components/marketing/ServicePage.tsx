@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { services, SITE_URL } from '@/lib/marketing';
-import { LondonIllustration } from './LondonIllustration';
+import e from './ResourceEditorial.module.css';
 import s from './Marketing.module.css';
 export function ServicePage({ slug }: { slug: string }) {
   const v = services.find((x) => x.slug === slug)!;
@@ -51,119 +51,107 @@ export function ServicePage({ slug }: { slug: string }) {
     provider: { '@type': 'Organization', name: 'VirtualAddressHub', url: SITE_URL },
   };
   return (
-    <div className={s.site}>
+    <div className={`${s.site} ${e.page}`}>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify([
-            schema,
-            {
-              '@context': 'https://schema.org',
-              '@type': 'BreadcrumbList',
-              itemListElement: [
-                { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
-                {
-                  '@type': 'ListItem',
-                  position: 2,
-                  name: 'Our services',
-                  item: `${SITE_URL}/services`,
-                },
-                { '@type': 'ListItem', position: 3, name: v.title, item: `${SITE_URL}/${slug}` },
-              ],
-            },
-          ]).replace(/</g, '\u003c'),
-        }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
       />
-      <div className={`${s.wrap} ${s.breadcrumbs}`}>
-        <Link href="/">Home</Link> / <Link href="/services">Our services</Link> / {v.title}
-      </div>
-      <section className={s.hero}>
-        <div className={`${s.wrap} ${s.split}`}>
-          <div>
-            <p className={s.kicker}>{v.eyebrow}</p>
-            <h1>{v.title}</h1>
-            <p className={s.lead}>{v.intro}</p>
-            <p>{v.body}</p>
-            <div className={s.actions}>
-              <Link href="/services" className={s.button}>
-                Included in our subscription ↗
-              </Link>
-            </div>
-            <p className={s.note}>Subject to eligibility, payment, verification and approval.</p>
-          </div>
-          <LondonIllustration variant={v.visual} />
-        </div>
-      </section>
-      <section className={s.section}>
-        <div className={`${s.wrap} ${s.split}`}>
-          <div>
-            <p className={s.kicker}>In practice</p>
-            <h2>
-              How it helps
-              <br />
-              your business.
-            </h2>
-            <p>{v.example}</p>
-          </div>
-          <div>
-            <h3>What to know before you start</h3>
-            <p>{v.detail}</p>
-            <p>
-              Read the{' '}
-              <Link className={s.textlink} href="/terms">
-                service terms
-              </Link>{' '}
-              and{' '}
-              <Link className={s.textlink} href="/how-it-works">
-                onboarding steps
-              </Link>{' '}
-              before applying. Contact us if you are unsure about your business’s eligibility.
-            </p>
-            {(slug.includes('registered') || slug.includes('directors')) && (
-              <p>
-                <a
-                  className={s.textlink}
-                  href="https://www.gov.uk/guidance/your-personal-information-on-the-companies-house-register"
-                >
-                  Companies House guidance on address information →
-                </a>
-              </p>
-            )}
-          </div>
-        </div>
-      </section>
-      <section className={`${s.section} ${s.sage}`}>
-        <div className={`${s.wrap} ${s.faq}`}>
-          <h2>Your questions, answered.</h2>
-          {questions.map(([question, answer]) => (
-            <details key={question}>
-              <summary>{question}</summary>
-              <p>{answer}</p>
-            </details>
-          ))}
-        </div>
-      </section>
-      <section className={s.section}>
+      <header className={`${e.guideHero} ${!isRegistered ? e.directorHero : ''}`}>
         <div className={s.wrap}>
-          <p className={s.kicker}>Included in the bigger picture</p>
-          <h2>One address. Connected services.</h2>
-          <p>
-            This address use belongs to the same subscription as your business correspondence
-            address and digital mail management. There is no separate address package to assemble.
+          <p className={s.breadcrumbs}>
+            <Link href="/blog">Guides & articles</Link> /{' '}
+            {isRegistered ? 'Company addresses' : 'Director correspondence'}
           </p>
-          <div className={s.actions}>
-            <Link href="/services" className={s.button}>
-              See everything included →
-            </Link>
-            <Link
-              href={isRegistered ? '/directors-service-address' : '/registered-office-address'}
+          <p className={s.kicker}>
+            {isRegistered ? 'THE COMPANY ADDRESS GUIDE' : 'THE DIRECTOR ADDRESS GUIDE'}
+          </p>
+          <h1>{v.title}</h1>
+          <p className={`${s.lead} ${e.guideHeading}`}>{v.intro}</p>
+        </div>
+      </header>
+      <div className={`${s.wrap} ${e.guideLayout}`}>
+        <div>
+          <h2>
+            {isRegistered
+              ? 'An official home for company correspondence.'
+              : 'Your role and your home are different things.'}
+          </h2>
+          <p>{v.body}</p>
+          <p>{v.detail}</p>
+          {questions.map(([question, answer]) => (
+            <section className={e.questionNotes} key={question}>
+              <h3>{question}</h3>
+              <p>{answer}</p>
+            </section>
+          ))}
+          <p>
+            <a
               className={s.textlink}
+              href="https://www.gov.uk/guidance/your-personal-information-on-the-companies-house-register"
             >
-              {isRegistered
-                ? 'Compare director’s service addresses'
-                : 'Compare registered office addresses'}
-            </Link>
-          </div>
+              Read Companies House guidance on address information →
+            </a>
+          </p>
+        </div>
+        <aside>
+          {isRegistered ? (
+            <figure className={e.stationery}>
+              <div className={e.stationeryPaper}>
+                <small>ILLUSTRATIVE COMPANY CORRESPONDENCE</small>
+                <p className={e.company}>Your Company Ltd</p>
+                <p>
+                  Registered office
+                  <br />
+                  Central London
+                  <br />
+                  United Kingdom
+                </p>
+                <hr />
+                <small>Example only. Complete address provided after approval.</small>
+              </div>
+              <p>
+                Your company’s official correspondence address. Not a workspace or visitor
+                reception.
+              </p>
+            </figure>
+          ) : (
+            <div className={e.roleDiagram}>
+              <p>TWO ADDRESSES / TWO PURPOSES</p>
+              <div>
+                <strong>Service address</strong>
+                <small>
+                  Correspondence about your role as a director. Can appear on the public register.
+                </small>
+              </div>
+              <div>
+                <strong>Residential address</strong>
+                <small>
+                  Your actual home. Supplied separately where required; never substitute our
+                  business address.
+                </small>
+              </div>
+            </div>
+          )}
+          <p className={s.note}>
+            Address use is subject to eligibility, payment, required verification and approval.
+          </p>
+          <Link
+            className={s.textlink}
+            href={isRegistered ? '/directors-service-address' : '/registered-office-address'}
+          >
+            {isRegistered
+              ? 'Compare the director’s service address'
+              : 'Compare the company’s registered office'}{' '}
+            →
+          </Link>
+        </aside>
+      </div>
+      <section className={e.supportBand}>
+        <div className={s.wrap}>
+          <p>This address use is part of the VirtualAddressHub subscription.</p>
+          <Link className={s.textlink} href="/services">
+            See what is included →
+          </Link>
         </div>
       </section>
     </div>

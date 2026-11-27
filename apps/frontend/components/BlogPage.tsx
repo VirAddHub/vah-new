@@ -1,441 +1,196 @@
 'use client';
-import { jsonLdScript } from '@/lib/jsonLd';
-
-import { useMemo, useEffect, useState } from "react";
-
+import { useMemo, useEffect, useState } from 'react';
+import Link from 'next/link';
+import m from './marketing/Marketing.module.css';
+import s from './marketing/ResourceEditorial.module.css';
 type BlogPost = {
-    id: number | string;
-    slug: string;
-    title: string;
-    excerpt: string;
-    dateLong: string;
-    dateShort: string;
-    readTime: string;
-    category: string;
-    imageUrl: string;
+  id: number | string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  dateLong: string;
+  dateShort: string;
+  readTime: string;
+  category: string;
+  imageUrl: string;
 };
-
 interface BlogPageProps {
-    onNavigate?: (page: string, data?: any) => void;
-    initialPosts?: BlogPost[];
+  onNavigate?: (page: string, data?: { slug: string }) => void;
+  initialPosts?: BlogPost[];
 }
+const guides = [
+  {
+    title: 'The company’s registered office',
+    text: 'Understand official company correspondence, jurisdiction and the address you put on the register.',
+    href: '/registered-office-address',
+  },
+  {
+    title: 'A director’s service address',
+    text: 'Separate correspondence about your role from your residential address. Understand what becomes public.',
+    href: '/directors-service-address',
+  },
+];
+export function BlogPage({ initialPosts }: BlogPageProps) {
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>(initialPosts ?? []);
+  const [loading, setLoading] = useState(!initialPosts);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-export function BlogPage({ onNavigate, initialPosts }: BlogPageProps) {
-    const [blogPosts, setBlogPosts] = useState<BlogPost[]>(initialPosts ?? []);
-    const [loading, setLoading] = useState(!initialPosts);
-    const [error, setError] = useState<string | null>(null);
-    const [searchQuery, setSearchQuery] = useState('');
+  useEffect(() => {
+    // If initialPosts were provided by the server, skip client fetch
+    if (initialPosts !== undefined) return;
 
-    useEffect(() => {
-        // If initialPosts were provided by the server, skip client fetch
-        if (initialPosts && initialPosts.length >= 0) return;
+    const fetchBlogPosts = async () => {
+      try {
+        const response = await fetch('/api/bff/blog/list');
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.toLowerCase().includes('application/json')) {
+          setError('Failed to load posts');
+          setLoading(false);
+          return;
+        }
+        const data = await response.json();
+        if (data.ok) {
+          setBlogPosts(Array.isArray(data.data) ? data.data : []);
+        } else {
+          setError('Failed to load posts');
+        }
+      } catch (err) {
+        setError('Failed to load posts');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBlogPosts();
+  }, [initialPosts]);
 
-        const fetchBlogPosts = async () => {
-            try {
-                const response = await fetch('/api/bff/blog/list');
-                const contentType = response.headers.get("content-type") || "";
-                if (!contentType.toLowerCase().includes("application/json")) {
-                    setError('Failed to load posts');
-                    setLoading(false);
-                    return;
-                }
-                const data = await response.json();
-                if (data.ok) {
-                    setBlogPosts(data.data);
-                } else {
-                    setError('Failed to load posts');
-                }
-            } catch (err) {
-                setError('Failed to load posts');
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchBlogPosts();
-    }, []);
-
-    const filteredPosts = useMemo(() => {
-        if (!searchQuery.trim()) return blogPosts;
-        const q = searchQuery.toLowerCase();
-        return blogPosts.filter(p =>
-            p.title?.toLowerCase().includes(q) ||
-            p.excerpt?.toLowerCase().includes(q) ||
-            p.category?.toLowerCase().includes(q)
-        );
-    }, [blogPosts, searchQuery]);
-
-    const featuredPost = filteredPosts[0] ?? null;
-    const gridPosts = filteredPosts.slice(1);
-
-    const blogStructuredData = useMemo(() => ({
-        "@context": "https://schema.org",
-        "@type": "Blog",
-        "name": "VirtualAddressHub — The Bulletin",
-        "description": "Honest writing about running a UK business.",
-        "url": "https://virtualaddresshub.co.uk/blog",
-        "publisher": { "@type": "Organization", "name": "VirtualAddressHub" },
-        "blogPost": blogPosts.map(post => ({
-            "@type": "BlogPosting",
-            "headline": post.title,
-            "description": post.excerpt,
-            "url": `https://virtualaddresshub.co.uk/blog/${post.slug}`,
-            "datePublished": post.dateLong,
-        }))
-    }), [blogPosts]);
-
-    return (
-        <div style={{ fontFamily: "'Inter', sans-serif", backgroundColor: '#FFFFFF', minHeight: '100vh' }}>
-            <style>{`
-                .blog-search-input {
-                    flex: 1;
-                    border: none;
-                    background: transparent;
-                    outline: none;
-                    font-family: 'Inter', sans-serif;
-                    font-size: 16px;
-                    font-style: normal;
-                    color: #0A0A0A;
-                }
-                .blog-search-input::placeholder {
-                    color: #6B6B6B;
-                    font-style: normal;
-                }
-                .featured-post-link {
-                    display: grid;
-                    grid-template-columns: 1fr 1.2fr;
-                    gap: 48px;
-                    padding: 40px 0;
-                    border-top: 1px solid #E5E5E5;
-                    border-bottom: 1px solid #E5E5E5;
-                    margin-bottom: 56px;
-                    text-decoration: none;
-                    cursor: pointer;
-                    align-items: center;
-                }
-                .featured-post-link:hover .blog-read-link {
-                    opacity: 0.7;
-                }
-                .featured-post-link:hover .featured-title {
-                    color: #0A0A0A;
-                }
-                .featured-title { transition: color 0.15s; }
-                .blog-grid-item {
-                    padding: 36px 0;
-                    text-decoration: none;
-                    cursor: pointer;
-                    display: block;
-                }
-                .blog-grid-item:hover .blog-grid-title {
-                    color: #0A0A0A;
-                }
-                .blog-grid-title { transition: color 0.15s; }
-                .blog-read-link {
-                    font-family: 'Inter', sans-serif;
-                    font-size: 14px;
-                    font-weight: 500;
-                    color: #0A0A0A;
-                    border-bottom: 1px solid #0A0A0A;
-                    padding-bottom: 2px;
-                    text-decoration: none;
-                    display: inline-block;
-                    transition: opacity 0.15s;
-                }
-                @media (max-width: 768px) {
-                    .featured-post-link {
-                        grid-template-columns: 1fr !important;
-                        gap: 24px !important;
-                    }
-                    .blog-post-grid {
-                        grid-template-columns: 1fr !important;
-                    }
-                    .blog-post-grid .blog-grid-item {
-                        border-right: none !important;
-                        padding-left: 0 !important;
-                        padding-right: 0 !important;
-                        border-top: 1px solid #E5E5E5 !important;
-                    }
-                    .blog-post-grid .blog-grid-item:first-child {
-                        border-top: none !important;
-                    }
-                }
-            `}</style>
-
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: jsonLdScript(blogStructuredData) }}
-            />
-
-            {/* Page header */}
-            <div style={{ maxWidth: '1100px', margin: '0 auto', padding: 'clamp(40px,6vw,72px) clamp(20px,5vw,56px) 0' }}>
-                <h1 style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: 'clamp(32px,6vw,68px)',
-                    fontWeight: 600,
-                    color: '#0A0A0A',
-                    margin: '0 0 18px',
-                    letterSpacing: '-0.025em',
-                    lineHeight: 1.05,
-                }}>
-                    Helpful notes for{' '}
-                    <em style={{ fontStyle: 'normal', color: '#6B6B6B' }}>running a UK business.</em>
-                </h1>
-
-                <p style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: 'clamp(14px,2vw,19px)',
-                    color: '#404040',
-                    margin: '0 0 36px',
-                    maxWidth: '620px',
-                    lineHeight: 1.55,
-                    fontWeight: 400,
-                }}>
-                    Simple, practical advice, honest lessons and things we wish we'd known earlier — written for founders, freelancers and small business owners.
-                </p>
-
-                {/* Search bar */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                    background: '#FFFFFF',
-                    border: '1px solid #E5E5E5',
-                    padding: '14px 20px',
-                    borderRadius: '4px',
-                    marginBottom: '56px',
-                    maxWidth: '640px',
-                }}>
-                    <span style={{
-                        fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
-                        fontSize: '11px',
-                        color: '#6B6B6B',
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        flexShrink: 0,
-                    }}>Search</span>
-                    <input
-                        className="blog-search-input"
-                        placeholder="Search the bulletin…"
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                    />
-                    <span style={{
-                        fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
-                        fontSize: '11px',
-                        color: '#6B6B6B',
-                        flexShrink: 0,
-                    }}>⏎</span>
-                </div>
-            </div>
-
-            {/* Posts section */}
-            <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 clamp(20px,5vw,56px) clamp(60px,8vw,110px)' }}>
-
-                {/* Loading */}
-                {loading && (
-                    <div style={{ padding: '60px 0', textAlign: 'center', color: '#6B6B6B', fontFamily: "'Inter', sans-serif", fontSize: '14px' }}>
-                        Loading posts…
-                    </div>
-                )}
-
-                {/* Error */}
-                {error && !loading && (
-                    <div style={{ padding: '60px 0', textAlign: 'center' }}>
-                        <p style={{ color: '#6B6B6B', fontFamily: "'Inter', sans-serif", fontSize: '14px', marginBottom: '16px' }}>{error}</p>
-                        <button
-                            onClick={() => window.location.reload()}
-                            style={{
-                                background: 'none', border: '1px solid #E5E5E5', borderRadius: '4px',
-                                padding: '8px 16px', cursor: 'pointer', fontFamily: "'Inter', sans-serif",
-                                fontSize: '13px', color: '#404040',
-                            }}
-                        >
-                            Try again
-                        </button>
-                    </div>
-                )}
-
-                {/* Empty */}
-                {!loading && !error && filteredPosts.length === 0 && (
-                    <div style={{ padding: '60px 0', textAlign: 'center', color: '#6B6B6B', fontFamily: "'Inter', sans-serif", fontSize: '14px' }}>
-                        {searchQuery ? `No posts matching "${searchQuery}"` : 'No posts yet.'}
-                    </div>
-                )}
-
-                {/* Featured post */}
-                {!loading && !error && featuredPost && (
-                    <div
-                        className="featured-post-link"
-                        onClick={() => onNavigate?.('blog-post', { slug: featuredPost.slug })}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={e => { if (e.key === 'Enter') onNavigate?.('blog-post', { slug: featuredPost.slug }); }}
-                    >
-                        {/* Cover */}
-                        <div style={{
-                            aspectRatio: '4/3',
-                            background: '#F5F5F5',
-                            backgroundImage: `repeating-linear-gradient(45deg, #E5E5E540 0 1px, transparent 1px 16px)`,
-                            display: 'grid',
-                            placeItems: 'center',
-                            position: 'relative',
-                            border: '1px solid #E5E5E5',
-                            overflow: 'hidden',
-                            borderRadius: '2px',
-                        }}>
-                            {featuredPost.imageUrl ? (
-                                <img
-                                    src={featuredPost.imageUrl}
-                                    alt={featuredPost.title}
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }}
-                                />
-                            ) : (
-                                <div style={{
-                                    fontFamily: "'IBM Plex Mono', monospace",
-                                    fontSize: '11px',
-                                    color: '#6B6B6B',
-                                    letterSpacing: '0.1em',
-                                    textAlign: 'center',
-                                    padding: '24px',
-                                    lineHeight: 1.7,
-                                }}>
-                                    [ COVER · drop in<br />a typographic<br />illustration ]
-                                </div>
-                            )}
-                            {/* Featured badge */}
-                            <div style={{
-                                position: 'absolute', top: '16px', left: '16px',
-                                background: '#B42318', color: '#FFFFFF',
-                                padding: '4px 12px',
-                                fontFamily: "'IBM Plex Mono', monospace",
-                                fontSize: '10px',
-                                letterSpacing: '0.15em',
-                                textTransform: 'uppercase',
-                            }}>Featured</div>
-                        </div>
-
-                        {/* Copy */}
-                        <div>
-                            <div style={{
-                                display: 'flex',
-                                gap: '12px',
-                                fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
-                                fontSize: '11px',
-                                color: '#6B6B6B',
-                                letterSpacing: '0.1em',
-                                textTransform: 'uppercase',
-                                marginBottom: '18px',
-                                flexWrap: 'wrap',
-                            }}>
-                                <span style={{ color: '#0A0A0A', fontWeight: 500 }}>{featuredPost.category}</span>
-                                <span>·</span>
-                                <span>{featuredPost.dateLong}</span>
-                                <span>·</span>
-                                <span>{featuredPost.readTime}</span>
-                            </div>
-
-                            <h2 className="featured-title" style={{
-                                fontFamily: "'Inter', sans-serif",
-                                fontSize: 'clamp(24px,3.5vw,42px)',
-                                color: '#0A0A0A',
-                                margin: '0 0 16px',
-                                letterSpacing: '-0.02em',
-                                fontWeight: 600,
-                                lineHeight: 1.1,
-                            }}>
-                                {featuredPost.title}
-                            </h2>
-
-                            {featuredPost.excerpt && (
-                                <p style={{
-                                    fontFamily: "'Inter', sans-serif",
-                                    fontSize: 'clamp(14px,1.8vw,17px)',
-                                    color: '#404040',
-                                    lineHeight: 1.6,
-                                    margin: '0 0 24px',
-                                    fontWeight: 400,
-                                }}>
-                                    {featuredPost.excerpt}
-                                </p>
-                            )}
-
-                            <span className="blog-read-link">Read article →</span>
-                        </div>
-                    </div>
-                )}
-
-                {/* Grid */}
-                {!loading && !error && gridPosts.length > 0 && (
-                    <div className="blog-post-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 0 }}>
-                        {gridPosts.map((post, i) => (
-                            <div
-                                key={post.id}
-                                className="blog-grid-item"
-                                onClick={() => onNavigate?.('blog-post', { slug: post.slug })}
-                                role="button"
-                                tabIndex={0}
-                                onKeyDown={e => { if (e.key === 'Enter') onNavigate?.('blog-post', { slug: post.slug }); }}
-                                style={{
-                                    borderTop: i >= 2 ? '1px solid #E5E5E5' : 'none',
-                                    borderRight: i % 2 === 0 ? '1px solid #E5E5E5' : 'none',
-                                    paddingRight: i % 2 === 0 ? '36px' : '0',
-                                    paddingLeft: i % 2 === 1 ? '36px' : '0',
-                                }}
-                            >
-                                <div style={{
-                                    display: 'flex',
-                                    gap: '10px',
-                                    fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
-                                    fontSize: '11px',
-                                    color: '#6B6B6B',
-                                    letterSpacing: '0.1em',
-                                    textTransform: 'uppercase',
-                                    marginBottom: '14px',
-                                    flexWrap: 'wrap',
-                                }}>
-                                    <span style={{ color: '#0A0A0A', fontWeight: 500 }}>{post.category}</span>
-                                    <span>·</span>
-                                    <span>{post.dateLong}</span>
-                                </div>
-
-                                <h3 className="blog-grid-title" style={{
-                                    fontFamily: "'Inter', sans-serif",
-                                    fontSize: 'clamp(18px,2.2vw,24px)',
-                                    color: '#0A0A0A',
-                                    margin: '0 0 10px',
-                                    letterSpacing: '-0.015em',
-                                    fontWeight: 600,
-                                    lineHeight: 1.2,
-                                }}>
-                                    {post.title}
-                                </h3>
-
-                                {post.excerpt && (
-                                    <p style={{
-                                        fontFamily: "'Inter', sans-serif",
-                                        fontSize: 'clamp(13px,1.5vw,15px)',
-                                        color: '#404040',
-                                        lineHeight: 1.6,
-                                        margin: '0 0 14px',
-                                        fontWeight: 400,
-                                    }}>
-                                        {post.excerpt}
-                                    </p>
-                                )}
-
-                                <span style={{
-                                    fontFamily: "'IBM Plex Mono', 'Courier New', monospace",
-                                    fontSize: '11px',
-                                    color: '#6B6B6B',
-                                    letterSpacing: '0.1em',
-                                    textTransform: 'uppercase',
-                                }}>
-                                    {post.readTime}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </div>
+  const filteredPosts = useMemo(() => {
+    if (!searchQuery.trim()) return blogPosts;
+    const q = searchQuery.trim().toLowerCase();
+    return blogPosts.filter(
+      (p) =>
+        p.title?.toLowerCase().includes(q) ||
+        p.excerpt?.toLowerCase().includes(q) ||
+        p.category?.toLowerCase().includes(q),
     );
+  }, [blogPosts, searchQuery]);
+
+  const visibleGuides = guides.filter((g) =>
+    `${g.title} ${g.text}`.toLowerCase().includes(searchQuery.trim().toLowerCase()),
+  );
+  return (
+    <div className={`${m.site} ${s.page}`}>
+      <header className={s.libraryHero}>
+        <div className={m.wrap}>
+          <p className={m.kicker}>THE BUSINESS ADDRESS LIBRARY</p>
+          <div className={s.masthead}>
+            <h1>
+              Good decisions
+              <br />
+              start with a little reading.
+            </h1>
+            <p>
+              Guides to choosing your business address, plus articles from VirtualAddressHub. One
+              place to explore, at your own pace.
+            </p>
+          </div>
+          <div className={s.search}>
+            <label htmlFor="resource-search">FIND A SUBJECT</label>
+            <input
+              id="resource-search"
+              type="search"
+              placeholder="Search guides and articles"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <button onClick={() => setSearchQuery('')}>Clear</button>
+          </div>
+        </div>
+      </header>
+      <div className={`${m.wrap} ${s.libraryBody} ${s.libraryGrid}`}>
+        <aside className={s.indexNote}>
+          <p className={s.sectionLabel}>A USEFUL DISTINCTION</p>
+          <h2>
+            Reading up?
+            <br />
+            You’re in the right place.
+          </h2>
+          <p>
+            These guides explain address choices. For account instructions, payments or help with
+            your mail, use our Help Centre.
+          </p>
+          <Link className={m.textlink} href="/help">
+            Get practical help →
+          </Link>
+        </aside>
+        <div>
+          <p role="status" className={s.sectionLabel}>
+            {visibleGuides.length + filteredPosts.length} guides and articles
+            {searchQuery.trim() ? ' matching your search' : ''}
+          </p>
+          {visibleGuides.length > 0 && (
+            <section aria-label="Address essentials">
+              <h2>Start with the essentials.</h2>
+              {visibleGuides.map((g, i) => (
+                <Link href={g.href} className={s.guideRow} key={g.href}>
+                  <span className={s.number}>{String(i + 1).padStart(2, '0')}</span>
+                  <div>
+                    <h3>{g.title}</h3>
+                    <p>{g.text}</p>
+                  </div>
+                  <span aria-hidden>↗</span>
+                </Link>
+              ))}
+            </section>
+          )}
+          <section className={s.articles} aria-label="Published articles">
+            <h2>From the journal.</h2>
+            {loading && <p role="status">Loading articles…</p>}
+            {error && (
+              <p role="alert">
+                Articles could not be loaded. You can still read the address guides above.
+              </p>
+            )}
+            {!loading && !error && filteredPosts.length === 0 && (
+              <p className={s.empty}>
+                {searchQuery.trim()
+                  ? 'No published articles match this search. Try another subject.'
+                  : 'Published articles will appear here when available. The address guides above are ready to read.'}
+              </p>
+            )}
+            {filteredPosts.map((post, i) => (
+              <article
+                className={`${s.story} ${i === 0 && post.imageUrl ? s.storyWithImage : ''}`}
+                key={post.slug}
+              >
+                <div>
+                  <div className={s.meta}>
+                    {post.category && <span>{post.category}</span>}
+                    {post.dateLong && <span>{post.dateLong}</span>}
+                    {post.readTime && <span>{post.readTime}</span>}
+                  </div>
+                  <h3>
+                    <Link href={`/blog/${encodeURIComponent(post.slug)}`}>{post.title}</Link>
+                  </h3>
+                  {post.excerpt && <p>{post.excerpt}</p>}
+                  <Link className={m.textlink} href={`/blog/${encodeURIComponent(post.slug)}`}>
+                    Read article →
+                  </Link>
+                </div>
+                {i === 0 && post.imageUrl && <img src={post.imageUrl} alt="" loading="lazy" />}
+              </article>
+            ))}
+          </section>
+        </div>
+      </div>
+      <section className={s.supportBand}>
+        <div className={m.wrap}>
+          <p>Ready to see how the address and mail service fit together?</p>
+          <Link className={m.textlink} href="/services">
+            Explore the subscription →
+          </Link>
+        </div>
+      </section>
+    </div>
+  );
 }

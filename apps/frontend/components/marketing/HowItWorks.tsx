@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LondonIllustration } from './LondonIllustration';
+import e from './ResourceEditorial.module.css';
 import m from './Marketing.module.css';
 import s from './PurchaseJourney.module.css';
 export function HowItWorks() {
@@ -25,11 +25,39 @@ export function HowItWorks() {
             </div>
             <p className={m.note}>Four stages, from choosing your plan to reading your post.</p>
           </div>
-          <div>
-            <LondonIllustration />
-            <p className={s.caption}>
-              A London presence. Wherever business takes you. · Illustration
-            </p>
+          <div className={e.journey}>
+            <p>YOUR BUSINESS ADDRESS / THE JOURNEY</p>
+            <ol>
+              <li>
+                <span>01</span>
+                <div>
+                  <strong>Choose your subscription</strong>
+                  <small>Monthly or annual billing</small>
+                </div>
+              </li>
+              <li>
+                <span>02</span>
+                <div>
+                  <strong>Complete setup</strong>
+                  <small>Payment, required checks and approval</small>
+                </div>
+              </li>
+              <li>
+                <span>03</span>
+                <div>
+                  <strong>Receive your address</strong>
+                  <small>Full details in your approved account</small>
+                </div>
+              </li>
+              <li>
+                <span>04</span>
+                <div>
+                  <strong>Open your business post</strong>
+                  <small>View and download available scans</small>
+                </div>
+              </li>
+            </ol>
+            <p className={e.journeyEnd}>From first step to first letter.</p>
           </div>
         </div>
       </section>

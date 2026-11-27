@@ -8,14 +8,14 @@ import { useAsync } from "@/hooks/useAsync";
 // ── Design tokens ────────────────────────────────────────────
 const T = {
     paper:      '#FFFFFF',
-    paperDeep:  '#F5F5F5',
-    paperLight: '#FFFFFF',
-    ink:        '#0A0A0A',
-    ink2:       '#404040',
-    muted:      '#6B6B6B',
-    rule:       '#E5E5E5',
-    green:      '#0A0A0A',
-    font:       "'Inter', system-ui, sans-serif",
+    paperDeep:  '#e6eee3',
+    paperLight: '#f8f5ed',
+    ink:        '#123d30',
+    ink2:       '#43564a',
+    muted:      '#536356',
+    rule:       '#cbd7c5',
+    green:      '#123d30',
+    font:       "var(--font-dmsans), Arial, sans-serif",
 } as const;
 
 interface ContactPageProps {
@@ -133,7 +133,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
             }}>
                 <div style={{ maxWidth: 560, textAlign: 'center' }}>
                     <h1 style={{
-                        fontFamily: T.font, fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+                        fontFamily: "var(--font-newsreader), Georgia, serif", fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
                         color: T.ink, fontWeight: 600, letterSpacing: '-0.045em',
                         margin: '0 0 16px',
                     }}>
@@ -147,7 +147,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                         <Link href="/" style={{
                             background: T.green, color: T.paperLight,
                             padding: '13px 22px', fontFamily: T.font, fontSize: 14,
-                            fontWeight: 500, borderRadius: 999, textDecoration: 'none',
+                            fontWeight: 500, borderRadius: 5, textDecoration: 'none',
                             display: 'inline-flex', alignItems: 'center', minHeight: 44,
                         }}>
                             Return home
@@ -200,7 +200,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
             <div style={{ padding: 'clamp(40px, 6vw, 64px) clamp(20px, 5vw, 56px) clamp(20px, 3vw, 32px)' }}>
                 <div style={{ maxWidth: 1080, margin: '0 auto' }}>
                     <h1 style={{
-                        fontFamily: T.font,
+                        fontFamily: "var(--font-newsreader), Georgia, serif",
                         fontSize: 'clamp(2.25rem, 6vw, 4.5rem)',
                         color: T.ink, margin: 0,
                         letterSpacing: '-0.045em', fontWeight: 600, lineHeight: 1.05,
@@ -422,7 +422,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                     display: 'inline-flex', alignItems: 'center',
                                     background: T.green, color: T.paper,
                                     padding: '10px 18px', fontFamily: T.font, fontSize: 13,
-                                    fontWeight: 500, textDecoration: 'none', borderRadius: 999, minHeight: 40,
+                                    fontWeight: 500, textDecoration: 'none', borderRadius: 5, minHeight: 40,
                                 }}
                             >
                                 Chat on WhatsApp →
