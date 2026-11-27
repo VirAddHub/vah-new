@@ -1,177 +1,198 @@
 'use client';
-
-import React, { useState } from 'react';
-import marketing from './marketing/Marketing.module.css';
+import Link from 'next/link';
 import { usePricing } from '@/hooks/usePlans';
-import { formatPrice } from '@/lib/formatPrice';
-import { Button } from './ui/button';
-
+import m from './marketing/Marketing.module.css';
+import s from './marketing/PurchaseJourney.module.css';
 interface PlansPageProps {
-    onNavigate: (page: string, data?: any) => void;
+  onNavigate: (page: string, data?: { initialBilling: 'monthly' | 'annual' }) => void;
 }
-
+const money = (value: number) =>
+  new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(value);
 export function PlansPage({ onNavigate }: PlansPageProps) {
-    const [isAnnual, setIsAnnual] = useState(false);
-
-    const { monthlyPrice, annualPrice, loading, error, monthlySavingsPct } = usePricing();
-    const selectedPrice = isAnnual ? annualPrice : monthlyPrice;
-
-    // Handle plan selection
-    const handleSelectPlan = () => {
-        onNavigate('signup', { initialBilling: isAnnual ? 'annual' : 'monthly' });
-    };
-
-    // Explanatory block features
-    const explanatoryFeatures = [
-        'Digital mail scanning and secure online access',
-        'HMRC & Companies House forwarding free (UK)',
-        'Other UK mail forwarded at £2 per item',
-        'International forwarding available on request'
-    ];
-
-    // At a glance features
-    const atAGlanceFeatures = [
-        'Central London address (never a PO Box)',
-        'Registered office and director’s service address use, subject to eligibility',
-        'Identity and business verification before approval',
-        'View and download available scans online'
-    ];
-
-    const displayPrice = selectedPrice === null ? (loading ? 'Loading pricing…' : 'Pricing unavailable') : formatPrice(selectedPrice, {interval: isAnnual ? 'year' : 'month'});
-
-    return (
-        <div className={`${marketing.site} ${marketing.pricingPage}`}>
-            <section className="py-8 sm:py-12 lg:py-16 overflow-x-hidden">
-                <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 min-w-0">
-                    {/* Header */}
-                    <div className="mb-8 sm:mb-12">
-                        <h1 className="text-h2 sm:text-h1 lg:text-display text-foreground leading-tight tracking-tight">
-                            Pricing
-                        </h1>
-                        <p className="mt-2 text-body-sm sm:text-body text-muted-foreground">
-                            Address services and digital mail management. One subscription.
-                        </p>
-                    </div>
-
-                    {/* Pricing card container */}
-                    <div className="rounded-xl sm:rounded-2xl border border-border bg-card shadow-sm overflow-hidden min-w-0">
-                        {/* Brand accent line */}
-                        <div className="h-0.5 bg-primary" />
-                        <div className="p-5 sm:p-8 lg:p-12 min-w-0">
-                            {/* Two-column layout */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
-                                {/* LEFT: Decision */}
-                                <div className="min-w-0">
-                                    <h2 className="text-h4 sm:text-h3 text-foreground mb-4 sm:mb-6">
-                                        Your London address package
-                                    </h2>
-
-                                    {/* Billing toggle - full width on mobile for easier tap */}
-                                    <div role="group" aria-label="Billing period" className="bg-muted flex h-11 sm:h-10 w-full sm:w-fit items-center rounded-lg p-1 mb-6 sm:mb-8">
-                                        <button
-                                            aria-pressed={!isAnnual}
-                                            onClick={() => setIsAnnual(false)}
-                                            className={`flex-1 sm:flex-none h-full rounded-md px-4 sm:px-6 text-body-sm font-medium transition-all min-h-[44px] sm:min-h-0 ${!isAnnual
-                                                ? 'bg-card text-foreground shadow-sm'
-                                                : 'text-muted-foreground hover:text-foreground'
-                                                }`}
-                                        >
-                                            Monthly
-                                        </button>
-                                        <button
-                                            aria-pressed={isAnnual}
-                                            onClick={() => setIsAnnual(true)}
-                                            className={`flex-1 sm:flex-none h-full rounded-md px-4 sm:px-6 text-body-sm font-medium transition-all min-h-[44px] sm:min-h-0 ${isAnnual
-                                                ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary'
-                                                : 'text-muted-foreground hover:text-foreground'
-                                                }`}
-                                        >
-                                            Annual
-                                        </button>
-                                    </div>
-
-                                    {/* Error Display */}
-                                    {error && (
-                                        <p className="text-body-sm text-muted-foreground mb-4 sm:mb-6">
-                                            Pricing temporarily unavailable. Please refresh.
-                                        </p>
-                                    )}
-
-                                    {/* Price - responsive size, no min-width overflow on mobile */}
-                                    <div className="mb-6 sm:mb-8">
-                                        <div className="flex items-baseline gap-2 mb-2 min-w-0">
-                                            <span className="text-h1 sm:text-display lg:text-display font-semibold text-foreground tabular-nums break-words">
-                                                {displayPrice}
-                                            </span>
-                                        </div>
-                                        <div className="inline-block border-b-2 border-primary/20 pb-0.5">
-                                            <p className="text-caption sm:text-body-sm text-muted-foreground">
-                                                {isAnnual ? 'Billed annually.' : 'Billed monthly. Cancellation conditions apply.'}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* CTA - full width on mobile, touch-friendly */}
-                                    <Button
-                                        onClick={handleSelectPlan}
-                                        disabled={selectedPrice === null}
-                                        size="lg"
-                                        className="h-12 min-h-[48px] px-6 sm:px-8 w-full sm:w-auto font-medium mb-2"
-                                    >
-                                        Get Started
-                                    </Button>
-
-                                    <p className="text-caption sm:text-body-sm text-muted-foreground tabular-nums">
-                                        {selectedPrice !== null && (isAnnual
-                                            ? `Equivalent to ${formatPrice(selectedPrice / 12, { interval: 'month' })}`
-                                            : monthlySavingsPct > 0 ? `Save ${monthlySavingsPct}% with annual billing` : 'Annual billing also available')}
-                                    </p>
-                                </div>
-
-                                {/* RIGHT: Understanding */}
-                                <div className="space-y-8 sm:space-y-10 min-w-0">
-                                    {/* What's included */}
-                                    <div>
-                                        <h3 className="text-label sm:text-body font-semibold text-foreground mb-3 sm:mb-4">
-                                            What's included
-                                        </h3>
-                                        <ul className="space-y-2.5 sm:space-y-3">
-                                            {explanatoryFeatures.map((feature, index) => (
-                                                <li key={index} className="flex items-start gap-2.5 sm:gap-3 text-body-sm text-muted-foreground leading-relaxed">
-                                                    <svg className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
-                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                    </svg>
-                                                    <span>{feature}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                        <p className="mt-3 sm:mt-4 text-caption text-muted-foreground leading-relaxed">
-                                            Physical forwarding has separate conditions and charges. Address use begins only after required checks and approval.
-                                        </p>
-                                    </div>
-
-                                    {/* Compliance */}
-                                    <div>
-                                        <h3 className="text-label sm:text-body font-semibold text-foreground mb-3 sm:mb-4">
-                                            Compliance & trust
-                                        </h3>
-                                        <ul className="space-y-2.5 sm:space-y-3">
-                                            {atAGlanceFeatures.map((feature, index) => (
-                                                <li key={index} className="flex items-start gap-2.5 sm:gap-3 text-body-sm text-muted-foreground leading-relaxed">
-                                                    <svg className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
-                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                    </svg>
-                                                    <span>{feature}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+  const { monthlyPrice, annualPrice, loading, error } = usePricing();
+  const savings =
+    monthlyPrice !== null && annualPrice !== null
+      ? (Math.round(monthlyPrice * 100) * 12 - Math.round(annualPrice * 100)) / 100
+      : 0;
+  return (
+    <div className={`${m.site} ${s.page}`}>
+      <section className={s.pricingHero}>
+        <div className={m.wrap}>
+          <p className={m.kicker}>YOUR BUSINESS, BASED IN LONDON</p>
+          <h1>
+            One London address.
+            <br />
+            One straightforward subscription.
+          </h1>
+          <div className={s.introLine}>
+            <p className={m.lead}>
+              A professional business presence. Your letters, online.
+              <br />
+              Choose how you pay. The core service stays the same.
+            </p>
+            <Link className={m.textlink} href="#included">
+              See everything included ↓
+            </Link>
+          </div>
         </div>
-    );
+      </section>
+      <section className={s.billingSection} aria-label="Subscription billing options">
+        <div className={m.wrap}>
+          {error && (
+            <p role="status" className={s.notice}>
+              Some pricing is temporarily unavailable. Please refresh before subscribing.
+            </p>
+          )}
+          <div className={s.billing}>
+            <div className={s.option}>
+              <p className={m.kicker}>01 / MONTHLY BILLING</p>
+              <h2>A month at a time.</h2>
+              <p className={s.price}>
+                {monthlyPrice === null ? (
+                  <span className={s.unavailable}>
+                    {loading ? 'Loading pricing…' : 'Pricing unavailable'}
+                  </span>
+                ) : (
+                  <>
+                    {money(monthlyPrice)}
+                    <span> / month</span>
+                  </>
+                )}
+              </p>
+              <p>Billed monthly. The complete core service.</p>
+              <button
+                className={m.button}
+                disabled={monthlyPrice === null}
+                onClick={() => onNavigate('signup', { initialBilling: 'monthly' })}
+              >
+                Choose monthly <span aria-hidden>↗</span>
+              </button>
+              <p className={s.fine}>
+                Recurring monthly subscription. Cancellation conditions apply.
+              </p>
+            </div>
+            <div className={`${s.option} ${s.annual}`}>
+              <p className={m.kicker}>02 / ANNUAL BILLING{savings > 0 ? ' — BETTER VALUE' : ''}</p>
+              <h2>A year of London presence.</h2>
+              <p className={s.price}>
+                {annualPrice === null ? (
+                  <span className={s.unavailable}>
+                    {loading ? 'Loading pricing…' : 'Pricing unavailable'}
+                  </span>
+                ) : (
+                  <>
+                    {money(annualPrice)}
+                    <span> / year</span>
+                  </>
+                )}
+              </p>
+              <p>
+                {annualPrice !== null ? (
+                  <>Equivalent to {money(annualPrice / 12)} a month. Billed annually.</>
+                ) : (
+                  'Annual billing is currently unavailable.'
+                )}
+              </p>
+              <button
+                className={m.button}
+                disabled={annualPrice === null}
+                onClick={() => onNavigate('signup', { initialBilling: 'annual' })}
+              >
+                Choose annual <span aria-hidden>↗</span>
+              </button>
+              <p className={s.fine}>
+                {savings > 0 ? (
+                  <>Save {money(savings)} a year compared with 12 monthly payments.</>
+                ) : (
+                  'Same core service, paid annually. Cancellation conditions apply.'
+                )}
+              </p>
+            </div>
+          </div>
+          <p className={s.purchaseNote}>
+            Both options renew on their billing schedule. Review the{' '}
+            <Link href="/terms">renewal and cancellation terms</Link> before subscribing. Address
+            use starts after successful payment, required verification and account approval.
+          </p>
+        </div>
+      </section>
+      <section id="included" className={s.included}>
+        <div className={`${m.wrap} ${s.featureLayout}`}>
+          <div>
+            <p className={m.kicker}>ONE SUBSCRIPTION / ALL CONNECTED</p>
+            <h2>
+              Your business address.
+              <br />
+              And the post that comes with it.
+            </h2>
+            <p>
+              No separate subscriptions for each address use. Monthly and annual billing include the
+              same core services.
+            </p>
+            <Link className={m.textlink} href="/services">
+              Explore our services →
+            </Link>
+          </div>
+          <dl className={s.featureList}>
+            <div>
+              <dt>A Central London business presence</dt>
+              <dd>
+                A professional correspondence address that keeps business post separate from home.
+              </dd>
+            </div>
+            <div>
+              <dt>Registered office & director’s service address</dt>
+              <dd>Address use for eligible companies and directors, following approval.</dd>
+            </div>
+            <div>
+              <dt>Digital mail scanning</dt>
+              <dd>Read available correspondence online, wherever you work.</dd>
+            </div>
+            <div>
+              <dt>Your secure customer dashboard</dt>
+              <dd>View and download available scans and manage your business post in one place.</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+      <section className={s.decision}>
+        <div className={`${m.wrap} ${s.featureLayout}`}>
+          <div>
+            <p className={m.kicker}>BEFORE YOU SUBSCRIBE</p>
+            <h2>A clear next step.</h2>
+            <p>See what happens from choosing a plan to opening your first available scan.</p>
+            <Link className={m.textlink} href="/how-it-works">
+              How it works →
+            </Link>
+          </div>
+          <div className={s.questions}>
+            <details>
+              <summary>When can I use my address?</summary>
+              <p>
+                After successful payment, required identity and business checks, and account
+                approval. Full address details are provided in your account.
+              </p>
+            </details>
+            <details>
+              <summary>Can I receive original letters?</summary>
+              <p>
+                Optional physical forwarding is available, subject to eligibility, retention
+                conditions and applicable charges.{' '}
+                <Link href="/services#forwarding">Review forwarding conditions and charges</Link>{' '}
+                before subscribing.
+              </p>
+            </details>
+            <details>
+              <summary>What should I check before subscribing?</summary>
+              <p>
+                Confirm the address is suitable for your business and company jurisdiction. Read the{' '}
+                <Link href="/terms">service, renewal and cancellation terms</Link>, or{' '}
+                <Link href="/contact">ask us about eligibility</Link>.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }

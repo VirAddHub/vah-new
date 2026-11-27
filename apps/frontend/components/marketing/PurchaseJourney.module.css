@@ -1,0 +1,458 @@
+/* Shared only by How it works and Pricing; homepage remains the visual source. */
+.page {
+  --line: #cbd7cb;
+}
+.page section[id] {
+  scroll-margin-top: 110px;
+}
+.page a:focus-visible,
+.page button:focus-visible,
+.page summary:focus-visible {
+  outline: 3px solid #a25e16;
+  outline-offset: 5px;
+}
+.page button {
+  cursor: pointer;
+  border: 0;
+  font-family: inherit;
+  min-height: 48px;
+}
+.page button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.pricingHero {
+  background: #f8f5ed;
+  padding: 64px 0 32px;
+}
+.pricingHero h1 {
+  max-width: 1000px;
+}
+.introLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.billingSection {
+  background: #f8f5ed;
+  padding: 10px 0 44px;
+}
+.billing {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid #91a68e;
+  border-bottom: 1px solid #91a68e;
+}
+.option {
+  padding: 38px 36px 28px 0;
+  min-width: 0;
+}
+.annual {
+  padding-left: 40px;
+  padding-right: 28px;
+  background: #e6eee3;
+  border-left: 1px solid #91a68e;
+}
+.option h2 {
+  font-size: 30px;
+}
+.page .price {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: clamp(42px, 4.5vw, 66px);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  margin: 28px 0 12px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.price span {
+  font-family: var(--font-dmsans), Arial, sans-serif;
+  font-size: 15px;
+  letter-spacing: 0;
+}
+.price .unavailable {
+  font-size: 24px;
+}
+.fine,
+.purchaseNote {
+  font-size: 13px;
+  color: #4e6152;
+}
+.purchaseNote {
+  margin-top: 24px;
+  max-width: 95ch !important;
+}
+.notice {
+  border-left: 3px solid #a25e16;
+  padding-left: 14px;
+}
+.included,
+.decision {
+  padding: 70px 0;
+}
+.included {
+  background: #fff;
+}
+.decision {
+  background: #f0f3ec;
+}
+.featureLayout {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 80px;
+}
+.featureList {
+  margin: 0;
+}
+.featureList > div {
+  border-top: 1px solid var(--line);
+  padding: 21px 0;
+}
+.featureList dt {
+  font-size: 18px;
+  font-weight: 600;
+  color: #123d30;
+}
+.featureList dd {
+  margin: 8px 0 0;
+  color: #43564a;
+  line-height: 1.65;
+}
+.questions details {
+  border-top: 1px solid var(--line);
+  padding: 22px 0;
+}
+.questions summary {
+  cursor: pointer;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.questions p {
+  font-size: 15px;
+}
+.caption {
+  font-size: 12px !important;
+  color: #536356;
+  text-align: center;
+  max-width: none !important;
+  line-height: 1.6;
+}
+.stageNav {
+  border-bottom: 1px solid var(--line);
+  background: white;
+  padding: 24px 0;
+}
+.stageNav > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+.stageNav a {
+  display: flex;
+  gap: 12px;
+  color: #365e40;
+  font-size: 13px;
+  text-decoration: none;
+}
+.stageNav a span {
+  font-weight: 600;
+}
+.stage {
+  padding: 72px 0;
+}
+.stageGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 80px;
+}
+.stageGrid > * {
+  min-width: 0;
+}
+.stageGrid figure {
+  margin: 0;
+}
+.reverse > div {
+  order: 2;
+}
+.sage {
+  background: #e6eee3;
+}
+.billingVisual {
+  padding: 32px 36px;
+  background: #f8f5ed;
+  border-top: 3px solid #41684b;
+}
+.billingVisual figcaption,
+.setupVisual figcaption,
+.mailVisual figcaption {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  line-height: 1.7;
+  color: #48604c;
+}
+.billingVisual > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
+}
+.billingVisual > div > span {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: 34px;
+}
+.billingVisual small {
+  font-size: 13px;
+  color: #536356;
+}
+.billingVisual > p {
+  font-size: 14px;
+  margin-top: 24px;
+}
+.setupVisual {
+  background: #fff;
+  padding: 32px 36px;
+  border-left: 3px solid #41684b;
+}
+.setupVisual ol {
+  padding: 0;
+  margin: 24px 0 0;
+  list-style: none;
+}
+.setupVisual li {
+  display: flex;
+  gap: 20px;
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+  align-items: center;
+}
+.setupVisual li > span {
+  font-family: Georgia, serif;
+  font-size: 25px;
+  color: #597951;
+}
+.setupVisual small {
+  display: block;
+  font-size: 13px;
+  color: #536356;
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.addressVisual {
+  padding: 32px;
+  background: #e6eee3;
+}
+.addressPaper {
+  background: #fffdf7;
+  padding: 35px;
+  border-bottom: 4px solid #b8c8ad;
+  box-shadow: 0 12px 25px #123d3010;
+}
+.addressPaper .company {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: 30px;
+  margin-bottom: 12px;
+}
+.addressRule {
+  width: 50px;
+  border-top: 2px solid #557449;
+  margin: 24px 0;
+}
+.addressPaper small {
+  font-size: 12px;
+  color: #536356;
+}
+.addressVisual figcaption {
+  font-size: 10px;
+  line-height: 1.6;
+  margin-top: 22px;
+  color: #536356;
+  text-align: center;
+}
+.postStage {
+  background: #123d30;
+  color: #fff;
+}
+.postStage h2 {
+  color: #fff;
+}
+.postStage > div > div > p {
+  color: #dce7dc;
+}
+.postStage a {
+  color: inherit;
+  text-underline-offset: 4px;
+}
+.originals {
+  font-size: 13px;
+  margin-top: 28px;
+}
+.mailVisual {
+  background: #f8f5ed;
+  color: #203c2b;
+  padding: 25px 28px;
+  box-shadow: 12px 12px 0 #ffffff12;
+}
+.mailHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding: 22px 0 18px;
+  gap: 14px;
+}
+.mailHeader strong {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: 29px;
+  font-weight: 400;
+}
+.mailHeader span {
+  font-size: 12px;
+  color: #365e40;
+}
+.mailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  padding: 20px 0;
+  font-size: 13px;
+}
+.mailRow p {
+  margin: 5px 0 0;
+  font-size: 12px;
+}
+.mailRow > span {
+  border: 1px solid #9caf98;
+  padding: 9px;
+  font-size: 10px;
+}
+.document {
+  background: white;
+  border: 1px solid #dce4d9;
+  padding: 28px 30px;
+}
+.document > span {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: #536356;
+}
+.document > div {
+  height: 5px;
+  background: #dce4d9;
+  margin-top: 15px;
+  width: 90%;
+}
+.document > div:nth-child(3) {
+  width: 75%;
+}
+.document > div:last-child {
+  width: 55%;
+}
+.mailActions {
+  display: flex;
+  gap: 20px;
+  margin: 20px 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+.closing {
+  padding: 70px 0;
+  background: #f8f5ed;
+  text-align: center;
+}
+.closing p {
+  margin-left: auto;
+  margin-right: auto;
+}
+.closing a {
+  margin-top: 15px;
+}
+@media (max-width: 1024px) {
+  .stageGrid,
+  .featureLayout {
+    gap: 36px;
+  }
+  .option h2 {
+    font-size: 27px;
+  }
+  .stage {
+    padding: 55px 0;
+  }
+  .billingVisual,
+  .setupVisual {
+    padding: 24px;
+  }
+  .addressVisual {
+    padding: 22px;
+  }
+  .addressPaper {
+    padding: 26px;
+  }
+}
+@media (max-width: 767px) {
+  .stageGrid,
+  .featureLayout,
+  .billing {
+    grid-template-columns: 1fr;
+  }
+  .stageGrid {
+    gap: 30px;
+  }
+  .reverse > div {
+    order: 0;
+  }
+  .stageNav > div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  .stageNav a {
+    font-size: 12px;
+  }
+  .pricingHero {
+    padding: 44px 0 20px;
+  }
+  .introLine {
+    display: block;
+  }
+  .introLine > a {
+    display: inline-block;
+    margin: 10px 0;
+  }
+  .option {
+    padding: 28px 0;
+  }
+  .annual {
+    padding: 28px 22px;
+    border-left: 0;
+    border-top: 1px solid #91a68e;
+  }
+  .stage,
+  .included,
+  .decision {
+    padding: 44px 0;
+  }
+  .mailVisual {
+    padding: 22px;
+    box-shadow: none;
+  }
+  .billingVisual > div {
+    flex-wrap: wrap;
+  }
+  .featureLayout {
+    gap: 24px;
+  }
+  .closing {
+    padding: 48px 0;
+  }
+  .page .price {
+    font-size: 48px;
+  }
+  .page .price .unavailable {
+    font-size: 23px;
+  }
+}
