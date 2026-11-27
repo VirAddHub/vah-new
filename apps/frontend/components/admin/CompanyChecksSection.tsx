@@ -7,20 +7,23 @@
  * Individual identity, address, PEP, sanctions and adverse-media checks are separate.
  */
 import { useEffect, useMemo, useState } from "react";
+import { StaffDeclarationForm } from "./StaffDeclarationForm";
 import useSWR from "swr";
 import { AlertTriangle, Bell, Building2, Check, CircleDashed, Download, ExternalLink, Loader2, Minus, Plus, RefreshCcw, Search, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ADMIN_SESSION_GONE, cn } from "@/lib/utils";
 
 const API = "/api/admin/company-checks";
 const getJson = async (url: string) => {
   const r = await fetch(url, { credentials: "include", cache: "no-store" });
   const j = await r.json().catch(() => null);
+  if (r.status === 401 || r.status === 403) throw new Error(ADMIN_SESSION_GONE);
   if (!r.ok) throw new Error(j?.message || j?.error || `Request failed (${r.status})`);
   return j;
 };
 async function send(url: string, body: unknown = {}) {
   const r = await fetch(url, { method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   const j = await r.json().catch(() => null);
+  if (r.status === 401 || r.status === 403) throw new Error(ADMIN_SESSION_GONE);
   if (!r.ok || j?.ok === false) throw new Error(j?.message || (j?.error ? String(j.error).replace(/_/g, " ") : `Request failed (${r.status})`));
   return j;
 }
@@ -210,10 +213,13 @@ function LinkCompany({ onCreated, onCancel }: { onCreated: (id: number) => void;
   );
 }
 
+const ENTRY_SOURCE: Record<string, string> = { phone: "phone call", email: "email", meeting: "meeting or video call", document: "documents the customer sent", other: "other" };
+
 function CheckDetail({ id, onChanged }: { id: number; onChanged: () => void }) {
   const { data, error, isLoading, mutate } = useSWR(`${API}/${id}`, getJson);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [entering, setEntering] = useState(false);
   const d = data?.data;
   const act = async (key: string, url: string, body?: unknown, done?: string) => {
     setBusy(key); setMsg(null);
@@ -249,7 +255,12 @@ function CheckDetail({ id, onChanged }: { id: number; onChanged: () => void }) {
       <div className={cn("rounded-md border p-3", d.next.priority <= 2 ? "border-red-200 bg-red-50/60" : d.next.key === "none" ? "border-primary/20 bg-primary/5" : "border-amber-200 bg-amber-50/60")} role="status">
         <p className="text-[12px] font-medium uppercase tracking-wide text-graphite">Next</p>
         <p className="text-[15px] font-semibold text-ink">{d.next.text}</p>
-        {d.next.key === "await_customer" && <p className="mt-1 text-[13px] text-graphite">The customer has been asked for their company declaration on their dashboard. Nothing to do until it arrives.</p>}
+        {d.next.key === "await_customer" && (
+          <>
+            <p className="mt-1 text-[13px] text-graphite">They have been asked on their dashboard. If they have given you the details by phone, email or in documents, enter them yourself instead of waiting.</p>
+            <Btn variant="solid" className="mt-2" onClick={() => setEntering(true)}>Enter the details yourself</Btn>
+          </>
+        )}
         {c.fetch_error && <p className="mt-1 text-[13px] text-amber-900">Last retrieval failed: {c.fetch_error}</p>}
       </div>
       {msg && <p role={msg.ok ? "status" : "alert"} className={cn("text-[13px]", msg.ok ? "text-primary" : "text-destructive")}>{msg.text}</p>}
@@ -287,16 +298,18 @@ function CheckDetail({ id, onChanged }: { id: number; onChanged: () => void }) {
         </div>
       )}
 
-      {d.next.key === "await_customer"
-        ? <p className="rounded-md border border-line px-3 py-2 text-[13px] text-graphite">Your review opens here once the customer's company details arrive. The comparison with Companies House runs automatically.</p>
-        : <Review d={d} busy={busy} act={act} id={id} />}
+      {d.next.key !== "await_customer" && <Review d={d} busy={busy} act={act} id={id} />}
+      {entering && <StaffDeclarationForm api={`${API}/${id}`} onClose={() => setEntering(false)} onSaved={async text => { setEntering(false); setMsg({ ok: true, text }); await mutate(); onChanged(); }} />}
 
       <Section title="Declaration compared with the register" count={a.comparison.length} open={!!decl && c.status !== "satisfactory"}>
         {decl ? (
           <>
-            <p className="mb-2 text-[12px] text-graphite">Submitted {day(decl.submitted_at)}{decl.returned_at ? ` · returned ${day(decl.returned_at)}: ${decl.returned_reason}` : ""}. Expected mail: {decl.data.expected_monthly_mail} a month. Account holder&apos;s role: {human(decl.data.applicant_role)}.</p>
+            <p className="mb-2 text-[12px] text-graphite">{decl.entered_by_admin ? `Entered by ${by(decl.entered_by_admin)} on ${day(decl.submitted_at)} from: ${ENTRY_SOURCE[decl.entered_source] ?? decl.entered_source} (${decl.entered_note})` : `Submitted by the customer ${day(decl.submitted_at)}`}{decl.returned_at ? ` · returned ${day(decl.returned_at)}: ${decl.returned_reason}` : ""}. Expected mail: {decl.data.expected_monthly_mail} a month. Account holder&apos;s role: {human(decl.data.applicant_role)}.</p>
             <ComparisonTable rows={a.comparison} />
-            {!decl.returned_at && <ReturnDeclaration onReturn={reason => act("return", `${API}/${id}/declaration/return`, { reason }, "Returned to the customer.")} />}
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <Btn onClick={() => setEntering(true)}>Correct the details</Btn>
+              {!decl.returned_at && <ReturnDeclaration onReturn={reason => act("return", `${API}/${id}/declaration/return`, { reason }, "Returned to the customer.")} />}
+            </div>
           </>
         ) : <p className="text-graphite">No declaration yet.</p>}
       </Section>

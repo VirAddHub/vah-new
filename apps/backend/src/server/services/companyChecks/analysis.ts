@@ -31,7 +31,9 @@ export interface CustomerInfo {
     company_number: string | null;
     trading_name: string | null;
     owners: { id?: number; full_name: string; email?: string | null; role: string | null; status: string | null; requires_verification: boolean }[];
-    declaration?: { data: Declaration; submitted_at: string | Date; returned_at?: string | Date | null; returned_reason?: string | null } | null;
+    declaration?: { data: Declaration; submitted_at: string | Date; returned_at?: string | Date | null; returned_reason?: string | null;
+        /** Set when staff entered the details on the customer's behalf. */
+        entered_by_admin?: number | null; entered_source?: string | null; entered_note?: string | null } | null;
 }
 
 export type AutoStatus = 'pass' | 'attention' | 'missing' | 'discrepancy' | 'not_available';
@@ -323,6 +325,6 @@ export function nextAction(x: { status: string; hasSnapshot: boolean; fetchError
     if (x.status === 'satisfactory') return { key: 'none', priority: 9, text: 'No action: monitored daily' };
     if (!x.hasSnapshot || x.fetchError || st('register_extract') !== 'pass') return { key: 'retrieve', priority: 3, text: x.fetchError ? 'Retrieval failed: retry' : 'Refresh the Companies House extract' };
     if (x.unresolved) return { key: 'resolve_discrepancies', priority: 4, text: `Resolve ${x.unresolved} discrepancy(ies)` };
-    if (st('declaration') !== 'pass') return { key: 'await_customer', priority: 7, text: 'Waiting for the customer\'s company declaration' };
+    if (st('declaration') !== 'pass') return { key: 'await_customer', priority: 7, text: 'Waiting for the customer\'s company details, or enter them yourself' };
     return { key: 'complete_review', priority: 5, text: x.blockers.length ? 'Complete your review' : 'Ready: complete the review' };
 }

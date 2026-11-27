@@ -18,7 +18,9 @@ import { ChError, chClient, normaliseCompanyNumber, searchCompanies, type ChClie
 import { analyse, JUDGEMENT, JUDGEMENT_IDS, nextAction, satisfactoryBlockers } from '../services/companyChecks/analysis';
 import { audit, detail, ensureCheck, getCheck, loadCustomer, loadCustomersBulk, refreshSnapshot, saveReport, syncDiscrepancies } from '../services/companyChecks/store';
 import { ensureAllChecks } from '../services/companyChecks/automation';
-import { latestDeclaration } from '../services/companyChecks/declaration';
+import { latestDeclaration, StaffDeclarationSchema } from '../services/companyChecks/declaration';
+import { inviteNamedPeople } from './company-declaration';
+import { sameName } from '../services/companyChecks/snapshot';
 import { identityProviderStatus } from '../services/identityVerification';
 import { DEADLINE_DAYS, tableReady as preTableReady } from '../services/companyChecks/preIncorporation';
 import { isBeneficialOwner } from '../services/companyChecks/declaration';
@@ -393,6 +395,94 @@ router.post('/company-checks/:id/entries/:entryId/resolve', async (req, res) => 
 });
 
 /** POST /:id/declaration/return { reason } — send the declaration back to the customer to correct. */
+const ENTRY_SOURCES = { phone: 'Phone call', email: 'Email', meeting: 'Meeting or video call', document: 'Documents the customer sent', other: 'Other' } as const;
+const SHARE_BAND: Record<string, string> = { '25-to-50-percent': 'more than 25% up to 50%', '50-to-75-percent': 'more than 50% up to 75%', '75-to-100-percent': '75% or more' };
+
+/**
+ * GET /:id/declaration/prefill — a starting point for staff entering the details on the customer's
+ * behalf: the latest details if any, otherwise the current directors and PSCs from the register.
+ * Ownership figures are left blank (the register only gives a band), with the band shown.
+ */
+router.get('/company-checks/:id/declaration/prefill', async (req, res) => {
+    const id = idParam(req);
+    if (!id) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    const db = getPool();
+    try {
+        const check = await getCheck(db, id);
+        if (!check) return res.status(404).json({ ok: false, error: 'not_found' });
+        const customer = await loadCustomer(db, Number(check.user_id), check.business_id, check.company_number);
+        const holder = [customer?.first_name, customer?.last_name].filter(Boolean).join(' ');
+        const latest = await latestDeclaration(db, Number(check.user_id), check.company_number);
+        const snap = check.snapshot ?? {};
+        const people: any[] = [];
+        for (const o of (snap.officers ?? []).filter((o: any) => !o.resigned_on && /director|member/i.test(String(o.officer_role ?? '')))) {
+            people.push({ full_name: o.name, email: null, is_account_holder: false, is_director: true, is_beneficial_owner: false,
+                ownership_percent: null, voting_percent: null, other_control: false, country_of_residence: o.country_of_residence ?? '', register_note: 'Director on the register' });
+        }
+        for (const p of (snap.pscs ?? []).filter((p: any) => !p.ceased_on && !p.ceased && /individual/i.test(String(p.kind ?? '')))) {
+            const natures: string[] = p.natures_of_control ?? [];
+            const shares = natures.map(n => Object.keys(SHARE_BAND).find(k => n.includes('ownership-of-shares') && n.includes(k))).find(Boolean);
+            const votes = natures.map(n => Object.keys(SHARE_BAND).find(k => n.includes('voting-rights') && n.includes(k))).find(Boolean);
+            const other = natures.some(n => /right-to-appoint|significant-influence/.test(n));
+            const band = [shares && `shares ${SHARE_BAND[shares]}`, votes && `votes ${SHARE_BAND[votes]}`, other && 'other control'].filter(Boolean).join(', ');
+            const existing = people.find(x => sameName(x.full_name, p.name));
+            const note = `PSC on the register${band ? `: ${band}` : ''}`;
+            if (existing) Object.assign(existing, { is_beneficial_owner: true, other_control: other, register_note: `Director and ${note}`, country_of_residence: existing.country_of_residence || p.country_of_residence || '' });
+            else people.push({ full_name: p.name, email: null, is_account_holder: false, is_director: false, is_beneficial_owner: true, ownership_percent: null, voting_percent: null,
+                other_control: other, country_of_residence: p.country_of_residence ?? '', register_note: note });
+        }
+        const me = people.find(x => holder && sameName(x.full_name, holder));
+        if (me) Object.assign(me, { is_account_holder: true, email: customer?.email ?? null });
+        else people.unshift({ full_name: holder, email: customer?.email ?? null, is_account_holder: true, is_director: false, is_beneficial_owner: false,
+            ownership_percent: null, voting_percent: null, other_control: false, country_of_residence: 'United Kingdom', register_note: 'Account holder (not on the register)' });
+        return res.json({ ok: true, data: {
+            from: latest && !latest.returned_at ? 'latest' : latest ? 'returned' : 'register',
+            data: latest?.data ?? { nature_of_business: (snap.profile?.sic_codes ?? []).length ? `SIC ${(snap.profile.sic_codes).join(', ')}: ` : '', principal_place_of_business: { same_as_registered_office: true },
+                applicant_role: me?.is_director ? (me.is_beneficial_owner ? 'director_and_beneficial_owner' : 'director') : 'authorised_person', people, corporate_owners: [], expected_monthly_mail: '0-10' },
+            sources: ENTRY_SOURCES,
+        } });
+    } catch (e) { return chFailure(res, e); }
+});
+
+/**
+ * POST /:id/declaration { data, source, source_note, invite } — staff enter the customer's company
+ * details for them (from a call, email, meeting or documents). Recorded as entered by this
+ * administrator with the source; the comparison with the register then runs as usual.
+ */
+router.post('/company-checks/:id/declaration', async (req, res) => {
+    const id = idParam(req);
+    const source = text(req.body?.source, 20);
+    const sourceNote = text(req.body?.source_note, 1000);
+    if (!id) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    if (!(source in ENTRY_SOURCES)) return res.status(400).json({ ok: false, error: 'source_required', message: 'Say how the customer gave you these details.' });
+    if (sourceNote.length < 5) return res.status(400).json({ ok: false, error: 'source_note_required', message: 'Add a short note: who you spoke to and when, or which email or document.' });
+    const parsed = StaffDeclarationSchema.safeParse(req.body?.data);
+    if (!parsed.success) {
+        const issues = parsed.error.issues.map(i => ({ path: i.path.join('.'), message: i.message }));
+        return res.status(400).json({ ok: false, error: 'validation_error', message: issues.map(i => i.message).join('. '), issues });
+    }
+    const db = getPool();
+    try {
+        const check = await getCheck(db, id);
+        if (!check) return res.status(404).json({ ok: false, error: 'not_found' });
+        const a = admin(req);
+        const ins = await db.query(
+            `INSERT INTO company_declaration (user_id, company_number, data, entered_by_admin, entered_source, entered_note) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+            [check.user_id, check.company_number, JSON.stringify(parsed.data), a.id, source, sourceNote]);
+        await audit(db, a.id, 'company_check_declaration_entered', id, { declaration_id: Number(ins.rows[0].id), source, source_note: sourceNote });
+        const invited = req.body?.invite === true
+            ? await inviteNamedPeople(db, Number(check.user_id), parsed.data.people, check.snapshot?.profile?.company_name ?? undefined)
+            : [];
+        await syncDiscrepancies(db, id);
+        return res.status(201).json({ ok: true, data: { declaration_id: Number(ins.rows[0].id), invited } });
+    } catch (e) {
+        if (/entered_by_admin/.test(String((e as Error)?.message))) {
+            return res.status(503).json({ ok: false, error: 'not_ready', message: 'This needs the latest database update. Try again in a few minutes.' });
+        }
+        return chFailure(res, e);
+    }
+});
+
 router.post('/company-checks/:id/declaration/return', async (req, res) => {
     const id = idParam(req);
     const reason = text(req.body?.reason, 1000);

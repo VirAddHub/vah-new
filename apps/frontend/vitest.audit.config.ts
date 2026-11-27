@@ -17,6 +17,7 @@ export default defineConfig({
       'tests/company-checks.test.tsx',
       'tests/admin-customers.test.tsx',
       'tests/site-content.test.tsx',
+      'tests/staff-declaration.test.tsx',
     ],
   },
 });

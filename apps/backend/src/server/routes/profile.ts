@@ -620,6 +620,12 @@ router.patch("/company-details", requireAuth, async (req: Request, res: Response
     const values: any[] = [];
     let paramIndex = 1;
 
+    {
+        const { companyNumberInUse, COMPANY_TAKEN_MESSAGE } = await import('../services/companyChecks/oneAccount');
+        if (await companyNumberInUse(getPool(), company_number, Number(userId))) {
+            return res.status(409).json({ ok: false, error: 'company_already_registered', message: COMPANY_TAKEN_MESSAGE });
+        }
+    }
     updates.push(`companies_house_number = $${paramIndex++}`);
     values.push(company_number);
 

@@ -35,7 +35,12 @@ export const CorporateOwnerSchema = z.object({
     ultimate_owners: text(600).min(3, 'Name the individuals who ultimately own or control each corporate owner'),
 });
 
-export const DeclarationSchema = z.object({
+/**
+ * forCustomer: the customer's own submission (they confirm it, and give an email for each other
+ * director or owner so we can verify them). Staff entering details on the customer's behalf
+ * record the source instead, and may not have every email.
+ */
+const makeDeclarationSchema = (forCustomer: boolean) => z.object({
     nature_of_business: text(1000).min(10, 'Describe what the business does (at least 10 characters)'),
     trading_name: text(120).nullable().optional(),
     website: text(200).nullable().optional(),
@@ -49,7 +54,7 @@ export const DeclarationSchema = z.object({
     corporate_owners: z.array(CorporateOwnerSchema).max(10).default([]),
     no_beneficial_owner_explanation: text(600).nullable().optional(),
     expected_monthly_mail: z.enum(['0-10', '11-50', '51-200', '200+']),
-    confirmation: z.literal(true, { message: 'Confirm the information is complete and correct' }),
+    confirmation: forCustomer ? z.literal(true, { message: 'Confirm the information is complete and correct' }) : z.boolean().optional(),
 }).superRefine((d, ctx) => {
     if (!d.principal_place_of_business.same_as_registered_office && !(d.principal_place_of_business.address || '').trim()) {
         ctx.addIssue({ code: 'custom', path: ['principal_place_of_business', 'address'], message: 'Enter the principal place of business' });
@@ -66,12 +71,15 @@ export const DeclarationSchema = z.object({
         if (p.is_beneficial_owner && p.ownership_percent == null && p.voting_percent == null && !p.other_control) {
             ctx.addIssue({ code: 'custom', path: ['people', i, 'ownership_percent'], message: 'Give the ownership or voting share, or say how they otherwise control the company' });
         }
-        if (!p.is_account_holder && (p.is_director || p.is_beneficial_owner) && !p.email) {
+        if (forCustomer && !p.is_account_holder && (p.is_director || p.is_beneficial_owner) && !p.email) {
             ctx.addIssue({ code: 'custom', path: ['people', i, 'email'], message: 'We need an email address to verify this person\'s identity' });
         }
     });
-    if (d.people.filter(p => p.is_account_holder).length !== 1) ctx.addIssue({ code: 'custom', path: ['people'], message: 'Include yourself once' });
+    if (d.people.filter(p => p.is_account_holder).length !== 1) ctx.addIssue({ code: 'custom', path: ['people'], message: forCustomer ? 'Include yourself once' : 'Mark the account holder once' });
 });
+export const DeclarationSchema = makeDeclarationSchema(true);
+/** Company details entered by staff on the customer's behalf. */
+export const StaffDeclarationSchema = makeDeclarationSchema(false);
 export type Declaration = z.infer<typeof DeclarationSchema>;
 
 /** A beneficial owner under the 25% test, or by other control. */
@@ -80,7 +88,8 @@ export const isBeneficialOwner = (p: Declaration['people'][number]) =>
 
 export async function latestDeclaration(db: Queryable, userId: number, companyNumber: string) {
     const r = await db.query(
-        `SELECT id, data, submitted_at, returned_at, returned_reason FROM company_declaration
+        // SELECT * so the staff-entry columns come through once their migration is applied.
+        `SELECT * FROM company_declaration
           WHERE user_id = $1 AND company_number = $2 ORDER BY submitted_at DESC, id DESC LIMIT 1`, [userId, companyNumber]);
     return r.rows[0] ?? null;
 }

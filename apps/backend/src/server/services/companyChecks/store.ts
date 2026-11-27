@@ -40,7 +40,8 @@ export async function loadCustomer(db: Queryable, userId: number, businessId?: n
         company_number: b?.companies_house_number ?? u.companies_house_number ?? u.company_number ?? null,
         trading_name: b?.trading_name ?? null,
         owners: owners.map((o: any) => ({ id: Number(o.id), full_name: o.full_name, email: o.email, role: o.role, status: o.status, requires_verification: !!o.requires_verification })),
-        declaration: decl ? { data: decl.data, submitted_at: decl.submitted_at, returned_at: decl.returned_at, returned_reason: decl.returned_reason } : null,
+        declaration: decl ? { data: decl.data, submitted_at: decl.submitted_at, returned_at: decl.returned_at, returned_reason: decl.returned_reason,
+            entered_by_admin: decl.entered_by_admin ?? null, entered_source: decl.entered_source ?? null, entered_note: decl.entered_note ?? null } : null,
     };
 }
 

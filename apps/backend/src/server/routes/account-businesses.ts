@@ -2,6 +2,7 @@
 // Account businesses API: list, create, update, set-primary. All require auth and ownership.
 
 import { Router, Request, Response } from 'express';
+import { companyNumberInUse, COMPANY_TAKEN_MESSAGE } from '../services/companyChecks/oneAccount';
 import { customerDetailsLocked } from '../lib/customerDetailsLock';
 import { getPool } from '../db';
 import { getMonthlyPricePenceForNextBusiness } from '../../lib/business-pricing';
@@ -56,6 +57,9 @@ router.post('/businesses', requireAuth, async (req: Request, res: Response) => {
   }
 
   try {
+    if (companies_house_number && (await companyNumberInUse(pool, companies_house_number, Number(userId)))) {
+      return res.status(409).json({ ok: false, error: 'company_already_registered', message: COMPANY_TAKEN_MESSAGE });
+    }
     const countResult = await pool.query<{ count: string }>(
       'SELECT COUNT(*) AS count FROM business WHERE user_id = $1',
       [userId]
@@ -130,6 +134,10 @@ router.patch('/businesses/:businessId', requireAuth, customerDetailsLocked, asyn
     values.push(typeof body.trading_name === 'string' ? body.trading_name.trim() || null : null);
   }
   if (body.companies_house_number !== undefined) {
+    if (typeof body.companies_house_number === 'string' && body.companies_house_number.trim()
+        && (await companyNumberInUse(getPool(), body.companies_house_number, Number(userId)))) {
+      return res.status(409).json({ ok: false, error: 'company_already_registered', message: COMPANY_TAKEN_MESSAGE });
+    }
     updates.push(`companies_house_number = $${pos++}`);
     values.push(typeof body.companies_house_number === 'string' ? body.companies_house_number.trim() || null : null);
   }

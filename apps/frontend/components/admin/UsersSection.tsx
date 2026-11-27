@@ -12,7 +12,7 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { BadgeCheck, ChevronLeft, KeyRound, Loader2, Unlock, Pencil, Plus, Search, ShieldAlert, Users, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ADMIN_SESSION_GONE, cn } from "@/lib/utils";
 import { AccountStandingDialog } from "./AccountStandingDialog";
 import { IdentityResults } from "./IdentityResults";
 import { AdminAccessControl } from "./AdminAccessControl";
@@ -21,12 +21,14 @@ const PAGE = 50;
 const getJson = async (url: string) => {
   const r = await fetch(url, { credentials: "include", cache: "no-store" });
   const j = await r.json().catch(() => null);
+  if (r.status === 401 || r.status === 403) throw new Error(ADMIN_SESSION_GONE);
   if (!r.ok || j?.ok === false) throw new Error(j?.message || (j?.error ? String(j.error).replace(/_/g, " ") : `Request failed (${r.status})`));
   return j;
 };
 async function call(url: string, method: string, body?: unknown) {
   const r = await fetch(url, { method, credentials: "include", headers: { "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
   const j = await r.json().catch(() => null);
+  if (r.status === 401 || r.status === 403) throw new Error(ADMIN_SESSION_GONE);
   if (!r.ok || j?.ok === false) throw new Error(j?.message || (j?.error ? String(j.error).replace(/_/g, " ") : `Request failed (${r.status})`));
   return j;
 }

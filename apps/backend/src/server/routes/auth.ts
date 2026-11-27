@@ -519,6 +519,14 @@ router.post("/signup", async (req, res) => {
             }
         }
 
+        // One open account per company: a company already on an account cannot sign up again.
+        if (i.company_number) {
+            const { companyNumberInUse, COMPANY_TAKEN_MESSAGE } = await import('../services/companyChecks/oneAccount');
+            if (await companyNumberInUse(pool, i.company_number)) {
+                return res.status(409).json({ ok: false, error: 'company_already_registered', message: COMPANY_TAKEN_MESSAGE });
+            }
+        }
+
         // The user and their primary business are created in ONE statement, so a signup can never
         // leave a user without the business record that mail items must belong to.
         const insertQuery = `

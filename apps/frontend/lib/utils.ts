@@ -16,3 +16,7 @@ const twMerge = extendTailwindMerge({
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
+
+/** What an admin screen says when the server no longer accepts this browser's admin session. */
+export const ADMIN_SESSION_GONE =
+  'This browser is no longer signed in as an administrator. If you signed in to a customer account here, sign out of it and sign in again as admin. Use a private window for customer accounts.';

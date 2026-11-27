@@ -100,10 +100,10 @@ describe('pre-incorporation', () => {
     });
 
     it('when the company number arrives, the company becomes a new customer: a check compares the register with what was declared', async () => {
-        const r = await request(app).patch('/api/profile/company-details').set('Authorization', token(CUSTOMER)).send({ company_number: '12345678' });
+        const r = await request(app).patch('/api/profile/company-details').set('Authorization', token(CUSTOMER)).send({ company_number: '24681357' });
         expect(r.status).toBe(200);
         const p = (await getPool().query(`SELECT status, company_number FROM pre_incorporation WHERE id = $1`, [preId])).rows[0];
-        expect(p).toEqual({ status: 'incorporated', company_number: '12345678' });
+        expect(p).toEqual({ status: 'incorporated', company_number: '24681357' });
         const d = (await getPool().query(`SELECT from_pre_incorporation FROM company_declaration WHERE user_id = $1`, [CUSTOMER])).rows;
         expect(d).toEqual([{ from_pre_incorporation: String(preId) }]);
         const check = (await getPool().query(`SELECT id, status, snapshot IS NOT NULL AS has_snapshot FROM company_check WHERE user_id = $1`, [CUSTOMER])).rows[0];

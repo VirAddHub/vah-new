@@ -19,7 +19,7 @@ import * as businessOwnersService from '../services/businessOwners';
 import { DEADLINE_DAYS, isCompanyType, latestPreIncorporation, parseProposed, tableReady } from '../services/companyChecks/preIncorporation';
 
 /** Directors and beneficial owners other than the account holder are asked to verify their identity. */
-async function inviteNamedPeople(db: any, userId: number, people: any[], companyName: string | undefined) {
+export async function inviteNamedPeople(db: any, userId: number, people: any[], companyName: string | undefined) {
     const existing = (await db.query(`SELECT full_name, email FROM business_owner WHERE user_id = $1`, [userId])).rows;
     const invited: string[] = [];
     for (const p of people.filter(x => !x.is_account_holder && (x.is_director || isBeneficialOwner(x)) && x.email)) {
