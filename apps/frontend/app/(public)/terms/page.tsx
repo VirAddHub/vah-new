@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { OG_IMAGES } from '@/lib/site';
 import { TermsPageClient } from './TermsPageClient';
 
 export const metadata: Metadata = {
@@ -6,6 +7,7 @@ export const metadata: Metadata = {
     title: 'Terms of Service | VirtualAddressHub',
     description: 'Read our terms of service for virtual business address services, mail forwarding, and compliance support. Understand your rights and responsibilities.',
     openGraph: {
+    images: OG_IMAGES,
         title: 'Terms of Service | VirtualAddressHub',
         description: 'Read our terms of service for virtual business address services, mail forwarding, and compliance support.',
         url: 'https://virtualaddresshub.co.uk/terms',

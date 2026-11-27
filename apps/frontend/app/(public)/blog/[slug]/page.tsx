@@ -1,4 +1,5 @@
 import { jsonLdScript } from '@/lib/jsonLd';
+import { OG_IMAGES } from '@/lib/site';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
@@ -98,7 +99,8 @@ export async function generateMetadata({
     title: `${post.title} | VirtualAddressHub Blog`,
     description,
     alternates: { canonical: `/blog/${slug}` },
-    openGraph: { title: post.title, description, url: `/blog/${slug}`, type: 'article' },
+    openGraph: {
+    images: post.cover ? [{ url: post.cover, alt: post.title }] : OG_IMAGES, title: post.title, description, url: `/blog/${slug}`, type: 'article' },
   };
 }
 

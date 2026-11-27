@@ -7,12 +7,12 @@ export function ServicesOverview() {
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Service',
-    name: 'Central London virtual office and mail management subscription',
+    name: 'London SE1 virtual office and mail management subscription',
     description:
       'Business address services and digital mail management in one subscription, with eligible physical letter forwarding.',
     url: `${SITE_URL}/services`,
     provider: { '@type': 'Organization', name: 'VirtualAddressHub', url: SITE_URL },
-    areaServed: { '@type': 'Place', name: 'Central London' },
+    areaServed: 'GB',
   };
   return (
     <article className={s.page}>
@@ -73,13 +73,12 @@ export function ServicesOverview() {
                 More room to work your way.
               </p>
               <ul>
-                <li>Business, registered office & director’s address use*</li>
+                <li>Business, registered office & director’s address use</li>
                 <li>Digital mail scanning & online management</li>
                 <li>Physical forwarding when you need an original</li>
               </ul>
               <p className={s.small}>
-                *Subject to eligibility and approval. Forwarding conditions and additional charges
-                are explained below.
+                Forwarding prices are explained below.
               </p>
             </div>
           </div>
@@ -100,7 +99,7 @@ export function ServicesOverview() {
               Correspond from London.
             </h2>
             <p className={s.lead}>
-              A Central London business address gives your correspondence a consistent home, without
+              A London SE1 business address by Tower Bridge gives your correspondence a consistent home, without
               renting an office or putting your residential address on new business materials.
             </p>
             <dl className={s.definitions}>
@@ -140,16 +139,15 @@ export function ServicesOverview() {
               <small>BUSINESS CORRESPONDENCE</small>
               <p className={e.company}>Your Company Ltd</p>
               <p>
-                Central London
+                Tower Bridge
                 <br />
-                United Kingdom
+                London SE1
               </p>
               <hr />
               <p>One address for the way your business works.</p>
             </div>
             <p>
-              Example stationery. Full address details are released after payment, required checks
-              and approval.
+              Example stationery.
             </p>
           </figure>
         </div>
@@ -315,9 +313,6 @@ export function ServicesOverview() {
               Ask us a question
             </Link>
           </div>
-          <p className={s.small}>
-            Full address details are released after required checks and approval.
-          </p>
         </div>
       </section>
     </article>

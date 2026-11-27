@@ -1,5 +1,4 @@
 'use client';
-import { LondonShowcase } from './marketing/LondonShowcase';
 import Link from 'next/link';
 import { usePricing } from '@/hooks/usePlans';
 import { homepageHelp } from '@/lib/marketing';
@@ -20,8 +19,9 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
               <br />A London business address to match.
             </h1>
             <p className={s.lead}>
-              Your virtual office in London, with registered office, director’s service address and
-              digital mail management in one straightforward subscription.
+              A virtual office by Tower Bridge, London SE1. Use it as your registered office,
+              director’s service address and business address, with your post scanned the same
+              working day it arrives.
             </p>
             <div className={s.actions}>
               <Link className={s.button} href="/signup">
@@ -32,24 +32,22 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
               </Link>
             </div>
             <p className={s.note}>
-              {monthlyPrice !== null
-                ? `Monthly subscription ${money(monthlyPrice)}. `
-                : 'See current availability on our plans page. '}
-              Address use begins after verification and approval.
+              {monthlyPrice !== null ? `From ${money(monthlyPrice)} a month. ` : ''}Director’s service
+              address included. No letter limits.
             </p>
           </div>
           <div>
             <LondonIllustration />
-            <p className={s.caption}>A little London presence. A lot of freedom. · Illustration</p>
+            <p className={s.caption}>A little London presence. A lot of freedom.</p>
           </div>
         </div>
       </section>
       <div className={s.band}>
         <div className={s.wrap}>
-          <span>Central London business address</span>
+          <span>Tower Bridge, London SE1</span>
           <span>Registered office & director’s address</span>
-          <span>Digital mail scanning</span>
-          <span>Secure online account</span>
+          <span>Same-day mail scanning</span>
+          <span>{monthlyPrice !== null ? `From ${money(monthlyPrice)} a month` : 'Monthly or annual plans'}</span>
         </div>
       </div>
       <section className={s.section}>
@@ -68,9 +66,10 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
               company a correspondence address while we handle the post that arrives there.
             </p>
             <p>
-              Keep business letters separate from home life. Read available scans online and request
-              eligible originals when you need them. No desks, meeting rooms or unnecessary extras
-              to pay for.
+              Your home address stays off the public register and off your invoices. Letters are
+              opened and scanned the same working day they arrive, so you can read them online
+              wherever you are, and ask for any original you need. No desks, meeting rooms or extras
+              you don’t use.
             </p>
             <Link href="/services" className={s.textlink}>
               What is a virtual office? →
@@ -89,20 +88,20 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
           {[
             {
               title: 'Your London business presence',
-              intro: 'One address for the way your business works.',
-              body: 'Business correspondence, registered office and director’s service address use for eligible customers—all part of the subscription.',
+              intro: 'One SE1 address for every official use.',
+              body: 'Use it for Companies House as your registered office and your director’s service address, and on your website, invoices and letters. All in one subscription, with no add-on fees.',
               href: '/services#london-presence',
             },
             {
               title: 'Your business mail, wherever you are',
-              intro: 'Read available correspondence online.',
-              body: 'Digital mail scanning and secure online management bring your letters to your screen, wherever you work.',
+              intro: 'Scanned the same working day.',
+              body: 'Each letter is opened and scanned the day it arrives. You get an email, then read or download the PDF in your secure dashboard.',
               href: '/services#digital-mail',
             },
             {
               title: 'When you need the original',
-              intro: 'Request eligible physical letters.',
-              body: 'UK forwarding of HMRC and Companies House letters is included under the current terms. Other forwarding has separate charges and conditions.',
+              intro: 'We post originals on.',
+              body: 'HMRC and Companies House letters are forwarded free within the UK. Other UK letters are £2 each, and international forwarding is quoted when you ask.',
               href: '/services#forwarding',
             },
           ].map((v, i) => (
@@ -137,10 +136,10 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
               <br />
               to your screen.
             </h2>
-            <p className={s.lead}>Your business correspondence shouldn’t tie you to one place.</p>
+            <p className={s.lead}>Your post shouldn’t tie you to one place.</p>
             <p>
-              View and download available scans in your secure dashboard. Keep track of incoming
-              letters, then request physical forwarding when the original matters.
+              We open, scan and upload your letters the same working day they arrive. Search them,
+              download them, and ask us to post an original on when you need it.
             </p>
             <div className={s.actions}>
               <Link className={s.textlink} href="/services#digital-mail">
@@ -150,13 +149,32 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
                 Forwarding & charges →
               </Link>
             </div>
-            <p className={s.note}>
-              Letters only. Forwarding charges, retention and account-access conditions apply.
-            </p>
+            <p className={s.note}>We handle letters, not parcels.</p>
           </div>
         </div>
       </section>
-      <LondonShowcase />
+      <section className={`${s.section} ${s.sage}`} id="why">
+        <div className={s.wrap}>
+          <p className={s.kicker}>Why VirtualAddressHub</p>
+          <h2>
+            The essentials, done properly.
+            <br />
+            For less than most of London.
+          </h2>
+          {[
+            ['A recognised London postcode', 'An address by Tower Bridge in SE1, a short walk from the City, for your company’s public record and your marketing.'],
+            ['Same-day scanning', 'Letters are scanned the working day they arrive, so nothing official sits unread.'],
+            ['One price, everything included', 'Registered office, director’s service address and mail scanning in one plan, with no letter limits. Many London providers charge £20 to £30 a month and add fees for a director’s address.'],
+            ['Every customer checked', 'We verify everyone who uses the address, as anti-money-laundering rules require. That keeps the address respectable for every business on it.'],
+          ].map(([h, p], i) => (
+            <div className={s.row} key={h}>
+              <span className={s.number}>0{i + 1}</span>
+              <div><h3>{h}</h3></div>
+              <div><p>{p}</p></div>
+            </div>
+          ))}
+        </div>
+      </section>
       <section className={s.section} id="how">
         <div className={s.wrap}>
           <p className={s.kicker}>Start with confidence</p>
@@ -177,7 +195,7 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
               ],
               [
                 'Get approved & get going',
-                'Wait for approval before using the address. Then manage available business mail online.',
+                'Once we approve your account you get the full address and can start using it. Your post appears online from then on.',
               ],
             ].map(([h, p], i) => (
               <div className={s.step} key={h}>
@@ -192,52 +210,27 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
           </Link>
         </div>
       </section>
-      <section className={`${s.section} ${s.sage}`} id="pricing">
-        <div className={s.wrap}>
-          <p className={s.kicker}>Simple subscription. Clear choices.</p>
-          <h2>
-            One address package.
-            <br />
-            Choose your billing rhythm.
-          </h2>
-          <p>
-            Address services and digital mail management together. Physical forwarding has separate
-            charges and conditions.
-          </p>
-          <div className={s.pricing}>
-            {[
-              ['Monthly', monthlyPrice, 'month'],
-              ['Annual', annualPrice, 'year'],
-            ].map(([name, value, period]) => (
-              <div className={s.plan} key={String(name)}>
-                <h3>{name} subscription</h3>
-                <div className={s.price}>
-                  {typeof value === 'number' ? (
-                    <>
-                      {money(value)} <small>/ {period}</small>
-                    </>
-                  ) : (
-                    <small>Current price unavailable</small>
-                  )}
-                </div>
-                <p>
-                  {name === 'Annual' &&
-                  monthlyPrice !== null &&
-                  annualPrice !== null &&
-                  monthlyPrice * 12 > annualPrice
-                    ? `Save ${money(monthlyPrice * 12 - annualPrice)} compared with 12 monthly payments.`
-                    : 'Choose the billing interval that suits your business.'}
-                </p>
-                <Link className={s.button} href="/pricing">
-                  View plan details →
-                </Link>
-              </div>
-            ))}
+      <section className={s.section} id="pricing">
+        <div className={`${s.wrap} ${s.split}`}>
+          <div>
+            <p className={s.kicker}>Simple pricing</p>
+            <h2>
+              {monthlyPrice !== null ? `${money(monthlyPrice)} a month.` : 'Pay monthly.'}
+              <br />
+              {annualPrice !== null ? `Or ${money(annualPrice)} a year.` : 'Or save by paying yearly.'}
+            </h2>
           </div>
-          <p className={s.note}>
-            Review forwarding, renewal and cancellation conditions before subscribing.{' '}
-            <Link href="/terms">Read the terms</Link>.
-          </p>
+          <div>
+            <p className={s.lead}>
+              The same complete service either way. Paying yearly
+              {monthlyPrice !== null && annualPrice !== null && monthlyPrice * 12 > annualPrice
+                ? ` saves ${money(monthlyPrice * 12 - annualPrice)}.`
+                : ' costs less.'}
+            </p>
+            <Link className={s.textlink} href="/pricing">
+              See what’s included and forwarding prices →
+            </Link>
+          </div>
         </div>
       </section>
       <section className={s.section}>
@@ -256,8 +249,8 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
               business correspondence organised without renting an office.
             </p>
             <p>
-              Eligibility depends on your business and required verification. If you are unsure
-              whether the service fits, talk to us before subscribing.
+              Sole traders, limited companies, LLPs, overseas founders and companies still being
+              formed can all use the service. Not sure it fits? Ask us before you subscribe.
             </p>
             <Link href="/contact" className={s.textlink}>
               Ask us about your business →
@@ -294,24 +287,23 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
       <section className={`${s.section} ${s.ink}`}>
         <div className={`${s.wrap} ${s.split}`}>
           <div>
-            <p className={s.kicker}>Make your next move</p>
+            <p className={s.kicker}>Ready when you are</p>
             <h2>
-              Your business.
+              Apply online today.
               <br />
-              Your London address.
+              We’ll take it from there.
             </h2>
           </div>
           <div>
             <p>
-              One subscription for the address services you need and a simpler way to manage
-              business post.
+              Choose a plan, verify your identity and tell us about your business. We review every
+              application and email you as soon as your address is ready to use.
             </p>
             <div className={s.actions}>
               <Link className={s.button} href="/signup">
                 Get your London address ↗
               </Link>
             </div>
-            <p className={s.note}>Subject to payment, required checks and approval.</p>
           </div>
         </div>
       </section>

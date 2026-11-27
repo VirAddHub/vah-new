@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { OG_IMAGES } from '@/lib/site';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { helpArticles, helpCategories } from '@/lib/help-content';
@@ -21,7 +22,8 @@ export async function generateMetadata({
     title: `${a.title} | VirtualAddressHub Help`,
     description: a.summary,
     alternates: { canonical: `/help/${slug}` },
-    openGraph: { title: a.title, description: a.summary, url: `/help/${slug}`, type: 'article' },
+    openGraph: {
+    images: OG_IMAGES, title: a.title, description: a.summary, url: `/help/${slug}`, type: 'article' },
   };
 }
 export default async function HelpArticlePage({ params }: { params: Promise<{ slug: string }> }) {

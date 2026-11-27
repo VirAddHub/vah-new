@@ -456,3 +456,38 @@
     font-size: 23px;
   }
 }
+
+.compareWrap {
+  overflow-x: auto;
+  margin-top: 28px;
+}
+.compare {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.compare th,
+.compare td {
+  text-align: left;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line, #d9e2d6);
+  vertical-align: top;
+}
+.compare thead th {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #43564a;
+  font-weight: 500;
+}
+.compare tbody th {
+  font-weight: 500;
+  color: #123d30;
+  width: 34%;
+}
+.compare td:nth-child(2) {
+  background: #e6eee3;
+  color: #123d30;
+  font-weight: 500;
+}

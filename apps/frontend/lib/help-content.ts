@@ -62,7 +62,7 @@ export const helpArticles: HelpArticle[] = [
     category: 'getting-started',
     title: 'What is a virtual office?',
     summary:
-      'A business address and mail-handling service for people who work elsewhere. It gives your business a Central London presence without renting an office.',
+      'A business address and mail-handling service for people who work elsewhere. It gives your business a London SE1 presence without renting an office.',
     paragraphs: [
       'The subscription does not provide desks, meeting rooms, telephone answering or a walk-in location for your customers. Do not describe the address as premises where your business physically operates.',
     ],
@@ -148,7 +148,7 @@ export const helpArticles: HelpArticle[] = [
     category: 'business-address',
     title: 'Can I register my company using your address?',
     summary:
-      'Eligible companies can use the Central London address as their registered office once their account is approved. Check that it is suitable for your company’s jurisdiction before subscribing.',
+      'Eligible companies can use the London SE1 address as their registered office once their account is approved. Check that it is suitable for your company’s jurisdiction before subscribing.',
     paragraphs: [
       'A registered office is the official address for company correspondence. A director’s service address is for correspondence to the director; it does not replace their residential details where those are separately required.',
       'You are responsible for making and maintaining company filings. Subscription approval does not automatically update Companies House.',
@@ -239,7 +239,7 @@ export const helpArticles: HelpArticle[] = [
     summary:
       'Eligible business letters are received, scanned and made available in your customer dashboard. You can view and download available correspondence online.',
     paragraphs: [
-      'Some correspondence may have restrictions. A letter cannot be viewed until its scan is available and your account has the required access. No guaranteed upload or delivery time is stated here.',
+      'Some correspondence may have restrictions. A letter cannot be viewed until its scan is available and your account has the required access. Letters are scanned the same working day they arrive.',
     ],
     steps: [],
     links: [

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { OG_IMAGES } from '@/lib/site';
 import { HelpPage } from '@/components/HelpPage';
 const title = 'Help Centre | VirtualAddressHub';
 const description =
@@ -7,7 +8,8 @@ export const metadata: Metadata = {
   title,
   description,
   alternates: { canonical: '/help' },
-  openGraph: { title, description, url: '/help', type: 'website' },
+  openGraph: {
+    images: OG_IMAGES, title, description, url: '/help', type: 'website' },
 };
 export default function Help() {
   return <HelpPage />;

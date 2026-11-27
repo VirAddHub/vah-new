@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { contactFaq } from "@/lib/marketing";
+
+// Shown only when a real WhatsApp number is configured (digits, with country code).
+const WHATSAPP = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "").replace(/\D/g, "");
 import { isEmail, validateRequired } from "@/lib/validators";
 import { useAsync } from "@/hooks/useAsync";
 
@@ -400,8 +404,8 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                             </a>
                         </div>
 
-                        {/* WhatsApp */}
-                        <div style={{
+                        {/* WhatsApp: only with a real number */}
+                        {WHATSAPP && <div style={{
                             background: T.paperLight, padding: 28,
                             border: `1px solid ${T.rule}`,
                         }}>
@@ -415,7 +419,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 Dedicated business line
                             </div>
                             <a
-                                href="https://wa.me/447000000000"
+                                href={`https://wa.me/${WHATSAPP}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{
@@ -427,7 +431,7 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                             >
                                 Chat on WhatsApp →
                             </a>
-                        </div>
+                        </div>}
 
                         {/* Service address — green card, no real address before signup */}
                         <div style={{ background: T.green, color: T.paper, padding: 28 }}>
@@ -438,25 +442,44 @@ export default function ContactPage({ onNavigate }: ContactPageProps) {
                                 fontFamily: T.font, fontSize: 20, fontWeight: 400,
                                 margin: '10px 0 6px', lineHeight: 1.35,
                             }}>
-                                A trusted<br />
-                                <span style={{ fontStyle: 'normal', fontWeight: 400 }}>Central London</span><br />
-                                business address.
+                                Tower Bridge,<br />
+                                London SE1.
                             </div>
                             <p style={{
                                 fontFamily: T.font, fontSize: 13, fontWeight: 400,
                                 opacity: 0.85, margin: '12px 0 0', lineHeight: 1.6,
                             }}>
-                                The full postal address is shared after signup, payment and successful identity verification.
+                                Our address is by Tower Bridge on the south bank, a short walk from the City. We give each customer the full address once their account is approved, so it is never used without permission.
                             </p>
                             <p style={{
                                 fontFamily: T.font, fontSize: 13, fontWeight: 400,
                                 opacity: 0.7, margin: '14px 0 0', fontStyle: 'normal',
                             }}>
-                                Support hours · Mon–Fri 9am–6pm GMT
+                                Support hours · Monday to Friday, 9am to 6pm (UK time)
                             </p>
                         </div>
 
                     </div>
+                </div>
+            </section>
+
+            {/* Quick answers: what most people write in about */}
+            <section aria-labelledby="contact-faq" style={{ padding: 'clamp(32px, 5vw, 56px) clamp(20px, 5vw, 56px) clamp(48px, 6vw, 80px)', borderTop: `1px solid ${T.rule}` }}>
+                <div style={{ maxWidth: 1080, margin: '0 auto' }}><div style={{ maxWidth: 760 }}>
+                    <div style={{ fontFamily: T.font, fontSize: 11, color: T.muted, fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Quick answers</div>
+                    <h2 id="contact-faq" style={{ fontFamily: 'var(--font-serif), Georgia, serif', fontWeight: 400, fontSize: 'clamp(26px, 3.4vw, 36px)', color: T.ink, margin: '10px 0 20px', lineHeight: 1.15 }}>
+                        You may not need to wait for a reply.
+                    </h2>
+                    {contactFaq.map(({ q, a }) => (
+                        <details key={q} style={{ borderTop: `1px solid ${T.rule}`, padding: '16px 0' }}>
+                            <summary style={{ cursor: 'pointer', fontSize: 16, color: T.ink, fontWeight: 500 }}>{q}</summary>
+                            <p style={{ margin: '10px 0 0', fontSize: 15, lineHeight: 1.7, color: T.ink2 }}>{a}</p>
+                        </details>
+                    ))}
+                    <p style={{ marginTop: 20, fontSize: 15 }}>
+                        <Link href="/help" style={{ color: T.ink, fontWeight: 500 }}>Browse the Help Centre →</Link>
+                    </p>
+                </div>
                 </div>
             </section>
         </div>

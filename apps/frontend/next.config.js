@@ -43,6 +43,8 @@ const nextConfig = {
   async redirects() {
     return [
       { source: '/guides', destination: '/blog', permanent: true },
+      { source: '/compliance-check', destination: '/help', permanent: true },
+      { source: '/plans', destination: '/pricing', permanent: true },
       { source: '/london-address', destination: '/services#london-presence', permanent: true },
       { source: '/virtual-office-london', destination: '/services', permanent: true },
       {

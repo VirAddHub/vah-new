@@ -7,3 +7,7 @@ export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://virtualadd
  * the staging deployment "production".
  */
 export const ALLOW_INDEXING = process.env.NEXT_PUBLIC_ALLOW_INDEXING === 'true';
+
+/** The branded share card (app/opengraph-image.tsx). Pages that set their own openGraph must list it,
+ * because a page's openGraph replaces the site default as a whole, image included. */
+export const OG_IMAGES = [{ url: '/social-card', width: 1200, height: 630, alt: 'VirtualAddressHub: a London SE1 business address with same-day mail scanning' }];

@@ -186,9 +186,9 @@ export function HowItWorks() {
               <p className={m.kicker}>YOUR BUSINESS, IN LONDON</p>
               <p className={s.company}>Your Company Ltd</p>
               <p>
-                Central London
+                Tower Bridge
                 <br />
-                United Kingdom
+                London SE1
               </p>
               <div className={s.addressRule} />
               <small>Full address provided after account approval.</small>
@@ -243,9 +243,7 @@ export function HowItWorks() {
               <span>View scan ↗</span>
               <span>Download PDF ↓</span>
             </div>
-            <p className={s.caption}>
-              Illustration of viewing and downloading a scan. Controls are not interactive.
-            </p>
+            <p className="sr-only">An example of viewing and downloading a scan. The buttons are a picture, not controls.</p>
           </figure>
         </div>
       </section>

@@ -9,7 +9,7 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
     <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-4xl px-6 py-12 space-y-6">
         <h1 className="text-h1 tracking-tight text-primary">Privacy Policy</h1>
-        <p className="text-body-sm text-muted-foreground italic">Last updated: [INSERT DATE]</p>
+        <p className="text-body-sm text-muted-foreground italic">Last updated: 27 November 2026</p>
 
           <p className="text-muted-foreground">
           At VirtualAddressHub, your privacy matters. We only collect the information required to provide your service securely, legally, and efficiently. This policy explains how we handle your data under the UK GDPR, the Data Protection Act 2018, and HMRC Anti-Money Laundering (AML) regulations.

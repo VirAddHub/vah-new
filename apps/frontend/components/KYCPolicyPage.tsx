@@ -9,7 +9,7 @@ export function KYCPolicyPage({ onNavigate }: KYCPolicyPageProps) {
     <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-4xl px-6 py-12 space-y-6 text-muted-foreground">
         <h1 className="text-h1 tracking-tight text-primary">KYC Verification Policy</h1>
-        <p className="text-body-sm italic">Last updated: [INSERT DATE]</p>
+        <p className="text-body-sm italic">Last updated: 27 November 2026</p>
         <p>
           VirtualAddressHub is required by UK law to verify the identity of customers before providing any address, mail-handling, or Registered Office services. This policy explains who must verify, how the process works, and what documents are accepted.
         </p>

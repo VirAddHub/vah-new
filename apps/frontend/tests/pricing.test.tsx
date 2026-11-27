@@ -26,7 +26,7 @@ it('includes real prices in server HTML and does not refetch after mounting', ()
   expect(renderToString(priced())).toContain('£12.34');
   expect(renderToString(priced())).toContain('£120.00');
   render(priced());
-  expect(screen.getByText('£12.34')).toBeInTheDocument();
+  expect(screen.getAllByText('£12.34').length).toBeGreaterThan(0); // plan card and comparison table
   expect(screen.getByText('£120.00')).toBeInTheDocument();
   expect(screen.getByText(/Save £28.08 a year/)).toBeInTheDocument();
   expect(apiClient.get).not.toHaveBeenCalled();

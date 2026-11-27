@@ -50,20 +50,13 @@ export const metadata: Metadata = {
         title: 'VirtualAddressHub - Professional London Business Address',
         description: 'Get a professional London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services.',
         siteName: 'VirtualAddressHub',
-        images: [
-            {
-                url: '/images/og-image.jpg',
-                width: 1200,
-                height: 630,
-                alt: 'VirtualAddressHub - Professional London Business Address',
-            },
-        ],
+        images: [{ url: '/social-card', width: 1200, height: 630, alt: 'VirtualAddressHub: a London SE1 business address with same-day mail scanning' }],
     },
     twitter: {
         card: 'summary_large_image',
         title: 'VirtualAddressHub - Professional London Business Address',
         description: 'Get a professional London business address for your company registration. Secure digital mail scanning, forwarding, and virtual office services.',
-        images: ['/images/og-image.jpg'],
+        images: ['/social-card'],
         creator: '@VirtualAddressHub',
     },
     verification: {
@@ -102,31 +95,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                             "alternateName": "VAH",
                             "url": "https://virtualaddresshub.co.uk",
                             "logo": "https://virtualaddresshub.co.uk/images/logo-green.svg",
-                            "description": "Professional London business address service with secure digital mail forwarding and virtual office solutions.",
+                            "description": "London SE1 business address by Tower Bridge, with same-day mail scanning, registered office and director's service address in one plan.",
                             "foundingDate": "2024",
+                            "address": { "@type": "PostalAddress", "addressLocality": "London", "postalCode": "SE1", "addressCountry": "GB" },
+                            "areaServed": "GB",
                             "contactPoint": {
                                 "@type": "ContactPoint",
                                 "email": "support@virtualaddresshub.co.uk",
                                 "contactType": "customer service",
                                 "areaServed": "GB",
-                                "availableLanguage": "English"
+                                "availableLanguage": "English",
+                                "hoursAvailable": { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "opens": "09:00", "closes": "18:00" }
                             },
-                            "service": [
-                                {
-                                    "@type": "Service",
-                                    "name": "Virtual Business Address",
-                                    "description": "Professional London business address for company registration and mail handling"
-                                },
-                                {
-                                    "@type": "Service",
-                                    "name": "Mail Forwarding",
-                                    "description": "Secure digital mail scanning and forwarding service"
-                                },
-                                {
-                                    "@type": "Service",
-                                    "name": "Virtual Office",
-                                    "description": "Complete virtual office solution with business address and mail services"
-                                }
+                            "makesOffer": [
+                                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Virtual office and business address, London SE1" } },
+                                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Registered office address" } },
+                                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Director's service address" } },
+                                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Same-day mail scanning and forwarding" } }
                             ]
                         })
                     }}

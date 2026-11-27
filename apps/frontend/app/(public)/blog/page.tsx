@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { OG_IMAGES } from '@/lib/site';
 import { BlogPageClient } from './BlogPageClient';
 
 export const metadata: Metadata = {
@@ -6,7 +7,8 @@ export const metadata: Metadata = {
   description:
     'Articles for UK business owners on business addresses, Companies House and handling official mail.',
   alternates: { canonical: '/blog' },
-  openGraph: { title: 'Blog | VirtualAddressHub', url: '/blog' },
+  openGraph: {
+    images: OG_IMAGES, title: 'Blog | VirtualAddressHub', url: '/blog' },
 };
 
 /**

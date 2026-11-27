@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { OG_IMAGES } from '@/lib/site';
 import { ServicePage } from '@/components/marketing/ServicePage';
 const title = 'Registered Office Address London: Company Requirements' + ' | VirtualAddressHub';
 const description =
@@ -7,7 +8,8 @@ export const metadata: Metadata = {
   title,
   description,
   alternates: { canonical: '/registered-office-address' },
-  openGraph: { title, description, url: '/registered-office-address', type: 'website' },
+  openGraph: {
+    images: OG_IMAGES, title, description, url: '/registered-office-address', type: 'website' },
 };
 export default function Page() {
   return <ServicePage slug="registered-office-address" />;

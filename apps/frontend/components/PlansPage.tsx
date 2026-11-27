@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { pricingFaq } from '@/lib/marketing';
 import { usePricing } from '@/hooks/usePlans';
 import m from './marketing/Marketing.module.css';
 import s from './marketing/PurchaseJourney.module.css';
@@ -18,7 +19,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
     <div className={`${m.site} ${s.page}`}>
       <section className={s.pricingHero}>
         <div className={m.wrap}>
-          <p className={m.kicker}>YOUR BUSINESS, BASED IN LONDON</p>
+          <p className={m.kicker}>PRICING · TOWER BRIDGE, LONDON SE1</p>
           <h1>
             One London address.
             <br />
@@ -26,9 +27,8 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
           </h1>
           <div className={s.introLine}>
             <p className={m.lead}>
-              A professional business presence. Your letters, online.
-              <br />
-              Choose how you pay. The core service stays the same.
+              Your registered office, director’s service address and same-day mail scanning, in one
+              plan with no letter limits. Choose how you pay; the service is the same.
             </p>
             <Link className={m.textlink} href="#included">
               See everything included ↓
@@ -68,7 +68,7 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                 Choose monthly <span aria-hidden>↗</span>
               </button>
               <p className={s.fine}>
-                Recurring monthly subscription. Cancellation conditions apply.
+                Renews monthly. Cancel any time with 30 days’ notice.
               </p>
             </div>
             <div className={`${s.option} ${s.annual}`}>
@@ -104,15 +104,14 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
                 {savings > 0 ? (
                   <>Save {money(savings)} a year compared with 12 monthly payments.</>
                 ) : (
-                  'Same core service, paid annually. Cancellation conditions apply.'
+                  'Same service, paid yearly.'
                 )}
               </p>
             </div>
           </div>
           <p className={s.purchaseNote}>
-            Both options renew on their billing schedule. Review the{' '}
-            <Link href="/terms">renewal and cancellation terms</Link> before subscribing. Address
-            use starts after successful payment, required verification and account approval.
+            You can start using the address once you have paid, verified your identity and we have
+            approved your account. <Link href="/terms">Full terms</Link>.
           </p>
         </div>
       </section>
@@ -126,8 +125,8 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
               And the post that comes with it.
             </h2>
             <p>
-              No separate subscriptions for each address use. Monthly and annual billing include the
-              same core services.
+              Everything you need for an official London address is in the one plan. Nothing is
+              sold as an add-on, and there is no cap on how many letters you receive.
             </p>
             <Link className={m.textlink} href="/services">
               Explore our services →
@@ -135,61 +134,82 @@ export function PlansPage({ onNavigate }: PlansPageProps) {
           </div>
           <dl className={s.featureList}>
             <div>
-              <dt>A Central London business presence</dt>
+              <dt>A London SE1 business address</dt>
               <dd>
-                A professional correspondence address that keeps business post separate from home.
+                By Tower Bridge, for your website, invoices and letters. Your home address stays
+                private.
               </dd>
             </div>
             <div>
               <dt>Registered office & director’s service address</dt>
-              <dd>Address use for eligible companies and directors, following approval.</dd>
+              <dd>
+                For Companies House: your company’s registered office (England and Wales) and each
+                director’s service address. No extra fee.
+              </dd>
             </div>
             <div>
-              <dt>Digital mail scanning</dt>
-              <dd>Read available correspondence online, wherever you work.</dd>
+              <dt>Same-day mail scanning</dt>
+              <dd>Every letter opened and scanned the working day it arrives, with an email to tell you.</dd>
             </div>
             <div>
               <dt>Your secure customer dashboard</dt>
-              <dd>View and download available scans and manage your business post in one place.</dd>
+              <dd>Read, search and download your scans, and ask for originals, from one place.</dd>
+            </div>
+            <div>
+              <dt>Forwarding of originals</dt>
+              <dd>
+                HMRC and Companies House letters forwarded free within the UK. Other UK letters £2
+                each. International forwarding quoted on request. Originals are kept for 30 days.
+              </dd>
             </div>
           </dl>
         </div>
       </section>
-      <section className={s.decision}>
+      <section className={m.section} aria-labelledby="compare">
+        <div className={m.wrap}>
+          <p className={m.kicker}>HOW WE COMPARE</p>
+          <h2 id="compare">
+            Less than most London providers.
+            <br />
+            With more included.
+          </h2>
+          <div className={s.compareWrap}>
+            <table className={s.compare}>
+              <caption className="sr-only">What a London virtual office typically includes, compared with VirtualAddressHub</caption>
+              <thead>
+                <tr><th scope="col"></th><th scope="col">VirtualAddressHub</th><th scope="col">Typical London provider</th></tr>
+              </thead>
+              <tbody>
+                <tr><th scope="row">Monthly price</th><td>{monthlyPrice !== null ? money(monthlyPrice) : '—'}</td><td>£20 to £30, often plus VAT</td></tr>
+                <tr><th scope="row">Director’s service address</th><td>Included</td><td>Often an extra monthly fee</td></tr>
+                <tr><th scope="row">Mail scanning</th><td>Same working day</td><td>Within one working day, or an add-on</td></tr>
+                <tr><th scope="row">Letter limit</th><td>None</td><td>Some plans cap letters each month</td></tr>
+                <tr><th scope="row">HMRC and Companies House forwarding</th><td>Free in the UK</td><td>Postage plus a handling fee</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p className={s.fine}>Typical prices from published London virtual office plans, November 2026.</p>
+        </div>
+      </section>
+      <section className={s.decision} aria-labelledby="pricing-faq">
         <div className={`${m.wrap} ${s.featureLayout}`}>
           <div>
-            <p className={m.kicker}>BEFORE YOU SUBSCRIBE</p>
-            <h2>A clear next step.</h2>
-            <p>See what happens from choosing a plan to opening your first available scan.</p>
+            <p className={m.kicker}>QUESTIONS</p>
+            <h2 id="pricing-faq">Before you subscribe.</h2>
+            <p>
+              Still unsure? <Link href="/contact">Ask us</Link>: we reply the same working day.
+            </p>
             <Link className={m.textlink} href="/how-it-works">
               How it works →
             </Link>
           </div>
           <div className={s.questions}>
-            <details>
-              <summary>When can I use my address?</summary>
-              <p>
-                After successful payment, required identity and business checks, and account
-                approval. Full address details are provided in your account.
-              </p>
-            </details>
-            <details>
-              <summary>Can I receive original letters?</summary>
-              <p>
-                Optional physical forwarding is available, subject to eligibility, retention
-                conditions and applicable charges.{' '}
-                <Link href="/services#forwarding">Review forwarding conditions and charges</Link>{' '}
-                before subscribing.
-              </p>
-            </details>
-            <details>
-              <summary>What should I check before subscribing?</summary>
-              <p>
-                Confirm the address is suitable for your business and company jurisdiction. Read the{' '}
-                <Link href="/terms">service, renewal and cancellation terms</Link>, or{' '}
-                <Link href="/contact">ask us about eligibility</Link>.
-              </p>
-            </details>
+            {pricingFaq.map(({ q, a }) => (
+              <details key={q}>
+                <summary>{q}</summary>
+                <p>{a}</p>
+              </details>
+            ))}
           </div>
         </div>
       </section>

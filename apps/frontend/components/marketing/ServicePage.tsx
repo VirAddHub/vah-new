@@ -102,9 +102,9 @@ export function ServicePage({ slug }: { slug: string }) {
                 <p>
                   Registered office
                   <br />
-                  Central London
+                  Tower Bridge
                   <br />
-                  United Kingdom
+                  London SE1
                 </p>
                 <hr />
                 <small>Example only. Complete address provided after approval.</small>
@@ -132,9 +132,6 @@ export function ServicePage({ slug }: { slug: string }) {
               </div>
             </div>
           )}
-          <p className={s.note}>
-            Address use is subject to eligibility, payment, required verification and approval.
-          </p>
           <Link
             className={s.textlink}
             href={isRegistered ? '/directors-service-address' : '/registered-office-address'}

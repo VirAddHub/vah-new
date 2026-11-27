@@ -50,7 +50,7 @@ export function Footer({ onNavigate }: { onNavigate?: (page: string) => void }) 
         </div>
         <div>
           <h2 className="font-semibold mb-5">Get in touch</h2>
-          <address className="text-sm leading-7 not-italic">Central London, United Kingdom</address>
+          <address className="text-sm leading-7 not-italic">Tower Bridge, London SE1</address>
           <p className="mt-4 text-sm">
             <a href="mailto:support@virtualaddresshub.co.uk">support@virtualaddresshub.co.uk</a>
           </p>

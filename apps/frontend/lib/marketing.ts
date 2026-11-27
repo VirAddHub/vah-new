@@ -75,3 +75,31 @@ export const services = [
 ] as const;
 // Homepage answers are projections of the central Help Centre content.
 export { homepageHelp } from './help-content';
+
+/** Questions people most often write in about, answered on the Contact page (also marked up for Google). */
+export const contactFaq = [
+  { q: 'How quickly will you reply?', a: 'Every message is answered the same working day, Monday to Friday, 9am to 6pm UK time. Messages sent later are answered the next working day.' },
+  { q: 'Where is the address?', a: 'By Tower Bridge on the south bank, London SE1. You receive the full address once your account is approved.' },
+  { q: 'How fast is post scanned?', a: 'Letters are opened and scanned the same working day they arrive. We email you as soon as a scan is in your dashboard.' },
+  { q: 'Can I use the address as my registered office?', a: 'Yes. Limited companies and LLPs in England and Wales can use it as their registered office, and directors can use it as their service address, once the account is approved.' },
+  { q: 'How do I cancel?', a: 'You can cancel at any time with 30 days’ notice. Download any scans you want to keep before your service ends.' },
+  { q: 'I already have an account. Where is my post?', a: 'Sign in and open Mail. Every scanned letter is there to read or download, and you can ask for originals from the same page.' },
+];
+
+/** Pricing questions, answered on the Pricing page (also marked up for Google). */
+export const pricingFaq = [
+  { q: 'What is included in the price?', a: 'The London SE1 address, its use as your registered office and director’s service address, same-day scanning of every letter, and your online dashboard. There is no limit on the number of letters.' },
+  { q: 'What does forwarding cost?', a: 'HMRC and Companies House letters are forwarded free within the UK. Other UK letters are £2 each. International forwarding is quoted when you ask. Originals are kept for 30 days.' },
+  { q: 'Do you accept parcels?', a: 'No. The service handles letters only, so please use another address for deliveries.' },
+  { q: 'When can I start using the address?', a: 'Once you have paid, verified your identity and we have approved your account. We email you the full address as soon as it is ready to use.' },
+  { q: 'Can I cancel?', a: 'Yes, at any time with 30 days’ notice. Download any scans you want to keep before your service ends.' },
+];
+
+/** FAQPage structured data for a list of questions and answers. */
+export function faqJsonLd(items: { q: string; a: string }[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: items.map(({ q, a }) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+  };
+}
