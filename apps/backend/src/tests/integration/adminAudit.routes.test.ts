@@ -209,8 +209,9 @@ it('customer search finds full names, companies, literal text and exact IDs', as
 describe('customer state regression checks', () => {
   it('completed KYC includes approved and legacy verified in both list and count predicates', async () => {
     const source = readFileSync(new URL('../../server/routes/admin-users.ts', import.meta.url), 'utf8');
+    // One predicate: the total is counted from the same filtered list.
     const predicates = [...source.matchAll(/AND (CASE WHEN u\.kyc_status[^`]+?) = \$\$\{/g)];
-    expect(predicates).toHaveLength(2);
+    expect(predicates).toHaveLength(1);
     for (const match of predicates) {
       const result = await db.query(`SELECT u.id FROM (VALUES (1,'approved'),(2,'verified'),(3,'pending'),(4,NULL),(5,'rejected')) u(id,kyc_status) WHERE ${match[1]} = $1 ORDER BY id`, ['approved']);
       expect(result.rows.map((r: any) => r.id)).toEqual([1,2]);
@@ -257,8 +258,9 @@ it('saves company edits alone and alongside other profile changes through the ad
 });
 it('includes both pending statuses in list/count predicates and statistics', async () => {
   const source = readFileSync(new URL('../../server/routes/admin-users.ts',import.meta.url),'utf8');
+  // One predicate: the total is counted from the same filtered list.
   const predicates=[...source.matchAll(/AND (\(CASE WHEN u\.status[^`]+?) = \$\$\{/g)];
-  expect(predicates).toHaveLength(2);
+  expect(predicates).toHaveLength(1);
   for (const match of predicates) {
     const result=await db.query(`SELECT u.id FROM (VALUES (1,'pending'),(2,'pending_payment'),(3,'active'),(4,'suspended')) u(id,status) WHERE ${match[1]} = $1 ORDER BY id`,['pending']);
     expect(result.rows.map((r:any)=>r.id)).toEqual([1,2]);

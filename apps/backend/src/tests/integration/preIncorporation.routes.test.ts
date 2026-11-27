@@ -6,7 +6,7 @@ import { createTestApp } from '../helpers/createTestApp';
 import { makeUserToken, makeAdminToken } from '../helpers/authHelper';
 import { getPool } from '../../server/db';
 import { setChClientFactory } from '../../server/routes/admin-company-checks';
-import { getAccess } from '../../server/services/access';
+import { getAccess, getAccessBulk } from '../../server/services/access';
 import { lapseOverdue, isCompanyType } from '../../server/services/companyChecks/preIncorporation';
 import { fakeChClient, declaration } from '../helpers/fakeCompaniesHouse';
 
@@ -140,5 +140,29 @@ describe('pre-incorporation', () => {
     it('is for administrators only', async () => {
         expect([401, 403]).toContain((await request(app).get(`/api/admin/company-checks/pre/${preId}`).set('Authorization', token(CUSTOMER))).status);
         expect([401, 403]).toContain((await request(app).post(`/api/admin/company-checks/pre/${preId}/decision`).set('Authorization', token(CUSTOMER)).send({ decision: 'approve' })).status);
+    });
+
+    it('the admin list\'s bulk access decision matches the per-customer one for every account', async () => {
+        const ids = (await getPool().query(`SELECT id FROM "user" ORDER BY id`)).rows.map((r: any) => Number(r.id));
+        const now = Date.now();
+        const bulk = await getAccessBulk(ids, getPool() as any, now);
+        for (const id of ids) expect(bulk.get(id)).toEqual(await getAccess(id, getPool() as any, now));
+    });
+
+    it('the customer list groups accounts by what happens next, with counts', async () => {
+        const r = await request(app).get('/api/admin/users?pageSize=500').set('Authorization', admin);
+        expect(r.status).toBe(200);
+        const { items, counts } = r.body;
+        expect(counts.all).toBe(items.length);
+        expect(counts.needs_you + counts.waiting + counts.active + counts.restricted).toBeLessThanOrEqual(counts.all);
+        const late = items.find((u: any) => Number(u.id) === LATE);
+        // No subscription in tests, so payment is the first thing outstanding.
+        expect(late).toMatchObject({ service_label: 'Awaiting payment', stage: 'waiting' });
+        expect(late.next_step).toMatch(/pay/);
+        const only = await request(app).get('/api/admin/users?stage=waiting&pageSize=500').set('Authorization', admin);
+        expect(only.body.items.every((u: any) => u.stage === 'waiting')).toBe(true);
+        expect(only.body.total).toBe(counts.waiting);
+        const stats = await request(app).get('/api/admin/users/stats').set('Authorization', admin);
+        expect(stats.body.data.total).toBeGreaterThanOrEqual(3);
     });
 });

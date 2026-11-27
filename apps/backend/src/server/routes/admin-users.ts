@@ -3,7 +3,7 @@ import { hasSessionVersionColumn } from '../../lib/sessionVersion';
 // src/server/routes/admin-users.ts
 // Admin user management endpoints
 
-import { getAccess } from '../services/access';
+import { getAccess, getAccessBulk } from '../services/access';
 import { clientKey } from '../lib/clientKey';
 import { clearAccount } from '../services/loginThrottle';
 import { Router, Request, Response } from 'express';
@@ -36,8 +36,32 @@ function serviceLabel(a: Awaited<ReturnType<typeof getAccess>>): string | null {
     if (m.includes('identity_in_review')) return 'Verification in review';
     if (m.includes('identity_required')) return 'Awaiting verification';
     if (m.includes('owners_required')) return 'Owners to verify';
+    if (m.includes('company_number_overdue')) return 'Company number overdue';
+    if (m.includes('pre_incorporation_refused')) return 'Company refused';
+    if (m.includes('company_checks_pending')) return a.company.declarationNeeded ? 'Company details needed' : 'Company review';
     return a.payment.cancelAtPeriodEnd ? 'Active (ends at period end)' : 'Active';
 }
+
+/** Which list a customer belongs in, and what happens next, in plain words. */
+const STAGE: Record<string, { stage: 'needs_you' | 'waiting' | 'active' | 'restricted' | 'staff'; next: string }> = {
+    'Verification in review': { stage: 'needs_you', next: 'Check their identity documents and record the result.' },
+    'Company review': { stage: 'needs_you', next: 'Review their company in Company checks.' },
+    'Awaiting payment': { stage: 'waiting', next: 'Waiting for them to pay at checkout.' },
+    'Awaiting verification': { stage: 'waiting', next: 'Waiting for them to verify their identity.' },
+    'Owners to verify': { stage: 'waiting', next: 'Waiting for their directors or owners to verify.' },
+    'Company details needed': { stage: 'waiting', next: 'Waiting for them to tell us about their company.' },
+    'Company number overdue': { stage: 'waiting', next: 'Their 30 days to register the company have passed.' },
+    'Payment overdue': { stage: 'restricted', next: 'Their payment failed: they need to update their card.' },
+    'Subscription ended': { stage: 'restricted', next: 'Their subscription has ended.' },
+    'Verification failed': { stage: 'restricted', next: 'Their identity could not be verified.' },
+    'Company refused': { stage: 'restricted', next: 'Their proposed company was refused.' },
+    'Suspended': { stage: 'restricted', next: 'Suspended by an administrator.' },
+    'Closed': { stage: 'restricted', next: 'Account closed.' },
+    'Active': { stage: 'active', next: 'Nothing to do.' },
+    'Active (ends at period end)': { stage: 'active', next: 'Cancelled: service ends at the end of the paid period.' },
+    'Administrator': { stage: 'staff', next: 'Administrator account.' },
+};
+const STAGES = ['needs_you', 'waiting', 'active', 'restricted'] as const;
 
 // Admin users rate limiter - very generous for admin dashboard usage
 const adminUsersLimiter = rateLimit({
@@ -190,68 +214,27 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
             paramIndex++;
         }
 
-        query += ` ${whereClause} ORDER BY u.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-        params.push(limitNum, offset);
-
+        // All matching accounts (admin lists are small; capped), so the stage tabs can be counted
+        // and filtered with the same access decision the API enforces, computed in bulk.
+        query += ` ${whereClause} ORDER BY u.created_at DESC LIMIT 5000`;
         const result = await pool.query(query, params);
-
-        // Get total count with same filters
-        let countQuery = 'SELECT COUNT(*) FROM "user" u WHERE u.deleted_at IS NULL';
-        const countParams: any[] = [];
-        let countParamIndex = 1;
-
-        if (search) {
-            const match = adminUserSearch(search, countParamIndex);
-            countQuery += ` AND ${match.clause}`;
-            countParams.push(match.value);
-            countParamIndex++;
-        }
-
-        if (status && status !== '__all__') {
-            countQuery += ` AND (CASE WHEN u.status = 'pending_payment' THEN 'pending' ELSE u.status END) = $${countParamIndex}`;
-            countParams.push(status === 'pending_payment' ? 'pending' : String(status));
-            countParamIndex++;
-        }
-
-        if (plan_id && plan_id !== '__all__') {
-            const planIdNum = parseInt(String(plan_id));
-            if (!isNaN(planIdNum)) {
-                countQuery += ` AND u.plan_id = $${countParamIndex}`;
-                countParams.push(planIdNum);
-                countParamIndex++;
-            }
-        }
-
-        if (kyc_status && kyc_status !== '__all__') {
-            countQuery += ` AND CASE WHEN u.kyc_status = 'verified' THEN 'approved' ELSE COALESCE(NULLIF(u.kyc_status, ''), 'pending') END = $${countParamIndex}`;
-            countParams.push(kyc_status === 'verified' ? 'approved' : String(kyc_status));
-            countParamIndex++;
-        }
-
-        if (activity) {
-            if (activity === 'online') {
-                countQuery += ` AND u.last_active_at > $${countParamIndex}`;
-                countParams.push(onlineThreshold);
-            } else if (activity === 'offline') {
-                countQuery += ` AND (u.last_active_at IS NULL OR u.last_active_at <= $${countParamIndex})`;
-                countParams.push(onlineThreshold);
-            }
-            countParamIndex++;
-        }
-
-        const countResult = await pool.query(countQuery, countParams);
-        const total = parseInt(countResult.rows[0].count);
-
-        // One plain service label per row, from the same access decision the API enforces.
-        const items = await Promise.all(result.rows.map(async (row: any) => {
-            if (row.is_admin) return { ...row, service_label: 'Administrator' };
-            try { return { ...row, service_label: serviceLabel(await getAccess(Number(row.id))) }; }
-            catch { return { ...row, service_label: null }; }
-        }));
+        const decisions = await getAccessBulk(result.rows.filter((r: any) => !r.is_admin).map((r: any) => Number(r.id)), pool).catch(() => new Map());
+        const all = result.rows.map((row: any) => {
+            const label = row.is_admin ? 'Administrator' : decisions.has(Number(row.id)) ? serviceLabel(decisions.get(Number(row.id))!) : null;
+            const st = label ? STAGE[label] : undefined;
+            return { ...row, service_label: label, stage: st?.stage ?? 'waiting', next_step: st?.next ?? null };
+        });
+        const counts: Record<string, number> = { all: all.length };
+        for (const k of STAGES) counts[k] = all.filter((r: any) => r.stage === k).length;
+        const stage = String(req.query.stage ?? '');
+        const filtered = (STAGES as readonly string[]).includes(stage) ? all.filter((r: any) => r.stage === stage) : all;
+        const total = filtered.length;
+        const items = filtered.slice(offset, offset + limitNum);
         return res.json({
             ok: true,
             items,
             total,
+            counts,
             page: pageNum,
             pageSize: limitNum,
             // Legacy pagination object for backwards compatibility
@@ -328,26 +311,15 @@ router.get('/users/stats', requireAdmin, async (req: Request, res: Response) => 
     const pool = getPool();
 
     try {
-        // Get total users
-        const totalResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE deleted_at IS NULL');
-        const total = parseInt(totalResult.rows[0].count);
-
-        // Get active users
-        const activeResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE status = $1 AND deleted_at IS NULL', ['active']);
-        const active = parseInt(activeResult.rows[0].count);
-
-        // Get suspended users
-        const suspendedResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE status = $1 AND deleted_at IS NULL', ['suspended']);
-        const suspended = parseInt(suspendedResult.rows[0].count);
-
-        // Get pending users
-        const pendingResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE status IN ($1, $2) AND deleted_at IS NULL', ['pending', 'pending_payment']);
-        const pending = parseInt(pendingResult.rows[0].count);
-
-        // Get deleted users
-        const deletedResult = await pool.query('SELECT COUNT(*) as count FROM "user" WHERE deleted_at IS NOT NULL');
-        const deleted = parseInt(deletedResult.rows[0].count);
-
+        // One pass over the table instead of five separate counts.
+        const r = (await pool.query(`
+            SELECT COUNT(*) FILTER (WHERE deleted_at IS NULL)::int AS total,
+                   COUNT(*) FILTER (WHERE deleted_at IS NULL AND status = 'active')::int AS active,
+                   COUNT(*) FILTER (WHERE deleted_at IS NULL AND status = 'suspended')::int AS suspended,
+                   COUNT(*) FILTER (WHERE deleted_at IS NULL AND status IN ('pending', 'pending_payment'))::int AS pending,
+                   COUNT(*) FILTER (WHERE deleted_at IS NOT NULL)::int AS deleted
+              FROM "user"`)).rows[0];
+        const { total, active, suspended, pending, deleted } = r;
         return res.json({
             ok: true,
             data: {

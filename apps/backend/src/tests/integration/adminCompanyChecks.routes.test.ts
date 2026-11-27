@@ -5,7 +5,7 @@ import { createTestApp } from '../helpers/createTestApp';
 import { makeUserToken, makeAdminToken } from '../helpers/authHelper';
 import { getPool } from '../../server/db';
 import { setChClientFactory } from '../../server/routes/admin-company-checks';
-import { getAccess } from '../../server/services/access';
+import { getAccess, getAccessBulk } from '../../server/services/access';
 import { runMonitoringOnce } from '../../server/services/companyChecks/monitor';
 import { ensureAllChecks, refreshPending } from '../../server/services/companyChecks/automation';
 import { fakeChClient, fakeCompany, defaultPscs, declaration } from '../helpers/fakeCompaniesHouse';
@@ -217,5 +217,12 @@ describe('company checks', () => {
         const system = (await getPool().query(`SELECT action FROM audit_log WHERE entity = 'company_check' AND entity_id = $1`, [String(checkId)])).rows.map(r => r.action);
         for (const a of ['company_check_link', 'company_check_refresh', 'company_check_discrepancy_detected', 'company_check_declaration_received', 'company_check_alert_raised', 'company_check_reopened']) expect(system).toContain(a);
         expect((await getPool().query(`SELECT 1 FROM admin_audit WHERE action = 'identity_result_recorded' AND target_id = $1`, [CUSTOMER])).rows.length).toBe(1);
+    });
+
+    it('the admin list\'s bulk access decision matches the per-customer one for every account', async () => {
+        const ids = (await getPool().query(`SELECT id FROM "user" ORDER BY id`)).rows.map((r: any) => Number(r.id));
+        const now = Date.now();
+        const bulk = await getAccessBulk(ids, getPool() as any, now);
+        for (const id of ids) expect(bulk.get(id)).toEqual(await getAccess(id, getPool() as any, now));
     });
 });

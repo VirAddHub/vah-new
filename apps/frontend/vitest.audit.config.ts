@@ -14,6 +14,7 @@ export default defineConfig({
       'tests/customer-theme.test.tsx',
       'tests/services-architecture.test.tsx',
       'tests/company-checks.test.tsx',
+      'tests/admin-customers.test.tsx',
     ],
   },
 });

@@ -74,7 +74,7 @@ export function MailImporterStatus({ compact = false }: { compact?: boolean }) {
         revalidateOnFocus: true,
     });
 
-    if (error || !status) {
+    if (error || !status || !status.health) {
         return null;
     }
 

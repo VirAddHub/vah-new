@@ -4,6 +4,7 @@ import { normaliseCompanyNumber, type ChClient } from './chClient';
 import { fetchSnapshot, snapshotHash, type Snapshot } from './snapshot';
 import { buildReportContent, contentHash, renderReportPdf } from './report';
 import { latestDeclaration } from './declaration';
+import { isCompanyType, preStateFrom } from './preIncorporationRules';
 
 export type Queryable = { query: (sql: string, args?: unknown[]) => Promise<{ rows: any[]; rowCount?: number | null }> };
 export const SYSTEM = 0; // admin_id / resolved_by for actions taken by the system
@@ -198,31 +199,69 @@ export async function requiredCompanyNumbers(db: Queryable, userId: number): Pro
     return [...new Set(all)];
 }
 
-export async function companyAccessState(db: Queryable, userId: number) {
-    const numbers = await requiredCompanyNumbers(db, userId);
-    if (!numbers.length) {
+export type CompanyAccessInputs = {
+    numbers: string[]; isCompany: boolean;
+    tables: { check: boolean; decl: boolean; pre: boolean };
+    checks: { company_number: string; status: string }[];
+    /** Latest declaration per company number. */
+    decls: { company_number: string; returned_at: unknown }[];
+    /** Latest pre-incorporation application, if any. */
+    pre: any | null;
+};
+
+/** The company part of the access decision (pure: shared by the single and bulk versions). */
+export function companyStateFrom(i: CompanyAccessInputs, nowMs = Date.now()) {
+    if (!i.numbers.length) {
         // A company customer with no company number yet: the pre-incorporation route applies.
-        const { preIncorporationAccess } = await import('./preIncorporation');
-        const pre = await preIncorporationAccess(db, userId);
-        if (!pre) return { required: 0, satisfactory: 0, investigating: 0, declarationNeeded: false };
+        if (!i.isCompany) return { required: 0, satisfactory: 0, investigating: 0, declarationNeeded: false };
+        const pre = preStateFrom(i.pre, i.tables.pre, nowMs);
         return { required: 1, satisfactory: pre.state === 'approved' ? 1 : 0, investigating: 0,
             declarationNeeded: pre.state === 'needed', preIncorporation: pre.state, deadline: pre.deadline };
     }
     // Fail closed: until the company_check table exists, no company can count as checked.
-    const t = (await db.query(`SELECT to_regclass('public.company_check') IS NOT NULL AS ok, to_regclass('public.company_declaration') IS NOT NULL AS decl`)).rows[0];
-    if (!t?.ok) return { required: numbers.length, satisfactory: 0, investigating: 0, declarationNeeded: false };
-    const r = (await db.query(`SELECT company_number, status FROM company_check WHERE user_id = $1 AND company_number = ANY($2)`, [userId, numbers])).rows;
-    let declarationNeeded = false;
-    if (t.decl) {
-        const d = (await db.query(
-            `SELECT DISTINCT ON (company_number) company_number, returned_at FROM company_declaration WHERE user_id = $1 AND company_number = ANY($2)
-              ORDER BY company_number, submitted_at DESC, id DESC`, [userId, numbers])).rows;
-        declarationNeeded = numbers.some(n => { const x = d.find((y: any) => y.company_number === n); return !x || !!x.returned_at; });
-    }
+    if (!i.tables.check) return { required: i.numbers.length, satisfactory: 0, investigating: 0, declarationNeeded: false };
+    const r = i.checks.filter(c => i.numbers.includes(c.company_number));
+    const declarationNeeded = i.tables.decl
+        && i.numbers.some(n => { const x = i.decls.find(y => y.company_number === n); return !x || !!x.returned_at; });
     return {
-        required: numbers.length,
-        satisfactory: r.filter((x: any) => x.status === 'satisfactory').length,
-        investigating: r.filter((x: any) => x.status === 'further_investigation').length,
+        required: i.numbers.length,
+        satisfactory: r.filter(x => x.status === 'satisfactory').length,
+        investigating: r.filter(x => x.status === 'further_investigation').length,
         declarationNeeded,
     };
+}
+
+async function tablesReady(db: Queryable) {
+    const t = (await db.query(`SELECT to_regclass('public.company_check') IS NOT NULL AS c, to_regclass('public.company_declaration') IS NOT NULL AS d, to_regclass('public.pre_incorporation') IS NOT NULL AS p`)).rows[0];
+    return { check: !!t?.c, decl: !!t?.d, pre: !!t?.p };
+}
+
+export async function companyAccessState(db: Queryable, userId: number) {
+    return (await companyAccessStateBulk(db, [userId])).get(userId)!;
+}
+
+/** The company part of the access decision for many customers in a fixed number of queries. */
+export async function companyAccessStateBulk(db: Queryable, userIds: number[], nowMs = Date.now()) {
+    const out = new Map<number, ReturnType<typeof companyStateFrom>>();
+    if (!userIds.length) return out;
+    const tables = await tablesReady(db);
+    const users = (await db.query(`SELECT id, company_number, companies_house_number, business_type FROM "user" WHERE id = ANY($1)`, [userIds])).rows;
+    const biz = (await db.query(`SELECT user_id, companies_house_number FROM business WHERE user_id = ANY($1) AND COALESCE(status, 'active') = 'active'`, [userIds])).rows;
+    const checks = tables.check ? (await db.query(`SELECT user_id, company_number, status FROM company_check WHERE user_id = ANY($1)`, [userIds])).rows : [];
+    const decls = tables.decl ? (await db.query(
+        `SELECT DISTINCT ON (user_id, company_number) user_id, company_number, returned_at FROM company_declaration WHERE user_id = ANY($1)
+          ORDER BY user_id, company_number, submitted_at DESC, id DESC`, [userIds])).rows : [];
+    const pres = tables.pre ? (await db.query(`SELECT DISTINCT ON (user_id) * FROM pre_incorporation WHERE user_id = ANY($1) ORDER BY user_id, id DESC`, [userIds])).rows : [];
+    for (const id of userIds) {
+        const u = users.find((x: any) => Number(x.id) === id);
+        const numbers = [...new Set([u?.companies_house_number, u?.company_number, ...biz.filter((b: any) => Number(b.user_id) === id).map((b: any) => b.companies_house_number)]
+            .map(normaliseCompanyNumber).filter((x): x is string => !!x))];
+        out.set(id, companyStateFrom({
+            numbers, isCompany: isCompanyType(u?.business_type), tables,
+            checks: checks.filter((c: any) => Number(c.user_id) === id),
+            decls: decls.filter((d: any) => Number(d.user_id) === id),
+            pre: pres.find((p: any) => Number(p.user_id) === id) ?? null,
+        }, nowMs));
+    }
+    return out;
 }

@@ -21,7 +21,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { getPool } from '../db';
 import { logger } from '../../lib/logger';
-import { companyAccessState } from './companyChecks/store';
+import { companyAccessState, companyAccessStateBulk } from './companyChecks/store';
 
 export type AccessLevel = 'none' | 'onboarding' | 'full';
 export type Standing = 'good' | 'suspended' | 'closed';
@@ -134,6 +134,27 @@ export async function getAccess(userId: number, db: Queryable = getPool(), nowMs
     const pendingOwners = Number(o.rows[0]?.n || 0) + (u.rows[0].owners_pending_info === true ? 1 : 0);
     const company = await companyAccessState(db, userId);
     return decide(standingOf(u.rows[0]), paymentOf(s.rows[0], nowMs), verificationOf(u.rows[0].kyc_status, pendingOwners, !!u.rows[0].identity_submitted_at), company);
+}
+
+/**
+ * The same decision as getAccess for many customers at once, in a fixed number of queries
+ * (for admin lists). Uses the same pure rules, so it cannot disagree with getAccess.
+ */
+export async function getAccessBulk(userIds: number[], db: Queryable = getPool(), nowMs: number = Date.now()): Promise<Map<number, AccessDecision>> {
+    const out = new Map<number, AccessDecision>();
+    if (!userIds.length) return out;
+    const users = (await db.query(`SELECT id, status, deleted_at, suspended_at, kyc_status, identity_submitted_at, owners_pending_info FROM "user" WHERE id = ANY($1)`, [userIds])).rows;
+    const subs = (await db.query(`SELECT DISTINCT ON (user_id) user_id, status, stripe_subscription_id, paid_through_ms, cancel_at_period_end FROM subscription WHERE user_id = ANY($1) ORDER BY user_id`, [userIds])).rows;
+    const owners = (await db.query(`SELECT user_id, COUNT(*)::int AS n FROM business_owner WHERE user_id = ANY($1) AND requires_verification = true AND status <> 'verified' GROUP BY user_id`, [userIds])).rows;
+    const company = await companyAccessStateBulk(db, userIds, nowMs);
+    for (const id of userIds) {
+        const u = users.find((x: any) => Number(x.id) === id);
+        if (!u) continue;
+        const pendingOwners = Number(owners.find((o: any) => Number(o.user_id) === id)?.n || 0) + (u.owners_pending_info === true ? 1 : 0);
+        out.set(id, decide(standingOf(u), paymentOf(subs.find((x: any) => Number(x.user_id) === id), nowMs),
+            verificationOf(u.kyc_status, pendingOwners, !!u.identity_submitted_at), company.get(id)));
+    }
+    return out;
 }
 
 /** Number of mail items held for a customer who is not in full service. A count only: no details. */

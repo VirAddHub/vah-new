@@ -12,17 +12,14 @@
  *    that check is satisfactory (mail is held, not released, in the meantime)
  */
 import { z } from 'zod';
+import { isCompanyType, preStateFrom, type PreIncState } from './preIncorporationRules';
+export { isCompanyType, preStateFrom, type PreIncState };
 import { DeclarationSchema } from './declaration';
 import { normaliseCompanyNumber, chClient } from './chClient';
 import { audit, ensureCheck, refreshSnapshot, syncDiscrepancies, SYSTEM, type Queryable } from './store';
 
 export const DEADLINE_DAYS = 30;
 export const ProposedNameSchema = z.string().trim().min(2, 'Enter the proposed company name').max(160);
-
-/** Business types that are companies (and so need a company, or a proposed company, checked). */
-export function isCompanyType(t: unknown): boolean {
-    return /limited|ltd|llp|plc|company/i.test(String(t ?? '')) && !/sole|partnership|other/i.test(String(t ?? ''));
-}
 
 export function parseProposed(body: any): { ok: true; name: string; declaration: any } | { ok: false; issues: { path: string; message: string }[] } {
     const name = ProposedNameSchema.safeParse(body?.proposed_company_name);
@@ -46,21 +43,13 @@ export async function latestPreIncorporation(db: Queryable, userId: number) {
     return (await db.query(`SELECT * FROM pre_incorporation WHERE user_id = $1 ORDER BY id DESC LIMIT 1`, [userId])).rows[0] ?? null;
 }
 
-export type PreIncState = 'needed' | 'in_review' | 'approved' | 'refused' | 'lapsed';
 
 /** What the pre-incorporation route means for access. null = it does not apply to this customer. */
 export async function preIncorporationAccess(db: Queryable, userId: number): Promise<{ state: PreIncState; deadline: string | null } | null> {
     const u = (await db.query(`SELECT business_type FROM "user" WHERE id = $1`, [userId])).rows[0];
     if (!isCompanyType(u?.business_type)) return null;
-    if (!(await tableReady(db))) return { state: 'needed', deadline: null }; // fail closed
-    const p = await latestPreIncorporation(db, userId);
-    if (!p || p.status === 'returned') return { state: 'needed', deadline: null };
-    if (p.status === 'submitted') return { state: 'in_review', deadline: null };
-    if (p.status === 'refused') return { state: 'refused', deadline: null };
-    if (p.status === 'lapsed' || p.status === 'incorporated') return { state: 'lapsed', deadline: p.deadline_at };
-    // approved
-    if (p.deadline_at && new Date(p.deadline_at).getTime() < Date.now()) return { state: 'lapsed', deadline: p.deadline_at };
-    return { state: 'approved', deadline: p.deadline_at };
+    const ok = await tableReady(db);
+    return preStateFrom(ok ? await latestPreIncorporation(db, userId) : null, ok);
 }
 
 /**

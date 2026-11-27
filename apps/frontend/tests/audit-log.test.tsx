@@ -222,101 +222,7 @@ it('defaults to Mail added and explains automated imports without inventing an e
 });
 
 vi.mock('../lib/apiClient', () => ({safe:(v:any,d:any)=>v ?? d,apiClient:{post:vi.fn(async()=>({ok:true})),get:vi.fn(async(url:string)=>url.includes('bff/plans')?{ok:true,data:[{id:37,name:'Business annual',interval:'year',price_pence:12000,active:true},{id:91,name:'Legacy monthly',interval:'month',price_pence:1234,active:true}]}:{ok:false,error:'unavailable'})},adminApi:{updateUser:vi.fn(async()=>({ok:true})),userStats:vi.fn(async()=>({ok:true,data:{total:80,active:80,suspended:0,pending:0,deleted:1}})),deletedUsers:vi.fn(async()=>({ok:true,data:{items:[],total:0}}))}}));
-import UsersSection from '../components/admin/UsersSection';
-import {adminApi} from '../lib/apiClient';
-it('makes customer actions discoverable and shows the backend result count', async () => {
-  render(<UsersSection users={[{id:53,email:'jamie@example.test',first_name:'Jamie',last_name:'Taylor',company_name:'Northstar Studio',status:'active'}]} loading={false} error={null} total={80} page={1} pageSize={25} onPageChange={vi.fn()} isValidating={false} />);
-  expect(screen.getByLabelText('Find a customer')).toBeInTheDocument();
-  expect(screen.getByText('80 matching customers · Page 1')).toBeInTheDocument();
-  expect(screen.getByRole('button',{name:'Edit profile'})).toBeInTheDocument();
-  expect(screen.getAllByRole('button',{name:'Standing…'}).length).toBeGreaterThan(0);
-  expect(screen.getByRole('button',{name:'More actions'})).toBeInTheDocument();
-});
-it('sends deleted-account searches and page limits to the server', async () => {
-  render(<UsersSection users={[]} loading={false} error={null} total={0} page={1} pageSize={25} onPageChange={vi.fn()} isValidating={false} />);
-  fireEvent.click(screen.getByRole('button',{name:'Show Deleted'}));
-  fireEvent.change(screen.getByLabelText('Find a customer'),{target:{value:'Northstar Studio'}});
-  await waitFor(()=>expect(vi.mocked(adminApi.deletedUsers).mock.calls.at(-1)?.[0].get('q')).toBe('Northstar Studio'));
-  expect(vi.mocked(adminApi.deletedUsers).mock.calls.at(-1)?.[0].get('limit')).toBe('25');
-});
-
 vi.mock('../components/ui/use-toast', () => ({useToast:()=>({toast:vi.fn()})}));
-
-it('opens account forms on opaque, scrollable panels rather than transparent surfaces', async () => {
-  render(<UsersSection users={[{id:53,email:'jamie@example.test',first_name:'Jamie',last_name:'Taylor',status:'active'}]} loading={false} error={null} total={1} page={1} pageSize={25} onPageChange={vi.fn()} isValidating={false} />);
-  fireEvent.click(screen.getByRole('button',{name:'Edit profile'}));
-  const panel=screen.getByRole('heading',{name:'Edit profile'}).parentElement!.parentElement!;
-  expect(panel).toHaveClass('bg-white','overflow-y-auto','max-h-[calc(100dvh-2rem)]');
-  expect(screen.getByLabelText('Email')).toHaveValue('jamie@example.test');
-  fireEvent.click(screen.getByRole('button',{name:'Cancel'}));
-});
-
-
-it('refreshes accounts on request and shows the successful London update time', async () => {
-  const refresh = vi.fn(async () => {});
-  const props = {users:[], loading:false, error:null, total:0, page:1, pageSize:25, onPageChange:vi.fn(), isValidating:false, onRefreshUsers:refresh, lastUpdated:Date.parse('2026-07-21T12:00:00Z')};
-  const view = render(<UsersSection {...props} />);
-  expect(screen.getByText(/Last updated:/)).toHaveTextContent('13:00:00 BST');
-  fireEvent.click(screen.getByRole('button', {name:'Refresh'}));
-  await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
-  await waitFor(() => expect(screen.getByRole('button', {name:'Refresh'})).toBeEnabled());
-  view.rerender(<UsersSection {...props} isValidating={true} />);
-  expect(screen.getByRole('button', {name:'Refreshing…'})).toBeDisabled();
-});
-
-
-const accountProps = {users:[{id:53,email:'jamie@example.test',company_name:'Original Ltd',status:'suspended',plan_status:'cancelled'}],loading:false,error:null,total:1,page:1,pageSize:25,onPageChange:vi.fn(),isValidating:false};
-it('offers no manual plan-status control: paid access only ever comes from Stripe', () => {
-  // Staff manage suspension, restoration and closure through "Standing…"; a hand-set plan
-  // status would only change a label while appearing to grant access.
-  render(<UsersSection {...accountProps} />);
-  expect(screen.queryByRole('button', {name:'Account & plan status'})).not.toBeInTheDocument();
-  expect(screen.getAllByRole('button', {name:'Standing…'}).length).toBeGreaterThan(0);
-});
-it('shows deleted account failures instead of claiming no matching customers, and allows retry', async () => {
-  vi.mocked(adminApi.deletedUsers).mockResolvedValueOnce({ok:false,error:'unavailable'} as any);
-  render(<UsersSection {...accountProps} />);
-  fireEvent.click(screen.getByRole('button',{name:'Show Deleted'}));
-  expect(await screen.findByRole('alert')).toHaveTextContent('Could not load deleted accounts');
-  expect(screen.queryByText(/No matching customers/)).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button',{name:'Refresh'}));
-  await waitFor(()=>expect(screen.queryByRole('alert')).not.toBeInTheDocument());
-  expect(await screen.findByText(/No matching customers/)).toBeInTheDocument();
-});
-it('loads plan options with their real IDs', async () => {
-  const onFiltersChange=vi.fn();
-  render(<form><UsersSection {...accountProps} onFiltersChange={onFiltersChange} /></form>);
-  // Radix also renders a native select for form participation.
-  await waitFor(()=>expect(document.querySelector('option[value="37"]')).toHaveTextContent('Annual'));
-  expect(document.querySelector('option[value="91"]')).toHaveTextContent('Monthly');
-  expect(document.querySelector('option[value="1"]')).not.toBeInTheDocument();
-  fireEvent.change(document.querySelector('option[value="37"]')!.parentElement!, {target:{value:'37'}});
-  await waitFor(()=>expect(onFiltersChange).toHaveBeenLastCalledWith(expect.objectContaining({plan_id:'37'})));
-});
-
-
-import {customerAccessNotes} from '../components/admin/customer-access';
-it('summarises each customer without overstating access', () => {
-  const suspended=customerAccessNotes({status:'suspended',plan_status:'active',kyc_status:'verified',service_subscription_status:'active'});
-  expect(suspended.title).toBe('Suspended by admin');
-  expect(suspended.summary).toContain('Payment will not remove');
-  expect(suspended.next).toBe('Restore account access when you are ready.');
-  const unpaidVerified=customerAccessNotes({status:'suspended',plan_status:'pending_payment',kyc_status:'verified',service_subscription_status:null});
-  expect(unpaidVerified.next).toContain('Resolve billing.');
-  expect(unpaidVerified.next).not.toContain('identity');
-  const unverified=customerAccessNotes({status:'suspended',plan_status:'active',kyc_status:'pending',service_subscription_status:'active'});
-  expect(unverified.next).toContain('Complete identity verification.');
-  expect(unverified.next).not.toContain('billing');
-  const pending=customerAccessNotes({status:'pending_payment',plan_status:'pending_payment',kyc_status:'pending',service_subscription_status:null});
-  expect(pending.summary).toContain('Mail access is blocked');
-  expect(pending.next).toContain('complete identity verification');
-  const eligible=customerAccessNotes({status:'active',plan_status:'active',kyc_status:'approved',service_subscription_status:'active'});
-  expect(eligible.title).toBe('Ready to receive mail');
-  expect(eligible.next).toContain('Previously locked scans');
-  expect(customerAccessNotes({status:'active',plan_status:'active',kyc_status:'approved'}).title).toBe('Access needs checking');
-  expect(customerAccessNotes({status:'active',plan_status:'active',kyc_status:'rejected',service_subscription_status:'active'}).summary).toContain('rejected');
-});
-
 
 vi.mock('../lib/useAuthedSWR', () => ({useAuthedSWR:vi.fn()}));
 import {useAuthedSWR} from '../lib/useAuthedSWR';
@@ -345,25 +251,6 @@ it('plans expose a persistent load error with retry', async () => {
   render(<PlansSection />);
   expect(await screen.findByRole('alert')).toHaveTextContent('Could not load plans');
 });
-it('checks status combinations without asking for already-completed checks', () => {
-  for (const status of ['active','suspended','pending_payment','pending',undefined]) {
-    for (const plan of ['active','pending_payment','cancelled','past_due',undefined]) {
-      for (const subscription of ['active','pending','cancelled',null,undefined]) {
-        for (const identity of ['approved','verified','pending','rejected',undefined]) {
-          const notes=customerAccessNotes({status,plan_status:plan,service_subscription_status:subscription,kyc_status:identity});
-          if (identity==='approved'||identity==='verified') expect(notes.next.toLowerCase()).not.toContain('identity');
-          if (status==='suspended') expect(notes.summary).toContain('Mail access is blocked');
-          if(notes.title==='Ready to receive mail') {
-            expect(status).toBe('active');expect(plan).toBe('active');expect(subscription).toBe('active');expect(['approved','verified']).toContain(identity);
-          }
-          expect(notes.next).not.toBe('.');
-        }
-      }
-    }
-  }
-  expect(customerAccessNotes({is_admin:true,status:'active'}).title).toBe('Admin account');
-});
-
 it('blocks duplicate plan submissions while saving', async () => {
   vi.mocked(apiClient.get).mockResolvedValueOnce({ok:true,data:[]} as any);
   let finish: (value:any)=>void=()=>{};

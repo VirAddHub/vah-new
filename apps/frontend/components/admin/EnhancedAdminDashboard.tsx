@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuthedSWR } from "@/lib/useAuthedSWR";
 import type { WhoamiUser } from "@/lib/verifiedAdminSession";
 // Monitoring hooks removed - using Sentry instead
 // import { useAdminOverview, useAdminHealth, useAdminActivity, useForwardingStats } from "@/lib/hooks/useAdminOverview";
@@ -12,7 +11,7 @@ import type { WhoamiUser } from "@/lib/verifiedAdminSession";
 // import SystemSummaryCard from "@/components/admin/SystemSummaryCard";
 import { AdminHeader } from "@/components/admin/parts/AdminHeader";
 // AdminStats removed - using Sentry instead
-import { AdminUsersTable } from "@/components/admin/parts/AdminUsersTable";
+
 import {
     Users,
     Truck,
@@ -24,6 +23,7 @@ import {
 } from "lucide-react";
 import dynamic from 'next/dynamic';
 
+const UsersSection = dynamic(() => import('@/components/admin/UsersSection'), { loading: () => <div className="p-6 text-graphite">Loading…</div> });
 const ChVerificationQueue = dynamic(() => import('@/components/admin/ChVerificationQueue'), { ssr: false });
 const PlansSection = dynamic(() => import('@/components/admin/PlansSection'), {
     loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div></div>
@@ -102,68 +102,8 @@ export function EnhancedAdminDashboard({
         router.push(`/admin/dashboard?section=${section}`, { scroll: false });
     }, [router]);
 
-    // Pagination state
-    const [usersPage, setUsersPage] = useState(1);
-    const [usersLastUpdated, setUsersLastUpdated] = useState<number | null>(null);
-
-    // User filters state
-    const [userFilters, setUserFilters] = useState({
-        search: '',
-        status: '',
-        plan_id: '',
-        kyc_status: '',
-    });
-
-    // Build query params for users - include ALL filters in key for immediate fetch
-    const usersQueryParams = {
-        page: usersPage,
-        pageSize: 50,
-        ...(userFilters.search && { search: userFilters.search }),
-        ...(userFilters.status && { status: userFilters.status }),
-        ...(userFilters.plan_id && { plan_id: userFilters.plan_id }),
-        ...(userFilters.kyc_status && { kyc_status: userFilters.kyc_status }),
-    };
-
-    // Use authenticated SWR with proper key that triggers immediate fetch on any change
-    // Note: The search input in UsersSection will handle debouncing before calling onFiltersChange
-    const usersKey: readonly [string, any] | null = activeSection === 'users'
-        ? ['/api/admin/users', usersQueryParams] as const
-        : null;
-
-    const {
-        data: usersData,
-        isLoading: usersLoading,
-        isValidating: usersValidating,
-        error: usersError,
-        mutate: refetchUsers
-    } = useAuthedSWR<{ items: any[]; total: number; page: number; pageSize: number }>(usersKey, {
-        keepPreviousData: true,
-        refreshInterval: 300000, // 5 minutes instead of 1 minute
-        refreshWhenHidden: false,
-        refreshWhenOffline: false,
-        revalidateOnFocus: true,
-        revalidateOnReconnect: true,
-        onSuccess: () => setUsersLastUpdated(Date.now()),
-        dedupingInterval: 10000, // Dedupe requests within 10 seconds
-        errorRetryCount: 1, // Reduce retry count
-        errorRetryInterval: 15000, // Increase retry interval
-    });
-
-    const users = usersData?.items ?? [];
-    const usersTotal = usersData?.total ?? 0;
-
-    // Overview and monitoring loading functions removed - using Sentry instead
-
-    // Overview loading removed - using Sentry instead
-
-    // Overview polling removed - using Sentry instead
-
-    // System health monitoring removed - using Sentry instead
-
-    // SWR will automatically fetch users data when the query key changes (filters or page)
-
     const menuItems = [
-        { id: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
+        { id: "users", label: "Customers", icon: <Users className="h-4 w-4" /> },
         { id: "mail", label: "Mail", icon: <Mail className="h-4 w-4" /> },
         { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
         { id: "companies-house", label: "Companies House", icon: <ShieldCheck className="h-4 w-4" /> },
@@ -172,33 +112,11 @@ export function EnhancedAdminDashboard({
         { id: "audit", label: "Audit log", icon: <ClipboardList className="h-4 w-4" /> },
     ] as const;
 
-    const handleFiltersChange = useCallback((filters: {
-        search: string;
-        status: string;
-        plan_id: string;
-        kyc_status: string;
-    }) => {
-        console.debug('[Users] Filters changed:', filters);
-        setUserFilters(filters);
-    }, []);
-
     const renderContent = () => {
         switch (activeSection) {
             case "users":
                 return (
-                    <AdminUsersTable
-                        users={users}
-                        loading={usersLoading}
-                        error={usersError?.message || null}
-                        onFiltersChange={handleFiltersChange}
-                        total={usersTotal}
-                        page={usersPage}
-                        pageSize={50}
-                        onPageChange={setUsersPage}
-                        isValidating={usersValidating}
-                        onRefreshUsers={refetchUsers}
-                        lastUpdated={usersLastUpdated}
-                    />
+                    <UsersSection />
                 );
             case "mail":
                 return <MailSection />;
@@ -221,19 +139,7 @@ export function EnhancedAdminDashboard({
                 const _exhaustive: never = activeSection;
                 // Fallback to users if somehow an invalid section is set
                 return (
-                    <AdminUsersTable
-                        users={users}
-                        loading={usersLoading}
-                        error={usersError?.message || null}
-                        onFiltersChange={handleFiltersChange}
-                        total={usersTotal}
-                        page={usersPage}
-                        pageSize={50}
-                        onPageChange={setUsersPage}
-                        isValidating={usersValidating}
-                        onRefreshUsers={refetchUsers}
-                        lastUpdated={usersLastUpdated}
-                    />
+                    <UsersSection />
                 );
         }
     };

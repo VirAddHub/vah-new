@@ -228,11 +228,9 @@ export default function PlansSection() {
   };
 
   const formatPrice = (pence: number, currency: string) => {
-    const amount = pence / 100;
-    return new Intl.NumberFormat("en-GB", {
-      style: "currency",
-      currency: currency,
-    }).format(amount);
+    // A plan saved without a currency must not take the whole page down.
+    try { return new Intl.NumberFormat("en-GB", { style: "currency", currency: currency || "GBP" }).format(Number(pence || 0) / 100); }
+    catch { return `£${(Number(pence || 0) / 100).toFixed(2)}`; }
   };
 
   return (

@@ -134,7 +134,7 @@ export function BlogSection() {
     const posts = postsData?.items || [];
     const totalPosts = postsData?.total || 0;
     const totalPages = Math.ceil(totalPosts / pageSize);
-    const categories = categoriesData || [];
+    const categories = Array.isArray(categoriesData) ? categoriesData : [];
 
     // Filters are applied on the server before pagination.
     const filteredPosts = posts;
