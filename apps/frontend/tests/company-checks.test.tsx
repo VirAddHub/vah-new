@@ -225,6 +225,15 @@ describe('customer notice', () => {
     expect(stepsFor(access(['company_checks_pending'], false)).find(s => s.key === 'company')?.label).toBe('Company checks');
     expect(sidebarStatusFor(access(['company_checks_pending'], true))?.title).toBe('Company details needed');
   });
+  it('says whose turn each step is, and what to do about other owners', () => {
+    const inv = { ...access(['company_checks_pending']), company: { required: 1, satisfactory: 0, investigating: 1 } };
+    expect(stepsFor(inv).find(s => s.key === 'company')).toMatchObject({ label: 'We are reviewing your company', who: 'us' });
+    const owners = { ...access(['owners_required']), verification: { state: 'owners_pending' as const, primaryApproved: true, pendingOwners: 2 } };
+    const step = stepsFor(owners).find(s => s.key === 'owners')!;
+    expect(step).toMatchObject({ who: 'you', action: 'Add or remind owners' });
+    expect(step.detail).toMatch(/Add their email address/);
+    expect(step.detail).not.toMatch(/We have emailed them/);
+  });
   it('explains each pre-incorporation stage', () => {
     const pre = (state: any, missing: AccessDecision['missing']) => ({ ...access(missing, state === 'needed'), company: { required: 1, satisfactory: 0, investigating: 0, declarationNeeded: state === 'needed', preIncorporation: state } });
     expect(stepsFor(pre('needed', ['company_checks_pending'])).find(s => s.key === 'company')?.detail).toMatch(/company you are forming/);

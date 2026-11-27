@@ -224,6 +224,7 @@ export function analyse(s: Snapshot | null, c: CustomerInfo, now = Date.now()) {
         for (const x of indiv) {
             if (!declaredOwners.some(d => sameName(x.name, d.full_name))) {
                 boIssues.push(x.name);
+                comparison.push({ field: 'Beneficial owner', register: `${x.name} (${(x.natures_of_control ?? []).map((n: string) => n.replace(/-/g, ' ')).join('; ')})`, customer: 'Not declared as an owner', result: 'differs' });
                 discrepancies.push({ key: `psc_not_declared:${key(x.name)}`, category: 'beneficial_ownership', field: 'Person with significant control', register: x.name, declared: 'Not declared',
                     text: `${x.name} is a PSC on the register but was not declared as a beneficial owner.` });
             }

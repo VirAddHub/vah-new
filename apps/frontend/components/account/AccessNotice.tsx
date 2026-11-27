@@ -5,7 +5,8 @@ import { Check, Circle, Mail } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useAccess, type AccessDecision } from '@/hooks/useAccess';
 
-type Step = { key: string; label: string; detail: string; done: boolean; href: string; action: string };
+/** who: 'you' = the customer must act; 'us' = we are working on it, nothing for them to do. */
+type Step = { key: string; label: string; detail: string; done: boolean; href: string; action: string; who?: 'you' | 'us' };
 
 function formatDate(ms: number | null) {
   return ms ? new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
@@ -18,7 +19,7 @@ export function stepsFor(access: AccessDecision): Step[] {
       ? { key: 'payment', label: 'Update your payment', detail: 'Your last payment did not go through. Update your card to restore your service.', done: false, href: '/account/billing', action: 'Update payment' }
       : payment.state === 'cancelled'
         ? { key: 'payment', label: 'Restart your subscription', detail: 'Your subscription has ended. Start a new one to use your address again.', done: false, href: '/account/billing', action: 'Go to billing' }
-        : { key: 'payment', label: 'Pay for your plan', detail: payment.entitled ? 'Your plan is paid.' : 'Choose monthly or annual billing and pay securely by card.', done: payment.entitled, href: '/account/billing', action: 'Complete payment' };
+        : { who: 'you', key: 'payment', label: 'Pay for your plan', detail: payment.entitled ? 'Your plan is paid.' : 'Choose monthly or annual billing and pay securely by card.', done: payment.entitled, href: '/account/billing', action: 'Complete payment' };
 
   const identityDetail: Record<AccessDecision['verification']['state'], string> = {
     not_started: 'We need to verify who you are before your address and mail open.',
@@ -29,6 +30,7 @@ export function stepsFor(access: AccessDecision): Step[] {
     complete: 'Your identity is verified.',
   };
   const identity: Step = {
+    who: verification.state === 'in_review' ? 'us' : 'you',
     key: 'identity', label: 'Verify your identity', detail: identityDetail[verification.state], done: verification.primaryApproved,
     href: verification.state === 'rejected' ? '/account/support' : '/account/verification',
     action: verification.state === 'rejected' ? 'Contact support' : verification.state === 'in_review' ? 'View status' : 'Verify identity',
@@ -37,9 +39,9 @@ export function stepsFor(access: AccessDecision): Step[] {
   if (verification.pendingOwners > 0 || verification.state === 'owners_pending') {
     const n = verification.pendingOwners;
     steps.push({
-      key: 'owners', label: 'Business owners verified',
-      detail: `${n} business owner${n === 1 ? '' : 's'} still need${n === 1 ? 's' : ''} to verify their identity. Your service is paused until every required owner is verified. We have emailed them a link; you can resend it.`,
-      done: false, href: '/business-owners', action: 'View owners',
+      key: 'owners', label: 'Other owners verify their identity',
+      detail: `${n || 'Some'} other director${n === 1 ? '' : 's'} or owner${n === 1 ? '' : 's'} of your company still need${n === 1 ? 's' : ''} to verify their identity. Add their email address on the Business owners page and we will email them a link (or resend it if you already have). Your service opens once everyone has verified.`,
+      done: false, href: '/business-owners', action: 'Add or remind owners', who: 'you',
     });
   }
   const pre = access.company?.preIncorporation;
@@ -55,7 +57,9 @@ export function stepsFor(access: AccessDecision): Step[] {
     const needDeclaration = !!access.company?.declarationNeeded;
     steps.push(needDeclaration
       ? { key: 'company', label: 'Tell us about your company', detail: 'Your business activity, directors and owners. We check them against Companies House.', done: false, href: '/account/verification#company', action: 'Add company details' }
-      : { key: 'company', label: 'Company checks', detail: 'We are checking your company\'s details on the Companies House register. You do not need to do anything unless we contact you.', done: false, href: '/account/support', action: 'Contact support' });
+      : (access.company?.investigating ?? 0) > 0
+        ? { key: 'company', label: 'We are reviewing your company', detail: 'Our team is checking a few details about your company against Companies House. You do not need to do anything; we will contact you if we need something from you.', done: false, href: '/account/support', action: 'Ask a question', who: 'us' }
+        : { key: 'company', label: 'Company checks', detail: 'We are checking your company against the Companies House register. You do not need to do anything unless we contact you.', done: false, href: '/account/support', action: 'Ask a question', who: 'us' });
   }
   return steps;
 }
@@ -72,7 +76,14 @@ export function AccessNotice({ access, currentPath }: { access: AccessDecision; 
     <section aria-labelledby="access-notice-title" className="mb-6 rounded-2xl border border-border bg-background p-5 sm:p-6">
       <h2 id="access-notice-title" className="text-h3 font-semibold text-foreground">Finish setting up your account</h2>
       <p className="mt-1 text-body-sm text-muted-foreground">
-        Your address, mail and forwarding open as soon as the steps below are complete.
+        Your address, mail and forwarding open as soon as every step below is done.{' '}
+        {(() => {
+          const mine = steps.filter(x => !x.done && x.who !== 'us').length;
+          const ours = steps.filter(x => !x.done && x.who === 'us').length;
+          if (mine) return <strong className="font-semibold text-foreground">{mine === 1 ? '1 step needs you.' : `${mine} steps need you.`}</strong>;
+          if (ours) return <strong className="font-semibold text-foreground">Nothing for you to do right now: we are on it.</strong>;
+          return null;
+        })()}
       </p>
 
       {access.mailWaiting != null && access.mailWaiting > 0 && (
@@ -95,14 +106,23 @@ export function AccessNotice({ access, currentPath }: { access: AccessDecision; 
                 ? <Check className="mt-0.5 h-5 w-5 shrink-0 text-foreground" aria-hidden />
                 : <Circle className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />}
               <div className="min-w-0">
-                <p className="text-body font-medium text-foreground">
-                  {step.label} <span className="sr-only">{step.done ? '(done)' : '(to do)'}</span>
+                <p className="flex flex-wrap items-center gap-2 text-body font-medium text-foreground">
+                  {step.label}
+                  <span className={step.done
+                    ? 'rounded-full bg-emerald-50 px-2 py-0.5 text-[12px] font-medium text-emerald-800'
+                    : step.who === 'us'
+                      ? 'rounded-full bg-muted px-2 py-0.5 text-[12px] font-medium text-muted-foreground'
+                      : 'rounded-full bg-red-50 px-2 py-0.5 text-[12px] font-semibold text-red-700'}>
+                    {step.done ? 'Done' : step.who === 'us' ? 'We are checking' : 'Your turn'}
+                  </span>
                 </p>
                 <p className="text-body-sm text-muted-foreground">{step.detail}</p>
               </div>
             </div>
             {!step.done && currentPath !== step.href && (
-              <Link href={step.href} className="inline-flex h-11 shrink-0 items-center justify-center rounded-full bg-foreground px-5 text-body-sm font-medium text-background hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground">
+              <Link href={step.href} className={step.who === 'us'
+                ? "inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-border px-5 text-body-sm font-medium text-foreground hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+                : "inline-flex h-11 shrink-0 items-center justify-center rounded-full bg-foreground px-5 text-body-sm font-medium text-background hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"}>
                 {step.action}
               </Link>
             )}

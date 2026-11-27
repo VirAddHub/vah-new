@@ -19,7 +19,7 @@ import { analyse, JUDGEMENT, JUDGEMENT_IDS, nextAction, satisfactoryBlockers } f
 import { audit, detail, ensureCheck, getCheck, loadCustomer, loadCustomersBulk, refreshSnapshot, saveReport, syncDiscrepancies } from '../services/companyChecks/store';
 import { ensureAllChecks } from '../services/companyChecks/automation';
 import { latestDeclaration, StaffDeclarationSchema } from '../services/companyChecks/declaration';
-import { inviteNamedPeople } from './company-declaration';
+import { inviteNamedPeople, syncOwnersPending } from './company-declaration';
 import { sameName } from '../services/companyChecks/snapshot';
 import { identityProviderStatus } from '../services/identityVerification';
 import { DEADLINE_DAYS, tableReady as preTableReady } from '../services/companyChecks/preIncorporation';
@@ -473,6 +473,7 @@ router.post('/company-checks/:id/declaration', async (req, res) => {
         const invited = req.body?.invite === true
             ? await inviteNamedPeople(db, Number(check.user_id), parsed.data.people, check.snapshot?.profile?.company_name ?? undefined)
             : [];
+        if (req.body?.invite !== true) await syncOwnersPending(db, Number(check.user_id), parsed.data.people);
         await syncDiscrepancies(db, id);
         return res.status(201).json({ ok: true, data: { declaration_id: Number(ins.rows[0].id), invited } });
     } catch (e) {

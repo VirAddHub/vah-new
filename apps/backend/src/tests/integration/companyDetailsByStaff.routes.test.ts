@@ -62,6 +62,9 @@ describe('company details entered by staff', () => {
         expect(d.body.data.next.key).not.toBe('await_customer');
         const a = await getPool().query(`SELECT details FROM admin_audit WHERE action = 'company_check_declaration_entered' AND target_id = $1`, [checkId]);
         expect(a.rows.length).toBe(1);
+        // The second director has no email yet, so is not on the owner list: they still count as an owner to verify.
+        const u = await getPool().query(`SELECT owners_pending_info FROM "user" WHERE id = $1`, [CUSTOMER]);
+        expect(u.rows[0].owners_pending_info).toBe(true);
     });
 
     it('is for administrators only', async () => {

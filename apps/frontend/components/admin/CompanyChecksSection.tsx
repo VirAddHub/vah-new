@@ -394,7 +394,7 @@ function AutoRow({ x }: { x: any }) {
     <li className="grid grid-cols-[18px_minmax(140px,220px)_1fr] items-start gap-2 px-3 py-1.5 text-[13px]">
       <span className={cn("mt-0.5", st.cls)} title={st.label}>{st.icon}<span className="sr-only">{st.label}</span></span>
       <span className="font-medium text-ink">{x.label}</span>
-      <span className={cn(x.status === "pass" ? "text-graphite" : "text-ink")}>{x.detail}</span>
+      <span className={cn(x.status === "pass" ? "text-graphite" : x.status === "discrepancy" ? "font-medium text-red-700" : "text-ink")}>{x.detail}</span>
     </li>
   );
 }
@@ -408,9 +408,13 @@ function ToFinish({ d, openAlerts, openDisc, onCorrect }: { d: any; openAlerts: 
   const items: Todo[] = [];
   if (openAlerts) items.push({ text: `Review ${openAlerts} change${openAlerts === 1 ? "" : "s"} found on the register (shown below).`, blocks: true });
   if (openDisc) items.push({ text: `Resolve ${openDisc} discrepanc${openDisc === 1 ? "y" : "ies"}.`, blocks: true, action: { label: "Go to discrepancies", href: "#discrepancies" } });
+  // One line per mismatch with Companies House, saying exactly what differs.
+  const mismatches = (a.discrepancies ?? []) as any[];
+  for (const m of mismatches) items.push({ text: `${m.text} Fix the details if Companies House is right; if the register is wrong, resolve it below and note why.`, blocks: false, action: correct });
   for (const x of a.automated as any[]) {
     if (x.status !== "discrepancy" && x.status !== "missing") continue;
     if (x.id === "register_extract" || x.id === "declaration") continue; // covered by the blockers below
+    if (mismatches.length && (x.id === "directors" || x.id === "beneficial_owners" || x.id === "company_details")) continue; // listed one by one above
     const fix = x.id === "individual_identity"
       ? "Add their email addresses in Correct the details and send the identity invite, or verify them in CH identity."
       : x.id === "directors" || x.id === "beneficial_owners" || x.id === "applicant_role" || x.id === "company_details"

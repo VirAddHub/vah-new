@@ -31,7 +31,21 @@ export async function inviteNamedPeople(db: any, userId: number, people: any[], 
             logger.warn('[company-declaration] owner not added', { message: (e as Error)?.message });
         }
     }
+    await syncOwnersPending(db, userId, people);
     return invited;
+}
+
+/**
+ * Directors and beneficial owners named in the company details who are not yet on the account's
+ * owner list (usually because there is no email for them yet) still count as owners to verify.
+ * A declared owner must never be treated as verified just because we cannot contact them (F21).
+ */
+export async function syncOwnersPending(db: any, userId: number, people: any[]) {
+    const needing = people.filter(x => !x.is_account_holder && (x.is_director || isBeneficialOwner(x)));
+    const onFile = (await db.query(`SELECT full_name, email FROM business_owner WHERE user_id = $1`, [userId])).rows;
+    const missing = needing.filter(p => !onFile.some((o: any) => (p.email && o.email === p.email) || sameName(o.full_name, p.full_name)));
+    await db.query(`UPDATE "user" SET owners_pending_info = $2 WHERE id = $1`, [userId, missing.length > 0]);
+    return missing.map(p => p.full_name as string);
 }
 
 async function holderName(db: any, userId: number) {
