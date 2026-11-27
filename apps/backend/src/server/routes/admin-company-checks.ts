@@ -291,7 +291,7 @@ async function judgement(req: Request, res: Response) {
     const id = idParam(req);
     const item = text(req.body?.item, 60);
     const done = req.body?.done === true;
-    const note = text(req.body?.note, 2000) || null;
+    const given = text(req.body?.note, 2000) || null;
     if (!id) return res.status(400).json({ ok: false, error: 'invalid_id' });
     if (!JUDGEMENT_IDS.includes(item)) return res.status(400).json({ ok: false, error: 'invalid_item' });
     const db = getPool();
@@ -299,6 +299,8 @@ async function judgement(req: Request, res: Response) {
         const check = await getCheck(db, id);
         if (!check) return res.status(404).json({ ok: false, error: 'not_found' });
         if (check.status === 'satisfactory') return res.status(409).json({ ok: false, error: 'decided', message: 'Reopen the check before changing your judgement.' });
+        // A note is kept until it is replaced: unticking, or re-saving without typing, never loses it.
+        const note = given ?? (check.checklist?.[item]?.note ?? null);
         if (done && item === 'warnings_reviewed' && !(note && note.length >= 10)) return res.status(400).json({ ok: false, error: 'note_required', message: 'Note what you concluded (at least 10 characters).' });
         const a = admin(req);
         await db.query(`UPDATE company_check SET checklist = jsonb_set(checklist, $2, $3::jsonb, true), updated_at = NOW() WHERE id = $1`,
@@ -436,6 +438,7 @@ router.get('/company-checks/:id/declaration/prefill', async (req, res) => {
         else people.unshift({ full_name: holder, email: customer?.email ?? null, is_account_holder: true, is_director: false, is_beneficial_owner: false,
             ownership_percent: null, voting_percent: null, other_control: false, country_of_residence: 'United Kingdom', register_note: 'Account holder (not on the register)' });
         return res.json({ ok: true, data: {
+            last_source: latest?.entered_source ?? null, last_note: latest?.entered_note ?? null,
             from: latest && !latest.returned_at ? 'latest' : latest ? 'returned' : 'register',
             data: latest?.data ?? { nature_of_business: (snap.profile?.sic_codes ?? []).length ? `SIC ${(snap.profile.sic_codes).join(', ')}: ` : '', principal_place_of_business: { same_as_registered_office: true },
                 applicant_role: me?.is_director ? (me.is_beneficial_owner ? 'director_and_beneficial_owner' : 'director') : 'authorised_person', people, corporate_owners: [], expected_monthly_mail: '0-10' },

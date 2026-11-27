@@ -116,3 +116,21 @@ describe('company checks register download', () => {
         expect([401, 403]).toContain((await request(app).get('/api/admin/exports/company-checks-register').set('Authorization', user)).status);
     });
 });
+
+describe('notes stay put', () => {
+    const app = createTestApp();
+    const admin = `Bearer ${makeAdminToken()}`;
+    it('keeps the source note for next time, and a judgement note through untick and retick', async () => {
+        const c = await request(app).get('/api/admin/company-checks').set('Authorization', admin);
+        const id = (c.body.data.items ?? c.body.data).find((x: any) => x.company_number === NUMBER)?.id;
+        expect(id).toBeTruthy();
+        const pre = await request(app).get(`/api/admin/company-checks/${id}/declaration/prefill`).set('Authorization', admin);
+        expect(pre.body.data).toMatchObject({ last_source: 'phone', last_note: 'Call with Test User, 27 Nov, 3pm' });
+        const j = (body: object) => request(app).post(`/api/admin/company-checks/${id}/judgement`).set('Authorization', admin).send({ item: 'beneficial_owners', ...body });
+        expect((await j({ done: true, note: 'Share register seen, 3 equal holders' })).status).toBe(200);
+        await j({ done: false });
+        await j({ done: true });
+        const d = await request(app).get(`/api/admin/company-checks/${id}`).set('Authorization', admin);
+        expect(d.body.data.check.checklist.beneficial_owners).toMatchObject({ done: true, note: 'Share register seen, 3 equal holders' });
+    });
+});

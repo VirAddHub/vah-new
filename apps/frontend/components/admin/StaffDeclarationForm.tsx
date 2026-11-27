@@ -38,7 +38,7 @@ export function StaffDeclarationForm({ api, onClose, onSaved }: { api: string; o
       if (!live) return;
       if (!j?.ok) { setErr(j?.message || "Could not load the details."); setLoading(false); return; }
       const d = j.data.data;
-      setFrom(j.data.from); setSources(j.data.sources ?? {});
+      setFrom(j.data.from); setSources(j.data.sources ?? {}); if (j.data.last_source) setSource(j.data.last_source); if (j.data.last_note) setNote(j.data.last_note);
       setF({ nature_of_business: d.nature_of_business ?? "", trading_name: d.trading_name ?? "", website: d.website ?? "",
         same: d.principal_place_of_business?.same_as_registered_office ?? true, address: d.principal_place_of_business?.address ?? "",
         applicant_role: d.applicant_role ?? "director", applicant_authority: d.applicant_authority ?? "",

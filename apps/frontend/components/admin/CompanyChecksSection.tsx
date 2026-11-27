@@ -546,11 +546,12 @@ function Review({ d, busy, act, id }: { d: any; busy: string | null; act: any; i
             <li key={j.id} className="px-3 py-2 text-[13px]">
               <div className="flex items-start gap-2.5">
                 <input type="checkbox" className="mt-0.5 h-4 w-4" checked={!!v.done} disabled={decided || !!busy} aria-label={j.label}
-                  onChange={() => { if (v.done) void act(`j${j.id}`, `${API}/${id}/judgement`, { item: j.id, done: false }); else { setOpen(j.id); setNote(""); } }} />
+                  onChange={() => { if (v.done) void act(`j${j.id}`, `${API}/${id}/judgement`, { item: j.id, done: false }); else { setOpen(j.id); setNote(v.note ?? ""); } }} />
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-ink">{j.label}</p>
                   <p className="text-[12px] text-graphite">{j.hint}{j.id === "beneficial_owners" && boEvidence ? ` ${boEvidence} evidence file(s) uploaded.` : ""}</p>
-                  {v.done && <p className="text-[12px] text-graphite">Done {day(v.at)} by {by(v.by)}{v.note ? ` — ${v.note}` : ""}</p>}
+                  {v.done && <p className="text-[12px] text-graphite">Done {day(v.at)} by {by(v.by)}{v.note ? <> · <span className="text-ink">Note: {v.note}</span></> : ""}{!decided && open !== j.id && <> · <button type="button" className="underline" onClick={() => { setOpen(j.id); setNote(v.note ?? ""); }}>{v.note ? "Edit note" : "Add a note"}</button></>}</p>}
+                  {!v.done && v.note && open !== j.id && <p className="text-[12px] text-graphite">Saved note: {v.note}</p>}
                   {open === j.id && (
                     <form className="mt-1.5 flex gap-2" onSubmit={async e => { e.preventDefault(); if (await act(`j${j.id}`, `${API}/${id}/judgement`, { item: j.id, done: true, note: note.trim() || undefined })) setOpen(null); }}>
                       <input autoFocus className={inputCls} value={note} onChange={e => setNote(e.target.value)} aria-label={`Note for ${j.label}`}
@@ -570,8 +571,14 @@ function Review({ d, busy, act, id }: { d: any; busy: string | null; act: any; i
               <option value="">Choose…</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
             </select>
             <input className={cn(inputCls, "min-w-[180px] flex-1")} placeholder="Reason for the rating" value={ratingReason} onChange={e => setRatingReason(e.target.value)} disabled={decided} aria-label="Reason for the risk rating" />
-            {!decided && (rating !== (c.risk_rating ?? "") || ratingReason !== (c.risk_reason ?? "")) && <Btn disabled={!rating || ratingReason.trim().length < 10} onClick={() => act("risk", `${API}/${id}/risk`, { rating, reason: ratingReason }, "Risk rating saved.")}>Save</Btn>}
+            {!decided && (rating !== (c.risk_rating ?? "") || ratingReason !== (c.risk_reason ?? "")) && <Btn variant="solid" disabled={!rating || ratingReason.trim().length < 10} onClick={() => act("risk", `${API}/${id}/risk`, { rating, reason: ratingReason }, "Risk rating saved.")}>Save</Btn>}
           </div>
+          {!decided && (rating !== (c.risk_rating ?? "") || ratingReason !== (c.risk_reason ?? "")) && (
+            <p className="mt-1 text-[12px] font-medium text-red-700">
+              {!rating ? "Choose low, medium or high." : ratingReason.trim().length < 10 ? `The reason needs at least 10 characters (${ratingReason.trim().length} so far).` : "Not saved yet: press Save."}
+            </p>
+          )}
+          {c.risk_rating && rating === c.risk_rating && ratingReason === (c.risk_reason ?? "") && <p className="mt-1 text-[12px] text-graphite">Saved: {c.risk_rating}, {c.risk_reason}</p>}
         </li>
       </ul>
       <div className="border-t border-line bg-mist/40 p-3">
