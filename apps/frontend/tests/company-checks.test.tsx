@@ -131,6 +131,19 @@ describe('Company declaration: customer', () => {
     expect(sent.corporate_owners[0]).toMatchObject({ name: 'Holdco Ltd', ownership_percent: 30 });
   });
 
+  it('says which person needs an email instead of failing silently', async () => {
+    wrap(<CompanyDeclarationCard />);
+    await screen.findByDisplayValue('Test User');
+    fireEvent.change(screen.getByLabelText(/What does your business do/), { target: { value: 'Software consultancy for small firms' } });
+    fireEvent.click(screen.getByRole('button', { name: /Add a person/ }));
+    fireEvent.change(screen.getByLabelText('Person 2 name'), { target: { value: 'Anna Other' } });
+    fireEvent.click(screen.getAllByRole('checkbox', { name: 'Director' })[1]);
+    fireEvent.click(screen.getByRole('checkbox', { name: /I confirm/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Submit company details' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Add an email address for Anna Other');
+    expect(calls.some(c => c.init?.method === 'POST')).toBe(false);
+  });
+
   it('shows nothing when there is no company number', async () => {
     declarationState = { required: false };
     const { container } = wrap(<CompanyDeclarationCard />);

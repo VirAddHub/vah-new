@@ -6,7 +6,7 @@
  * We compare it with the Companies House register. It can be submitted once; after that it can only
  * be changed if we return it with a reason.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import useSWR from 'swr';
 import { Plus, Trash2 } from 'lucide-react';
 import { useAccess } from '@/hooks/useAccess';
@@ -48,6 +48,8 @@ export function CompanyDeclarationCard() {
   const [form, setForm] = useState<Form | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useRef<HTMLParagraphElement | null>(null);
+  useEffect(() => { if (error) errorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' }); }, [error]);
   const [done, setDone] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,7 +63,14 @@ export function CompanyDeclarationCard() {
 
   const submit = async () => {
     if (!form) return;
-    setBusy(true); setError(null);
+    setError(null);
+    const missingEmail = form.people.find(p => !p.is_account_holder && (p.is_director || p.is_beneficial_owner) && !p.email.trim());
+    if (missingEmail) { setError(`Add an email address for ${missingEmail.full_name || 'each person you listed'}: we ask them to verify their identity.`); return; }
+    const unnamed = form.people.findIndex(p => !p.full_name.trim());
+    if (unnamed >= 0) { setError(`Enter the full name of person ${unnamed + 1}, or remove them.`); return; }
+    const noRole = form.people.find(p => !p.is_director && !p.is_beneficial_owner);
+    if (noRole) { setError(`Tick Director or Owner or controller for ${noRole.full_name}, or remove them.`); return; }
+    setBusy(true);
     try {
     const body = {
       nature_of_business: form.nature_of_business, trading_name: form.trading_name || null, website: form.website || null,
@@ -76,7 +85,13 @@ export function CompanyDeclarationCard() {
     };
       const res = await fetch('/api/bff/company-declaration', { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
       const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.ok) { setError(json?.message || 'We could not submit your details. Please check them and try again.'); return; }
+      if (!res.ok || !json?.ok) {
+        // Name the person a problem is about (e.g. "people.1.email" -> person 2).
+        const issues: { path: string; message: string }[] = json?.issues ?? [];
+        const named = issues.map(i => { const m = i.path.match(/^people\.(\d+)/); const who = m ? form.people[Number(m[1])]?.full_name || `person ${Number(m[1]) + 1}` : null; return who ? `${who}: ${i.message}` : i.message; });
+        setError(named.length ? named.join(' ') : json?.message || 'We could not submit your details. Please check them and try again.');
+        return;
+      }
       const invited: string[] = json.data?.owners_invited ?? [];
       setDone(invited.length ? `Thank you. We have emailed ${invited.join(', ')} to verify their identity.` : 'Thank you. We will check your company details.');
       setForm(null);
@@ -202,7 +217,7 @@ export function CompanyDeclarationCard() {
           )}
           <label className="flex items-start gap-2 text-body-sm"><input type="checkbox" className="mt-1" checked={form.confirmation} onChange={e => set({ confirmation: e.target.checked })} />
             I confirm this information is complete and correct, and I will tell VirtualAddressHub if it changes.</label>
-          {error && <p role="alert" className="text-body-sm text-destructive">{error}</p>}
+          {error && <p ref={errorRef} role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-body-sm text-destructive">{error}</p>}
           <button type="submit" disabled={busy} className="inline-flex h-11 items-center rounded-full bg-foreground px-6 text-body-sm font-medium text-background hover:opacity-90 disabled:opacity-50">{busy ? 'Submitting…' : 'Submit company details'}</button>
         </form>
       )}
