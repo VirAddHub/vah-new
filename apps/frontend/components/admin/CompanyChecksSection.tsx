@@ -267,6 +267,7 @@ function CheckDetail({ id, onChanged }: { id: number; onChanged: () => void }) {
           </>
         )}
         {c.fetch_error && <p className="mt-1 text-[13px] text-amber-900">Last retrieval failed: {c.fetch_error}</p>}
+        {c.status !== "satisfactory" && <ToFinish d={d} openAlerts={openAlerts.length} openDisc={openDisc.length} onCorrect={() => setEntering(true)} />}
       </div>
       {msg && <p role={msg.ok ? "status" : "alert"} className={cn("text-[13px]", msg.ok ? "text-primary" : "text-destructive")}>{msg.text}</p>}
 
@@ -301,7 +302,7 @@ function CheckDetail({ id, onChanged }: { id: number; onChanged: () => void }) {
       )}
 
       {(openDisc.length > 0 || doneDisc.length > 0) && (
-        <div className="rounded-md border border-line">
+        <div id="discrepancies" className="scroll-mt-24 rounded-md border border-line">
           <Heading note={openDisc.length ? `${openDisc.length} to resolve` : "All resolved"}>Discrepancies</Heading>
           <ul className="divide-y divide-line">
             {openDisc.map((e: any) => <DiscrepancyRow key={e.id} e={e} onResolve={body => act(`res${e.id}`, `${API}/${id}/entries/${e.id}/resolve`, body, "Discrepancy resolved.")} />)}
@@ -397,6 +398,56 @@ function AutoRow({ x }: { x: any }) {
     </li>
   );
 }
+type Todo = { text: string; blocks: boolean; action?: { label: string; href?: string; onClick?: () => void } };
+
+/** Everything still outstanding on a check, in red, each with where to fix it. */
+function ToFinish({ d, openAlerts, openDisc, onCorrect }: { d: any; openAlerts: number; openDisc: number; onCorrect: () => void }) {
+  const a = d.analysis;
+  const correct = { label: "Correct the details", onClick: onCorrect };
+  const review = { label: "Go to your review", href: "#review" };
+  const items: Todo[] = [];
+  if (openAlerts) items.push({ text: `Review ${openAlerts} change${openAlerts === 1 ? "" : "s"} found on the register (shown below).`, blocks: true });
+  if (openDisc) items.push({ text: `Resolve ${openDisc} discrepanc${openDisc === 1 ? "y" : "ies"}.`, blocks: true, action: { label: "Go to discrepancies", href: "#discrepancies" } });
+  for (const x of a.automated as any[]) {
+    if (x.status !== "discrepancy" && x.status !== "missing") continue;
+    if (x.id === "register_extract" || x.id === "declaration") continue; // covered by the blockers below
+    const fix = x.id === "individual_identity"
+      ? "Add their email addresses in Correct the details and send the identity invite, or verify them in CH identity."
+      : x.id === "directors" || x.id === "beneficial_owners" || x.id === "applicant_role" || x.id === "company_details"
+        ? "Update the company details so they match Companies House (tick each owner and their share)."
+        : "";
+    items.push({ text: `${x.label}: ${x.detail}${fix ? ` ${fix}` : ""}`, blocks: false, action: x.id === "screening" ? undefined : correct });
+  }
+  for (const b of (d.satisfactory_blockers ?? []) as string[]) {
+    if (/^Resolve \d+ discrepanc/.test(b)) continue;
+    const decl = /declaration/i.test(b);
+    items.push({ text: b, blocks: true, action: decl ? { label: "Enter the details", onClick: onCorrect } : /evidence/i.test(b) ? { label: "Add evidence or a note", href: "#review" } : review });
+  }
+  for (const m of a.missing as any[]) {
+    if (m.key === "identity" && items.some(i => i.text.startsWith("Identity"))) continue;
+    items.push({ text: m.text, blocks: false });
+  }
+  if (!items.length) return <p className="mt-2 flex items-center gap-1.5 text-[13px] font-medium text-primary"><Check className="h-4 w-4" aria-hidden /> Nothing outstanding: you can complete the review.</p>;
+  return (
+    <div className="mt-2 rounded-md border border-red-200 bg-white">
+      <p className="border-b border-red-100 px-3 py-1.5 text-[12px] font-semibold uppercase tracking-wide text-red-700">To finish this check: {items.length} left</p>
+      <ul className="divide-y divide-red-100">
+        {items.map((it, i) => (
+          <li key={i} className="flex flex-wrap items-start justify-between gap-2 px-3 py-2 text-[13px]">
+            <span className="flex min-w-0 flex-1 items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden />
+              <span><span className="text-red-800">{it.text}</span>{it.blocks && <span className="ml-1.5 rounded bg-red-100 px-1.5 py-0.5 text-[11px] font-medium text-red-800">stops you completing</span>}</span>
+            </span>
+            {it.action && (it.action.href
+              ? <a href={it.action.href} className="shrink-0 text-[13px] font-medium text-ink underline">{it.action.label}</a>
+              : <button type="button" onClick={it.action.onClick} className="shrink-0 text-[13px] font-medium text-ink underline">{it.action.label}</button>)}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /** Exceptions first; passed checks folded into one line. */
 function AutomatedResults({ results }: { results: any[] }) {
   const sorted = [...results].sort((x, y) => (ORDER[x.status] ?? 5) - (ORDER[y.status] ?? 5));
@@ -482,7 +533,7 @@ function Review({ d, busy, act, id }: { d: any; busy: string | null; act: any; i
   const boEvidence = d.evidence.filter((e: any) => e.kind === "beneficial_ownership").length;
 
   return (
-    <div className="rounded-md border border-line">
+    <div id="review" className="scroll-mt-24 rounded-md border border-line">
       <Heading note={decided ? `Completed ${day(c.decided_at)}` : undefined}>Your review</Heading>
       <ul className="divide-y divide-line">
         {items.map((j: any) => {
