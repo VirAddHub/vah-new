@@ -11,7 +11,7 @@
  */
 import { useEffect, useState } from "react";
 import useSWR from "swr";
-import { ChevronLeft, KeyRound, Loader2, Unlock, Pencil, Plus, Search, ShieldAlert, Users, X } from "lucide-react";
+import { BadgeCheck, ChevronLeft, KeyRound, Loader2, Unlock, Pencil, Plus, Search, ShieldAlert, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AccountStandingDialog } from "./AccountStandingDialog";
 import { IdentityResults } from "./IdentityResults";
@@ -228,11 +228,13 @@ function CustomerDetail({ row, onBack, onChanged }: { row: any; onBack: () => vo
   const [tab, setTab] = useState<(typeof DETAIL_TABS)[number]["id"]>("overview");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [dialog, setDialog] = useState<null | "edit" | "standing" | "delete" | "restore">(null);
+  const [dialog, setDialog] = useState<null | "edit" | "name" | "standing" | "delete" | "restore">(null);
   const profile = useSWR(row.closed ? null : `/api/admin/users/${id}`, getJson);
   const standing = useSWR(row.closed || (tab !== "overview" && tab !== "history") ? null : `/api/bff/admin/users/${id}/standing`, getJson);
   const mail = useSWR(tab === "mail" ? `/api/admin/mail-items?user_id=${id}&limit=50` : null, getJson);
   const billing = useSWR(tab === "billing" ? `/api/bff/admin/invoices?user_id=${id}&pageSize=50` : null, getJson);
+  const names = useSWR(row.closed || (tab !== "overview" && tab !== "history") ? null : `/api/admin/users/${id}/name-changes`, getJson);
+  const nameChanges: any[] = names.data?.data ?? [];
   const p = profile.data?.data ?? {};
   const s = standing.data?.data;
   const email = p.email ?? row.email ?? row.original_email;
@@ -289,7 +291,8 @@ function CustomerDetail({ row, onBack, onChanged }: { row: any; onBack: () => vo
       )}
 
       <div className="flex flex-wrap gap-2">
-        <Btn onClick={() => setDialog("edit")} disabled={!profile.data}><Pencil className="h-4 w-4" aria-hidden /> Edit details</Btn>
+        <Btn onClick={() => setDialog("name")} disabled={!profile.data}><BadgeCheck className="h-4 w-4" aria-hidden /> Change legal name…</Btn>
+        <Btn onClick={() => setDialog("edit")} disabled={!profile.data}><Pencil className="h-4 w-4" aria-hidden /> Edit email or company</Btn>
         <Btn disabled={!!busy} onClick={() => act("reset", () => call(`/api/admin/users/send-password-reset?id=${id}`, "POST"), `Password reset email sent to ${email}.`)}>
           {busy === "reset" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <KeyRound className="h-4 w-4" aria-hidden />} Send password reset
         </Btn>
@@ -308,6 +311,7 @@ function CustomerDetail({ row, onBack, onChanged }: { row: any; onBack: () => vo
         {tab === "overview" && (
           <Loadable s={profile}>
             <dl className="divide-y divide-line">
+              <Row label="Legal name">{name(p) || "—"}{nameChanges.length > 0 && <span className="text-graphite"> · previously {nameChanges.map(c => [c.previous_first_name, c.previous_last_name].filter(Boolean).join(" ")).join(", ")}</span>}</Row>
               <Row label="Phone">{p.phone || "—"}</Row>
               <Row label="Plan">{plan(row)}</Row>
               <Row label="Payment">{cap(s?.access?.payment?.state)}</Row>
@@ -368,7 +372,19 @@ function CustomerDetail({ row, onBack, onChanged }: { row: any; onBack: () => vo
         )}
 
         {tab === "history" && (
-          <Loadable s={standing} empty={!s?.history?.length}>
+          <>
+          {nameChanges.length > 0 && (
+            <ol className="mb-3 divide-y divide-line rounded-md border border-line px-3">
+              {nameChanges.map(c => (
+                <li key={`n${c.id}`} className="py-2">
+                  <p><span className="font-medium">Legal name changed</span><span className="text-graphite"> · {day(c.created_at)} · {c.admin_email ?? "admin"}</span></p>
+                  <p>{[c.previous_first_name, c.previous_last_name].filter(Boolean).join(" ") || "—"} → {c.new_first_name} {c.new_last_name} <span className="text-graphite">({c.reason_label})</span></p>
+                  <p className="text-graphite">Checked: {c.evidence} · kept at {c.reference}{c.note ? ` · ${c.note}` : ""}</p>
+                </li>
+              ))}
+            </ol>
+          )}
+          <Loadable s={standing} empty={!s?.history?.length && !nameChanges.length}>
             <ol className="divide-y divide-line">
               {(s?.history ?? []).map((h: any) => (
                 <li key={h.id} className="py-2">
@@ -378,10 +394,12 @@ function CustomerDetail({ row, onBack, onChanged }: { row: any; onBack: () => vo
               ))}
             </ol>
           </Loadable>
+          </>
         )}
       </div>
 
-      {dialog === "edit" && <EditDetails user={{ ...p, id }} onClose={() => setDialog(null)} onSaved={async () => { setDialog(null); setMsg({ ok: true, text: "Details saved." }); await Promise.all([profile.mutate(), onChanged()]); }} />}
+      {dialog === "edit" && <EditDetails user={{ ...p, id }} onClose={() => setDialog(null)} onSaved={async () => { setDialog(null); setMsg({ ok: true, text: "Saved." }); await Promise.all([profile.mutate(), onChanged()]); }} />}
+      {dialog === "name" && <ChangeLegalName user={{ ...p, id }} onClose={() => setDialog(null)} onSaved={async t => { setDialog(null); setMsg({ ok: true, text: t }); await Promise.all([profile.mutate(), names.mutate(), onChanged()]); }} />}
       {dialog === "delete" && <DeletePermanently id={id} email={email} onClose={() => setDialog(null)} onDeleted={async () => { setDialog(null); await onChanged(); onBack(); }} />}
       <AccountStandingDialog user={dialog === "standing" ? { id, email } : null} onClose={() => setDialog(null)} onChanged={async () => { await Promise.all([onChanged(), standing.mutate()]); }} />
     </div>
@@ -389,7 +407,7 @@ function CustomerDetail({ row, onBack, onChanged }: { row: any; onBack: () => vo
 }
 
 function EditDetails({ user, onClose, onSaved }: { user: any; onClose: () => void; onSaved: () => Promise<void> }) {
-  const [f, setF] = useState({ email: user.email ?? "", first_name: user.first_name ?? "", last_name: user.last_name ?? "", company_name: user.company_name ?? "" });
+  const [f, setF] = useState({ email: user.email ?? "", company_name: user.company_name ?? "" });
   const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
   const save = async () => {
     const payload: Record<string, string> = {};
@@ -400,16 +418,50 @@ function EditDetails({ user, onClose, onSaved }: { user: any; onClose: () => voi
     catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   };
   return (
-    <Modal title="Edit details" onClose={onClose}>
+    <Modal title="Edit email or company" onClose={onClose}>
       <form className="space-y-3" onSubmit={e => { e.preventDefault(); void save(); }}>
         {err && <p role="alert" className="text-[13px] text-destructive">{err}</p>}
         <Field label="Email"><input className={inputCls} type="email" value={f.email} onChange={e => setF({ ...f, email: e.target.value })} /></Field>
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="First name"><input className={inputCls} value={f.first_name} onChange={e => setF({ ...f, first_name: e.target.value })} /></Field>
-          <Field label="Last name"><input className={inputCls} value={f.last_name} onChange={e => setF({ ...f, last_name: e.target.value })} /></Field>
-        </div>
         <Field label="Company name"><input className={inputCls} value={f.company_name} onChange={e => setF({ ...f, company_name: e.target.value })} /></Field>
+        <p className="text-[12px] text-graphite">To change their name, use Change legal name: it records the reason and the document you checked.</p>
         <div className="flex justify-end gap-2 pt-1"><Btn variant="ghost" onClick={onClose}>Cancel</Btn><Btn type="submit" variant="solid" disabled={busy}>{busy ? "Saving…" : "Save"}</Btn></div>
+      </form>
+    </Modal>
+  );
+}
+
+const NAME_REASONS = [
+  ["marriage", "Marriage or civil partnership"], ["divorce", "Divorce or dissolution"], ["deed_poll", "Deed poll or statutory declaration"],
+  ["correction", "Correcting a mistake"], ["other", "Other"],
+] as const;
+function ChangeLegalName({ user, onClose, onSaved }: { user: any; onClose: () => void; onSaved: (text: string) => Promise<void> }) {
+  const [f, setF] = useState({ first_name: user.first_name ?? "", last_name: user.last_name ?? "", reason: "marriage", evidence: "", reference: "", note: "" });
+  const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
+  const save = async () => {
+    setBusy(true); setErr("");
+    try { await call(`/api/admin/users/${user.id}/name-change`, "POST", f); await onSaved(`Name changed to ${f.first_name.trim()} ${f.last_name.trim()}. The previous name is kept in History.`); }
+    catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
+  };
+  const ready = f.first_name.trim() && f.last_name.trim() && f.evidence.trim().length >= 5 && f.reference.trim().length >= 2;
+  return (
+    <Modal title="Change legal name" onClose={onClose}>
+      <form className="space-y-3" onSubmit={e => { e.preventDefault(); void save(); }}>
+        <p className="text-[13px] text-graphite">Currently <strong className="text-ink">{name(user) || "no name"}</strong>. Only change it when you have seen a document showing the new legal name. The old name is kept.</p>
+        {err && <p role="alert" className="text-[13px] text-destructive">{err}</p>}
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="New first name"><input className={inputCls} value={f.first_name} onChange={e => setF({ ...f, first_name: e.target.value })} /></Field>
+          <Field label="New last name"><input className={inputCls} value={f.last_name} onChange={e => setF({ ...f, last_name: e.target.value })} /></Field>
+        </div>
+        <Field label="Reason">
+          <select className={inputCls} value={f.reason} onChange={e => setF({ ...f, reason: e.target.value })}>
+            {NAME_REASONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </Field>
+        <Field label="Document checked"><input className={inputCls} placeholder="For example: marriage certificate, original seen on video call" value={f.evidence} onChange={e => setF({ ...f, evidence: e.target.value })} /></Field>
+        <Field label="Where the copy is kept"><input className={inputCls} placeholder="For example: KYC folder / customer 61" value={f.reference} onChange={e => setF({ ...f, reference: e.target.value })} /></Field>
+        <Field label="Note (optional)"><input className={inputCls} value={f.note} onChange={e => setF({ ...f, note: e.target.value })} /></Field>
+        <p className="text-[12px] text-graphite">If they are a director or owner, Companies House should show the new name too: the company check compares it on its next run.</p>
+        <div className="flex justify-end gap-2 pt-1"><Btn variant="ghost" onClick={onClose}>Cancel</Btn><Btn type="submit" variant="solid" disabled={busy || !ready}>{busy ? "Saving…" : "Change name"}</Btn></div>
       </form>
     </Modal>
   );

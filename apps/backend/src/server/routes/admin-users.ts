@@ -453,6 +453,71 @@ router.get('/users/deleted', adminUsersLimiter, requireAdmin, async (req: Reques
     }
 });
 
+const NAME_REASONS = { marriage: 'Marriage or civil partnership', divorce: 'Divorce or dissolution', deed_poll: 'Deed poll or statutory declaration', correction: 'Correcting a mistake', other: 'Other' } as const;
+
+/**
+ * POST /api/admin/users/:id/name-change
+ * Change a customer's legal name (customers cannot). Keeps the previous name, the reason and the
+ * document checked, permanently; the identity result already recorded stays linked to the person.
+ */
+router.post('/users/:id/name-change', requireAdmin, async (req: Request, res: Response) => {
+    const userId = parseInt(param(req, 'id'), 10);
+    const adminId = Number(req.user!.id);
+    const s = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
+    const first = s(req.body?.first_name, 100), last = s(req.body?.last_name, 100);
+    const reason = s(req.body?.reason, 20), evidence = s(req.body?.evidence, 300), reference = s(req.body?.reference, 200), note = s(req.body?.note, 1000);
+    if (!userId) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    const missing = [!first && 'first name', !last && 'last name', !(reason in NAME_REASONS) && 'reason',
+        evidence.length < 5 && 'the document you checked', reference.length < 2 && 'where the document is kept'].filter(Boolean);
+    if (missing.length) return res.status(400).json({ ok: false, error: 'validation_error', message: `Add ${missing.join(', ')}.` });
+    const pool = getPool();
+    const client = await (pool as any).connect();
+    try {
+        await client.query('BEGIN');
+        const u = (await client.query(`SELECT first_name, last_name FROM "user" WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`, [userId])).rows[0];
+        if (!u) { await client.query('ROLLBACK'); return res.status(404).json({ ok: false, error: 'user_not_found' }); }
+        if ((u.first_name ?? '').trim() === first && (u.last_name ?? '').trim() === last) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ ok: false, error: 'no_changes', message: 'That is already their name.' });
+        }
+        const r = (await client.query(
+            `INSERT INTO user_name_change (user_id, previous_first_name, previous_last_name, new_first_name, new_last_name, reason, evidence, reference, note, admin_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, created_at`,
+            [userId, u.first_name, u.last_name, first, last, reason, evidence, reference, note || null, adminId])).rows[0];
+        await client.query(`UPDATE "user" SET first_name = $2, last_name = $3, updated_at = $4 WHERE id = $1`,
+            [userId, first, last, TimestampUtils.forTableField('user', 'updated_at')]);
+        await client.query(`INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at) VALUES ($1, 'user_name_changed', 'user', $2, $3, $4)`,
+            [adminId, userId, JSON.stringify({ name_change_id: Number(r.id), from: [u.first_name, u.last_name].filter(Boolean).join(' '), to: `${first} ${last}`, reason, evidence, reference }),
+             TimestampUtils.forTableField('admin_audit', 'created_at')]);
+        await client.query('COMMIT');
+        return res.status(201).json({ ok: true, data: { id: Number(r.id), first_name: first, last_name: last } });
+    } catch (error: any) {
+        await client.query('ROLLBACK').catch(() => {});
+        if (String(error?.message || '').includes('user_name_change') && /does not exist/.test(String(error?.message))) {
+            return res.status(503).json({ ok: false, error: 'not_ready', message: 'Name changes are not available until the latest database update is applied.' });
+        }
+        logger.error('[POST /api/admin/users/:id/name-change] error', { message: error?.message });
+        return res.status(500).json({ ok: false, error: 'database_error' });
+    } finally { client.release(); }
+});
+
+/** GET /api/admin/users/:id/name-changes — the customer's earlier names, newest first. */
+router.get('/users/:id/name-changes', requireAdmin, async (req: Request, res: Response) => {
+    const userId = parseInt(param(req, 'id'), 10);
+    if (!userId) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    try {
+        const ok = (await getPool().query(`SELECT to_regclass('public.user_name_change') IS NOT NULL AS ok`)).rows[0]?.ok;
+        if (!ok) return res.json({ ok: true, data: [] });
+        const r = await getPool().query(
+            `SELECT c.id, c.previous_first_name, c.previous_last_name, c.new_first_name, c.new_last_name, c.reason, c.evidence, c.reference, c.note, c.created_at, a.email AS admin_email
+               FROM user_name_change c LEFT JOIN "user" a ON a.id = c.admin_id WHERE c.user_id = $1 ORDER BY c.id DESC`, [userId]);
+        return res.json({ ok: true, data: r.rows.map((x: any) => ({ ...x, reason_label: (NAME_REASONS as any)[x.reason] ?? x.reason })) });
+    } catch (error: any) {
+        logger.error('[GET /api/admin/users/:id/name-changes] error', { message: error?.message });
+        return res.status(500).json({ ok: false, error: 'database_error' });
+    }
+});
+
 /**
  * GET /api/admin/users/:id
  * Get specific user (admin only)
@@ -558,13 +623,22 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
             updates.push(`email = $${paramIndex++}`);
             values.push(email);
         }
-        if (typeof first_name === 'string') {
-            updates.push(`first_name = $${paramIndex++}`);
-            values.push(first_name);
+        // A legal name is identity data: once set, it changes only through the recorded name-change
+        // action (reason, document checked, previous name kept). Filling in a missing name is allowed.
+        const before = (await pool.query(`SELECT email, first_name, last_name, company_name FROM "user" WHERE id = $1`, [userId])).rows[0];
+        if (!before) return res.status(404).json({ ok: false, error: 'user_not_found' });
+        const renames = (typeof first_name === 'string' && (before.first_name ?? '').trim() && first_name.trim() !== String(before.first_name).trim())
+            || (typeof last_name === 'string' && (before.last_name ?? '').trim() && last_name.trim() !== String(before.last_name).trim());
+        if (renames) {
+            return res.status(400).json({ ok: false, error: 'use_name_change', message: 'Use Change legal name, which records the reason and the document you checked.' });
         }
-        if (typeof last_name === 'string') {
+        if (typeof first_name === 'string' && !(before.first_name ?? '').trim()) {
+            updates.push(`first_name = $${paramIndex++}`);
+            values.push(first_name.trim());
+        }
+        if (typeof last_name === 'string' && !(before.last_name ?? '').trim()) {
             updates.push(`last_name = $${paramIndex++}`);
-            values.push(last_name);
+            values.push(last_name.trim());
         }
         if (typeof company_name === 'string') {
             updates.push(`company_name = $${paramIndex++}`);
@@ -686,10 +760,12 @@ router.patch('/users/:id', requireAdmin, async (req: Request, res: Response) => 
         const sanitisedBody = Object.fromEntries(
             Object.entries(req.body).filter(([k]) => !SENSITIVE_AUDIT_FIELDS.has(k))
         );
+        const previous: Record<string, unknown> = {};
+        for (const k of ['email', 'first_name', 'last_name', 'company_name']) if (k in sanitisedBody) previous[k] = before[k] ?? null;
         await pool.query(`
             INSERT INTO admin_audit (admin_id, action, target_type, target_id, details, created_at)
             VALUES ($1, 'update_user', 'user', $2, $3, $4)
-        `, [adminId, userId, JSON.stringify(sanitisedBody), TimestampUtils.forTableField('admin_audit', 'created_at')]);
+        `, [adminId, userId, JSON.stringify({ ...sanitisedBody, previous }), TimestampUtils.forTableField('admin_audit', 'created_at')]);
 
         // Send KYC approved email if KYC just became approved
         if (typeof kyc_status === 'string' && kyc_status === 'approved' && previousKycStatus !== 'approved') {

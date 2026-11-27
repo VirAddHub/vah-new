@@ -241,7 +241,7 @@ describe('customer state regression checks', () => {
 });
 
 
-it('saves company edits alone and alongside other profile changes through the admin endpoint', async () => {
+it('saves company edits through the admin endpoint, but never a silent rename', async () => {
   await db.exec(`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS updated_at bigint;
     ALTER TABLE admin_audit ALTER COLUMN created_at TYPE timestamptz USING to_timestamp(created_at / 1000.0);
     CREATE SEQUENCE IF NOT EXISTS test_audit_id START 10000;
@@ -253,8 +253,16 @@ it('saves company edits alone and alongside other profile changes through the ad
   const update = (body: any) => request(usersApp).patch('/api/admin/users/53').set('Authorization', `Bearer ${adminToken}`).send(body);
   expect((await update({company_name:'Updated Studio Ltd'})).status).toBe(200);
   expect((await db.query('SELECT company_name FROM "user" WHERE id=53')).rows[0].company_name).toBe('Updated Studio Ltd');
-  expect((await update({company_name:'Second Studio Ltd',first_name:'New name'})).status).toBe(200);
-  expect((await db.query('SELECT company_name,first_name FROM "user" WHERE id=53')).rows[0]).toEqual({company_name:'Second Studio Ltd',first_name:'New name'});
+  // A legal name changes only through the recorded name-change action; the whole edit is refused.
+  const before = (await db.query('SELECT first_name FROM "user" WHERE id=53')).rows[0].first_name;
+  const renamed = await update({company_name:'Second Studio Ltd',first_name:'New name'});
+  if (before) {
+    expect(renamed.status).toBe(400);
+    expect(renamed.body.error).toBe('use_name_change');
+    expect((await db.query('SELECT company_name,first_name FROM "user" WHERE id=53')).rows[0]).toEqual({company_name:'Updated Studio Ltd',first_name:before});
+  } else {
+    expect(renamed.status).toBe(200); // filling in a missing name is allowed
+  }
 });
 it('includes both pending statuses in list/count predicates and statistics', async () => {
   const source = readFileSync(new URL('../../server/routes/admin-users.ts',import.meta.url),'utf8');

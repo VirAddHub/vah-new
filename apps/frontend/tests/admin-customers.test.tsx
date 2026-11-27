@@ -54,7 +54,7 @@ describe('Admin › Customers', () => {
     wrap();
     fireEvent.click(await screen.findByText('Pat Founder'));
     expect(await screen.findByText('Check their identity documents and record the result.')).toBeInTheDocument();
-    for (const name of ['Edit details', 'Send password reset', 'Suspend, restore or close…']) expect(screen.getByRole('button', { name: new RegExp(name) })).toBeInTheDocument();
+    for (const name of ['Change legal name…', 'Edit email or company', 'Send password reset', 'Suspend, restore or close…']) expect(screen.getByRole('button', { name: new RegExp(name) })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /KYC/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /plan status/i })).toBeNull();
     expect(await screen.findByText('Record result…')).toBeInTheDocument();
@@ -83,6 +83,26 @@ describe('Admin › Customers', () => {
     deletedFails = false;
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('Old Customer')).toBeInTheDocument();
+  });
+
+  it('a legal name change needs the document checked, and the general edit has no name fields', async () => {
+    wrap();
+    fireEvent.click(await screen.findByText('Pat Founder'));
+    await screen.findByText('Check their identity documents and record the result.');
+    await waitFor(() => expect(screen.getByRole('button', { name: /Change legal name/ })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: /Edit email or company/ }));
+    expect(screen.queryByLabelText('First name')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: /Change legal name/ }));
+    fireEvent.change(screen.getByLabelText('New last name'), { target: { value: 'Smith' } });
+    const save = screen.getByRole('button', { name: 'Change name' });
+    expect(save).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Document checked'), { target: { value: 'Marriage certificate' } });
+    fireEvent.change(screen.getByLabelText('Where the copy is kept'), { target: { value: 'KYC/61' } });
+    expect(save).toBeEnabled();
+    fireEvent.click(save);
+    await waitFor(() => expect(calls.find(c => c.url === '/api/admin/users/61/name-change')).toBeTruthy());
+    expect(JSON.parse(String(calls.find(c => c.url === '/api/admin/users/61/name-change')!.init!.body))).toMatchObject({ first_name: 'Pat', last_name: 'Smith', reason: 'marriage', evidence: 'Marriage certificate', reference: 'KYC/61' });
   });
 
   it('permanent delete needs the email typed and points to closing instead', async () => {
