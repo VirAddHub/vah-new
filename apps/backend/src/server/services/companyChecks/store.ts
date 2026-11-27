@@ -43,6 +43,40 @@ export async function loadCustomer(db: Queryable, userId: number, businessId?: n
     };
 }
 
+/**
+ * Customer information for many checks at once: four queries in total, whatever the number of
+ * checks (the queue used to make four per check). Keyed by check id.
+ */
+export async function loadCustomersBulk(db: Queryable, checks: { id: number | string; user_id: number | string; business_id?: number | string | null; company_number: string }[]) {
+    const out = new Map<number, CustomerInfo>();
+    if (!checks.length) return out;
+    const userIds = [...new Set(checks.map(c => Number(c.user_id)))];
+    const businessIds = [...new Set(checks.map(c => Number(c.business_id)).filter(Boolean))];
+    const [users, owners, businesses, decls] = await Promise.all([
+        db.query(`SELECT id, email, first_name, last_name, kyc_status, business_type, company_name, company_number, companies_house_number FROM "user" WHERE id = ANY($1) AND deleted_at IS NULL`, [userIds]),
+        db.query(`SELECT id, user_id, full_name, email, role, status, requires_verification FROM business_owner WHERE user_id = ANY($1) ORDER BY id`, [userIds]),
+        businessIds.length ? db.query(`SELECT id, user_id, company_name, trading_name, companies_house_number FROM business WHERE id = ANY($1)`, [businessIds]) : Promise.resolve({ rows: [] as any[] }),
+        db.query(`SELECT DISTINCT ON (user_id, company_number) user_id, company_number, data, submitted_at, returned_at, returned_reason
+                    FROM company_declaration WHERE user_id = ANY($1) ORDER BY user_id, company_number, submitted_at DESC, id DESC`, [userIds]),
+    ]);
+    const byUser = new Map(users.rows.map((u: any) => [Number(u.id), u]));
+    for (const c of checks) {
+        const u: any = byUser.get(Number(c.user_id));
+        if (!u) continue;
+        const b: any = c.business_id ? businesses.rows.find((x: any) => Number(x.id) === Number(c.business_id) && Number(x.user_id) === Number(c.user_id)) : null;
+        const d: any = decls.rows.find((x: any) => Number(x.user_id) === Number(c.user_id) && x.company_number === c.company_number);
+        out.set(Number(c.id), {
+            user_id: Number(u.id), email: u.email, first_name: u.first_name, last_name: u.last_name, kyc_status: u.kyc_status, business_type: u.business_type,
+            company_name: b?.company_name ?? u.company_name ?? null,
+            company_number: b?.companies_house_number ?? u.companies_house_number ?? u.company_number ?? null,
+            trading_name: b?.trading_name ?? null,
+            owners: owners.rows.filter((o: any) => Number(o.user_id) === Number(u.id)).map((o: any) => ({ id: Number(o.id), full_name: o.full_name, email: o.email, role: o.role, status: o.status, requires_verification: !!o.requires_verification })),
+            declaration: d ? { data: d.data, submitted_at: d.submitted_at, returned_at: d.returned_at, returned_reason: d.returned_reason } : null,
+        });
+    }
+    return out;
+}
+
 export async function getCheck(db: Queryable, id: number) {
     return (await db.query(`SELECT * FROM company_check WHERE id = $1`, [id])).rows[0] ?? null;
 }

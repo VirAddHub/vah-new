@@ -6,7 +6,7 @@
  * makes the judgements a person must make, and decides. Automated results never approve anyone.
  * Individual identity, address, PEP, sanctions and adverse-media checks are separate.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import { AlertTriangle, Bell, Building2, Check, CircleDashed, Download, ExternalLink, Loader2, Minus, Plus, RefreshCcw, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -83,9 +83,12 @@ function Heading({ children, note }: { children: React.ReactNode; note?: string 
 export default function CompanyChecksSection() {
   const [view, setView] = useState<string>("action");
   const [q, setQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
   const [linking, setLinking] = useState(false);
-  const list = useSWR(`${API}?view=${view}&q=${encodeURIComponent(q)}`, getJson, { refreshInterval: 60_000 });
+  // Search once typing pauses, and keep the current list on screen while the next one loads.
+  useEffect(() => { const t = setTimeout(() => setDebouncedQ(q.trim()), 300); return () => clearTimeout(t); }, [q]);
+  const list = useSWR(`${API}?view=${view}&q=${encodeURIComponent(debouncedQ)}`, getJson, { refreshInterval: 60_000, keepPreviousData: true });
   const items: any[] = list.data?.data?.items ?? [];
   const counts = list.data?.data?.counts ?? {};
 
@@ -116,7 +119,7 @@ export default function CompanyChecksSection() {
               <input className={cn(inputCls, "pl-8")} placeholder="Company, number, customer" value={q} onChange={e => setQ(e.target.value)} />
             </label>
           </div>
-          {list.isLoading ? <p className="p-4 text-[13px] text-graphite">Loading…</p>
+          {list.isLoading && !items.length ? <p className="p-4 text-[13px] text-graphite">Loading…</p>
             : list.error ? <p className="p-4 text-[13px] text-destructive">{String(list.error.message)}</p>
             : !items.length ? <p className="p-4 text-[13px] text-graphite">{view === "action" ? "Nothing needs action." : "Nothing here."}</p>
             : (

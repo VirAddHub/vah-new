@@ -7,7 +7,7 @@ import { getPool } from '../../server/db';
 import { setChClientFactory } from '../../server/routes/admin-company-checks';
 import { getAccess } from '../../server/services/access';
 import { runMonitoringOnce } from '../../server/services/companyChecks/monitor';
-import { refreshPending } from '../../server/services/companyChecks/automation';
+import { ensureAllChecks, refreshPending } from '../../server/services/companyChecks/automation';
 import { fakeChClient, fakeCompany, defaultPscs, declaration } from '../helpers/fakeCompaniesHouse';
 
 const CUSTOMER = 30401;
@@ -41,6 +41,7 @@ describe('company checks', () => {
     });
 
     it('a customer with a company number gets a check automatically, waiting for retrieval', async () => {
+        expect(await ensureAllChecks(getPool() as any)).toBeGreaterThanOrEqual(1); // the hourly job
         const r = await get('?view=all');
         expect(r.status).toBe(200);
         const item = r.body.data.items.find((i: any) => i.user_id === CUSTOMER);

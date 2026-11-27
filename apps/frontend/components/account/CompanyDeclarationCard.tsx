@@ -23,7 +23,9 @@ const getJson = (u: string) => fetch(u, { credentials: 'include', cache: 'no-sto
 const blankPerson = (o: Partial<Person> = {}): Person => ({ full_name: '', email: '', is_account_holder: false, is_director: false, is_beneficial_owner: false,
   ownership_percent: '', voting_percent: '', other_control: false, country_of_residence: 'United Kingdom', date_of_birth: '', ...o });
 const field = 'h-10 w-full rounded-md border border-border bg-background px-3 text-body-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20';
-const num = (v: string) => (v.trim() === '' ? null : Number(v));
+// Values can arrive as numbers (a returned declaration) or text (typed in): accept both.
+const num = (v: unknown) => { const t = String(v ?? '').trim(); return t === '' ? null : Number(t); };
+const str = (v: unknown) => (v === null || v === undefined ? '' : String(v));
 
 function fromData(d: any, holder: { full_name: string; email: string }): Form {
   if (!d) {
@@ -34,8 +36,8 @@ function fromData(d: any, holder: { full_name: string; email: string }): Form {
   return { nature_of_business: d.nature_of_business ?? '', trading_name: d.trading_name ?? '', website: d.website ?? '',
     same_as_registered_office: !!d.principal_place_of_business?.same_as_registered_office, address: d.principal_place_of_business?.address ?? '',
     applicant_role: d.applicant_role, applicant_authority: d.applicant_authority ?? '',
-    people: (d.people ?? []).map((p: any) => blankPerson({ ...p, email: p.email ?? '', ownership_percent: p.ownership_percent ?? '', voting_percent: p.voting_percent ?? '', date_of_birth: p.date_of_birth ?? '' })),
-    corporate_owners: (d.corporate_owners ?? []).map((c: any) => ({ ...c, registration_number: c.registration_number ?? '', ownership_percent: String(c.ownership_percent) })),
+    people: (d.people ?? []).map((p: any) => blankPerson({ ...p, email: str(p.email), ownership_percent: str(p.ownership_percent), voting_percent: str(p.voting_percent), date_of_birth: str(p.date_of_birth), country_of_residence: str(p.country_of_residence) })),
+    corporate_owners: (d.corporate_owners ?? []).map((c: any) => ({ name: str(c.name), registration_number: str(c.registration_number), country: str(c.country), ownership_percent: str(c.ownership_percent), ultimate_owners: str(c.ultimate_owners) })),
     no_beneficial_owner_explanation: d.no_beneficial_owner_explanation ?? '', expected_monthly_mail: d.expected_monthly_mail ?? '0-10', confirmation: false };
 }
 
@@ -60,6 +62,7 @@ export function CompanyDeclarationCard() {
   const submit = async () => {
     if (!form) return;
     setBusy(true); setError(null);
+    try {
     const body = {
       nature_of_business: form.nature_of_business, trading_name: form.trading_name || null, website: form.website || null,
       principal_place_of_business: { same_as_registered_office: form.same_as_registered_office, address: form.same_as_registered_office ? null : form.address },
@@ -68,10 +71,9 @@ export function CompanyDeclarationCard() {
         is_beneficial_owner: p.is_beneficial_owner, ownership_percent: p.is_beneficial_owner ? num(p.ownership_percent) : null,
         voting_percent: p.is_beneficial_owner ? num(p.voting_percent) : null, other_control: p.is_beneficial_owner && p.other_control,
         country_of_residence: p.country_of_residence, date_of_birth: p.date_of_birth || null })),
-      corporate_owners: form.corporate_owners.map(c => ({ ...c, registration_number: c.registration_number || null, ownership_percent: Number(c.ownership_percent) })),
+      corporate_owners: form.corporate_owners.map(c => ({ ...c, registration_number: c.registration_number || null, ownership_percent: num(c.ownership_percent) ?? 0 })),
       no_beneficial_owner_explanation: form.no_beneficial_owner_explanation || null, expected_monthly_mail: form.expected_monthly_mail, confirmation: form.confirmation,
     };
-    try {
       const res = await fetch('/api/bff/company-declaration', { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.ok) { setError(json?.message || 'We could not submit your details. Please check them and try again.'); return; }
@@ -79,6 +81,8 @@ export function CompanyDeclarationCard() {
       setDone(invited.length ? `Thank you. We have emailed ${invited.join(', ')} to verify their identity.` : 'Thank you. We will check your company details.');
       setForm(null);
       await mutate(); await refreshAccess();
+    } catch {
+      setError('We could not submit your details. Please try again.');
     } finally { setBusy(false); }
   };
 

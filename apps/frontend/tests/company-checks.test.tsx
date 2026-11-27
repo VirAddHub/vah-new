@@ -115,6 +115,22 @@ describe('Company declaration: customer', () => {
     expect(await screen.findByText(/We will check your company details/)).toBeInTheDocument();
   });
 
+  it('a returned declaration (saved numbers) can be corrected and resubmitted', async () => {
+    declarationState = { ...declarationState, editable: true, declaration: { submitted_at: '2026-11-27T14:25:00Z', returned_at: '2026-11-27T14:30:00Z', returned_reason: 'Please add the second owner',
+      data: { nature_of_business: 'Software consultancy', principal_place_of_business: { same_as_registered_office: true, address: null }, applicant_role: 'director_and_beneficial_owner',
+        people: [{ full_name: 'Test User', email: null, is_account_holder: true, is_director: true, is_beneficial_owner: true, ownership_percent: 100, voting_percent: 100, other_control: false, country_of_residence: 'England', date_of_birth: null }],
+        corporate_owners: [{ name: 'Holdco Ltd', registration_number: null, country: 'England', ownership_percent: 30, ultimate_owners: 'Test User' }], expected_monthly_mail: '11-50' } } };
+    wrap(<CompanyDeclarationCard />);
+    expect(await screen.findByText(/Please add the second owner/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Person 1 share percentage')).toHaveValue('100');
+    fireEvent.click(screen.getByRole('checkbox', { name: /I confirm/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Submit company details' }));
+    await waitFor(() => expect(calls.some(c => c.init?.method === 'POST')).toBe(true));
+    const sent = JSON.parse(String(calls.find(c => c.init?.method === 'POST')!.init!.body));
+    expect(sent.people[0]).toMatchObject({ ownership_percent: 100, voting_percent: 100 });
+    expect(sent.corporate_owners[0]).toMatchObject({ name: 'Holdco Ltd', ownership_percent: 30 });
+  });
+
   it('shows nothing when there is no company number', async () => {
     declarationState = { required: false };
     const { container } = wrap(<CompanyDeclarationCard />);

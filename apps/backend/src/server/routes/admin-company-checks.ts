@@ -16,7 +16,7 @@ import { logger } from '../../lib/logger';
 import { param } from '../../lib/express-params';
 import { ChError, createChClient, normaliseCompanyNumber, searchCompanies, type ChClient } from '../services/companyChecks/chClient';
 import { analyse, JUDGEMENT, JUDGEMENT_IDS, nextAction, satisfactoryBlockers } from '../services/companyChecks/analysis';
-import { audit, detail, ensureCheck, getCheck, loadCustomer, refreshSnapshot, saveReport, syncDiscrepancies } from '../services/companyChecks/store';
+import { audit, detail, ensureCheck, getCheck, loadCustomer, loadCustomersBulk, refreshSnapshot, saveReport, syncDiscrepancies } from '../services/companyChecks/store';
 import { ensureAllChecks } from '../services/companyChecks/automation';
 import { latestDeclaration } from '../services/companyChecks/declaration';
 import { identityProviderStatus } from '../services/identityVerification';
@@ -34,6 +34,15 @@ const chLimiter = rateLimit({
     keyGenerator: (req: Request) => `admin:${(req as any).user?.id ?? 'unknown'}`,
     message: { ok: false, error: 'rate_limited', message: 'Too many Companies House requests. Wait a few minutes.' },
 });
+
+// Creating checks for customers who have a company number is done by the hourly job. The queue
+// also nudges it, in the background and at most every 10 minutes, so opening the page stays fast.
+let lastEnsure = 0;
+function ensureChecksSoon(db: any) {
+    if (Date.now() - lastEnsure < 10 * 60 * 1000) return;
+    lastEnsure = Date.now();
+    ensureAllChecks(db).catch(e => logger.warn('[company-checks] ensureAllChecks failed', { message: (e as Error)?.message }));
+}
 
 const admin = (req: Request) => ({ id: Number((req as any).user!.id), email: ((req as any).user?.email as string) ?? null });
 const idParam = (req: Request, name = 'id') => { const n = Number(param(req, name)); return Number.isSafeInteger(n) && n > 0 ? n : null; };
@@ -62,7 +71,7 @@ router.get('/company-checks/summary', async (_req, res) => {
 /**
  * GET / — the work queue, most urgent first, each with its next action.
  * ?view=action|waiting|satisfactory|all&q=&user_id=
- * Any customer with a company number but no check yet gets one here (no Companies House call).
+ * Customers with a company number get a check from the hourly job (nudged from here in the background).
  */
 router.get('/company-checks', async (req, res) => {
     const view = text(req.query.view, 20) || 'action';
@@ -70,18 +79,20 @@ router.get('/company-checks', async (req, res) => {
     const userId = Number(req.query.user_id) || null;
     const db = getPool();
     try {
-        await ensureAllChecks(db).catch(e => logger.warn('[company-checks] ensureAllChecks failed', { message: (e as Error)?.message }));
+        ensureChecksSoon(db);
         const rows = (await db.query(`
-            SELECT c.*, u.email, u.first_name, u.last_name,
+            SELECT c.id, c.user_id, c.business_id, c.company_number, c.company_name, c.status, c.risk_rating, c.monitoring, c.fetched_at, c.fetch_error,
+                   c.updated_at, c.checklist, c.snapshot, u.email, u.first_name, u.last_name,
                    (SELECT COUNT(*)::int FROM company_check_alert a WHERE a.check_id = c.id AND a.acknowledged_at IS NULL) AS open_alerts,
                    (SELECT COUNT(*)::int FROM company_check_entry e WHERE e.check_id = c.id AND e.kind = 'discrepancy' AND e.resolved_at IS NULL) AS open_discrepancies,
                    (SELECT COUNT(*)::int FROM company_check_evidence v WHERE v.check_id = c.id AND v.kind = 'beneficial_ownership') AS bo_evidence
               FROM company_check c JOIN "user" u ON u.id = c.user_id
              WHERE u.deleted_at IS NULL ${userId ? 'AND c.user_id = $1' : ''}
              ORDER BY c.updated_at DESC LIMIT 500`, userId ? [userId] : [])).rows;
+        const customers = await loadCustomersBulk(db, rows);
         const items: any[] = [];
         for (const c of rows) {
-            const customer = await loadCustomer(db, Number(c.user_id), c.business_id, c.company_number);
+            const customer = customers.get(Number(c.id));
             if (!customer) continue;
             const a = analyse(c.snapshot ?? null, customer);
             const blockers = satisfactoryBlockers({ checklist: c.checklist || {}, automated: a.automated, attention: a.attention,
