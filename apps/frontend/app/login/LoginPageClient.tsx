@@ -310,16 +310,19 @@ export function LoginPageClient() {
   return (
     <div className="flex min-h-screen flex-col bg-background lg:flex-row">
       {/* Left — branding (wide screens only) */}
-      <div className="hidden flex-col justify-between bg-[#123d30] p-10 text-white lg:flex lg:w-[45%] xl:w-[40%]">
-        <LoginBrandMark variant="onDark" />
+      <div className="hidden flex-col justify-between bg-background p-10 text-[#123d30] lg:flex lg:w-[45%] xl:w-[40%]">
+        <LoginBrandMark />
         <div>
-          <h2 className="font-newsreader text-4xl font-normal leading-snug text-white/95">
-            Everything you need to manage your account,
+          <h2 className="font-newsreader text-4xl font-normal leading-snug text-[#123d30]">
+            Your business post.
             <br />
-            in one dashboard.
+            All in one place.
           </h2>
+          <p className="mt-5 max-w-sm text-base leading-relaxed text-muted-foreground">
+            Read your letters, manage your business address and keep your account up to date.
+          </p>
         </div>
-        <p className="text-xs text-white/75">© 2026 VirtualAddressHub</p>
+        <p className="text-xs text-muted-foreground">© 2026 VirtualAddressHub</p>
       </div>
 
       {/* Right — form */}
@@ -332,10 +335,10 @@ export function LoginPageClient() {
           <div className="w-full max-w-[420px]">
             <div className="mb-6 text-left">
               <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                Welcome back
+                Sign in to your account
               </h1>
               <p className="mt-1.5 text-sm text-muted-foreground">
-                Sign in to your account
+                Sign in to manage your business post.
               </p>
             </div>
 
@@ -413,7 +416,7 @@ export function LoginPageClient() {
                   size="sm"
                   className="h-10 w-full rounded-md text-body-sm font-semibold bg-primary text-primary-foreground transition-[filter,background] hover:bg-primary/90 hover:brightness-95"
                 >
-                  {loading ? 'Signing in...' : 'Sign In'}
+                  {loading ? 'Signing in...' : 'Sign in'}
                 </Button>
               </form>
 
@@ -434,7 +437,7 @@ export function LoginPageClient() {
                     href="/contact"
                     className="text-body-sm font-medium text-primary transition-colors hover:text-primary/90 hover:underline"
                   >
-                    Can&apos;t log in?
+                    Need help signing in?
                   </Link>
                 </div>
               </div>
