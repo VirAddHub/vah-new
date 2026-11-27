@@ -6,7 +6,6 @@ import { swrFetcher } from '@/services/http';
 import { useProfile, useWhoAmI } from '@/hooks/useDashboardData';
 import { Card, CardContent } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { REGISTERED_OFFICE_ADDRESS } from '@/lib/config/address';
 import { toast } from '@/hooks/use-toast';
 import { mutate as globalMutate } from 'swr';
 import { DASHBOARD_BOOTSTRAP_KEY } from '@/lib/swrKeys';
@@ -25,43 +24,18 @@ export default function AccountAddressesPage() {
     const user = userData?.data?.user || userData?.data || null;
     const profile = profileData?.data;
 
-    // 🔍 STEP 3: Log frontend profile fetch
-    if (profileData) {
-        console.log("🟣 PROFILE FROM API:", profile);
-        console.log("🟣 forwarding_address:", profile?.forwarding_address);
-        console.log("🟣 forwardingAddress:", profile?.forwardingAddress);
-    }
-
     // Build addresses
     const addresses = useMemo(() => {
         // Business address (Registered Office)
         let businessAddress = null;
         if (accountData?.ok && accountData.data?.business_address) {
             businessAddress = accountData.data.business_address;
-        } else {
-            businessAddress = {
-                formatted: [
-                    REGISTERED_OFFICE_ADDRESS.line1,
-                    REGISTERED_OFFICE_ADDRESS.line2,
-                    `${REGISTERED_OFFICE_ADDRESS.city} ${REGISTERED_OFFICE_ADDRESS.postcode}`,
-                ].filter(Boolean).join('\n'),
-            };
         }
 
         // Forwarding address
         const forwardingAddress = profile?.forwarding_address || user?.forwarding_address
             ? { formatted: profile?.forwarding_address || user?.forwarding_address || '' }
             : null;
-
-        // 🔍 STEP 4: Log forwarding check
-        console.log("🔴 FORWARDING CHECK:", {
-            forwarding_address: profile?.forwarding_address,
-            forwardingAddress: profile?.forwardingAddress,
-            user_forwarding_address: user?.forwarding_address,
-            forwardingAddressFormatted: forwardingAddress?.formatted,
-            profile,
-            user,
-        });
 
         return {
             businessAddress,

@@ -48,8 +48,8 @@ it('permanently redirects redundant URLs without a chain', async () => {
     );
   }
 });
-it('sitemap lists consolidated and distinct pages, not redirect sources', () => {
-  const urls = sitemap().map((x) => x.url);
+it('sitemap lists consolidated and distinct pages, not redirect sources', async () => {
+  const urls = (await sitemap()).map((x) => x.url);
   for (const p of ['/services', '/registered-office-address', '/directors-service-address'])
     expect(urls).toContain(`https://virtualaddresshub.co.uk${p}`);
   for (const p of Object.keys(destinations))

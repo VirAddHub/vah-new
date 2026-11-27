@@ -1,3 +1,5 @@
+import "server-only";
+
 // Frontend config for registered office address
 // This should match the backend config in apps/backend/src/config/address.ts
 

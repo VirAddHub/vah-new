@@ -14,7 +14,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
-import { REGISTERED_OFFICE_ADDRESS } from '@/lib/config/address';
 /**
  * Premium Account Overview Page
  * 
@@ -107,14 +106,6 @@ export default function AccountOverviewPage() {
         let businessAddress = null;
         if (accountData?.ok && accountData.data?.business_address) {
             businessAddress = accountData.data.business_address;
-        } else if (access?.level === 'full' || access?.isAdmin) {
-            businessAddress = {
-                formatted: [
-                    REGISTERED_OFFICE_ADDRESS.line1,
-                    REGISTERED_OFFICE_ADDRESS.line2,
-                    `${REGISTERED_OFFICE_ADDRESS.city} ${REGISTERED_OFFICE_ADDRESS.postcode}`,
-                ].filter(Boolean).join('\n'),
-            };
         }
 
         return {
