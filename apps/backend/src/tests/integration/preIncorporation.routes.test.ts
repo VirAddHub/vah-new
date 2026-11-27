@@ -159,6 +159,9 @@ describe('pre-incorporation', () => {
         // No subscription in tests, so payment is the first thing outstanding.
         expect(late).toMatchObject({ service_label: 'Awaiting payment', stage: 'waiting' });
         expect(late.next_step).toMatch(/pay/);
+        const order = ['needs_you', 'restricted', 'waiting', 'active', 'staff'];
+        const ranks = items.map((u: any) => order.indexOf(u.stage));
+        expect(ranks).toEqual([...ranks].sort((a, b) => a - b)); // people who need us first
         const only = await request(app).get('/api/admin/users?stage=waiting&pageSize=500').set('Authorization', admin);
         expect(only.body.items.every((u: any) => u.stage === 'waiting')).toBe(true);
         expect(only.body.total).toBe(counts.waiting);

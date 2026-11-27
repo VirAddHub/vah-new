@@ -34,12 +34,19 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const wrap = () => render(<SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}><UsersSection /></SWRConfig>);
 
 describe('Admin › Customers', () => {
-  it('opens on the people who need an administrator, with counts for every list', async () => {
+  it('opens on every account, with the to-do lists as tabs and counts', async () => {
     wrap();
     expect(await screen.findByText('Pat Founder')).toBeInTheDocument();
-    expect(screen.queryByText('Sam Test')).toBeNull();
-    expect(screen.getByRole('button', { name: /Needs you 1/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('Sam Test')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /All 2/ })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: /Closed 3/ })).toBeInTheDocument();
+    expect(calls.some(c => c.url.includes('stage='))).toBe(false);
+    // Groups are labelled, people who need an administrator first.
+    const text = document.body.textContent ?? '';
+    expect(text.indexOf('Needs you1Pat Founder')).toBeGreaterThan(-1);
+    expect(text.indexOf('Pat Founder')).toBeLessThan(text.indexOf('Sam Test'));
+    fireEvent.click(screen.getByRole('button', { name: /Needs you 1/ }));
+    await waitFor(() => expect(screen.queryByText('Sam Test')).toBeNull());
     expect(calls.some(c => c.url.includes('stage=needs_you'))).toBe(true);
   });
 
@@ -62,7 +69,6 @@ describe('Admin › Customers', () => {
 
   it('a locked sign-in can be cleared from the customer', async () => {
     wrap();
-    fireEvent.click(await screen.findByRole('button', { name: /Active 1/ }));
     fireEvent.click(await screen.findByText('Sam Test'));
     fireEvent.click(await screen.findByRole('button', { name: /Clear block/ }));
     await waitFor(() => expect(calls.some(c => c.url === '/api/admin/users/53/unlock-account' && c.init?.method === 'POST')).toBe(true));

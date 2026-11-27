@@ -32,15 +32,16 @@ async function call(url: string, method: string, body?: unknown) {
 }
 
 const TABS = [
+  { id: "all", label: "All", empty: "No accounts." },
   { id: "needs_you", label: "Needs you", empty: "Nobody is waiting on you." },
   { id: "waiting", label: "Waiting on customer", empty: "Nobody is part-way through setting up." },
   { id: "active", label: "Active", empty: "No active customers." },
   { id: "restricted", label: "Restricted", empty: "No suspended, overdue or refused accounts." },
-  { id: "all", label: "All", empty: "No accounts." },
   { id: "closed", label: "Closed", empty: "No closed accounts." },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 
+const GROUP: Record<string, string> = { needs_you: "Needs you", restricted: "Restricted", waiting: "Waiting on customer", active: "Active", staff: "Administrators" };
 const DOT: Record<string, string> = { needs_you: "bg-amber-500", waiting: "bg-graphite/40", active: "bg-primary", restricted: "bg-red-600", staff: "bg-ink", closed: "bg-graphite/40" };
 const name = (u: any) => [u?.first_name, u?.last_name].filter(Boolean).join(" ");
 const day = (v: unknown) => {
@@ -83,7 +84,7 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
 }
 
 export default function UsersSection() {
-  const [tab, setTab] = useState<TabId>("needs_you");
+  const [tab, setTab] = useState<TabId>("all");
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -110,8 +111,8 @@ export default function UsersSection() {
     <div className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-[20px] font-semibold tracking-[-0.02em] text-ink"><Users className="h-5 w-5" aria-hidden /> Customers</h1>
-          <p className="text-[13px] text-graphite">Grouped by what happens next. Select a customer to see their details and act.</p>
+          <h1 className="flex items-center gap-2 text-[20px] font-semibold tracking-[-0.02em] text-ink"><Users className="h-5 w-5" aria-hidden /> Users</h1>
+          <p className="text-[13px] text-graphite">Every account, with the people who need you at the top. Select someone to see their details and act.</p>
         </div>
         <Btn variant="solid" onClick={() => setCreating(true)}><Plus className="h-4 w-4" aria-hidden /> Create account</Btn>
       </div>
@@ -147,10 +148,18 @@ export default function UsersSection() {
             : !items.length ? <p className="p-4 text-[13px] text-graphite">{search ? "No matching customers." : TABS.find(t => t.id === tab)!.empty}</p>
             : (
               <ul className="max-h-[70vh] divide-y divide-line overflow-y-auto" aria-label="Customers">
-                {items.map(u => {
+                {items.map((u, i) => {
                   const stage = tab === "closed" ? "closed" : u.stage;
+                  // In the full list (sorted by urgency on the server), label each group once.
+                  const heading = tab === "all" && (i === 0 || items[i - 1].stage !== u.stage) ? GROUP[u.stage] : null;
                   return (
                     <li key={u.id}>
+                      {heading && (
+                        <p className="flex items-center gap-1.5 bg-mist/60 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-graphite">
+                          <span className={cn("h-1.5 w-1.5 rounded-full", DOT[u.stage])} aria-hidden />{heading}
+                          {counts[u.stage] != null && <span className="font-normal">{counts[u.stage]}</span>}
+                        </p>
+                      )}
                       <button type="button" onClick={() => setSelected({ ...u, closed: tab === "closed" })} aria-current={selected?.id === u.id}
                         className={cn("w-full px-3 py-2.5 text-left hover:bg-mist", selected?.id === u.id && "bg-mist")}>
                         <div className="flex items-start justify-between gap-2">
@@ -241,7 +250,7 @@ function CustomerDetail({ row, onBack, onChanged }: { row: any; onBack: () => vo
   if (row.closed) {
     return (
       <div className="space-y-3">
-        <button type="button" onClick={onBack} className="inline-flex items-center gap-1 text-[13px] text-graphite hover:text-ink lg:hidden"><ChevronLeft className="h-4 w-4" aria-hidden /> All customers</button>
+        <button type="button" onClick={onBack} className="inline-flex items-center gap-1 text-[13px] text-graphite hover:text-ink lg:hidden"><ChevronLeft className="h-4 w-4" aria-hidden /> All users</button>
         <h2 className="text-[17px] font-semibold text-ink">{name(row) || row.original_email || row.email} <span className="font-normal text-graphite">· #{id}</span></h2>
         <div className="rounded-md border border-line bg-mist/40 p-3 text-[13px]">Closed {day(row.deleted_at)}. Records are kept as the law requires.</div>
         {msg && <p role={msg.ok ? "status" : "alert"} className={cn("text-[13px]", msg.ok ? "text-primary" : "text-destructive")}>{msg.text}</p>}
@@ -253,7 +262,7 @@ function CustomerDetail({ row, onBack, onChanged }: { row: any; onBack: () => vo
 
   return (
     <div className="space-y-3">
-      <button type="button" onClick={onBack} className="inline-flex items-center gap-1 text-[13px] text-graphite hover:text-ink lg:hidden"><ChevronLeft className="h-4 w-4" aria-hidden /> All customers</button>
+      <button type="button" onClick={onBack} className="inline-flex items-center gap-1 text-[13px] text-graphite hover:text-ink lg:hidden"><ChevronLeft className="h-4 w-4" aria-hidden /> All users</button>
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="truncate text-[18px] font-semibold text-ink">{name(p) || name(row) || email}</h2>

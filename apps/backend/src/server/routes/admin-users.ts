@@ -227,7 +227,11 @@ router.get('/users', adminUsersLimiter, requireAdmin, async (req: Request, res: 
         const counts: Record<string, number> = { all: all.length };
         for (const k of STAGES) counts[k] = all.filter((r: any) => r.stage === k).length;
         const stage = String(req.query.stage ?? '');
-        const filtered = (STAGES as readonly string[]).includes(stage) ? all.filter((r: any) => r.stage === stage) : all;
+        // In the full list, the people who need an administrator come first, then problems,
+        // then those part-way through setup, then everyone else; newest first within each.
+        const ORDER: Record<string, number> = { needs_you: 0, restricted: 1, waiting: 2, active: 3, staff: 4 };
+        const filtered = (STAGES as readonly string[]).includes(stage) ? all.filter((r: any) => r.stage === stage)
+            : [...all].sort((a: any, b: any) => (ORDER[a.stage] ?? 9) - (ORDER[b.stage] ?? 9));
         const total = filtered.length;
         const items = filtered.slice(offset, offset + limitNum);
         return res.json({

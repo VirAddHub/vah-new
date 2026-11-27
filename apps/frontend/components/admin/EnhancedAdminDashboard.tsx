@@ -103,7 +103,7 @@ export function EnhancedAdminDashboard({
     }, [router]);
 
     const menuItems = [
-        { id: "users", label: "Customers", icon: <Users className="h-4 w-4" /> },
+        { id: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
         { id: "mail", label: "Mail", icon: <Mail className="h-4 w-4" /> },
         { id: "forwarding", label: "Forwarding", icon: <Truck className="h-4 w-4" /> },
         { id: "companies-house", label: "Companies House", icon: <ShieldCheck className="h-4 w-4" /> },
