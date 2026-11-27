@@ -1,24 +1,14 @@
 import type { Metadata } from 'next';
-import { HelpPageClient } from './HelpPageClient';
-
-
+import { HelpPage } from '@/components/HelpPage';
+const title = 'Help Centre | VirtualAddressHub';
+const description =
+  'Practical help with your London business address, digital mail, billing, verification and account. Search support answers and step-by-step guides.';
 export const metadata: Metadata = {
-    alternates: { canonical: '/help' },
-    title: 'Help Centre & FAQs | VirtualAddressHub',
-    description: 'Get answers to frequently asked questions about virtual business addresses, mail forwarding, pricing, compliance, and more. Fast answers and friendly support.',
-    openGraph: {
-        title: 'Help Centre & FAQs | VirtualAddressHub',
-        description: 'Get answers to frequently asked questions about virtual business addresses, mail forwarding, pricing, compliance, and more.',
-        url: 'https://virtualaddresshub.co.uk/help',
-    },
+  title,
+  description,
+  alternates: { canonical: '/help' },
+  openGraph: { title, description, url: '/help', type: 'website' },
 };
-
-/**
- * Help Centre Page
- * 
- * Uses shared (public) layout - no duplicate header/footer
- * Layout provides: HeaderWithNav, main wrapper, FooterWithNav
- */
 export default function Help() {
-    return <HelpPageClient />;
+  return <HelpPage />;
 }

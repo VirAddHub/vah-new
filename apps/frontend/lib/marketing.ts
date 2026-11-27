@@ -73,49 +73,5 @@ export const services = [
     visual: 'mail',
   },
 ] as const;
-export const faqs = [
-  [
-    'What is a virtual office?',
-    'An address and mail-handling service for a business that works elsewhere. Our service does not include desks, meeting rooms or a staffed location for your customers to visit.',
-  ],
-  [
-    'What does the subscription include?',
-    'Business correspondence, registered office and director’s service address use where eligible, plus digital mail scanning and online mail management. Physical forwarding has separate conditions and charges.',
-  ],
-  [
-    'When can I start using the address?',
-    'After payment, required identity and business checks, and account approval. Payment alone does not authorise address use or unlock restricted mail.',
-  ],
-  [
-    'Can I keep my home address private?',
-    'Using a separate service or registered office address can avoid publishing your home address on new filings. It does not automatically remove information already on the public register.',
-  ],
-  [
-    'Can I receive original letters?',
-    'Yes, you can request eligible originals through your account, subject to forwarding charges, availability and retention rules. Parcels and bulky items are not accepted.',
-  ],
-  [
-    'Why do I need identity verification?',
-    'We verify customers and required business owners before approving address use. Follow the checks requested during onboarding; these are separate from any Companies House verification obligations.',
-  ],
-  [
-    'How much does a London virtual office cost?',
-    'Our current monthly and annual subscription prices appear in the pricing section and on the plans page. If pricing is unavailable, please contact our team before choosing a subscription.',
-  ],
-  [
-    'Can I use the address on my website and invoices?',
-    'Once approved, you can use the business correspondence address for your eligible business. Check the terms and any requirements that apply to your own business.',
-  ],
-  [
-    'Can I cancel my subscription?',
-    'The current terms specify 30 days’ notice. Review the terms before choosing a monthly or annual subscription, including renewal and cancellation conditions.',
-  ],
-  [
-    'Can I use it for Google Business Profile?',
-    'A virtual mailing address where your business does not operate is not eligible as a Google Business Profile location. Do not describe our address as your walk-in business premises.',
-  ],
-  [
-    'What happens to my mail when I cancel?',
-    'The terms require you to stop using the address and scanning stops. Update senders and your company records, and contact support about outstanding originals before the service ends.',
-  ],
-] as const;
+// Homepage answers are projections of the central Help Centre content.
+export { homepageHelp } from './help-content';

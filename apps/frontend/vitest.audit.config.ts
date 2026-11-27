@@ -9,6 +9,7 @@ export default defineConfig({
     include: [
       'tests/audit-log.test.tsx',
       'tests/pricing.test.tsx',
+      'tests/help-centre.test.tsx',
       'tests/purchase-journey.test.tsx',
       'tests/customer-theme.test.tsx',
       'tests/services-architecture.test.tsx',

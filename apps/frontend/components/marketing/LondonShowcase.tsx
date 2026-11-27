@@ -76,7 +76,10 @@ export function LondonShowcase({ standalone = false }: { standalone?: boolean })
             <Link href="/signup" className={styles.cta}>
               Get your London address <span aria-hidden="true">↗</span>
             </Link>
-            <Link href={standalone ? '/pricing' : '/london-address'} className={styles.secondary}>
+            <Link
+              href={standalone ? '/pricing' : '/services#london-presence'}
+              className={styles.secondary}
+            >
               {standalone ? 'Explore plans' : 'Explore our London service'} →
             </Link>
           </div>

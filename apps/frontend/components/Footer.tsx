@@ -36,7 +36,6 @@ export function Footer({ onNavigate }: { onNavigate?: (page: string) => void }) 
           <h2 className="font-semibold mb-5">Explore & learn</h2>
           <ul className="space-y-3 text-sm">
             {[
-              ['Our London address', '/london-address'],
               ['Pricing', '/pricing'],
               ['How it works', '/how-it-works'],
               ['Business guides', '/guides'],

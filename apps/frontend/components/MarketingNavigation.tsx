@@ -36,7 +36,6 @@ export function MarketingNavigation({ onNavigate }: { onNavigate?: (page: string
           <Link href="/services" aria-current={path === '/services' ? 'page' : undefined}>
             Our services
           </Link>
-          <Link href="/london-address">Our London address</Link>
           <Link href="/pricing">Pricing</Link>
           <Link href="/how-it-works">How it works</Link>
           <details className={styles.dropdown}>

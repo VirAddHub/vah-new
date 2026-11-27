@@ -2,7 +2,7 @@
 import { LondonShowcase } from './marketing/LondonShowcase';
 import Link from 'next/link';
 import { usePricing } from '@/hooks/usePlans';
-import { faqs } from '@/lib/marketing';
+import { homepageHelp } from '@/lib/marketing';
 import { LondonIllustration } from './marketing/LondonIllustration';
 import s from './marketing/Marketing.module.css';
 const money = (n: number) =>
@@ -273,10 +273,15 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
             <br />
             your virtual office.
           </h2>
-          {faqs.map(([q, a]) => (
-            <details key={q}>
-              <summary>{q}</summary>
-              <p>{a}</p>
+          {homepageHelp.map(({ slug, title, summary }) => (
+            <details key={slug}>
+              <summary>{title}</summary>
+              <p>
+                {summary}{' '}
+                <Link href={`/help/${slug}`} className={s.textlink}>
+                  Read more
+                </Link>
+              </p>
             </details>
           ))}
           <p>
