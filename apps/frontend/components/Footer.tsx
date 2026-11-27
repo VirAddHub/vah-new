@@ -38,7 +38,7 @@ export function Footer({ onNavigate }: { onNavigate?: (page: string) => void }) 
             {[
               ['Pricing', '/pricing'],
               ['How it works', '/how-it-works'],
-              ['Guides & articles', '/blog'],
+              ['Blog', '/blog'],
               ['Help centre', '/help'],
               ['About us', '/about'],
             ].map(([label, href]) => (

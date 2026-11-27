@@ -59,7 +59,7 @@ export function ServicePage({ slug }: { slug: string }) {
       <header className={`${e.guideHero} ${!isRegistered ? e.directorHero : ''}`}>
         <div className={s.wrap}>
           <p className={s.breadcrumbs}>
-            <Link href="/blog">Guides & articles</Link> /{' '}
+            <Link href="/blog">Blog</Link> /{' '}
             {isRegistered ? 'Company addresses' : 'Director correspondence'}
           </p>
           <p className={s.kicker}>

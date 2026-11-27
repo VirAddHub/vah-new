@@ -18,18 +18,6 @@ interface BlogPageProps {
   onNavigate?: (page: string, data?: { slug: string }) => void;
   initialPosts?: BlogPost[];
 }
-const guides = [
-  {
-    title: 'The company’s registered office',
-    text: 'Understand official company correspondence, jurisdiction and the address you put on the register.',
-    href: '/registered-office-address',
-  },
-  {
-    title: 'A director’s service address',
-    text: 'Separate correspondence about your role from your residential address. Understand what becomes public.',
-    href: '/directors-service-address',
-  },
-];
 export function BlogPage({ initialPosts }: BlogPageProps) {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>(initialPosts ?? []);
   const [loading, setLoading] = useState(!initialPosts);
@@ -75,31 +63,28 @@ export function BlogPage({ initialPosts }: BlogPageProps) {
     );
   }, [blogPosts, searchQuery]);
 
-  const visibleGuides = guides.filter((g) =>
-    `${g.title} ${g.text}`.toLowerCase().includes(searchQuery.trim().toLowerCase()),
-  );
   return (
     <div className={`${m.site} ${s.page}`}>
       <header className={s.libraryHero}>
         <div className={m.wrap}>
-          <p className={m.kicker}>THE BUSINESS ADDRESS LIBRARY</p>
+          <p className={m.kicker}>THE VIRTUALADDRESSHUB BLOG</p>
           <div className={s.masthead}>
             <h1>
-              Good decisions
+              Notes on running
               <br />
-              start with a little reading.
+              a business from anywhere.
             </h1>
             <p>
-              Guides to choosing your business address, plus articles from VirtualAddressHub. One
-              place to explore, at your own pace.
+              Articles from VirtualAddressHub on business addresses, Companies House and handling
+              official mail.
             </p>
           </div>
           <div className={s.search}>
-            <label htmlFor="resource-search">FIND A SUBJECT</label>
+            <label htmlFor="resource-search">SEARCH THE BLOG</label>
             <input
               id="resource-search"
               type="search"
-              placeholder="Search guides and articles"
+              placeholder="Search articles"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -109,15 +94,15 @@ export function BlogPage({ initialPosts }: BlogPageProps) {
       </header>
       <div className={`${m.wrap} ${s.libraryBody} ${s.libraryGrid}`}>
         <aside className={s.indexNote}>
-          <p className={s.sectionLabel}>A USEFUL DISTINCTION</p>
+          <p className={s.sectionLabel}>NEED A HAND?</p>
           <h2>
-            Reading up?
+            Questions about
             <br />
-            You’re in the right place.
+            your account?
           </h2>
           <p>
-            These guides explain address choices. For account instructions, payments or help with
-            your mail, use our Help Centre.
+            The blog is for reading. For account instructions, payments or help with your mail,
+            use our Help Centre.
           </p>
           <Link className={m.textlink} href="/help">
             Get practical help →
@@ -125,37 +110,22 @@ export function BlogPage({ initialPosts }: BlogPageProps) {
         </aside>
         <div>
           <p role="status" className={s.sectionLabel}>
-            {visibleGuides.length + filteredPosts.length} guides and articles
+            {loading ? 'Loading articles' : `${filteredPosts.length} article${filteredPosts.length === 1 ? '' : 's'}`}
             {searchQuery.trim() ? ' matching your search' : ''}
           </p>
-          {visibleGuides.length > 0 && (
-            <section aria-label="Address essentials">
-              <h2>Start with the essentials.</h2>
-              {visibleGuides.map((g, i) => (
-                <Link href={g.href} className={s.guideRow} key={g.href}>
-                  <span className={s.number}>{String(i + 1).padStart(2, '0')}</span>
-                  <div>
-                    <h3>{g.title}</h3>
-                    <p>{g.text}</p>
-                  </div>
-                  <span aria-hidden>↗</span>
-                </Link>
-              ))}
-            </section>
-          )}
           <section className={s.articles} aria-label="Published articles">
-            <h2>From the journal.</h2>
+            <h2>Latest articles.</h2>
             {loading && <p role="status">Loading articles…</p>}
             {error && (
               <p role="alert">
-                Articles could not be loaded. You can still read the address guides above.
+                Articles could not be loaded. Please try again shortly.
               </p>
             )}
             {!loading && !error && filteredPosts.length === 0 && (
               <p className={s.empty}>
                 {searchQuery.trim()
                   ? 'No published articles match this search. Try another subject.'
-                  : 'Published articles will appear here when available. The address guides above are ready to read.'}
+                  : 'New articles will appear here soon.'}
               </p>
             )}
             {filteredPosts.map((post, i) => (

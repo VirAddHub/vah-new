@@ -30,38 +30,31 @@ const posts = [
     imageUrl: '',
   },
 ];
-it('provides genuine article links and no invented cover placeholder', () => {
+it('lists published articles only, with genuine links and no invented cover placeholder', () => {
   render(<BlogPage initialPosts={posts} />);
-  expect(screen.getByRole('link', { name: 'Managing correspondence' })).toHaveAttribute(
-    'href',
-    '/blog/sample-post',
-  );
-  expect(screen.getByRole('link', { name: /company’s registered office/ })).toHaveAttribute(
-    'href',
-    '/registered-office-address',
-  );
+  expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Notes on running/);
+  expect(screen.getByRole('link', { name: 'Managing correspondence' })).toHaveAttribute('href', '/blog/sample-post');
+  expect(screen.queryByRole('link', { name: /company’s registered office/ })).not.toBeInTheDocument();
+  expect(screen.queryByText(/guides/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/drop in/)).not.toBeInTheDocument();
   expect(screen.queryByRole('img')).not.toBeInTheDocument();
 });
-it('searches published articles and guides, and clears a no-match search', () => {
+it('searches articles and clears a no-match search', () => {
   render(<BlogPage initialPosts={posts} />);
   const search = screen.getByRole('searchbox');
   fireEvent.change(search, { target: { value: '  CORRESPONDENCE  ' } });
   expect(screen.getByRole('link', { name: 'Managing correspondence' })).toBeInTheDocument();
-  fireEvent.change(search, { target: { value: 'residential' } });
-  expect(screen.getByRole('link', { name: /director’s service address/ })).toBeInTheDocument();
-  expect(screen.queryByRole('link', { name: 'Managing correspondence' })).not.toBeInTheDocument();
   fireEvent.change(search, { target: { value: 'no-match-xyz' } });
-  expect(screen.getByRole('status')).toHaveTextContent('0 guides and articles');
+  expect(screen.getByRole('status')).toHaveTextContent('0 articles matching your search');
+  expect(screen.queryByRole('link', { name: 'Managing correspondence' })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
   expect(screen.getByRole('link', { name: 'Managing correspondence' })).toBeInTheDocument();
 });
-it('keeps useful guides when there are no published posts and avoids refetching initial data', () => {
+it('says plainly when nothing is published yet and avoids refetching initial data', () => {
   const fetch = vi.fn();
   vi.stubGlobal('fetch', fetch);
   render(<BlogPage initialPosts={[]} />);
-  expect(screen.getByRole('link', { name: /company’s registered office/ })).toBeInTheDocument();
-  expect(screen.getByText(/Published articles will appear/)).toBeInTheDocument();
+  expect(screen.getByText('New articles will appear here soon.')).toBeInTheDocument();
   expect(fetch).not.toHaveBeenCalled();
 });
 it('uses permanent direct redirects and excludes their sources from the sitemap', async () => {
@@ -82,12 +75,13 @@ it('uses permanent direct redirects and excludes their sources from the sitemap'
   expect(urls).not.toContain('https://virtualaddresshub.co.uk/guides');
   expect(urls).not.toContain('https://virtualaddresshub.co.uk/london-address');
 });
-it('keeps Resources to the library and Help Centre without a competing FAQ destination', () => {
+it('keeps Resources to the Blog and Help Centre without a competing FAQ destination', () => {
   const nav = readFileSync(
     path.resolve(__dirname, '../components/MarketingNavigation.tsx'),
     'utf8',
   );
-  expect(nav).toContain('Guides & articles');
+  expect(nav).toContain('href="/blog">Blog<');
+  expect(nav).not.toContain('Guides & articles');
   expect(nav).toContain('href="/help"');
   expect(nav).not.toContain('href="/#faq"');
   expect(nav).not.toContain('href="/guides"');

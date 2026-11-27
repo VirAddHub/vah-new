@@ -1,16 +1,16 @@
 # Public resources and visual roles
 
-The homepage is the brand reference. Its content, styles, FAQs and artwork were not edited in this change. Shared header/footer Resources links now expose only Guides & articles and Help Centre.
+The homepage is the brand reference. Its content, styles, FAQs and artwork were not edited in this change. Shared header/footer Resources links expose the Blog and Help Centre.
 
 ## Destinations
 
-- `/blog`: Guides & articles. Combines the old guides index with published articles from the existing blog API. Two evergreen address guides remain linked here. Search covers those guides and published article titles/excerpts/categories. Do not add fake posts or placeholder covers to fill an empty feed.
+- `/blog`: The blog. Published articles from the existing blog API, in the editorial resource style, with search over titles, excerpts and categories. No guides listing. Do not add fake posts or placeholder covers to fill an empty feed.
 - `/blog/[slug]`: Existing published URLs, retained with an editorial reading layout. Continue rendering content through ReactMarkdown without raw HTML execution.
 - `/registered-office-address`: Detailed company-address guide, with example stationery and jurisdiction/filing questions.
 - `/directors-service-address`: Detailed director-address guide, with a service/residential role diagram and privacy questions.
 - `/help`: Existing operational support centre, unchanged.
 - `/#faq`: Existing concise homepage FAQ section, unchanged; no separate menu entry or duplicate FAQ page is needed.
-- `/guides`: Permanent 308 redirect to `/blog`. Its useful address links now live in the library.
+- `/guides`: Removed. Permanent 308 redirect to `/blog`.
 - `/london-address`: Permanent 308 redirect to `/services#london-presence`. The old page repeated the homepage’s showcase; its service explanation is already covered by Services. Homepage showcase remains intact.
 
 Only canonical destinations remain in the sitemap. Update redirects whenever retiring a public URL; never silently turn an established address into a 404.

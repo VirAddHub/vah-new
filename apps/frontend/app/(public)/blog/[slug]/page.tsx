@@ -135,7 +135,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       <header className={s.articleHeader}>
         <div className={m.wrap}>
           <Link className={m.textlink} href="/blog">
-            ← Guides & articles
+            ← Blog
           </Link>
           <div className={s.meta}>
             {categoryLabel && <span>{categoryLabel}</span>}

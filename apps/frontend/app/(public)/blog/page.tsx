@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import { BlogPageClient } from './BlogPageClient';
 
 export const metadata: Metadata = {
-  title: 'Business Address Guides & Articles | VirtualAddressHub',
+  title: 'Blog | VirtualAddressHub',
   description:
-    'Practical guides for UK company owners: registered office rules, Companies House, business addresses and handling official mail.',
+    'Articles for UK business owners on business addresses, Companies House and handling official mail.',
   alternates: { canonical: '/blog' },
-  openGraph: { title: 'Guides & articles | VirtualAddressHub', url: '/blog' },
+  openGraph: { title: 'Blog | VirtualAddressHub', url: '/blog' },
 };
 
 /**
