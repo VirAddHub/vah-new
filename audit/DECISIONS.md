@@ -29,6 +29,9 @@ Newest last. Source: owner instructions of the date shown.
 | 23 | 17 Nov | Obsolete code removed only where the feature is confirmed replaced: in-page billing/KYC/profile views (now /account/*), admin Billing/Overview/Settings/Analytics sections and user edit form (not mounted; called endpoints that never existed), GoCardless client methods, client-side "audit" posts to a non-existent endpoint | Done; list in commit message |
 | 24 | 27 Nov | Company checks (admin): Companies House register extract, comparison, checklist, discrepancies (reg 30A reporting recorded), evidence, dated immutable reports, daily monitoring with admin alerts. Full service additionally needs a satisfactory company check for every company number on file (closes deferred decision 3 for company due diligence only) | Implemented on branch `company-checks`; **awaiting owner approval** before merge. Not deployed |
 
+| 25 | 27 Nov | Sumsub removed: integration, webhook (now 410 Gone, stores nothing), SDK, configuration and UI. Historical data kept (user.sumsub_*, business_owner.sumsub_applicant_id, kyc_status, verification_event, webhook_log). Identity is provider-independent: no provider is treated as connected until integrated and tested; administrators record results they establish (identity_check, permanent, audited) | On branch `compliance-v2`; awaiting owner approval |
+| 26 | 27 Nov | Company checks v2: automatic check creation, retrieval and comparison; automated results never ticked by hand; only beneficial ownership, activity and (when flagged) warnings need judgement, plus a risk rating; missing information kept separate from discrepancies; reg 30A reporting only for material PSC discrepancies; monitoring on when a review completes; a new discrepancy re-opens an approved company | On branch `compliance-v2`; awaiting owner approval |
+| 27 | 27 Nov | Company declaration collected in onboarding (activity, place of business, directors, beneficial owners with shares/votes/control, corporate owners and their ultimate owners, expected mail). Directors and beneficial owners named are invited to verify identity (adding a required owner pauses service, decision 11) | On branch `compliance-v2`; awaiting owner approval |
 ## Deferred launch decisions (owner)
 
 1. Held-mail retention and disposal for accounts that never become eligible.
@@ -49,10 +52,9 @@ Newest last. Source: owner instructions of the date shown.
 - Welcome email after first payment is no longer sent (it was tied to the GoCardless handler).
 - A payment event with a plan that does not match keeps failing on every Stripe retry by design; needs an admin view of failed events.
 
-**Sumsub**
-- Live widget and applicant creation (needs sandbox credentials).
-- Event safety: duplicate and out-of-order protection, and separate "needs information" vs "final rejection" states, are NOT implemented. A late "pending" event can still overwrite "approved".
-- Final rejection -> admin review queue.
+**Identity provider (replaces Sumsub, decision 25)**
+- No provider is connected. Identity, liveness, PEP, sanctions and adverse-media checks need a provider integration, tested before use.
+- Mortality checks, identity confidence level and ongoing AML monitoring: to be confirmed with the provider.
 
 **Others**
 - Postmark: real delivery and templates (parked). Local outbox only.

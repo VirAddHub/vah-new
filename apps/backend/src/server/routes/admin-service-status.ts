@@ -1,5 +1,5 @@
 // src/server/routes/admin-service-status.ts
-// Service monitoring endpoints for Stripe, Sumsub, Postmark, OneDrive
+// Service monitoring endpoints for Stripe, Postmark, OneDrive
 
 import { Router, Request, Response } from 'express';
 import { logger } from '../../lib/logger';
@@ -30,64 +30,6 @@ router.get('/stripe', requireAdmin, async (_req: Request, res: Response) => {
     } catch (error) {
         logger.error('[Service Status] Stripe check failed:', error);
         return res.status(500).json({ ok: false, status: 'down', message: 'Stripe status check failed' });
-    }
-});
-
-/**
- * GET /api/admin/service-status/sumsub
- * Check Sumsub service status
- */
-router.get('/sumsub', requireAdmin, async (req: Request, res: Response) => {
-    try {
-        const pool = getPool();
-        const now = Date.now();
-        const oneDayAgo = now - (24 * 60 * 60 * 1000);
-        const oneHourAgo = now - (60 * 60 * 1000);
-
-        // Check recent webhook activity (Sumsub - check if it exists)
-        const webhookResult = await pool.query(`
-            SELECT 
-                MAX(created_at) as last_webhook,
-                COUNT(*) as total_events,
-                COUNT(CASE WHEN created_at >= $1 THEN 1 END) as recent_events,
-                COUNT(CASE WHEN error IS NOT NULL THEN 1 END) as error_count
-            FROM webhook_log 
-            WHERE (type = 'sumsub' OR source = 'sumsub') 
-            AND created_at >= $2
-        `, [oneHourAgo, oneDayAgo]);
-
-        const webhookData = webhookResult.rows[0];
-        const lastWebhook = webhookData?.last_webhook ? parseInt(webhookData.last_webhook) : null;
-        const errorCount = parseInt(webhookData?.error_count || '0');
-        const recentEvents = parseInt(webhookData?.recent_events || '0');
-
-        // Determine status based on activity
-        let status = 'healthy';
-        if (!lastWebhook || (now - lastWebhook) > (2 * 60 * 60 * 1000)) {
-            status = 'down';
-        } else if (errorCount > 3 || recentEvents === 0) {
-            status = 'degraded';
-        }
-
-        const uptime = errorCount === 0 ? 99.9 : Math.max(95, 99.9 - (errorCount * 0.5));
-
-        res.json({
-            ok: true,
-            status,
-            lastWebhook,
-            errorCount,
-            recentEvents,
-            uptime,
-            message: `Sumsub webhook activity: ${recentEvents} events in last hour`
-        });
-
-    } catch (error: any) {
-        logger.error('[Service Status] Sumsub check failed:', error);
-        res.status(500).json({
-            ok: false,
-            error: 'service_check_failed',
-            message: error.message
-        });
     }
 });
 

@@ -42,6 +42,16 @@ export const defaultOfficers = () => [
       date_of_birth: { month: 5, year: 1980 }, links: { officer: { appointments: '/officers/abc123/appointments' } } },
 ];
 export const defaultPscs = () => [
-    { name: 'Mr Test User', kind: 'individual-person-with-significant-control', natures_of_control: ['ownership-of-shares-75-to-100-percent'],
+    { name: 'Mr Test User', kind: 'individual-person-with-significant-control', natures_of_control: ['ownership-of-shares-75-to-100-percent', 'voting-rights-75-to-100-percent'],
       notified_on: '2019-04-01', country_of_residence: 'England', date_of_birth: { month: 5, year: 1980 } },
 ];
+
+/** A complete, fictional company declaration matching the default fake company. */
+export const declaration = (over: Record<string, any> = {}): any => ({
+    nature_of_business: 'Software consultancy for small businesses', trading_name: null, website: null,
+    principal_place_of_business: { same_as_registered_office: true, address: null },
+    applicant_role: 'director_and_beneficial_owner', applicant_authority: null,
+    people: [{ full_name: 'Test User', email: null, is_account_holder: true, is_director: true, is_beneficial_owner: true,
+        ownership_percent: 100, voting_percent: 100, other_control: false, country_of_residence: 'England', date_of_birth: '1980-05' }],
+    corporate_owners: [], no_beneficial_owner_explanation: null, expected_monthly_mail: '0-10', confirmation: true, ...over,
+});

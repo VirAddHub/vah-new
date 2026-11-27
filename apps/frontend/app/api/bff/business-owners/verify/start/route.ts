@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 /**
  * POST /api/bff/business-owners/verify/start
  * Proxies to backend POST /api/business-owners/verify/start.
- * Body: { token: string }. Returns { ok, data: { started, sumsubToken, applicantId, owner? } }.
+ * Body: { token: string }. Returns { ok, data: { started, auto_approved?, owner? } }, or 503 identity_verification_unavailable while no provider is connected.
  */
 export async function POST(request: NextRequest) {
   try {

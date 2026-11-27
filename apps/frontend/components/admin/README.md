@@ -43,7 +43,6 @@ This is the default view. It aggregates data from multiple real backend endpoint
 - Checks the health and connectivity of external 3rd-party services critical to VAH.
 - **Services Monitored**:
   - **Stripe**: Configuration and recent payment-event activity.
-  - **Sumsub**: Checks KYC verification service status.
   - **Postmark**: Checks email delivery service status.
   - **OneDrive**: Checks file storage status.
 - **Mechanism**: Calls internal API endpoints (e.g., `/api/admin/service-status/stripe`) which perform the actual health checks.

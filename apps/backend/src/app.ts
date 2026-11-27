@@ -22,12 +22,13 @@ import { health, healthAdmin } from './server/routes/health';
 import { postmarkWebhook } from './server/routes/webhooks-postmark';
 import onedriveWebhook from './server/routes/webhooks-onedrive';
 import stripeWebhook from './server/routes/webhooks-stripe';
-import sumsubWebhook from './server/routes/webhooks-sumsub';
 import { Router } from 'express';
 import profileRouter from './server/routes/profile';
 import profileEmailChangeRouter from './server/routes/profileEmailChange';
 import businessOwnersRouter from './server/routes/businessOwners';
 import accountBusinessesRouter from './server/routes/account-businesses';
+import companyDeclarationRouter from './server/routes/company-declaration';
+import adminIdentityRouter from './server/routes/admin-identity';
 import publicPlansRouter from './server/routes/public/plans';
 import debugEmailRouter from './server/routes/debug-email';
 import devRouter from './server/routes/dev';
@@ -163,8 +164,8 @@ export function createApp() {
     const webhooksRouter = Router();
     webhooksRouter.use(stripeWebhook);
 
-    // Sumsub webhook — raw Buffer for signature verification
-    webhooksRouter.use('/sumsub', sumsubWebhook);
+    // Sumsub (former identity provider) is no longer used: its webhook answers 410 Gone and stores nothing.
+    webhooksRouter.post('/sumsub', (_req, res) => res.status(410).json({ ok: false, error: 'gone' }));
 
     app.use(
         '/api/webhooks',
@@ -397,6 +398,7 @@ export function createApp() {
     app.use('/api/profile', profileEmailChangeRouter);
     app.use('/api/business-owners', businessOwnersRouter);
     app.use('/api/account', accountBusinessesRouter);
+    app.use('/api/account', companyDeclarationRouter);
     app.use('/api', publicPlansRouter);
     app.use('/api', blogRouter);
     logger.info('[mount] /api (blog, public) mounted (TS handler)');
@@ -495,6 +497,7 @@ export function createApp() {
     app.use('/api/admin', adminChVerificationRouter);
     logger.info('[mount] /api/admin (ch-verification) mounted');
     app.use('/api/admin', adminCompanyChecksRouter);
+    app.use('/api/admin', adminIdentityRouter);
     logger.info('[mount] /api/admin/company-checks mounted');
 
     app.use('/api/quiz', quizRouter);

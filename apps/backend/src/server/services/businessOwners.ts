@@ -7,8 +7,6 @@ import { generateEmailChangeToken, hashToken } from '../security/tokens';
 import { getAppUrl } from '../../config/appUrl';
 import { sendTemplateEmail } from '../../lib/mailer';
 import { Templates } from '../../lib/postmark-templates';
-import { sumsubFetch } from '../../lib/sumsub';
-import { resolveSumsubApiConfig, resolveSumsubLevelName } from '../../lib/sumsubConfig';
 
 /**
  * Create business owner and send verification invite
@@ -62,13 +60,6 @@ export async function createBusinessOwner(
     );
     
     // Send verification email using dedicated business owner verification template
-    // TODO: Future enhancement - Replace with direct Sumsub URL generation
-    // When switching to direct Sumsub links:
-    // 1) Generate Sumsub URL at send-time using createSumsubApplicantForOwner()
-    // 2) Keep token issuance in DB for audit trail (already done above)
-    // 3) On resend, rotate token/session and invalidate previous invite
-    // 4) Add error handling if Sumsub URL generation fails
-    // 5) Keep template variable {{verification_url}} unchanged
     const verifyUrl = `${getAppUrl()}/verify-owner?token=${token}`;
     
     // Fetch company name if not provided
@@ -160,7 +151,6 @@ export async function resendBusinessOwnerInvite(ownerId: number): Promise<string
     }
     
     // Send email using dedicated business owner verification template
-    // TODO: Future enhancement - Replace with direct Sumsub URL generation (see createBusinessOwner for details)
     const verifyUrl = `${getAppUrl()}/verify-owner?token=${token}`;
     const expiresIn = '7 days';
     const companyName = owner.company_name || 'your company';
@@ -268,114 +258,6 @@ export async function markBusinessOwnerInviteUsed(token: string): Promise<void> 
 }
 
 /**
- * Create Sumsub applicant for a business owner
- */
-export async function createSumsubApplicantForOwner(ownerId: number): Promise<{
-    applicantId: string;
-    accessToken: string;
-}> {
-    const pool = getPool();
-    // Get owner details
-    const ownerResult = await pool.query(
-        'SELECT id, user_id, full_name, email, sumsub_applicant_id FROM business_owner WHERE id = $1',
-        [ownerId]
-    );
-    
-    if (ownerResult.rows.length === 0) {
-        throw new Error('Business owner not found');
-    }
-    
-    const owner = ownerResult.rows[0];
-
-    const api = resolveSumsubApiConfig();
-    if (!api) {
-        throw new Error('Sumsub API not configured');
-    }
-    const { levelName } = resolveSumsubLevelName(api.mode, 'basic-kyc');
-    
-    // If applicant already exists, generate new token
-    if (owner.sumsub_applicant_id) {
-        const tokenBody = {
-            userId: `owner_${owner.id}`,
-            levelName: levelName,
-            ttlInSecs: 600,
-            applicantIdentifiers: {
-                email: owner.email,
-            },
-        };
-        
-        const tokenResp = await sumsubFetch(
-            'POST',
-            '/resources/accessTokens/sdk',
-            tokenBody
-        );
-        
-        if (!tokenResp?.token) {
-            throw new Error('No token in Sumsub response');
-        }
-        
-        return {
-            applicantId: owner.sumsub_applicant_id,
-            accessToken: tokenResp.token,
-        };
-    }
-    
-    // Create new Sumsub applicant
-    const [firstName, ...lastNameParts] = owner.full_name.split(' ');
-    const lastName = lastNameParts.join(' ') || firstName;
-    
-    const payload = {
-        externalUserId: `owner_${owner.id}`, // Prefix to distinguish from primary users
-        email: owner.email,
-        info: {
-            firstName: firstName || '',
-            lastName: lastName || '',
-            country: '',
-        },
-    };
-    
-    const created = await sumsubFetch('POST', '/resources/applicants', payload);
-    const applicantId = created?.id;
-    
-    if (!applicantId) {
-        throw new Error('No applicant id from Sumsub');
-    }
-    
-    // Store applicant ID
-    await pool.query(
-        `UPDATE business_owner 
-         SET sumsub_applicant_id = $1, status = $2, updated_at = NOW()
-         WHERE id = $3`,
-        [applicantId, 'pending', owner.id]
-    );
-    
-    // Generate access token (levelName from resolveSumsubLevelName above)
-    const tokenBody = {
-        userId: `owner_${owner.id}`,
-        levelName: levelName,
-        ttlInSecs: 600,
-        applicantIdentifiers: {
-            email: owner.email,
-        },
-    };
-    
-    const tokenResp = await sumsubFetch(
-        'POST',
-        '/resources/accessTokens/sdk',
-        tokenBody
-    );
-    
-    if (!tokenResp?.token) {
-        throw new Error('No token in Sumsub response');
-    }
-    
-    return {
-        applicantId,
-        accessToken: tokenResp.token,
-    };
-}
-
-/**
  * Get all business owners for a user
  */
 export async function getBusinessOwners(userId: number): Promise<Array<{
@@ -387,7 +269,6 @@ export async function getBusinessOwners(userId: number): Promise<Array<{
     role: string;
     requiresVerification: boolean;
     status: string;
-    sumsubApplicantId: string | null;
     kycUpdatedAt: Date | null;
     createdAt: Date;
 }>> {
@@ -396,7 +277,7 @@ export async function getBusinessOwners(userId: number): Promise<Array<{
     const result = await pool.query(
         `SELECT 
             id, full_name, email, role, requires_verification, status,
-            sumsub_applicant_id, kyc_updated_at, created_at
+            kyc_updated_at, created_at
          FROM business_owner
          WHERE user_id = $1
          ORDER BY created_at ASC`,
@@ -418,7 +299,6 @@ export async function getBusinessOwners(userId: number): Promise<Array<{
             role: row.role,
             requiresVerification: row.requires_verification,
             status: row.status,
-            sumsubApplicantId: row.sumsub_applicant_id,
             kycUpdatedAt: row.kyc_updated_at,
             createdAt: row.created_at,
         };

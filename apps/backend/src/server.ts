@@ -8,7 +8,6 @@ import winston from 'winston';
 import { HOST, PORT } from './config/env';
 import { validateProductionConfigOrThrow } from './config/productionEnvValidation';
 import { logGraphConfigAtStartup } from './config/azure';
-import { logSumsubConfigAtStartup } from './lib/sumsubConfig';
 
 // Database adapters
 import { ensureSchema, getPool } from './server/db';
@@ -142,7 +141,6 @@ async function start() {
         }
 
         logGraphConfigAtStartup();
-        logSumsubConfigAtStartup();
     });
 
     // ---- Graceful shutdown ----

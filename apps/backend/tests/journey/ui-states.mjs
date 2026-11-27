@@ -2,7 +2,7 @@
 // (no direct database writes), for checking the dashboard in a browser.
 // Writes the logins to /tmp/vah-ui-states.json. Mock provider events: NOT provider-sandbox tests.
 import { writeFileSync } from 'node:fs';
-import { Session, db, stripeEvent, sendStripe, sendSumsub, sumsubReview, importMail, setScanUrl, startPdfServer, stripeFixture } from './lib.mjs';
+import { Session, db, stripeEvent, sendStripe, recordIdentity, importMail, setScanUrl, startPdfServer, stripeFixture } from './lib.mjs';
 
 const PW = 'Journey!Passw0rd#1';
 // --stable: fixed emails (ui.<state>@example.test) for trying the app by hand; existing ones are kept.
@@ -47,7 +47,7 @@ async function pay(id, inv = {}) {
   }
   return fx;
 }
-const verify = async id => { const r = await sendSumsub(sumsubReview(id, 'GREEN')); if (r.status !== 200) throw new Error(`sumsub ${r.status}`); };
+const verify = async id => { const r = await recordIdentity(id); if (r.status !== 200) throw new Error(`identity ${r.status}`); };
 const out = {};
 const done = async (tag, c) => { out[tag] = c.email; const acc = (await c.s.get('/api/access')).json?.data; console.log(tag.padEnd(10), acc ? `${acc.level} next=${acc.next} missing=${acc.missing.join(',')}` : 'no access (login refused)'); };
 

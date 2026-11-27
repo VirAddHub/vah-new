@@ -46,11 +46,11 @@ function applySecurityHeaders(response: NextResponse, _request: NextRequest) {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  // Allow Sumsub WebSDK iframe (in.sumsub.com) to use camera/mic for liveness checks.
-  // camera=() / microphone=() blocks *all* contexts, including cross-origin iframes — breaks KYC on every device.
+  // No embedded identity-verification provider: camera and microphone stay off.
+  // (A provider's liveness check will need camera/microphone for its origin once it is connected.)
   response.headers.set(
     'Permissions-Policy',
-    'camera=(self "https://in.sumsub.com" "https://static.sumsub.com"), microphone=(self "https://in.sumsub.com" "https://static.sumsub.com"), geolocation=()'
+    'camera=(), microphone=(), geolocation=()'
   );
   if (process.env.NODE_ENV === 'production') {
     response.headers.set(
@@ -94,8 +94,8 @@ function applySecurityHeaders(response: NextResponse, _request: NextRequest) {
       // script-src: 'unsafe-eval' only in dev (Next.js HMR); never in production.
       // Stripe.js must be loaded from js.stripe.com — bundling it breaks PCI DSS scope.
       isDev
-        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://in.sumsub.com https://static.sumsub.com"
-        : "script-src 'self' 'unsafe-inline' https://js.stripe.com https://in.sumsub.com https://static.sumsub.com",
+        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com"
+        : "script-src 'self' 'unsafe-inline' https://js.stripe.com",
 
       // style-src: googleapis.com for any direct CSS fetches; 'unsafe-inline' for CSS-in-JS / Tailwind.
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -104,11 +104,11 @@ function applySecurityHeaders(response: NextResponse, _request: NextRequest) {
       "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://*.stripe.com",
 
       // connect-src: Stripe API + telemetry endpoints required by Stripe.js for 3DS, fraud, error reporting.
-      "connect-src 'self' https://api.stripe.com https://errors.stripe.com https://m.stripe.network https://m.stripe.com https://api.sumsub.com https://api.virtualaddresshub.co.uk",
+      "connect-src 'self' https://api.stripe.com https://errors.stripe.com https://m.stripe.network https://m.stripe.com https://api.virtualaddresshub.co.uk",
 
-      // frame-src: Stripe Embedded Checkout and payment iframes; Sumsub liveness iframes; blob: for the
+      // frame-src: Stripe Embedded Checkout and payment iframes; blob: for the
       // scan preview, which the page builds from a same-origin download (object-src stays 'none').
-      "frame-src blob: https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://in.sumsub.com",
+      "frame-src blob: https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
 
       // worker-src: Stripe.js spawns blob: web workers for fraud detection and 3DS.
       "worker-src 'self' blob:",

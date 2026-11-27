@@ -1,5 +1,5 @@
 // Admin controls and transaction integrity. MOCK provider events; real API, migration-built database.
-import { Session, db, step, expect, report, stripeEvent, sendStripe, sendSumsub, sumsubReview, stripeFixture, importMail } from './lib.mjs';
+import { Session, db, step, expect, report, stripeEvent, sendStripe, recordIdentity, stripeFixture, importMail } from './lib.mjs';
 
 const pg = await db();
 const one = async (sql, args) => (await pg.query(sql, args)).rows[0];
@@ -14,7 +14,7 @@ async function fullCustomer() {
   const id = Number((await one('SELECT id FROM "user" WHERE email=$1', [email])).id);
   const fx = stripeFixture(id, plan.id);
   await sendStripe(stripeEvent('checkout.session.completed', fx.checkout(), { created: T })); await sendStripe(stripeEvent('invoice.paid', fx.invoice(), { created: T }));
-  await sendSumsub(sumsubReview(id, 'GREEN'));
+  await recordIdentity(id);
   return { s, id, email, fx, level: async () => (await s.get('/api/access')).json?.data?.level };
 }
 const admin = new Session();
@@ -40,7 +40,7 @@ await step('A2', 'Suspend: recorded with reason, existing session ends at once, 
 });
 await step('A3', 'Suspended: payment and verification events do not lift it; mail is still stored', async () => {
   await sendStripe(stripeEvent('invoice.paid', c.fx.invoice({ start: T + 30 * 86400, end: T + 60 * 86400 }), { created: T + 50 }));
-  await sendSumsub(sumsubReview(c.id, 'GREEN'));
+  await recordIdentity(c.id);
   expect((await one('SELECT status FROM "user" WHERE id=$1', [c.id])).status === 'suspended', 'standing changed by a provider event');
   const m = await importMail({ userId: c.id, sourceSlug: 'bank', fileName: `user${c.id}_2026-11-15_Bank.pdf`, oneDriveFileId: `susp-${Date.now()}`, oneDriveDownloadUrl: 'http://127.0.0.1:4011/scan.pdf', receivedAt: new Date().toISOString() });
   expect(m.status < 300 && (await one('SELECT locked FROM mail_item WHERE user_id=$1 ORDER BY id DESC LIMIT 1', [c.id])).locked === true, `import ${m.status}`);

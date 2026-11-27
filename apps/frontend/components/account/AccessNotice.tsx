@@ -21,7 +21,7 @@ export function stepsFor(access: AccessDecision): Step[] {
         : { key: 'payment', label: 'Pay for your plan', detail: payment.entitled ? 'Your plan is paid.' : 'Choose monthly or annual billing and pay securely by card.', done: payment.entitled, href: '/account/billing', action: 'Complete payment' };
 
   const identityDetail: Record<AccessDecision['verification']['state'], string> = {
-    not_started: 'Confirm who you are with a photo ID. It takes a few minutes.',
+    not_started: 'We need to verify who you are before your address and mail open.',
     in_review: 'We are checking your documents. You do not need to do anything.',
     action_required: 'We need a little more information to finish checking your identity.',
     rejected: 'We could not verify your identity. Please contact support so we can review it.',
@@ -43,11 +43,10 @@ export function stepsFor(access: AccessDecision): Step[] {
     });
   }
   if (access.missing.includes('company_checks_pending')) {
-    steps.push({
-      key: 'company', label: 'Company checks',
-      detail: 'We are checking your company\'s details on the Companies House register. You do not need to do anything unless we contact you.',
-      done: false, href: '/account/support', action: 'Contact support',
-    });
+    const needDeclaration = !!access.company?.declarationNeeded;
+    steps.push(needDeclaration
+      ? { key: 'company', label: 'Tell us about your company', detail: 'Your business activity, directors and owners. We check them against Companies House.', done: false, href: '/account/verification#company', action: 'Add company details' }
+      : { key: 'company', label: 'Company checks', detail: 'We are checking your company\'s details on the Companies House register. You do not need to do anything unless we contact you.', done: false, href: '/account/support', action: 'Contact support' });
   }
   return steps;
 }
@@ -136,7 +135,9 @@ export function sidebarStatusFor(access: AccessDecision): { title: string; detai
     const n = access.verification.pendingOwners;
     return { title: 'Owners to verify', detail: `${n || 'Some'} business owner${n === 1 ? '' : 's'} still need${n === 1 ? 's' : ''} to verify.`, href: '/business-owners' };
   }
-  if (m.includes('company_checks_pending')) return { title: 'Company checks in progress', detail: 'We are checking your company on Companies House.', href: '/account' };
+  if (m.includes('company_checks_pending')) return access.company?.declarationNeeded
+    ? { title: 'Company details needed', detail: 'Tell us about your company and its owners.', href: '/account/verification#company' }
+    : { title: 'Company checks in progress', detail: 'We are checking your company on Companies House.', href: '/account' };
   return { title: 'Setup not finished', detail: 'Complete the steps on your dashboard.', href: '/account' };
 }
 
@@ -146,6 +147,6 @@ export function navAttention(access: AccessDecision | null): { billing: boolean;
   const m = access.missing;
   return {
     billing: m.some(x => x === 'payment_required' || x === 'payment_overdue' || x === 'subscription_cancelled'),
-    verification: m.some(x => x === 'identity_required' || x === 'identity_rejected' || x === 'owners_required'),
+    verification: m.some(x => x === 'identity_required' || x === 'identity_rejected' || x === 'owners_required') || (m.includes('company_checks_pending') && !!access.company?.declarationNeeded),
   };
 }

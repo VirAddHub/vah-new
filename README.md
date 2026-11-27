@@ -26,7 +26,7 @@ Root `*.sql` files are old manual database scripts; they are not run by the app.
 
 ## Run locally
 
-Needs Node 20 and Docker (local PostgreSQL); details in `local/README.md`. Uses dummy configuration only; Stripe, Sumsub and Postmark are mocked or disabled.
+Needs Node 20 and Docker (local PostgreSQL); details in `local/README.md`. Uses dummy configuration only; Stripe and Postmark are mocked or disabled; no identity provider is connected.
 
 ```bash
 npm ci

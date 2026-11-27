@@ -1,9 +1,11 @@
 /**
  * Admin "Company checks": company due diligence with the Companies House public data API.
  * Mounted at /api/admin/company-checks. Every route requires an administrator; every change is
- * written to admin_audit (target_type 'company_check').
+ * audited (admin_audit for administrators, audit_log for automation).
  *
- * Individual identity, address, PEP, sanctions and adverse-media checks are deliberately not here.
+ * The system retrieves and compares everything it can; administrators only make judgements,
+ * resolve discrepancies and decide. Automated results never approve a customer.
+ * Individual identity, address, PEP, sanctions and adverse-media checks are not done here.
  */
 import { Router, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
@@ -13,8 +15,11 @@ import { getPool } from '../db';
 import { logger } from '../../lib/logger';
 import { param } from '../../lib/express-params';
 import { ChError, createChClient, normaliseCompanyNumber, searchCompanies, type ChClient } from '../services/companyChecks/chClient';
-import { CHECKLIST, CHECKLIST_IDS, satisfactoryBlockers } from '../services/companyChecks/analysis';
-import { audit, detail, getCheck, loadCustomer, refreshSnapshot, saveReport } from '../services/companyChecks/store';
+import { analyse, JUDGEMENT, JUDGEMENT_IDS, nextAction, satisfactoryBlockers } from '../services/companyChecks/analysis';
+import { audit, detail, ensureCheck, getCheck, loadCustomer, refreshSnapshot, saveReport, syncDiscrepancies } from '../services/companyChecks/store';
+import { ensureAllChecks } from '../services/companyChecks/automation';
+import { latestDeclaration } from '../services/companyChecks/declaration';
+import { identityProviderStatus } from '../services/identityVerification';
 
 let clientFactory: () => ChClient = () => createChClient();
 /** For tests: replace the Companies House client. */
@@ -43,36 +48,63 @@ function chFailure(res: Response, e: unknown) {
     return res.status(500).json({ ok: false, error: 'server_error', message: 'Something went wrong. Nothing was changed.' });
 }
 
-/** GET /summary — counts for the admin navigation badge. */
+/** GET /summary — counts for the admin navigation badge (items needing an administrator). */
 router.get('/company-checks/summary', async (_req, res) => {
     try {
         const r = (await getPool().query(`
             SELECT (SELECT COUNT(*)::int FROM company_check_alert WHERE acknowledged_at IS NULL) AS open_alerts,
+                   (SELECT COUNT(*)::int FROM company_check WHERE status = 'further_investigation') AS investigating,
                    (SELECT COUNT(*)::int FROM company_check WHERE status <> 'satisfactory') AS open_checks`)).rows[0];
-        return res.json({ ok: true, data: r });
+        return res.json({ ok: true, data: { ...r, needs_attention: r.open_alerts + r.investigating } });
     } catch (e) { return chFailure(res, e); }
 });
 
-/** GET / — checks list. ?status=in_progress|further_investigation|satisfactory|alerts&q=&user_id= */
+/**
+ * GET / — the work queue, most urgent first, each with its next action.
+ * ?view=action|waiting|satisfactory|all&q=&user_id=
+ * Any customer with a company number but no check yet gets one here (no Companies House call).
+ */
 router.get('/company-checks', async (req, res) => {
-    const status = text(req.query.status, 40);
-    const q = text(req.query.q, 100);
+    const view = text(req.query.view, 20) || 'action';
+    const q = text(req.query.q, 100).toLowerCase();
     const userId = Number(req.query.user_id) || null;
-    const where: string[] = []; const args: unknown[] = [];
-    if (['in_progress', 'further_investigation', 'satisfactory'].includes(status)) { args.push(status); where.push(`c.status = $${args.length}`); }
-    if (status === 'alerts') where.push(`EXISTS (SELECT 1 FROM company_check_alert a WHERE a.check_id = c.id AND a.acknowledged_at IS NULL)`);
-    if (userId) { args.push(userId); where.push(`c.user_id = $${args.length}`); }
-    if (q) { args.push(`%${q.replace(/[%_\\]/g, m => '\\' + m)}%`); where.push(`(c.company_name ILIKE $${args.length} OR c.company_number ILIKE $${args.length} OR u.email ILIKE $${args.length})`); }
+    const db = getPool();
     try {
-        const r = await getPool().query(`
-            SELECT c.id, c.user_id, u.email, c.company_number, c.company_name, c.status, c.monitoring, c.fetched_at, c.decided_at, c.updated_at,
-                   (SELECT COUNT(*)::int FROM jsonb_each(c.checklist) j WHERE (j.value->>'done')::boolean) AS checklist_done,
-                   (SELECT COUNT(*)::int FROM company_check_alert a WHERE a.check_id = c.id AND a.acknowledged_at IS NULL) AS open_alerts
+        await ensureAllChecks(db).catch(e => logger.warn('[company-checks] ensureAllChecks failed', { message: (e as Error)?.message }));
+        const rows = (await db.query(`
+            SELECT c.*, u.email, u.first_name, u.last_name,
+                   (SELECT COUNT(*)::int FROM company_check_alert a WHERE a.check_id = c.id AND a.acknowledged_at IS NULL) AS open_alerts,
+                   (SELECT COUNT(*)::int FROM company_check_entry e WHERE e.check_id = c.id AND e.kind = 'discrepancy' AND e.resolved_at IS NULL) AS open_discrepancies,
+                   (SELECT COUNT(*)::int FROM company_check_evidence v WHERE v.check_id = c.id AND v.kind = 'beneficial_ownership') AS bo_evidence
               FROM company_check c JOIN "user" u ON u.id = c.user_id
-             ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
-             ORDER BY (SELECT COUNT(*) FROM company_check_alert a WHERE a.check_id = c.id AND a.acknowledged_at IS NULL) DESC, c.updated_at DESC
-             LIMIT 200`, args);
-        return res.json({ ok: true, data: { items: r.rows, checklist_total: CHECKLIST.length } });
+             WHERE u.deleted_at IS NULL ${userId ? 'AND c.user_id = $1' : ''}
+             ORDER BY c.updated_at DESC LIMIT 500`, userId ? [userId] : [])).rows;
+        const items: any[] = [];
+        for (const c of rows) {
+            const customer = await loadCustomer(db, Number(c.user_id), c.business_id, c.company_number);
+            if (!customer) continue;
+            const a = analyse(c.snapshot ?? null, customer);
+            const blockers = satisfactoryBlockers({ checklist: c.checklist || {}, automated: a.automated, attention: a.attention,
+                unrecordedDiscrepancies: 0, unresolvedDiscrepancies: c.open_discrepancies, beneficialOwnerEvidence: c.bo_evidence, riskRating: c.risk_rating });
+            const next = nextAction({ status: c.status, hasSnapshot: !!c.snapshot, fetchError: c.fetch_error, openAlerts: c.open_alerts,
+                unresolved: c.open_discrepancies, automated: a.automated, blockers });
+            items.push({
+                id: Number(c.id), user_id: Number(c.user_id), email: c.email, customer_name: [c.first_name, c.last_name].filter(Boolean).join(' '),
+                company_number: c.company_number, company_name: c.company_name || c.snapshot?.profile?.company_name || null,
+                status: c.status, risk_rating: c.risk_rating, monitoring: c.monitoring, fetched_at: c.fetched_at, updated_at: c.updated_at,
+                open_alerts: c.open_alerts, open_discrepancies: c.open_discrepancies,
+                counts: { attention: a.attention, missing: a.automated.filter(x => x.status === 'missing').length, pass: a.automated.filter(x => x.status === 'pass').length, total: a.automated.length },
+                next,
+            });
+        }
+        const group = (i: any) => i.next.key === 'await_customer' ? 'waiting' : i.next.key === 'none' ? 'satisfactory' : 'action';
+        const counts = { action: 0, waiting: 0, satisfactory: 0, all: items.length };
+        for (const i of items) counts[group(i) as 'action' | 'waiting' | 'satisfactory']++;
+        const filtered = items
+            .filter(i => view === 'all' || group(i) === view)
+            .filter(i => !q || [i.company_name, i.company_number, i.email, i.customer_name].some(v => String(v ?? '').toLowerCase().includes(q)))
+            .sort((x, y) => x.next.priority - y.next.priority || String(x.updated_at).localeCompare(String(y.updated_at)));
+        return res.json({ ok: true, data: { items: filtered.slice(0, 200), counts } });
     } catch (e) { return chFailure(res, e); }
 });
 
@@ -91,12 +123,11 @@ router.get('/company-checks/customer/:userId', async (req, res) => {
         const c = await loadCustomer(getPool(), userId);
         if (!c) return res.status(404).json({ ok: false, error: 'user_not_found' });
         const checks = (await getPool().query(`SELECT id, company_number, company_name, status FROM company_check WHERE user_id = $1 ORDER BY id`, [userId])).rows;
-        const businesses = (await getPool().query(`SELECT id, company_name, companies_house_number, is_primary FROM business WHERE user_id = $1 ORDER BY is_primary DESC, id`, [userId])).rows;
-        return res.json({ ok: true, data: { customer: c, checks, businesses } });
+        return res.json({ ok: true, data: { customer: c, checks } });
     } catch (e) { return chFailure(res, e); }
 });
 
-/** POST / { userId, companyNumber, businessId? } — link a company to a customer and fetch the register extract. */
+/** POST / { userId, companyNumber, businessId? } — link a company to a customer by hand and retrieve it. */
 router.post('/company-checks', chLimiter, async (req, res) => {
     const a = admin(req);
     const userId = Number(req.body?.userId);
@@ -106,52 +137,32 @@ router.post('/company-checks', chLimiter, async (req, res) => {
     if (!number) return res.status(400).json({ ok: false, error: 'invalid_company_number', message: 'Enter a valid company number.' });
     const db = getPool();
     try {
-        const customer = await loadCustomer(db, userId);
-        if (!customer) return res.status(404).json({ ok: false, error: 'user_not_found' });
-        if (businessId) {
-            const b = await db.query(`SELECT 1 FROM business WHERE id = $1 AND user_id = $2`, [businessId, userId]);
-            if (!b.rows.length) return res.status(400).json({ ok: false, error: 'business_not_owned', message: 'That business does not belong to this customer.' });
+        if (!(await loadCustomer(db, userId))) return res.status(404).json({ ok: false, error: 'user_not_found' });
+        if (businessId && !(await db.query(`SELECT 1 FROM business WHERE id = $1 AND user_id = $2`, [businessId, userId])).rows.length) {
+            return res.status(400).json({ ok: false, error: 'business_not_owned', message: 'That business does not belong to this customer.' });
         }
-        const existing = (await db.query(`SELECT id FROM company_check WHERE user_id = $1 AND company_number = $2`, [userId, number])).rows[0];
-        if (existing) return res.status(409).json({ ok: false, error: 'already_linked', message: 'This company is already linked to the customer.', data: { id: Number(existing.id) } });
-        const ins = await db.query(
-            `INSERT INTO company_check (user_id, business_id, company_number, created_by) VALUES ($1, $2, $3, $4) RETURNING *`,
-            [userId, businessId, number, a.id]);
-        const check = ins.rows[0];
-        await audit(db, a.id, 'company_check_link', Number(check.id), { user_id: userId, company_number: number, business_id: businessId });
-        try {
-            await refreshSnapshot(db, clientFactory(), check);
-        } catch (e) {
-            // The link stays; the extract can be retrieved again. Record why it failed.
+        const { check, created } = await ensureCheck(db, userId, number, a.id, businessId);
+        if (!created) return res.status(409).json({ ok: false, error: 'already_linked', message: 'This company is already linked to the customer.', data: { id: Number(check.id) } });
+        try { await refreshSnapshot(db, clientFactory(), check); } catch (e) {
             await db.query(`UPDATE company_check SET fetch_error = $2, updated_at = NOW() WHERE id = $1`, [check.id, (e as Error).message.slice(0, 300)]);
-            if (e instanceof ChError && e.code === 'not_found') {
-                return res.status(201).json({ ok: true, data: { id: Number(check.id) }, warning: 'Company not found at Companies House. Check the number.' });
-            }
-            return res.status(201).json({ ok: true, data: { id: Number(check.id) }, warning: (e as Error).message });
+            return res.status(201).json({ ok: true, data: { id: Number(check.id) }, warning: e instanceof ChError && e.code === 'not_found' ? 'Company not found at Companies House. Check the number.' : (e as Error).message });
         }
         return res.status(201).json({ ok: true, data: { id: Number(check.id) } });
     } catch (e) { return chFailure(res, e); }
 });
 
-/** GET /:id — everything for one check. */
+/** GET /:id — everything for one check, with the next action and what blocks completion. */
 router.get('/company-checks/:id', async (req, res) => {
     const id = idParam(req);
     if (!id) return res.status(400).json({ ok: false, error: 'invalid_id' });
     try {
         const d = await detail(getPool(), id);
         if (!d) return res.status(404).json({ ok: false, error: 'not_found' });
-        const entries = d.entries;
-        const blockers = satisfactoryBlockers({
-            checklist: d.check.checklist || {}, fetchedAt: d.check.fetched_at, hasSnapshot: !!d.check.snapshot,
-            partialErrors: d.check.snapshot?.partial_errors?.length ?? 0,
-            unresolvedDiscrepancies: entries.filter((e: any) => e.kind === 'discrepancy' && !e.resolved_at).length,
-            beneficialOwnerEvidence: d.evidence.filter((e: any) => e.kind === 'beneficial_ownership').length,
-        });
-        return res.json({ ok: true, data: { ...d, checklist_items: CHECKLIST, satisfactory_blockers: blockers } });
+        return res.json({ ok: true, data: { ...d, judgement_items: JUDGEMENT, satisfactory_blockers: d.blockers, identity_provider: identityProviderStatus() } });
     } catch (e) { return chFailure(res, e); }
 });
 
-/** POST /:id/refresh — retrieve the register extract again. */
+/** POST /:id/refresh — retrieve the register extract again and re-compare. */
 router.post('/company-checks/:id/refresh', chLimiter, async (req, res) => {
     const id = idParam(req);
     if (!id) return res.status(400).json({ ok: false, error: 'invalid_id' });
@@ -170,34 +181,55 @@ router.post('/company-checks/:id/refresh', chLimiter, async (req, res) => {
     }
 });
 
-/** POST /:id/checklist { item, done, note } */
-router.post('/company-checks/:id/checklist', async (req, res) => {
+/** POST /:id/judgement { item, done, note } — the items that need a person. (Also at /checklist.) */
+async function judgement(req: Request, res: Response) {
     const id = idParam(req);
     const item = text(req.body?.item, 60);
     const done = req.body?.done === true;
     const note = text(req.body?.note, 2000) || null;
     if (!id) return res.status(400).json({ ok: false, error: 'invalid_id' });
-    if (!CHECKLIST_IDS.includes(item)) return res.status(400).json({ ok: false, error: 'invalid_item' });
+    if (!JUDGEMENT_IDS.includes(item)) return res.status(400).json({ ok: false, error: 'invalid_item' });
     const db = getPool();
     try {
         const check = await getCheck(db, id);
         if (!check) return res.status(404).json({ ok: false, error: 'not_found' });
-        if (check.status === 'satisfactory') return res.status(409).json({ ok: false, error: 'decided', message: 'Reopen the check before changing the checklist.' });
-        if (done && item === 'register_extract' && !check.snapshot) return res.status(400).json({ ok: false, error: 'no_extract', message: 'Retrieve the Companies House extract first.' });
+        if (check.status === 'satisfactory') return res.status(409).json({ ok: false, error: 'decided', message: 'Reopen the check before changing your judgement.' });
+        if (done && item === 'warnings_reviewed' && !(note && note.length >= 10)) return res.status(400).json({ ok: false, error: 'note_required', message: 'Note what you concluded (at least 10 characters).' });
         const a = admin(req);
-        const value = done ? { done: true, by: a.id, at: new Date().toISOString(), note } : { done: false, by: a.id, at: new Date().toISOString(), note };
         await db.query(`UPDATE company_check SET checklist = jsonb_set(checklist, $2, $3::jsonb, true), updated_at = NOW() WHERE id = $1`,
-            [id, `{${item}}`, JSON.stringify(value)]);
+            [id, `{${item}}`, JSON.stringify({ done, by: a.id, at: new Date().toISOString(), note })]);
         await audit(db, a.id, done ? 'company_check_item_done' : 'company_check_item_undone', id, { item, note });
+        return res.json({ ok: true });
+    } catch (e) { return chFailure(res, e); }
+}
+router.post('/company-checks/:id/judgement', judgement);
+router.post('/company-checks/:id/checklist', judgement);
+
+/** POST /:id/risk { rating: low|medium|high, reason } */
+router.post('/company-checks/:id/risk', async (req, res) => {
+    const id = idParam(req);
+    const rating = text(req.body?.rating, 10);
+    const reason = text(req.body?.reason, 1000);
+    if (!id) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    if (!['low', 'medium', 'high'].includes(rating)) return res.status(400).json({ ok: false, error: 'invalid_rating' });
+    if (reason.length < 10) return res.status(400).json({ ok: false, error: 'reason_required', message: 'Give the reason for the rating (at least 10 characters).' });
+    const db = getPool();
+    try {
+        const check = await getCheck(db, id);
+        if (!check) return res.status(404).json({ ok: false, error: 'not_found' });
+        if (check.status === 'satisfactory') return res.status(409).json({ ok: false, error: 'decided', message: 'Reopen the check before changing the risk rating.' });
+        await db.query(`UPDATE company_check SET risk_rating = $2, risk_reason = $3, updated_at = NOW() WHERE id = $1`, [id, rating, reason]);
+        await audit(db, admin(req).id, 'company_check_risk_rated', id, { from: check.risk_rating, to: rating, reason });
         return res.json({ ok: true });
     } catch (e) { return chFailure(res, e); }
 });
 
-/** POST /:id/entries { kind: 'note'|'discrepancy', body, field?, chValue?, customerValue?, material? } */
+/** POST /:id/entries { kind: 'note'|'discrepancy', body, field?, chValue?, customerValue?, category? } */
 router.post('/company-checks/:id/entries', async (req, res) => {
     const id = idParam(req);
     const kind = req.body?.kind === 'discrepancy' ? 'discrepancy' : req.body?.kind === 'note' ? 'note' : null;
     const body = text(req.body?.body, 4000);
+    const category = kind === 'discrepancy' ? (req.body?.category === 'beneficial_ownership' ? 'beneficial_ownership' : 'other') : null;
     if (!id) return res.status(400).json({ ok: false, error: 'invalid_id' });
     if (!kind) return res.status(400).json({ ok: false, error: 'invalid_kind' });
     if (!body) return res.status(400).json({ ok: false, error: 'body_required', message: 'Write the note or describe the discrepancy.' });
@@ -206,41 +238,75 @@ router.post('/company-checks/:id/entries', async (req, res) => {
         if (!(await getCheck(db, id))) return res.status(404).json({ ok: false, error: 'not_found' });
         const a = admin(req);
         const r = await db.query(
-            `INSERT INTO company_check_entry (check_id, admin_id, kind, field, ch_value, customer_value, material, body) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
-            [id, a.id, kind, text(req.body?.field, 120) || null, text(req.body?.chValue, 1000) || null, text(req.body?.customerValue, 1000) || null,
-                kind === 'discrepancy' ? req.body?.material === true : null, body]);
-        // A new discrepancy re-opens a satisfactory check: service pauses until it is reviewed.
+            `INSERT INTO company_check_entry (check_id, admin_id, kind, field, ch_value, customer_value, body, category) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+            [id, a.id, kind, text(req.body?.field, 120) || null, text(req.body?.chValue, 1000) || null, text(req.body?.customerValue, 1000) || null, body, category]);
         if (kind === 'discrepancy') {
             await db.query(`UPDATE company_check SET status = 'further_investigation', updated_at = NOW() WHERE id = $1 AND status = 'satisfactory'`, [id]);
         }
         await db.query(`UPDATE company_check SET updated_at = NOW() WHERE id = $1`, [id]);
-        await audit(db, a.id, `company_check_${kind}_added`, id, { entry_id: Number(r.rows[0].id), field: text(req.body?.field, 120) || null, material: kind === 'discrepancy' ? req.body?.material === true : null });
+        await audit(db, a.id, `company_check_${kind}_added`, id, { entry_id: Number(r.rows[0].id), field: text(req.body?.field, 120) || null, category });
         return res.status(201).json({ ok: true, data: { id: Number(r.rows[0].id) } });
     } catch (e) { return chFailure(res, e); }
 });
 
-/** POST /:id/entries/:entryId/resolve { resolution, reportedToCh, reference } */
+/**
+ * POST /:id/entries/:entryId/resolve { resolution, materiality?, reference? }
+ * Beneficial-ownership discrepancies need a materiality decision (MLR reg 30A):
+ *   material → must be reported to Companies House: the report reference is required
+ *   not_material → the reason is required (at least 20 characters)
+ *   register_corrected → the register has been corrected (refresh confirms it)
+ * Other discrepancies are not reportable under reg 30A and are resolved with an explanation.
+ */
 router.post('/company-checks/:id/entries/:entryId/resolve', async (req, res) => {
     const id = idParam(req); const entryId = idParam(req, 'entryId');
     const resolution = text(req.body?.resolution, 2000);
-    const reported = req.body?.reportedToCh === true;
     const reference = text(req.body?.reference, 120) || null;
+    let materiality = text(req.body?.materiality, 30) || null;
     if (!id || !entryId) return res.status(400).json({ ok: false, error: 'invalid_id' });
     if (!resolution) return res.status(400).json({ ok: false, error: 'resolution_required', message: 'Explain how the discrepancy was resolved.' });
-    if (reported && !reference) return res.status(400).json({ ok: false, error: 'reference_required', message: 'Enter the Companies House report reference.' });
     const db = getPool();
     try {
-        const e = (await db.query(`SELECT kind, material, resolved_at FROM company_check_entry WHERE id = $1 AND check_id = $2`, [entryId, id])).rows[0];
+        const e = (await db.query(`SELECT kind, category, material, resolved_at FROM company_check_entry WHERE id = $1 AND check_id = $2`, [entryId, id])).rows[0];
         if (!e) return res.status(404).json({ ok: false, error: 'not_found' });
         if (e.kind !== 'discrepancy') return res.status(400).json({ ok: false, error: 'not_a_discrepancy' });
         if (e.resolved_at) return res.status(409).json({ ok: false, error: 'already_resolved' });
-        if (e.material && !reported) return res.status(400).json({ ok: false, error: 'material_needs_report', message: 'A material discrepancy must be reported to Companies House (MLR reg 30A) before it is resolved.' });
+        const beneficial = e.category === 'beneficial_ownership' || (e.category == null && e.material === true);
+        if (beneficial) {
+            if (!['material', 'not_material', 'register_corrected'].includes(materiality ?? '')) {
+                return res.status(400).json({ ok: false, error: 'materiality_required', message: 'Decide whether this beneficial-ownership discrepancy is material.' });
+            }
+            if (materiality === 'material' && !reference) return res.status(400).json({ ok: false, error: 'reference_required', message: 'A material discrepancy must be reported to Companies House (MLR reg 30A). Enter the report reference.' });
+            if (materiality === 'not_material' && resolution.length < 20) return res.status(400).json({ ok: false, error: 'reason_required', message: 'Explain why it is not material (at least 20 characters).' });
+        } else {
+            if (materiality === 'material') return res.status(400).json({ ok: false, error: 'not_reportable', message: 'Only beneficial-ownership (PSC) discrepancies are reported to Companies House.' });
+            materiality = 'not_applicable';
+        }
         const a = admin(req);
-        await db.query(`UPDATE company_check_entry SET resolution = $3, reported_to_ch = $4, report_reference = $5, resolved_by = $6, resolved_at = NOW() WHERE id = $1 AND check_id = $2`,
-            [entryId, id, resolution, reported, reference, a.id]);
-        await audit(db, a.id, 'company_check_discrepancy_resolved', id, { entry_id: entryId, reported_to_ch: reported, reference });
+        await db.query(`UPDATE company_check_entry SET resolution = $3, materiality = $4, reported_to_ch = $5, report_reference = $6, resolved_by = $7, resolved_at = NOW() WHERE id = $1 AND check_id = $2`,
+            [entryId, id, resolution, materiality, materiality === 'material', materiality === 'material' ? reference : null, a.id]);
+        await audit(db, a.id, 'company_check_discrepancy_resolved', id, { entry_id: entryId, materiality, reference: materiality === 'material' ? reference : null });
         return res.json({ ok: true });
     } catch (err) { return chFailure(res, err); }
+});
+
+/** POST /:id/declaration/return { reason } — send the declaration back to the customer to correct. */
+router.post('/company-checks/:id/declaration/return', async (req, res) => {
+    const id = idParam(req);
+    const reason = text(req.body?.reason, 1000);
+    if (!id) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    if (reason.length < 10) return res.status(400).json({ ok: false, error: 'reason_required', message: 'Tell the customer what to correct (at least 10 characters).' });
+    const db = getPool();
+    try {
+        const check = await getCheck(db, id);
+        if (!check) return res.status(404).json({ ok: false, error: 'not_found' });
+        const latest = await latestDeclaration(db, Number(check.user_id), check.company_number);
+        if (!latest || latest.returned_at) return res.status(409).json({ ok: false, error: 'nothing_to_return', message: 'There is no submitted declaration to return.' });
+        const a = admin(req);
+        await db.query(`UPDATE company_declaration SET returned_at = NOW(), returned_by = $2, returned_reason = $3 WHERE id = $1`, [latest.id, a.id, reason]);
+        if (check.status === 'satisfactory') await db.query(`UPDATE company_check SET status = 'in_progress', updated_at = NOW() WHERE id = $1`, [id]);
+        await audit(db, a.id, 'company_check_declaration_returned', id, { declaration_id: Number(latest.id), reason });
+        return res.json({ ok: true });
+    } catch (e) { return chFailure(res, e); }
 });
 
 const MAX_EVIDENCE_BYTES = 3 * 1024 * 1024;
@@ -297,7 +363,11 @@ router.get('/company-checks/:id/evidence/:evidenceId', async (req, res) => {
     } catch (e) { return chFailure(res, e); }
 });
 
-/** POST /:id/decision { status, reason } — records the outcome and saves a dated report. */
+/**
+ * POST /:id/decision { status, reason } — complete the review (satisfactory) or move it to further
+ * investigation / back to in progress. Each records a dated report. Satisfactory turns monitoring on.
+ * Approval of the customer still needs identity, payment and every other condition (access rule).
+ */
 router.post('/company-checks/:id/decision', async (req, res) => {
     const id = idParam(req);
     const status = text(req.body?.status, 40);
@@ -307,25 +377,18 @@ router.post('/company-checks/:id/decision', async (req, res) => {
     if (status !== 'satisfactory' && !reason) return res.status(400).json({ ok: false, error: 'reason_required', message: 'Give a reason.' });
     const db = getPool();
     try {
+        // Bring the comparison up to date before deciding.
+        await syncDiscrepancies(db, id);
         const d = await detail(db, id);
         if (!d) return res.status(404).json({ ok: false, error: 'not_found' });
-        if (status === 'satisfactory') {
-            const blockers = satisfactoryBlockers({
-                checklist: d.check.checklist || {}, fetchedAt: d.check.fetched_at, hasSnapshot: !!d.check.snapshot,
-                partialErrors: d.check.snapshot?.partial_errors?.length ?? 0,
-                unresolvedDiscrepancies: d.entries.filter((e: any) => e.kind === 'discrepancy' && !e.resolved_at).length,
-                beneficialOwnerEvidence: d.evidence.filter((e: any) => e.kind === 'beneficial_ownership').length,
-            });
-            if (blockers.length) return res.status(409).json({ ok: false, error: 'not_ready', message: blockers.join(' '), data: { blockers } });
-        }
+        if (status === 'satisfactory' && d.blockers.length) return res.status(409).json({ ok: false, error: 'not_ready', message: d.blockers.join(' '), data: { blockers: d.blockers } });
         const a = admin(req);
-        // Monitoring starts when a check is satisfactory and stays on afterwards unless turned off.
         await db.query(
             `UPDATE company_check SET status = $2, decided_by = $3, decided_at = NOW(), decision_reason = $4,
                     monitoring = CASE WHEN $2 = 'satisfactory' THEN true ELSE monitoring END, updated_at = NOW() WHERE id = $1`,
             [id, status, a.id, reason || null]);
-        await audit(db, a.id, 'company_check_decision', id, { from: d.check.status, to: status, reason: reason || null });
-        const report = await saveReport(db, id, a, `Decision: ${status.replace(/_/g, ' ')}`);
+        await audit(db, a.id, 'company_check_decision', id, { from: d.check.status, to: status, reason: reason || null, risk_rating: d.check.risk_rating });
+        const report = await saveReport(db, id, a, status === 'satisfactory' ? 'Review completed: satisfactory' : `Decision: ${status.replace(/_/g, ' ')}`);
         await audit(db, a.id, 'company_check_report_saved', id, { report_id: report.id, sha256: report.sha256 });
         return res.json({ ok: true, data: { status, report } });
     } catch (e) { return chFailure(res, e); }

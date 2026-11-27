@@ -5,9 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle2, XCircle, Loader2, User, ShieldCheck } from 'lucide-react';
-import dynamic from 'next/dynamic';
-import { OwnerSumsubWidget } from '@/components/verify-owner/OwnerSumsubWidget';
+import { CheckCircle2, XCircle, Loader2, User } from 'lucide-react';
 import { devError } from '@/lib/devConsole';
 
 type PageStatus =
@@ -33,7 +31,6 @@ function VerifyOwnerContent() {
   const [status, setStatus] = useState<PageStatus>('loading');
   const [message, setMessage] = useState<string>('');
   const [owner, setOwner] = useState<OwnerContext | null>(null);
-  const [sumsubToken, setSumsubToken] = useState<string | null>(null);
   const [startLoading, setStartLoading] = useState(false);
 
   const token = searchParams.get('token');
@@ -134,16 +131,14 @@ function VerifyOwnerContent() {
       });
       const result = await response.json();
 
-      if (result.ok && result.data?.sumsubToken) {
-        setSumsubToken(result.data.sumsubToken);
-        setStatus('pending');
+      if (result.ok && result.data?.auto_approved) {
+        setStatus('already_verified');
         setMessage('');
+      } else if (response.status === 503) {
+        // No identity provider is connected yet: we contact the person directly.
+        setMessage(result.message || 'Online identity verification is not available yet. We will contact you to complete it.');
       } else {
-        setMessage(
-          result.data?.message ||
-            result.error ||
-            'Failed to start verification. Please try again.'
-        );
+        setMessage(result.message || result.data?.message || 'Failed to start verification. Please try again.');
       }
     } catch (error) {
       devError('[VerifyOwner] Start error:', error);
@@ -153,8 +148,7 @@ function VerifyOwnerContent() {
     }
   };
 
-  const showWidget = status === 'pending' && sumsubToken;
-  const showStartButton = status === 'ready_to_start' && !sumsubToken;
+  const showStartButton = status === 'ready_to_start';
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -164,11 +158,8 @@ function VerifyOwnerContent() {
             {status === 'loading' && (
               <Loader2 className="h-12 w-12 text-primary animate-spin" />
             )}
-            {(status === 'ready_to_start' || status === 'pending') && !showWidget && (
+            {(status === 'ready_to_start' || status === 'pending') && (
               <User className="h-12 w-12 text-primary" />
-            )}
-            {showWidget && (
-              <ShieldCheck className="h-12 w-12 text-primary" />
             )}
             {(status === 'already_verified' || status === 'verified') && (
               <CheckCircle2 className="h-12 w-12 text-success" />
@@ -184,8 +175,7 @@ function VerifyOwnerContent() {
             {status === 'token_used' && 'Link already used'}
             {status === 'already_verified' && 'Already verified'}
             {status === 'ready_to_start' && 'Identity verification'}
-            {status === 'pending' && !showWidget && 'Identity verification'}
-            {status === 'pending' && showWidget && 'Complete your verification'}
+            {status === 'pending' && 'Identity verification'}
             {status === 'verified' && 'Verification complete'}
             {status === 'rejected' && 'Verification not approved'}
           </CardTitle>
@@ -199,9 +189,7 @@ function VerifyOwnerContent() {
               owner &&
               `Hello ${owner.fullName}, please start your identity verification below.`}
             {status === 'pending' &&
-              !showWidget &&
               'Verification has been started. Status will update once our team has reviewed your documents.'}
-            {status === 'pending' && showWidget && 'Complete the steps in the form below.'}
             {status === 'verified' && 'Your identity has been verified.'}
             {status === 'rejected' && 'Your previous verification was not approved.'}
           </CardDescription>
@@ -229,14 +217,6 @@ function VerifyOwnerContent() {
             >
               {startLoading ? 'Starting…' : 'Start verification'}
             </Button>
-          )}
-
-          {showWidget && sumsubToken && (
-            <OwnerSumsubWidget
-              accessToken={sumsubToken}
-              containerId="owner-sumsub-websdk-container"
-              onComplete={() => setStatus('pending')}
-            />
           )}
 
           {status === 'already_verified' && (
@@ -278,7 +258,7 @@ function VerifyOwnerContent() {
             </Alert>
           )}
 
-          {status === 'pending' && !showWidget && (
+          {status === 'pending' && (
             <Alert>
               <AlertDescription>
                 Verification has been started. Status will update once our team has reviewed your

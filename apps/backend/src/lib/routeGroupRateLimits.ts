@@ -54,7 +54,7 @@ export const physicalMailForwardUserLimiter = rateLimit({
   },
 });
 
-/** POST /api/kyc/* mutating Sumsub — provider API + cost; GET /status stays on global only. */
+/** POST /api/kyc/* (identity verification); GET /status stays on global only. */
 export const kycWriteUserLimiter = rateLimit({
   windowMs: FIFTEEN_MIN_MS,
   limit: 25,

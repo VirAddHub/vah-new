@@ -27,7 +27,7 @@ module.exports = require('./db/index');
     // Create lib/*.js shims for common modules
     const libModules = [
         'metrics', 'metrics-forwarding', 'notify', 'gdpr-export',
-        'token', 'mailer', 'sumsub'
+        'token', 'mailer'
     ];
 
     for (const module of libModules) {

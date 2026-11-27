@@ -2,8 +2,8 @@
  * Lightweight verification event logging for audit/debugging.
  * See docs/IDENTITY_VERIFICATION_ENGINEERING_SPEC.md (Part 4)
  *
- * Event types: invite_sent, invite_resent, sumsub_started, verified, rejected,
- * token_expired, webhook_received
+ * Event types: invite_sent, invite_resent, verification_started, verified, rejected,
+ * token_expired, webhook_received. (Older rows may also hold 'sumsub_started', from the former provider.)
  */
 import { getPool } from '../db';
 import { logger } from '../../lib/logger';
@@ -12,7 +12,7 @@ export type VerificationSubjectType = 'user' | 'business_owner';
 export type VerificationEventType =
   | 'invite_sent'
   | 'invite_resent'
-  | 'sumsub_started'
+  | 'verification_started'
   | 'verified'
   | 'rejected'
   | 'pending'

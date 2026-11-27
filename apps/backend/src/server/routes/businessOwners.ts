@@ -7,6 +7,8 @@ import { getPool } from '../db';
 import * as businessOwnersService from '../services/businessOwners';
 import { param } from '../../lib/express-params';
 
+import { canSelfVerify, IDENTITY_UNAVAILABLE_MESSAGE } from '../services/identityVerification';
+
 const router = Router();
 
 function toNumberId(value: unknown): number {
@@ -267,60 +269,33 @@ router.get('/verify', async (req: Request, res: Response) => {
 
 /**
  * POST /api/business-owners/verify/start
- * Start identity verification for a business owner (public, no auth required)
- * 
- * Body: { token: string }
- * Returns: { ok: true, data: { started: true, sumsubToken: string, applicantId: string } }
+ * Start identity verification for a business owner (public; the invite token is the credential).
+ * No identity provider is connected yet (services/identityVerification.ts): this answers 503
+ * identity_verification_unavailable and leaves the invite usable, unless KYC_AUTO_APPROVE_FOR_TESTING
+ * is on, which approves the owner for testing only.
  */
 router.post('/verify/start', async (req: Request, res: Response) => {
     try {
         const { token } = req.body ?? {};
-        
-        if (!token) {
-            return res.status(400).json({
-                ok: false,
-                error: 'validation_error',
-                    message: 'Token is required',
-            });
-        }
-        
+        if (!token) return res.status(400).json({ ok: false, error: 'validation_error', message: 'Token is required' });
         const owner = await businessOwnersService.verifyBusinessOwnerInviteToken(token);
-        
-        if (!owner) {
-            return res.status(400).json({
-                ok: false,
-                error: 'invalid_token',
-                    message: 'Invalid or expired token',
-            });
+        if (!owner) return res.status(400).json({ ok: false, error: 'invalid_token', message: 'Invalid or expired token' });
+
+        if (canSelfVerify() !== 'testing') {
+            return res.status(503).json({ ok: false, error: 'identity_verification_unavailable', message: IDENTITY_UNAVAILABLE_MESSAGE });
         }
-        
-        // Open verification first, and only then consume the invite: if Sumsub fails, the owner can
-        // simply use the same link again (security review F25). Starting is idempotent — an existing
-        // applicant is reused rather than duplicated.
-        const { applicantId, accessToken } = await businessOwnersService.createSumsubApplicantForOwner(owner.ownerId);
+        const pool = getPool();
+        const r = await pool.query(`UPDATE business_owner SET status = 'verified', kyc_updated_at = NOW(), updated_at = NOW() WHERE id = $1 RETURNING user_id`, [owner.ownerId]);
+        await pool.query(
+            `INSERT INTO identity_check (user_id, owner_id, subject, outcome, method, notes) VALUES ($1, $2, 'owner', 'verified', 'testing', 'KYC_AUTO_APPROVE_FOR_TESTING')`,
+            [r.rows[0]?.user_id, owner.ownerId]).catch(() => undefined);
         await businessOwnersService.markBusinessOwnerInviteUsed(token);
         const { logVerificationEvent } = await import('../services/verificationEventLog');
-        await logVerificationEvent('business_owner', owner.ownerId, 'sumsub_started', { applicantId });
-
-        return res.json({
-            ok: true,
-            data: {
-                started: true,
-                sumsubToken: accessToken,
-                applicantId: applicantId,
-                owner: {
-                    fullName: owner.fullName,
-                    email: owner.email,
-                },
-            },
-        });
+        await logVerificationEvent('business_owner', owner.ownerId, 'verified', { reason: 'auto_approved_testing' });
+        return res.json({ ok: true, data: { started: true, auto_approved: true, owner: { fullName: owner.fullName, email: owner.email } } });
     } catch (error: any) {
         logger.error('[POST /api/business-owners/verify/start] error:', { message: error?.message });
-        return res.status(500).json({
-            ok: false,
-            error: 'server_error',
-            message: "We couldn't start identity verification just now. Please try the link again in a few minutes.",
-        });
+        return res.status(500).json({ ok: false, error: 'server_error', message: "We couldn't start identity verification just now. Please try the link again later." });
     }
 });
 

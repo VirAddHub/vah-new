@@ -54,8 +54,6 @@ services:
         sync: false
       - key: COOKIE_SECRET
         sync: false
-      - key: SUMSUB_SECRET
-        sync: false
 
   - type: web
     name: vah-frontend

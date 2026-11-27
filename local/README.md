@@ -24,7 +24,7 @@ to `postgres://<user>:<password>@127.0.0.1:<port>/vah_local` and run `npm run lo
 | Admin | `admin@example.test` | `Local!Admin#2026` | Log in at `/admin/login` |
 | Customer | `demo.customer@example.test` | `Local!Customer#2026` | Only with `--demo-customer`. Seeded straight into the database as paid, identity not yet verified. For realistic accounts use the state accounts below |
 
-`npm run local:states` creates these through the real API (signup, mocked Stripe and Sumsub events, admin
+`npm run local:states` creates these through the real API (signup, mocked Stripe events, identity results recorded through the admin API, admin
 actions), each with dummy mail. Password for all: `Journey!Passw0rd#1`. Re-running keeps existing ones.
 
 | Email | State |
@@ -64,7 +64,7 @@ token is present (local runs do not send email). `local/backend.env` and `local/
 - **The database is built from the migrations** (`apps/backend/scripts/baseline/000_baseline.sql` on an empty database, then the forward migrations). The baseline is a reconstruction that has not been compared with production: see `audit/SCHEMA-ASSUMPTIONS.md`.
 - **Rate limits and sign-in throttling are on** (see `audit/RATE-LIMITS.md`). Five wrong passwords lock that
   account for 15 minutes from that browser; the admin Users screen can unlock it.
-- Email, Companies House, address lookup, OneDrive and Sumsub's live widget are not configured. Stripe needs
+- Email, Companies House, address lookup, OneDrive and identity verification providers are not configured. Stripe needs
   your own **test-mode** keys in `local/backend.env` for a real checkout.
 
 ## Tests
@@ -79,5 +79,5 @@ npm test                # backend unit and integration tests (uses its own vah_u
 `rate-limits` runs last because it exhausts the local allowance; restart `local:start` afterwards.
 
 All run on the migration-built database with rate limits on and no manual account activation.
-They are MOCK tests: Stripe and Sumsub events are built and signed locally. A real Stripe
-test-mode payment and the live Sumsub widget are separate provider-sandbox checks.
+They are MOCK tests: Stripe events are built and signed locally, and identity results are recorded
+through the admin API. A real Stripe test-mode payment is a separate provider-sandbox check.

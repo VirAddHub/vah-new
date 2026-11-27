@@ -1,5 +1,6 @@
 /**
- * Ongoing monitoring of companies with monitoring turned on (every satisfactory check, by default).
+ * Ongoing monitoring of companies with monitoring turned on (every satisfactory check: turned on
+ * automatically when a review is completed). The hourly run also creates and refreshes checks (automation.ts).
  * Each company is re-read from Companies House about once a day. Any change to the watched parts of
  * the register (status, name, registered office, SIC codes, insolvency, overdue filings, officers,
  * PSCs, PSC statements, possible disqualifications) raises an alert for administrators.
@@ -10,7 +11,8 @@
 import { logger } from '../../../lib/logger';
 import { ChError, createChClient, type ChClient } from './chClient';
 import { diffSnapshots, fetchSnapshot, snapshotHash } from './snapshot';
-import { audit, type Queryable } from './store';
+import { audit, syncDiscrepancies, type Queryable } from './store';
+import { ensureAllChecks, refreshPending } from './automation';
 
 const LOCK_KEY = 72_631_127; // pg advisory lock: one runner across instances
 const DUE_AFTER_HOURS = 24;
@@ -40,6 +42,7 @@ export async function runMonitoringOnce(db: Queryable & { connect?: () => Promis
                         `UPDATE company_check SET snapshot = $2, snapshot_hash = $3, fetched_at = NOW(), fetch_error = NULL, last_monitored_at = NOW(),
                                 company_name = COALESCE($4, company_name) WHERE id = $1`,
                         [check.id, JSON.stringify(fresh), snapshotHash(fresh), fresh.profile?.company_name ?? null]);
+                    await syncDiscrepancies(conn, Number(check.id));
                     result.checked++;
                 } catch (e) {
                     if (e instanceof ChError && e.code === 'rate_limited') break; // try again next run
@@ -69,8 +72,10 @@ export function startCompanyMonitoring(getDb: () => any): (() => void) | null {
         try {
             const t = (await getDb().query(`SELECT to_regclass('public.company_check') IS NOT NULL AS ok`)).rows[0];
             if (!t?.ok) return;
+            const created = await ensureAllChecks(getDb());
+            const pending = await refreshPending(getDb(), createChClient());
             const r = await runMonitoringOnce(getDb(), createChClient());
-            if (r.checked || r.alerts || r.errors) logger.info('[companyChecks] monitoring run', r);
+            if (created || pending.refreshed || pending.failed || r.checked || r.alerts || r.errors) logger.info('[companyChecks] automation run', { created, ...pending, ...r });
         } catch (e) {
             logger.warn('[companyChecks] monitoring run failed', { message: (e as Error)?.message });
         }

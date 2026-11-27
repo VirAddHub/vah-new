@@ -4,7 +4,8 @@
  * Three independent facts, each with one source:
  *   standing      user.status / suspended_at / deleted_at     changed only by an admin
  *   payment       subscription row (Stripe events only)
- *   verification  primary identity + every required business owner (Sumsub events, admin override)
+ *   verification  primary identity + every required business owner (identity results: provider when
+ *                 connected, or an administrator's recorded result)
  *   company       a satisfactory company check (admin Company checks) for every company number the
  *                 customer has given us; customers with no company number are not affected
  *
@@ -28,7 +29,7 @@ export type VerificationState = 'not_started' | 'in_review' | 'action_required' 
 export type MissingReason = 'account_suspended' | 'account_closed' | 'payment_required' | 'payment_overdue'
     | 'subscription_cancelled' | 'identity_required' | 'identity_in_review' | 'identity_rejected' | 'owners_required'
     | 'company_checks_pending';
-export type NextStep = 'none' | 'payment' | 'billing' | 'verification' | 'owners' | 'support' | 'mail';
+export type NextStep = 'none' | 'payment' | 'billing' | 'verification' | 'owners' | 'company' | 'support' | 'mail';
 
 export interface AccessDecision {
     level: AccessLevel;
@@ -41,8 +42,8 @@ export interface AccessDecision {
     next: NextStep;
 }
 
-export type CompanyAccess = { required: number; satisfactory: number; investigating: number };
-const NO_COMPANY: CompanyAccess = { required: 0, satisfactory: 0, investigating: 0 };
+export type CompanyAccess = { required: number; satisfactory: number; investigating: number; declarationNeeded?: boolean };
+const NO_COMPANY: CompanyAccess = { required: 0, satisfactory: 0, investigating: 0, declarationNeeded: false };
 
 type Queryable = { query: (sql: string, args?: unknown[]) => Promise<{ rows: any[] }> };
 
@@ -110,12 +111,13 @@ export function decide(standing: Standing, payment: AccessDecision['payment'], v
     else if (missing.includes('identity_rejected')) next = 'support';
     else if (missing.includes('identity_required') || missing.includes('identity_in_review')) next = 'verification';
     else if (missing.includes('owners_required')) next = 'owners';
+    else if (missing.includes('company_checks_pending') && company.declarationNeeded) next = 'company';
     return { level: missing.length === 0 ? 'full' : 'onboarding', standing, payment, verification, company, missing, next };
 }
 
 export async function getAccess(userId: number, db: Queryable = getPool(), nowMs: number = Date.now()): Promise<AccessDecision | null> {
     const u = await db.query(
-        `SELECT id, status, deleted_at, suspended_at, kyc_status, sumsub_applicant_id, owners_pending_info FROM "user" WHERE id = $1 LIMIT 1`, [userId]);
+        `SELECT id, status, deleted_at, suspended_at, kyc_status, identity_submitted_at, owners_pending_info FROM "user" WHERE id = $1 LIMIT 1`, [userId]);
     if (u.rows.length === 0) return null;
     const s = await db.query(
         `SELECT status, stripe_subscription_id, paid_through_ms, cancel_at_period_end FROM subscription WHERE user_id = $1 LIMIT 1`, [userId]);
@@ -125,7 +127,7 @@ export async function getAccess(userId: number, db: Queryable = getPool(), nowMs
     // a missing owner row must never read as "verified" (security review F21).
     const pendingOwners = Number(o.rows[0]?.n || 0) + (u.rows[0].owners_pending_info === true ? 1 : 0);
     const company = await companyAccessState(db, userId);
-    return decide(standingOf(u.rows[0]), paymentOf(s.rows[0], nowMs), verificationOf(u.rows[0].kyc_status, pendingOwners, !!u.rows[0].sumsub_applicant_id), company);
+    return decide(standingOf(u.rows[0]), paymentOf(s.rows[0], nowMs), verificationOf(u.rows[0].kyc_status, pendingOwners, !!u.rows[0].identity_submitted_at), company);
 }
 
 /** Number of mail items held for a customer who is not in full service. A count only: no details. */

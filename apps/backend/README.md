@@ -96,9 +96,9 @@ This is the **FINAL PRODUCTION VERSION** of VirtualAddressHub. All demo referenc
    STRIPE_PUBLISHABLE_KEY=pk_live_your-stripe-publishable-key
    STRIPE_SECRET_KEY=sk_live_your-stripe-secret-key
    
-   # KYC Service (Sumsub)
-   SUMSUB_APP_TOKEN=your-sumsub-app-token
-   SUMSUB_SECRET_KEY=your-sumsub-secret-key
+   # Identity verification: no provider connected (see src/server/services/identityVerification.ts)
+   # Companies House public data API (company checks and monitoring)
+   COMPANIES_HOUSE_API_KEY=your-companies-house-key
    ```
 
 #### Local Development Setup

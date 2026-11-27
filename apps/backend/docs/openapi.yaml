@@ -48,10 +48,6 @@ components:
       type: apiKey
       in: cookie
       name: vah_session
-    SumsubWebhookSig:
-      type: http
-      scheme: bearer
-      description: Sumsub webhook signature using SUMSUB_WEBHOOK_SECRET
     roleAuth:
       type: apiKey
       in: cookie
@@ -1064,22 +1060,7 @@ paths:
     post:
       tags:
         - webhooks
-      summary: Sumsub webhook
-      x-config-required: true
-      security:
-        - SumsubWebhookSig: []
+      summary: Former identity-provider webhook (no longer used). Stores nothing.
       responses:
-        '204':
-          description: Accepted
-        '501':
-          description: Not Implemented (missing configuration)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiResponse'
+        '410':
+          description: Gone

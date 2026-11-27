@@ -5,6 +5,7 @@
  * endpoints. Opened by clicking a row in the Users table. Standing changes (suspend, restore, close)
  * stay in the Account standing dialog; admin access is granted or removed here.
  */
+import { IdentityResults } from './IdentityResults';
 import * as Dialog from '@radix-ui/react-dialog';
 import useSWR from 'swr';
 import { useState } from 'react';
@@ -119,7 +120,7 @@ export function AdminUserPanel({ user, onClose, onOpenStanding }: {
                     {s?.access?.company
                       ? s.access.company.required === 0
                         ? 'Not required (no company number)'
-                        : `${s.access.company.satisfactory} of ${s.access.company.required} satisfactory${s.access.company.investigating ? ` · ${s.access.company.investigating} under investigation` : ''}`
+                        : `${s.access.company.satisfactory} of ${s.access.company.required} satisfactory${s.access.company.investigating ? ` · ${s.access.company.investigating} under investigation` : ''}${s.access.company.declarationNeeded ? ' · declaration not received' : ''}`
                       : '—'}
                     {user && <a className="ml-2 text-ink underline" href={`/admin/dashboard?section=company-checks`}>Open</a>}
                   </Row>
@@ -131,6 +132,7 @@ export function AdminUserPanel({ user, onClose, onOpenStanding }: {
                     Suspend, restore or close…
                   </Button>
                 )}
+                {user && <IdentityResults userId={user.id} />}
                 {user && p && (
                   <AdminAccessControl
                     userId={user.id}

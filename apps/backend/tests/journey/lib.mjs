@@ -91,16 +91,20 @@ export async function sendStripe(event, { badSignature = false } = {}) {
   const res = await fetch(API + '/api/webhooks/stripe', { method: 'POST', headers: { 'content-type': 'application/json', 'stripe-signature': `t=${t},v1=${sig}` }, body });
   return { status: res.status, json: await res.json().catch(() => null) };
 }
-export async function sendSumsub(payload, { badSignature = false } = {}) {
-  const body = JSON.stringify(payload);
-  const sig = crypto.createHmac('sha256', badSignature ? 'wrong' : ENV.SUMSUB_WEBHOOK_SECRET).update(body).digest('hex');
-  const res = await fetch(API + '/api/webhooks/sumsub', { method: 'POST', headers: { 'content-type': 'application/json', 'x-payload-digest': sig, 'x-payload-digest-alg': 'HMAC_SHA256_HEX' }, body });
-  return { status: res.status, json: await res.json().catch(() => null) };
+/**
+ * Records an identity result the way an administrator does (POST /api/admin/users/:id/identity).
+ * No identity provider is connected; results are established by an administrator and recorded.
+ */
+let adminSession = null;
+export async function recordIdentity(userId, outcome = 'verified') {
+  if (!adminSession) {
+    adminSession = new Session();
+    const r = await adminSession.post('/api/auth/login', { email: 'admin@example.test', password: 'Local!Admin#2026' });
+    if (r.status !== 200) throw new Error(`admin login ${r.status}`);
+  }
+  const r = await adminSession.post(`/api/admin/users/${userId}/identity`, { subject: 'account_holder', outcome, reference: 'JOURNEY-TEST', notes: 'Journey test: identity documents reviewed' });
+  return { status: r.status, json: r.json };
 }
-export const sumsubReview = (externalUserId, answer, extra = {}) => ({
-  type: 'applicantReviewed', applicantId: `app_${externalUserId}`, externalUserId: String(externalUserId), reviewStatus: 'completed',
-  reviewResult: { reviewAnswer: answer, ...extra }, createdAtMs: new Date().toISOString(),
-});
 export async function importMail(body) {
   const res = await fetch(API + '/api/internal/from-onedrive', { method: 'POST', headers: { 'content-type': 'application/json', 'x-mail-import-secret': ENV.MAIL_IMPORT_WEBHOOK_SECRET }, body: JSON.stringify(body) });
   return { status: res.status, json: await res.json().catch(() => null) };

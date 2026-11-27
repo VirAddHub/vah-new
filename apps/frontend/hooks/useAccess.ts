@@ -3,7 +3,7 @@
 import useSWR from 'swr';
 
 export type AccessLevel = 'none' | 'onboarding' | 'full';
-export type NextStep = 'none' | 'payment' | 'billing' | 'verification' | 'owners' | 'support' | 'mail';
+export type NextStep = 'none' | 'payment' | 'billing' | 'verification' | 'owners' | 'company' | 'support' | 'mail';
 export type MissingReason =
   | 'account_suspended' | 'account_closed' | 'payment_required' | 'payment_overdue' | 'subscription_cancelled'
   | 'identity_required' | 'identity_in_review' | 'identity_rejected' | 'owners_required' | 'company_checks_pending';
@@ -14,7 +14,7 @@ export interface AccessDecision {
   payment: { state: 'none' | 'active' | 'past_due' | 'cancelled' | 'pending'; entitled: boolean; paidThroughMs: number | null; cancelAtPeriodEnd: boolean };
   verification: { state: 'not_started' | 'in_review' | 'action_required' | 'rejected' | 'owners_pending' | 'complete'; primaryApproved: boolean; pendingOwners: number };
   /** Company checks: present when the API includes it (older responses may not). */
-  company?: { required: number; satisfactory: number; investigating: number };
+  company?: { required: number; satisfactory: number; investigating: number; declarationNeeded?: boolean };
   missing: MissingReason[];
   next: NextStep;
   /** How many items are waiting while service is restricted. A count only. Null when in full service. */
@@ -37,6 +37,7 @@ export const NEXT_STEP_PATH: Record<NextStep, string> = {
   billing: '/account/billing',
   verification: '/account/verification',
   owners: '/business-owners',
+  company: '/account/verification#company',
   support: '/account/support',
   mail: '/mail',
 };

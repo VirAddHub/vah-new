@@ -2,7 +2,7 @@
 // Conditions: database built by `npm run migrate`, rate limits ON, no manual activation, no patched build.
 // Run:  node apps/backend/tests/journey/journey.mjs   (API must be running: npm run local:start)
 // Steps that need provider setup (e.g. real Stripe test-mode checkout) are reported as PENDING with the reason.
-import { Session, db, step, expect, pending, report, stripeEvent, sendStripe, sendSumsub, sumsubReview, importMail, setScanUrl, startPdfServer, TEST_PDF, stripeFixture } from './lib.mjs';
+import { Session, db, step, expect, pending, report, stripeEvent, sendStripe, recordIdentity, importMail, setScanUrl, startPdfServer, TEST_PDF, stripeFixture } from './lib.mjs';
 
 const stamp = Date.now();
 const customer = {
@@ -43,7 +43,7 @@ await step('1.6', 'Unpaid: checkout is reachable (not blocked by the subscriptio
   const r = await s.post('/api/payments/stripe/checkout-session-embedded', { plan_id: Number(plan.id), billing_period: 'monthly' });
   expect(r.status !== 401 && r.status !== 403, `blocked with ${r.status}`); return `HTTP ${r.status} (dummy Stripe key locally; real session needs test keys)`;
 });
-await step('1.7', 'Unpaid: can start identity verification', async () => { const r = await s.post('/api/kyc/start', {}); expect(![401, 403].includes(r.status), `blocked with ${r.status}`); return `HTTP ${r.status} (501 = Sumsub not configured locally)`; });
+await step('1.7', 'Unpaid: can start identity verification', async () => { const r = await s.post('/api/kyc/start', {}); expect(![401, 403].includes(r.status), `blocked with ${r.status}`); return `HTTP ${r.status} (503 = no identity provider connected)`; });
 await step('1.8', 'Unpaid: support, billing overview and company search reachable', async () => {
   const a = await s.post('/api/support/tickets', { subject: 'Help', message: 'Journey test ticket body', category: 'general' });
   const b = await s.get('/api/billing/overview'); const c = await s.get('/api/companies-house/search?q=test');
@@ -127,17 +127,20 @@ await step('4.2', 'Paid customer logs out and back in; lands on the right next s
   expect((w?.data?.access ?? w?.data?.user?.access)?.next === 'verification', 'whoami does not carry the access decision');
 });
 
-// ---- Step 5: verification (simulated Sumsub events) --------------------------------------------
-await step('5.1', 'Verification events are rejected without a valid signature', async () => {
-  expect((await sendSumsub(sumsubReview(userId, 'GREEN'), { badSignature: true })).status === 401, 'bad signature accepted');
+// ---- Step 5: verification (identity results recorded by an administrator; no provider connected) --
+await step('5.1', 'Customers cannot record their own identity result', async () => {
+  const r = await s.post(`/api/admin/users/${userId}/identity`, { subject: 'account_holder', outcome: 'verified', reference: 'x', notes: 'trying it myself' });
+  expect([401, 403].includes(r.status), `got ${r.status}`);
 });
-await step('5.2', 'Identity rejected with retry: still restricted', async () => {
-  const r = await sendSumsub(sumsubReview(userId, 'RED', { reviewRejectType: 'RETRY', rejectLabels: ['DOCUMENT_PAGE_MISSING'] })); expect(r.status === 200, `got ${r.status}`);
+await step('5.2', 'Identity rejected: still restricted', async () => {
+  const r = await recordIdentity(userId, 'rejected'); expect(r.status === 201, `got ${r.status}`);
   const a = (await s.get('/api/access')).json?.data; expect(a.level === 'onboarding' && !a.verification.primaryApproved, JSON.stringify(a.verification));
 });
-await step('5.3', 'Identity approved: full service opens', async () => {
-  expect((await sendSumsub(sumsubReview(userId, 'GREEN'))).status === 200, 'event refused');
-  const a = (await s.get('/api/access')).json?.data; expect(a.level === 'full' && a.next === 'mail' && a.missing.length === 0, JSON.stringify(a));
+await step('5.3', 'Identity approved: full service opens unless a company check is still needed', async () => {
+  expect((await recordIdentity(userId)).status === 201, 'not recorded');
+  const a = (await s.get('/api/access')).json?.data;
+  const onlyCompany = a.missing.length === 1 && a.missing[0] === 'company_checks_pending';
+  expect((a.level === 'full' && a.next === 'mail' && a.missing.length === 0) || onlyCompany, JSON.stringify(a));
 });
 
 // ---- Step 6: mail received and opened ----------------------------------------------------------

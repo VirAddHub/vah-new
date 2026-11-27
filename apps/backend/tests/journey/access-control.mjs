@@ -1,7 +1,7 @@
 // Who can see what. Two full-service customers (A and B), one restricted customer, an administrator
 // and an anonymous visitor, each trying A's records: mail, scans, downloads, forwarding, invoices,
 // businesses, Companies House proof and admin actions. Mock provider events (not provider-sandbox).
-import { Session, db, step, expect, report, stripeEvent, sendStripe, sendSumsub, sumsubReview, importMail, setScanUrl, startPdfServer, stripeFixture, TEST_PDF } from './lib.mjs';
+import { Session, db, step, expect, report, stripeEvent, sendStripe, recordIdentity, importMail, setScanUrl, startPdfServer, stripeFixture, TEST_PDF } from './lib.mjs';
 
 const PW = 'Journey!Passw0rd#1';
 const stamp = Date.now().toString(36);
@@ -19,7 +19,7 @@ async function customer(tag, { pay = true, verify = true } = {}) {
   if (r.status >= 300) throw new Error(`signup ${tag} ${r.status}`);
   const id = Number((await one('SELECT id FROM "user" WHERE email=$1', [email])).id);
   if (pay) { const fx = stripeFixture(id, plan.id, 'monthly'); for (const e of [stripeEvent('checkout.session.completed', fx.checkout()), stripeEvent('customer.subscription.created', fx.sub('active')), stripeEvent('invoice.paid', fx.invoice())]) await sendStripe(e); }
-  if (verify) await sendSumsub(sumsubReview(id, 'GREEN'));
+  if (verify) await recordIdentity(id);
   const m = await importMail({ userId: id, sourceSlug: 'hmrc', fileName: `user${id}_2026-11-17_HMRC.pdf`, oneDriveFileId: `ac-${tag}-${stamp}`, oneDriveDownloadUrl: pdf.url, receivedAt: new Date().toISOString() });
   const mailId = Number((await one('SELECT id FROM mail_item WHERE user_id=$1 ORDER BY id DESC LIMIT 1', [id])).id);
   await setScanUrl(mailId, pdf.url);

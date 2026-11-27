@@ -1,6 +1,6 @@
 /**
  * Account standing: suspend, restore, close. Admin only, each with a recorded reason and an
- * audit row. Standing overrides payment and verification (services/access.ts); Stripe and Sumsub
+ * audit row. Standing overrides payment and verification (services/access.ts); Stripe and identity-verification results
  * events never change it.
  *
  * What these actions do NOT do: they do not cancel or refund anything in Stripe. If the account

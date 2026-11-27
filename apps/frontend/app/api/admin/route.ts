@@ -76,7 +76,7 @@ async function handleAdminStats() {
 async function handleSystemHealth() {
     const health = [
         { label: "Mail Processing API", status: "operational", uptime: "99.98%" },
-        { label: "KYC Verification (Sumsub)", status: "operational", uptime: "99.95%" },
+        { label: "Identity verification provider", status: "not_configured", uptime: "—" },
         { label: "Payment Gateway", status: "operational", uptime: "99.99%" },
         { label: "Database Performance", status: "warning", uptime: "97.82%" },
         { label: "Email Notifications", status: "operational", uptime: "99.87%" }

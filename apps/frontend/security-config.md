@@ -96,7 +96,6 @@ NODE_ENV=production
 FRONTEND_ORIGIN=http://localhost:3000,https://vah-frontend-final.vercel.app
 SESSION_SECRET=<long-random>
 GOCARDLESS_WEBHOOK_SECRET=<sandbox>
-SUMSUB_WEBHOOK_SECRET=<staging>
 ```
 
 ### Production
@@ -105,7 +104,6 @@ NODE_ENV=production
 FRONTEND_ORIGIN=https://vah-frontend-final.vercel.app
 SESSION_SECRET=<long-random>
 GOCARDLESS_WEBHOOK_SECRET=<production>
-SUMSUB_WEBHOOK_SECRET=<production>
 COOKIE_DOMAIN=.virtualaddresshub.co.uk
 ```
 

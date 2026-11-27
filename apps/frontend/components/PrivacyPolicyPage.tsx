@@ -38,7 +38,7 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
             <li>Email address and phone number</li>
             <li>Billing and forwarding address</li>
             <li>
-              <strong>Identity documents (collected securely by our verification partner, Sumsub; we only store the verification result and required AML data)</strong>
+              <strong>Identity documents (collected securely by our identity verification provider; we only store the verification result and required AML data)</strong>
             </li>
             <li>Scanned mail and mail-handling information</li>
             <li>Login and security logs</li>
@@ -158,7 +158,7 @@ export function PrivacyPolicyPage({ onNavigate }: PrivacyPolicyPageProps) {
           <p className="text-muted-foreground">We only share your information with essential service providers who help us deliver your service:</p>
           <ul className="list-disc pl-6 text-muted-foreground space-y-1">
             <li>
-              <strong>Sumsub</strong> – identity verification
+              <strong>Our identity verification provider</strong> – identity checks and screening
             </li>
             <li>
               <strong>Stripe</strong> – payments

@@ -799,10 +799,16 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
 
             // Company due-diligence records must be kept for five years after the relationship ends
             // (MLR 2017 reg 40). The database also refuses this; say so plainly instead of failing.
-            const cdd = await pool.query(`SELECT to_regclass('public.company_check') IS NOT NULL AS ok`);
-            if (cdd.rows[0]?.ok && (await pool.query(`SELECT 1 FROM company_check WHERE user_id = $1 LIMIT 1`, [userId])).rows.length) {
+            const cdd = await pool.query(`SELECT to_regclass('public.company_check') IS NOT NULL AS cc, to_regclass('public.identity_check') IS NOT NULL AS ic, to_regclass('public.company_declaration') IS NOT NULL AS cd`);
+            const t = cdd.rows[0] ?? {};
+            const held = [
+                t.cc ? `SELECT 1 FROM company_check WHERE user_id = $1` : null,
+                t.ic ? `SELECT 1 FROM identity_check WHERE user_id = $1` : null,
+                t.cd ? `SELECT 1 FROM company_declaration WHERE user_id = $1` : null,
+            ].filter(Boolean);
+            if (held.length && (await pool.query(`${held.join(' UNION ALL ')} LIMIT 1`, [userId])).rows.length) {
                 return res.status(409).json({ ok: false, error: 'records_must_be_retained',
-                    message: 'This customer has company check records that must be kept for five years. Close the account instead.' });
+                    message: 'This customer has due diligence records that must be kept for five years. Close the account instead.' });
             }
 
             // All database deletions and the audit entry commit together or not at all, so a failure
@@ -829,7 +835,7 @@ router.delete('/users/:id', requireAdmin, async (req: Request, res: Response) =>
 
             return res.json({
                 ok: true,
-                message: `User ${user.email} has been permanently deleted from the database. This cannot be undone. Scans in OneDrive and records held by Stripe and Sumsub are not removed by this action.`,
+                message: `User ${user.email} has been permanently deleted from the database. This cannot be undone. Scans in OneDrive and records held by Stripe or an identity provider are not removed by this action.`,
                 permanent: true
             });
         } else {
@@ -1104,7 +1110,7 @@ router.post('/users', requireAdmin, async (req: Request, res: Response) => {
             if (kycAutoApproveForTesting()) {
                 await pool.query(
                     `UPDATE "user" SET kyc_status = 'approved', kyc_approved_at = NOW(),
-                            sumsub_review_status = 'auto_approved_testing' WHERE id = $1`,
+                            identity_submitted_at = NOW() WHERE id = $1`,
                     [newUser.id]
                 );
             }

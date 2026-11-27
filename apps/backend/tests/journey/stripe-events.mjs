@@ -1,7 +1,7 @@
 // Stripe event reliability: duplicates, retries, concurrency, ordering, renewal failure, recovery,
 // cancellation, resubscription. MOCK tests: events are built and signed locally, not sent by Stripe.
 // Run with the API up:  node apps/backend/tests/journey/stripe-events.mjs
-import { Session, db, step, expect, report, stripeEvent, sendStripe, sendSumsub, sumsubReview, stripeFixture, uid, importMail, setScanUrl, startPdfServer, TEST_PDF } from './lib.mjs';
+import { Session, db, step, expect, report, stripeEvent, sendStripe, recordIdentity, stripeFixture, uid, importMail, setScanUrl, startPdfServer, TEST_PDF } from './lib.mjs';
 
 const pg = await db();
 const one = async (sql, args) => (await pg.query(sql, args)).rows[0];
@@ -10,7 +10,7 @@ const annual = await one(`SELECT id, name FROM plans WHERE slug='virtual-mailbox
 const T = Math.floor(Date.now() / 1000);
 let n = 0;
 
-/** A fresh signed-up customer (through the real signup route). Optionally verified through a simulated Sumsub approval. */
+/** A fresh signed-up customer (through the real signup route). Optionally verified through a recorded identity result. */
 async function newCustomer({ verified = true } = {}) {
   const s = new Session(); const email = `evt.${Date.now()}.${n++}@example.test`;
   const r = await s.post('/api/auth/signup', { first_name: 'Event', last_name: 'Tester', email, password: 'Journey!Passw0rd#1', phone: '+447700900002',
@@ -19,7 +19,7 @@ async function newCustomer({ verified = true } = {}) {
     billing: 'monthly', price: '9.99', isSoleController: true, additionalControllersCount: 0 });
   if (r.status >= 300) throw new Error(`signup ${r.status} ${r.text.slice(0, 120)}`);
   const id = Number((await one('SELECT id FROM "user" WHERE email=$1', [email])).id);
-  if (verified) await sendSumsub(sumsubReview(id, 'GREEN'));
+  if (verified) await recordIdentity(id);
   return { s, id, email, access: async () => (await s.get('/api/access')).json?.data, sub: () => one('SELECT * FROM subscription WHERE user_id=$1', [id]) };
 }
 const pay = async (c, fx, o = {}) => { for (const e of [stripeEvent('checkout.session.completed', fx.checkout(), { created: T }), stripeEvent('invoice.paid', fx.invoice(o), { created: T })]) { const r = await sendStripe(e); if (r.status !== 200) throw new Error(`${e.type} ${r.status}`); } };

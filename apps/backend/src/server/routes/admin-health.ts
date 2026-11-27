@@ -2,7 +2,7 @@
 // Admin health check endpoints
 
 import { Router, Request, Response } from 'express';
-import { isSumsubApiConfigured } from '../../lib/sumsubConfig';
+import { identityProviderStatus } from '../services/identityVerification';
 import { getPool } from '../db';
 import { requireAdmin } from '../../middleware/auth';
 
@@ -64,7 +64,7 @@ router.get('/summary', requireAdmin, async (_req: Request, res: Response) => {
         const deps = await Promise.all([
             checkService('email_postmark_config', async () => !!process.env.POSTMARK_TOKEN),
             checkService('payments_stripe_config', async () => !!((process.env.STRIPE_SECRET_KEY || '').trim() && (process.env.STRIPE_WEBHOOK_SECRET || '').trim())),
-            checkService('kyc_sumsub_config', async () => isSumsubApiConfigured()),
+            checkService('identity_verification_provider', async () => identityProviderStatus().connected),
             checkService('storage_onedrive_config', async () => !!(process.env.GRAPH_CLIENT_ID && process.env.GRAPH_CLIENT_SECRET)),
             checkService('queue_jobs_db', async () => dbStatus.severity !== 'down'),
         ]);
@@ -95,7 +95,7 @@ router.get('/dependencies', requireAdmin, async (_req: Request, res: Response) =
         const deps = await Promise.all([
             checkService('email_postmark_config', async () => !!process.env.POSTMARK_TOKEN),
             checkService('payments_stripe_config', async () => !!((process.env.STRIPE_SECRET_KEY || '').trim() && (process.env.STRIPE_WEBHOOK_SECRET || '').trim())),
-            checkService('kyc_sumsub_config', async () => isSumsubApiConfigured()),
+            checkService('identity_verification_provider', async () => identityProviderStatus().connected),
             checkService('storage_onedrive_config', async () => !!(process.env.GRAPH_CLIENT_ID && process.env.GRAPH_CLIENT_SECRET)),
             checkService('queue_jobs_db', async () => dbStatus.severity !== 'down'),
         ]);

@@ -9,11 +9,6 @@
  */
 
 import { isStripeEnabled, getStripeConfig, getBillingProvider } from './billing';
-import {
-  isSumsubApiConfigured,
-  resolveSumsubApiConfig,
-  resolveSumsubWebhookSecret,
-} from '../lib/sumsubConfig';
 import { logger } from '../lib/logger';
 import {
   isDatabaseSslInsecureEnvRequested,
@@ -123,31 +118,6 @@ export function collectProductionEnvIssues(): ProductionEnvCheckResult {
     }
   }
 
-  if (isSumsubApiConfigured()) {
-    const wh = resolveSumsubWebhookSecret();
-    const sumsubMode = resolveSumsubApiConfig()?.mode;
-    // Live Sumsub on a production NODE_ENV host: enforce webhook HMAC secret.
-    // Sandbox: never block boot — Render still uses NODE_ENV=production while you test Sumsub sandbox.
-    if (!wh.secret) {
-      if (sumsubMode === 'sandbox') {
-        warnings.push(
-          'Sumsub API is configured (sandbox mode) but no webhook secret is set. Set SUMSUB_WEBHOOK_SECRET_SANDBOX (preferred) or SUMSUB_WEBHOOK_SECRET. The service will start; Sumsub webhooks cannot be verified until a secret is configured (expect 401 on /api/webhooks/sumsub).'
-        );
-      } else {
-        fatal.push(
-          'Sumsub API is configured (live mode) but no webhook secret is set. Set SUMSUB_WEBHOOK_SECRET (min 16 characters).'
-        );
-      }
-    } else if (sumsubMode === 'live' && wh.secret.length < 16) {
-      fatal.push(
-        `Sumsub webhook secret (${wh.source}) must be at least 16 characters in production (live mode).`
-      );
-    } else if (sumsubMode === 'sandbox' && wh.secret.length < 16) {
-      warnings.push(
-        `Sumsub sandbox webhook secret (${wh.source}) is only ${wh.secret.length} characters — boot continues. Prefer the full signing secret from Sumsub sandbox webhook settings if HMAC verification returns 401.`
-      );
-    }
-  }
 
 
   // --- OneDrive mail import webhook (only if Graph/OneDrive import looks configured) ---

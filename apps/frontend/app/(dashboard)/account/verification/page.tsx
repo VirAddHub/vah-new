@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Mail, ArrowRight } from 'lucide-react';
-import dynamic from 'next/dynamic';
 import {
     Dialog,
     DialogContent,
@@ -24,6 +23,8 @@ import { getOwnerStatusMeta } from '@/lib/verification-state';
 import { devError } from '@/lib/devConsole';
 import { StatusSteps } from '@/components/ui/status-steps';
 import { useAccess } from '@/hooks/useAccess';
+import { IdentityStart } from '@/components/account/IdentityStart';
+import { CompanyDeclarationCard } from '@/components/account/CompanyDeclarationCard';
 
 /** Identity check as a step line, from the same access decision the API enforces. */
 function IdentityProgress() {
@@ -46,7 +47,6 @@ function IdentityProgress() {
     );
 }
 
-const SumsubKycWidget = dynamic(() => import('../SumsubKycWidget').then(mod => ({ default: mod.SumsubKycWidget })), { ssr: false });
 
 /** Match `AccountBillingCard` / Billing page. */
 const BILLING_LIKE_CARD =
@@ -347,9 +347,9 @@ export default function AccountVerificationPage() {
     return (
         <div className="w-full">
             <div className="mb-5 sm:mb-6 md:mb-8">
-                <h1 className="page-title">Identity Verification</h1>
+                <h1 className="page-title">Verification</h1>
                 <p className="page-lede">
-                    Check your verification status and any required next steps.
+                    Your identity, your company's details and anything still needed.
                 </p>
                 <IdentityProgress />
             </div>
@@ -411,6 +411,8 @@ export default function AccountVerificationPage() {
                         </div>
                     </CardContent>
                 </Card>
+
+                <CompanyDeclarationCard />
 
                 {(verificationState === 'verified' || verificationState === 'pending_others') && (
                     <Card className={BILLING_LIKE_CARD}>
@@ -490,7 +492,7 @@ export default function AccountVerificationPage() {
                             <div className="flex flex-1 flex-col gap-4 sm:gap-5">
                                 <h3 className="text-h4 text-foreground sm:text-h3">{statusCopy.title}</h3>
                                 <p className="text-body text-muted-foreground leading-relaxed">{statusCopy.body}</p>
-                                <SumsubKycWidget hideIntro />
+                                <IdentityStart />
                             </div>
                         </CardContent>
                     </Card>

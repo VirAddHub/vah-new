@@ -1,106 +1,141 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { SWRConfig } from 'swr';
 import CompanyChecksSection from '../components/admin/CompanyChecksSection';
+import { CompanyDeclarationCard } from '../components/account/CompanyDeclarationCard';
 import { stepsFor, sidebarStatusFor } from '../components/account/AccessNotice';
 import type { AccessDecision } from '../hooks/useAccess';
 
-const CHECKLIST = [
-  { id: 'register_extract', label: 'Register extract obtained and reviewed', hint: 'h' },
-  { id: 'beneficial_owners', label: 'Beneficial owners verified independently', hint: 'Not on the PSC register alone' },
+const JUDGEMENT = [
+  { id: 'beneficial_owners', label: 'Beneficial ownership verified independently', hint: 'Not from the PSC register alone' },
+  { id: 'activity', label: 'Business activity is consistent and acceptable', hint: 'h' },
+  { id: 'warnings_reviewed', label: 'Automated warnings reviewed', hint: 'h' },
 ];
 const detail = (over: any = {}) => ({
   ok: true,
   data: {
-    check: { id: 7, user_id: 53, company_number: '12345678', company_name: 'EXAMPLE TRADING LTD', status: 'in_progress', monitoring: false, fetched_at: '2026-11-27T10:00:00Z',
-      checklist: { register_extract: { done: true, by: 9, at: '2026-11-27T10:05:00Z' } },
-      snapshot: { profile: { company_name: 'EXAMPLE TRADING LTD', company_status: 'active', sic_codes: ['62020'], registered_office_address: { address_line_1: '1 Test Street', locality: 'London' } },
-        officers: [{ name: 'USER, Test', officer_role: 'director', country_of_residence: 'England', appointment_count: 2, disqualification: { searched: true, matches: [] } }],
-        pscs: [], psc_statements: [], filing_history: [], insolvency: null, partial_errors: [] } },
-    customer: { email: 'customer@example.com', kyc_status: 'approved', owners: [] },
-    entries: [], evidence: [], reports: [], decided_by_email: null,
-    alerts: [{ id: 3, detected_at: '2026-11-27T11:00:00Z', changes: [{ field: 'company_status', label: 'Company status', before: 'active', after: 'liquidation' }], acknowledged_at: null }],
-    analysis: { flags: [{ level: 'warning', area: 'PSC', text: 'No current PSCs and no PSC statement on the register.' }],
-      comparison: [{ field: 'Company name', register: 'EXAMPLE TRADING LTD', customer: 'Example Trading Limited', result: 'match' }] },
-    checklist_items: CHECKLIST,
-    satisfactory_blockers: ['Checklist items outstanding: Beneficial owners verified independently.'],
+    check: { id: 7, user_id: 53, company_number: '12345678', company_name: 'EXAMPLE TRADING LTD', status: 'in_progress', monitoring: false, fetched_at: '2026-11-27T10:00:00Z', checklist: {}, risk_rating: null,
+      snapshot: { profile: { company_name: 'EXAMPLE TRADING LTD', company_status: 'active', sic_codes: ['62020'] }, officers: [], pscs: [], psc_statements: [], filing_history: [], partial_errors: [] } },
+    customer: { first_name: 'Test', last_name: 'User', email: 'customer@example.com', owners: [], declaration: { submitted_at: '2026-11-27T09:00:00Z', data: { expected_monthly_mail: '0-10', applicant_role: 'director' } } },
+    entries: [{ id: 21, kind: 'discrepancy', category: 'beneficial_ownership', source: 'system', admin_id: 0, body: 'Ms Hidden Owner is a PSC on the register but was not declared as a beneficial owner.', ch_value: 'Ms Hidden Owner', customer_value: 'Not declared', created_at: '2026-11-27T10:00:00Z', resolved_at: null },
+              { id: 22, kind: 'discrepancy', category: 'other', source: 'system', admin_id: 0, body: 'Anna Other is a current director but was not declared.', created_at: '2026-11-27T10:00:00Z', resolved_at: null }],
+    evidence: [], reports: [], alerts: [], identity: [],
+    analysis: {
+      automated: [
+        { id: 'register_extract', label: 'Companies House extract', status: 'pass', detail: 'Complete.' },
+        { id: 'residence', label: 'Residence of directors and PSCs', status: 'attention', detail: 'Outside the UK: OTHER, Anna (France).' },
+        { id: 'screening', label: 'PEP, sanctions and adverse media (separate check)', status: 'not_available', detail: 'No screening provider is connected.' },
+      ],
+      missing: [{ key: 'identity', from: 'customer', text: 'Identity verification is outstanding for an owner.' }],
+      discrepancies: [], flags: [], attention: 1,
+      comparison: [{ field: 'Company name', register: 'EXAMPLE TRADING LTD', customer: 'Example Trading Limited', result: 'match' }],
+    },
+    next: { key: 'resolve_discrepancies', priority: 4, text: 'Resolve 2 discrepancy(ies)' },
+    judgement_items: JUDGEMENT,
+    satisfactory_blockers: ['Resolve 2 discrepancy(ies).', 'Choose a risk rating.'],
     ...over,
   },
 });
 
 let calls: { url: string; init?: RequestInit }[] = [];
+let declarationState: any;
 beforeEach(() => {
   calls = [];
+  declarationState = { required: true, company_number: '12345678', company_name: 'Example Trading Ltd', account_holder: { full_name: 'Test User', email: 't@example.com' }, declaration: null, editable: true };
   vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
     calls.push({ url, init });
-    const body = url.startsWith('/api/admin/company-checks?')
-      ? { ok: true, data: { checklist_total: 11, items: [{ id: 7, company_number: '12345678', company_name: 'EXAMPLE TRADING LTD', email: 'customer@example.com', status: 'in_progress', checklist_done: 1, open_alerts: 1 }] } }
-      : url === '/api/admin/company-checks/7' ? detail() : { ok: true };
-    return { ok: true, status: 200, json: async () => body } as any;
+    let body: any = { ok: true };
+    if (url.startsWith('/api/admin/company-checks?')) body = { ok: true, data: { counts: { action: 1, waiting: 3, satisfactory: 5, all: 9 }, items: [
+      { id: 7, company_number: '12345678', company_name: 'EXAMPLE TRADING LTD', customer_name: 'Test User', email: 'customer@example.com', status: 'in_progress', open_alerts: 0, risk_rating: null, next: { key: 'resolve_discrepancies', priority: 4, text: 'Resolve 2 discrepancy(ies)' } }] } };
+    else if (url === '/api/admin/company-checks/7') body = detail();
+    else if (url === '/api/bff/company-declaration' && (!init || init.method !== 'POST')) body = { ok: true, data: declarationState };
+    else if (url === '/api/bff/company-declaration') body = { ok: true, data: { owners_invited: [] } };
+    return { ok: true, status: url.endsWith('/resolve') ? 200 : 200, json: async () => body } as any;
   }));
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+const wrap = (el: React.ReactElement) => render(<SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>{el}</SWRConfig>);
+const openCheck = async () => { wrap(<CompanyChecksSection />); fireEvent.click(await screen.findByText('EXAMPLE TRADING LTD')); await screen.findByText('Automated results'); };
 
-const renderSection = () => render(<SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}><CompanyChecksSection /></SWRConfig>);
-
-describe('Company checks section', () => {
-  it('lists checks and opens one with its checklist, flags, alert and comparison', async () => {
-    renderSection();
-    fireEvent.click(await screen.findByRole('button', { name: /EXAMPLE TRADING LTD/ }));
-    expect(await screen.findByText('1 of 2 done')).toBeInTheDocument();
-    expect(screen.getByText(/No current PSCs/)).toBeInTheDocument();
-    expect(screen.getByText(/Change found/)).toBeInTheDocument();
-    expect(screen.getByText('Example Trading Limited')).toBeInTheDocument();
-    expect(screen.getByText(/Individual identity, address, PEP, sanctions and adverse-media checks are recorded separately/)).toBeInTheDocument();
+describe('Company checks: admin', () => {
+  it('the queue shows counts and the next action for each company', async () => {
+    wrap(<CompanyChecksSection />);
+    expect(await screen.findByRole('button', { name: /Needs action\s*1/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /Waiting for customer\s*3/ })).toBeInTheDocument();
+    expect(screen.getAllByText('Resolve 2 discrepancy(ies)').length).toBeGreaterThan(0);
   });
 
-  it('cannot record a satisfactory outcome while items are outstanding', async () => {
-    renderSection();
-    fireEvent.click(await screen.findByRole('button', { name: /EXAMPLE TRADING LTD/ }));
-    await screen.findByText('Outcome');
-    const btn = screen.getAllByRole('button', { name: 'Satisfactory' }).find(b => !b.hasAttribute('aria-pressed'))!;
-    expect(btn).toBeDisabled();
-    expect(screen.getByText(/Checklist items outstanding/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Further investigation' })).toBeDisabled(); // needs a reason
+  it('opens with the next action, automated results kept apart from the judgements, and nothing automated to tick', async () => {
+    await openCheck();
+    expect(screen.getByText('Next')).toBeInTheDocument();
+    expect(screen.getByText('Checked by the system: no ticking needed')).toBeInTheDocument();
+    expect(screen.getByText('Outside the UK: OTHER, Anna (France).')).toBeInTheDocument();
+    expect(screen.getByText('Not connected')).toBeInTheDocument(); // screening never shown as done
+    expect(screen.queryByRole('checkbox', { name: 'Companies House extract' })).toBeNull();
+    expect(screen.getByRole('checkbox', { name: 'Beneficial ownership verified independently' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Automated warnings reviewed' })).toBeInTheDocument(); // shown because one item needs attention
+    expect(screen.getByText('Not discrepancies')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Complete review: satisfactory/ })).toBeDisabled();
   });
 
-  it('ticking beneficial ownership asks how it was verified and sends the note', async () => {
-    renderSection();
-    fireEvent.click(await screen.findByRole('button', { name: /EXAMPLE TRADING LTD/ }));
-    fireEvent.click(await screen.findByRole('checkbox', { name: 'Beneficial owners verified independently' }));
-    const note = screen.getByPlaceholderText(/How beneficial owners were verified/);
-    fireEvent.change(note, { target: { value: 'Share register and certified ID reviewed' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
-    await waitFor(() => expect(calls.some(c => c.url === '/api/admin/company-checks/7/checklist' && c.init?.method === 'POST')).toBe(true));
-    const sent = JSON.parse(String(calls.find(c => c.url.endsWith('/checklist'))!.init!.body));
-    expect(sent).toEqual({ item: 'beneficial_owners', done: true, note: 'Share register and certified ID reviewed' });
-    // The list and the check reload after a change.
+  it('a beneficial-ownership discrepancy asks about materiality; an "other" one is never reportable', async () => {
+    await openCheck();
+    const [boRow, otherRow] = screen.getAllByRole('button', { name: 'Resolve…' });
+    fireEvent.click(otherRow);
+    expect(screen.getByText(/Not reportable to Companies House/)).toBeInTheDocument();
+    fireEvent.click(boRow);
+    const material = screen.getByRole('radio', { name: /Material: reported to Companies House/ });
+    fireEvent.click(material);
+    expect(screen.getByPlaceholderText('Companies House report reference')).toBeInTheDocument();
+    const forms = document.querySelectorAll('form');
+    const boForm = Array.from(forms).find(f => f.textContent?.includes('MLR reg 30A'))!;
+    fireEvent.change(within(boForm as HTMLElement).getByLabelText('Resolution'), { target: { value: 'Reported to Companies House' } });
+    fireEvent.change(within(boForm as HTMLElement).getByLabelText('Report reference'), { target: { value: 'DR-1' } });
+    fireEvent.click(within(boForm as HTMLElement).getByRole('button', { name: 'Resolve' }));
+    await waitFor(() => expect(calls.some(c => c.url.endsWith('/entries/21/resolve'))).toBe(true));
+    expect(JSON.parse(String(calls.find(c => c.url.endsWith('/entries/21/resolve'))!.init!.body))).toEqual({ resolution: 'Reported to Companies House', materiality: 'material', reference: 'DR-1' });
     await waitFor(() => expect(calls.filter(c => c.url.startsWith('/api/admin/company-checks?')).length).toBeGreaterThanOrEqual(2));
   });
+});
 
-  it('an alert can only be marked reviewed with a note', async () => {
-    renderSection();
-    fireEvent.click(await screen.findByRole('button', { name: /EXAMPLE TRADING LTD/ }));
-    const ack = await screen.findByRole('button', { name: 'Mark reviewed' });
-    expect(ack).toBeDisabled();
-    fireEvent.change(screen.getByLabelText('Review note'), { target: { value: 'Reviewed' } });
-    expect(ack).toBeEnabled();
+describe('Company declaration: customer', () => {
+  it('starts with the account holder filled in, and submits the declaration', async () => {
+    wrap(<CompanyDeclarationCard />);
+    expect(await screen.findByDisplayValue('Test User')).toHaveAttribute('readonly');
+    fireEvent.change(screen.getByLabelText(/What does your business do/), { target: { value: 'Software consultancy for small firms' } });
+    fireEvent.change(screen.getByLabelText('Person 1 share percentage'), { target: { value: '100' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: /I confirm/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Submit company details' }));
+    await waitFor(() => expect(calls.some(c => c.url === '/api/bff/company-declaration' && c.init?.method === 'POST')).toBe(true));
+    const sent = JSON.parse(String(calls.find(c => c.init?.method === 'POST')!.init!.body));
+    expect(sent.people[0]).toMatchObject({ full_name: 'Test User', is_account_holder: true, is_director: true, is_beneficial_owner: true, ownership_percent: 100 });
+    expect(sent.confirmation).toBe(true);
+    expect(await screen.findByText(/We will check your company details/)).toBeInTheDocument();
+  });
+
+  it('shows nothing when there is no company number', async () => {
+    declarationState = { required: false };
+    const { container } = wrap(<CompanyDeclarationCard />);
+    await waitFor(() => expect(calls.length).toBeGreaterThan(0));
+    expect(container.textContent).toBe('');
   });
 });
 
 describe('customer notice', () => {
-  const access = (missing: AccessDecision['missing']): AccessDecision => ({
+  const access = (missing: AccessDecision['missing'], declarationNeeded = false): AccessDecision => ({
     level: 'onboarding', standing: 'good', payment: { state: 'active', entitled: true, paidThroughMs: null, cancelAtPeriodEnd: false },
-    verification: { state: 'complete', primaryApproved: true, pendingOwners: 0 }, missing, next: 'mail', mailWaiting: null, isAdmin: false,
+    verification: { state: 'complete', primaryApproved: true, pendingOwners: 0 }, company: { required: 1, satisfactory: 0, investigating: 0, declarationNeeded },
+    missing, next: declarationNeeded ? 'company' : 'mail', mailWaiting: null, isAdmin: false,
   });
-  it('tells a customer their company is being checked', () => {
-    const steps = stepsFor(access(['company_checks_pending']));
-    expect(steps.find(s => s.key === 'company')?.done).toBe(false);
-    expect(sidebarStatusFor(access(['company_checks_pending']))?.title).toBe('Company checks in progress');
+  it('asks for the company declaration first, then explains the check', () => {
+    expect(stepsFor(access(['company_checks_pending'], true)).find(s => s.key === 'company')).toMatchObject({ label: 'Tell us about your company', href: '/account/verification#company' });
+    expect(stepsFor(access(['company_checks_pending'], false)).find(s => s.key === 'company')?.label).toBe('Company checks');
+    expect(sidebarStatusFor(access(['company_checks_pending'], true))?.title).toBe('Company details needed');
   });
-  it('shows nothing about company checks when none are needed', () => {
-    expect(stepsFor(access([])).some(s => s.key === 'company')).toBe(false);
+  it('identity wording does not promise an online check that is not connected', () => {
+    const a = { ...access(['identity_required']), verification: { state: 'not_started' as const, primaryApproved: false, pendingOwners: 0 } };
+    expect(stepsFor(a).find(s => s.key === 'identity')?.detail).not.toMatch(/few minutes/);
   });
 });

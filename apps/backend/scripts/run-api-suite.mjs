@@ -194,7 +194,6 @@ const POSTS_BACKEND = [
     { path: "/payments/redirect-flows", body: { session_token: "demo" }, capture: (j) => (state.redirectFlowId = j?.id || j?.redirect_flow?.id || state.redirectFlowId) },
     { path: "/mail/forward", body: () => (need("mailId") ? { mail_item_id: state.mailId, address: "Home, 1 Test St, AB1 2CD" } : null), requireVar: "mailId" },
     { path: "/admin/mail-bulk", body: { ids: [1, 2, 3], address: "Home, 1 Test St, AB1 2CD" } },
-    { path: "/webhooks/sumsub", body: { type: "applicantReviewed", reviewStatus: "completed", reviewResult: { reviewAnswer: "GREEN" }, applicantId: "demo" } },
     { path: "/webhooks-gc", body: { events: [{ resource_type: "payments", action: "confirmed", links: { payment: "PM123" } }] } },
     { path: "/webhooks-postmark", body: { RecordType: "Bounce", Type: "HardBounce", Email: "user@example.com" } },
 ];
