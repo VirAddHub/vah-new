@@ -1,7 +1,6 @@
 'use client';
 import Link from 'next/link';
 import { VAHLogo } from './VAHLogo';
-import { services } from '@/lib/marketing';
 export function Footer({ onNavigate }: { onNavigate?: (page: string) => void }) {
   return (
     <footer className="bg-white text-[#123d30] border-t border-[#dce4dc] px-6 py-14">
@@ -19,11 +18,18 @@ export function Footer({ onNavigate }: { onNavigate?: (page: string) => void }) 
         <div>
           <h2 className="font-semibold mb-5">Our services</h2>
           <ul className="space-y-3 text-sm">
-            {services.map((v) => (
-              <li key={v.slug}>
-                <Link href={`/${v.slug}`}>{v.title}</Link>
-              </li>
-            ))}
+            <li>
+              <Link href="/services">The complete subscription</Link>
+            </li>
+            <li>
+              <Link href="/services#london-presence">Your London business presence</Link>
+            </li>
+            <li>
+              <Link href="/services#digital-mail">Digital mail management</Link>
+            </li>
+            <li>
+              <Link href="/services#forwarding">Forwarding & charges</Link>
+            </li>
           </ul>
         </div>
         <div>
@@ -46,9 +52,7 @@ export function Footer({ onNavigate }: { onNavigate?: (page: string) => void }) 
         </div>
         <div>
           <h2 className="font-semibold mb-5">Get in touch</h2>
-          <address className="text-sm leading-7 not-italic">
-            Central London, United Kingdom
-          </address>
+          <address className="text-sm leading-7 not-italic">Central London, United Kingdom</address>
           <p className="mt-4 text-sm">
             <a href="mailto:support@virtualaddresshub.co.uk">support@virtualaddresshub.co.uk</a>
           </p>

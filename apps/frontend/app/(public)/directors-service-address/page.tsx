@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import { ServicePage } from '@/components/marketing/ServicePage';
-import { services } from '@/lib/marketing';
-const service = services.find((v) => v.slug === 'directors-service-address')!;
+const title = 'Director’s Service Address: Privacy & Correspondence' + ' | VirtualAddressHub';
+const description =
+  'Understand a director’s service address, how it differs from a residential or registered office address, and what it can and cannot do for privacy.';
 export const metadata: Metadata = {
-  title: `${service.title} | VirtualAddressHub`,
-  description: service.intro,
+  title,
+  description,
   alternates: { canonical: '/directors-service-address' },
+  openGraph: { title, description, url: '/directors-service-address', type: 'website' },
 };
 export default function Page() {
   return <ServicePage slug="directors-service-address" />;

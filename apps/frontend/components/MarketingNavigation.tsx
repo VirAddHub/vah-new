@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { VAHLogo } from './VAHLogo';
-import { services } from '@/lib/marketing';
 import styles from './marketing/Navigation.module.css';
 export function MarketingNavigation({ onNavigate }: { onNavigate?: (page: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -34,23 +33,9 @@ export function MarketingNavigation({ onNavigate }: { onNavigate?: (page: string
             }
           }}
         >
-          <details className={styles.dropdown}>
-            <summary>Services</summary>
-            <div>
-              {services.map((v) => (
-                <Link
-                  onClick={(e) => {
-                    e.currentTarget.closest('details')?.removeAttribute('open');
-                    setOpen(false);
-                  }}
-                  key={v.slug}
-                  href={`/${v.slug}`}
-                >
-                  {v.title}
-                </Link>
-              ))}
-            </div>
-          </details>
+          <Link href="/services" aria-current={path === '/services' ? 'page' : undefined}>
+            Our services
+          </Link>
           <Link href="/london-address">Our London address</Link>
           <Link href="/pricing">Pricing</Link>
           <Link href="/how-it-works">How it works</Link>

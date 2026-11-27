@@ -17,7 +17,7 @@ const nextConfig = {
   // Note: Do NOT set output: 'standalone' for Vercel deployments
   // Vercel automatically handles Next.js builds - standalone is only for self-hosting
   // Removing output setting lets Vercel use its optimized build process
-  
+
   // Performance optimizations
   compress: true,
   poweredByHeader: false,
@@ -30,17 +30,26 @@ const nextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     remotePatterns: [
-      { protocol: "https", hostname: "res.cloudinary.com" },
-      { protocol: "https", hostname: "images.unsplash.com" },
-      { protocol: "https", hostname: "vah-api.onrender.com" },
-      { protocol: "https", hostname: "virtualaddresshub.co.uk" },
-      { protocol: "https", hostname: "www.virtualaddresshub.co.uk" },
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'vah-api-staging.onrender.com' },
+      { protocol: 'https', hostname: 'vah-api.onrender.com' },
+      { protocol: 'https', hostname: 'virtualaddresshub.co.uk' },
+      { protocol: 'https', hostname: 'www.virtualaddresshub.co.uk' },
     ],
   },
 
   // Legacy / mistaken paths (SPA hash route name used as a URL segment)
   async redirects() {
     return [
+      { source: '/virtual-office-london', destination: '/services', permanent: true },
+      {
+        source: '/business-address-london',
+        destination: '/services#london-presence',
+        permanent: true,
+      },
+      { source: '/mail-scanning', destination: '/services#digital-mail', permanent: true },
+      { source: '/mail-forwarding', destination: '/services#forwarding', permanent: true },
       { source: '/blog-post', destination: '/blog', permanent: false },
       { source: '/blog-post/:slug', destination: '/blog/:slug', permanent: false },
     ];

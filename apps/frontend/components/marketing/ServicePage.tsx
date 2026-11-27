@@ -4,6 +4,44 @@ import { LondonIllustration } from './LondonIllustration';
 import s from './Marketing.module.css';
 export function ServicePage({ slug }: { slug: string }) {
   const v = services.find((x) => x.slug === slug)!;
+  const isRegistered = slug === 'registered-office-address';
+  const questions = isRegistered
+    ? [
+        [
+          'Is a registered office the same as a trading address?',
+          'A registered office is the company’s official address for statutory correspondence. A trading or business correspondence address is used for everyday business. An eligible company can use our approved address for both purposes within the subscription.',
+        ],
+        [
+          'Can a Scottish or Northern Irish company use a London registered office?',
+          'A company’s registered office must remain in its registered jurisdiction. Our London address is in England. Do not change a Scottish or Northern Irish registered office to it without first checking the rules that apply to your company.',
+        ],
+        [
+          'Does subscribing update Companies House for me?',
+          'No company filing service is promised here. Wait for account approval and the complete address, then make the appropriate filing yourself or through your authorised adviser. Update other correspondents separately.',
+        ],
+        [
+          'What if my home address is already on the register?',
+          'Changing the current registered office does not automatically remove it from historical filings. Companies House has separate processes for protecting or removing certain personal information; read its guidance for your circumstances.',
+        ],
+      ]
+    : [
+        [
+          'How is a service address different from a residential address?',
+          'The service address is used for correspondence about your role as a director and can be public. Your usual residential address is your actual home address, supplied separately to Companies House. Do not substitute our address for your residential address.',
+        ],
+        [
+          'Can it be the same as my company’s registered office?',
+          'A director can use the company’s registered office as a service address where appropriate. The two addresses have different purposes even when they are the same physical address. Confirm eligibility and account approval before using ours.',
+        ],
+        [
+          'Does a director’s service address make me a UK resident?',
+          'No. A correspondence address does not establish residence, tax status or permission to work. It also does not replace your own identity verification or company obligations.',
+        ],
+        [
+          'Will my existing home address disappear from public filings?',
+          'No automatic removal takes place. Use Companies House guidance to understand the separate options for historical documents and protected information.',
+        ],
+      ];
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Service',
@@ -24,14 +62,20 @@ export function ServicePage({ slug }: { slug: string }) {
               '@type': 'BreadcrumbList',
               itemListElement: [
                 { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
-                { '@type': 'ListItem', position: 2, name: v.title, item: `${SITE_URL}/${slug}` },
+                {
+                  '@type': 'ListItem',
+                  position: 2,
+                  name: 'Our services',
+                  item: `${SITE_URL}/services`,
+                },
+                { '@type': 'ListItem', position: 3, name: v.title, item: `${SITE_URL}/${slug}` },
               ],
             },
           ]).replace(/</g, '\u003c'),
         }}
       />
       <div className={`${s.wrap} ${s.breadcrumbs}`}>
-        <Link href="/">Home</Link> / {v.title}
+        <Link href="/">Home</Link> / <Link href="/services">Our services</Link> / {v.title}
       </div>
       <section className={s.hero}>
         <div className={`${s.wrap} ${s.split}`}>
@@ -41,8 +85,8 @@ export function ServicePage({ slug }: { slug: string }) {
             <p className={s.lead}>{v.intro}</p>
             <p>{v.body}</p>
             <div className={s.actions}>
-              <Link href="/pricing" className={s.button}>
-                Explore subscription plans ↗
+              <Link href="/services" className={s.button}>
+                Included in our subscription ↗
               </Link>
             </div>
             <p className={s.note}>Subject to eligibility, payment, verification and approval.</p>
@@ -91,42 +135,34 @@ export function ServicePage({ slug }: { slug: string }) {
       <section className={`${s.section} ${s.sage}`}>
         <div className={`${s.wrap} ${s.faq}`}>
           <h2>Your questions, answered.</h2>
-          <details>
-            <summary>Is this part of the subscription?</summary>
-            <p>
-              Our address services and digital mail management are offered together. Physical
-              forwarding has additional conditions and charges; check the current plans and terms.
-            </p>
-          </details>
-          <details>
-            <summary>Can I use it as soon as I pay?</summary>
-            <p>
-              No. Required identity and business checks and account approval must be complete before
-              you use the address. Payment does not override a suspension.
-            </p>
-          </details>
-          <details>
-            <summary>How do I get started?</summary>
-            <p>
-              Choose a plan, create your account and follow payment and verification instructions.
-              Wait for approval before changing your business address.
-            </p>
-          </details>
+          {questions.map(([question, answer]) => (
+            <details key={question}>
+              <summary>{question}</summary>
+              <p>{answer}</p>
+            </details>
+          ))}
         </div>
       </section>
       <section className={s.section}>
         <div className={s.wrap}>
           <p className={s.kicker}>Included in the bigger picture</p>
           <h2>One address. Connected services.</h2>
-          <div className={s.services}>
-            {services
-              .filter((x) => x.slug !== slug)
-              .map((x) => (
-                <Link key={x.slug} href={`/${x.slug}`}>
-                  {x.title}
-                  <span aria-hidden>↗</span>
-                </Link>
-              ))}
+          <p>
+            This address use belongs to the same subscription as your business correspondence
+            address and digital mail management. There is no separate address package to assemble.
+          </p>
+          <div className={s.actions}>
+            <Link href="/services" className={s.button}>
+              See everything included →
+            </Link>
+            <Link
+              href={isRegistered ? '/directors-service-address' : '/registered-office-address'}
+              className={s.textlink}
+            >
+              {isRegistered
+                ? 'Compare director’s service addresses'
+                : 'Compare registered office addresses'}
+            </Link>
           </div>
         </div>
       </section>

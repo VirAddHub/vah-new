@@ -2,7 +2,7 @@
 import { LondonShowcase } from './marketing/LondonShowcase';
 import Link from 'next/link';
 import { usePricing } from '@/hooks/usePlans';
-import { services, faqs } from '@/lib/marketing';
+import { faqs } from '@/lib/marketing';
 import { LondonIllustration } from './marketing/LondonIllustration';
 import s from './marketing/Marketing.module.css';
 const money = (n: number) =>
@@ -72,7 +72,7 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
               eligible originals when you need them. No desks, meeting rooms or unnecessary extras
               to pay for.
             </p>
-            <Link href="/virtual-office-london" className={s.textlink}>
+            <Link href="/services" className={s.textlink}>
               What is a virtual office? →
             </Link>
           </div>
@@ -86,8 +86,27 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
             <br />
             as hard as you do.
           </h2>
-          {services.slice(0, 4).map((v, i) => (
-            <div className={s.row} key={v.slug}>
+          {[
+            {
+              title: 'Your London business presence',
+              intro: 'One address for the way your business works.',
+              body: 'Business correspondence, registered office and director’s service address use for eligible customers—all part of the subscription.',
+              href: '/services#london-presence',
+            },
+            {
+              title: 'Your business mail, wherever you are',
+              intro: 'Read available correspondence online.',
+              body: 'Digital mail scanning and secure online management bring your letters to your screen, wherever you work.',
+              href: '/services#digital-mail',
+            },
+            {
+              title: 'When you need the original',
+              intro: 'Request eligible physical letters.',
+              body: 'UK forwarding of HMRC and Companies House letters is included under the current terms. Other forwarding has separate charges and conditions.',
+              href: '/services#forwarding',
+            },
+          ].map((v, i) => (
+            <div className={s.row} key={v.title}>
               <span className={s.number}>0{i + 1}</span>
               <div>
                 <h3>{v.title}</h3>
@@ -95,12 +114,17 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
               </div>
               <div>
                 <p>{v.body}</p>
-                <Link className={s.textlink} href={`/${v.slug}`}>
-                  Explore {v.title.toLowerCase()} →
+                <Link className={s.textlink} href={v.href}>
+                  Find out more →
                 </Link>
               </div>
             </div>
           ))}
+          <p>
+            <Link href="/services" className={s.textlink}>
+              Explore the complete subscription →
+            </Link>
+          </p>
         </div>
       </section>
       <section className={s.section} id="mail">
@@ -119,10 +143,10 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
               letters, then request physical forwarding when the original matters.
             </p>
             <div className={s.actions}>
-              <Link className={s.textlink} href="/mail-scanning">
+              <Link className={s.textlink} href="/services#digital-mail">
                 Discover mail scanning →
               </Link>
-              <Link className={s.textlink} href="/mail-forwarding">
+              <Link className={s.textlink} href="/services#forwarding">
                 Forwarding & charges →
               </Link>
             </div>

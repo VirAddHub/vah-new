@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import { ServicePage } from '@/components/marketing/ServicePage';
-import { services } from '@/lib/marketing';
-const service = services.find((v) => v.slug === 'registered-office-address')!;
+const title = 'Registered Office Address London: Company Requirements' + ' | VirtualAddressHub';
+const description =
+  'Understand registered office address use for eligible companies in England and Wales, jurisdiction rules and changing your address. Included in the VirtualAddressHub subscription.';
 export const metadata: Metadata = {
-  title: `${service.title} | VirtualAddressHub`,
-  description: service.intro,
+  title,
+  description,
   alternates: { canonical: '/registered-office-address' },
+  openGraph: { title, description, url: '/registered-office-address', type: 'website' },
 };
 export default function Page() {
   return <ServicePage slug="registered-office-address" />;
