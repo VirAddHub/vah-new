@@ -25,7 +25,7 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
               <br />A London business address to match.
             </h1>
             <p className={s.lead}>
-              A professional business address by Tower Bridge, Central London. Registered office,
+              A professional business address by Tower Bridge, London SE1. Registered office,
               director’s service address and digital mail management—all in one subscription.
             </p>
             <div className={p.heroPrices} aria-label="Subscription prices">
