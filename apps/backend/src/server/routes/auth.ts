@@ -377,6 +377,9 @@ router.post("/signup", async (req, res) => {
 
     const parsed = SignupSchema.safeParse(req.body);
     if (!parsed.success) {
+        // Field names and rule codes only (never the values), so failed sign-ups can be diagnosed.
+        logger.warn('Signup rejected', { event: 'signup_validation_failed',
+            fields: parsed.error.issues.map((e: any) => `${e.path.join('.') || '(body)'}:${e.code}`).slice(0, 10) });
         return res.status(400).json({
             ok: false,
             error: "validation_error",
