@@ -99,3 +99,30 @@ it('preserves the billing choice for both signup actions', () => {
   fireEvent.click(screen.getByRole('button', { name: /Choose annual/ }));
   expect(onNavigate).toHaveBeenLastCalledWith('signup', { initialBilling: 'annual' });
 });
+
+
+// Homepage shares the server pricing used by the pricing page.
+import { HomePage } from '../components/HomePage';
+const home = (monthlyPrice: number | null, annualPrice: number | null) => (
+  <PricingProvider initialPricing={{ monthlyPrice, annualPrice }}><HomePage /></PricingProvider>
+);
+it('renders homepage prices before signup and pricing immediately after inclusions', () => {
+  const html = renderToString(home(12.34, 120));
+  expect(html.indexOf('£12.34')).toBeLessThan(html.indexOf('/signup?billing=monthly'));
+  render(home(12.34, 120));
+  const services = document.getElementById('services');
+  expect(services?.nextElementSibling?.id).toBe('pricing');
+  expect(document.getElementById('pricing')?.nextElementSibling?.id).toBe('mail');
+  expect(screen.getByText(/Save £28.08 a year/)).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /Choose annual/ })).toHaveAttribute('href', '/signup?billing=annual');
+  expect(apiClient.get).not.toHaveBeenCalled();
+});
+it.each([[10, 120], [10, 130], [null, 120], [10, null], [null, null]])(
+  'does not invent homepage savings for %s monthly and %s annually', (monthly, annual) => {
+    render(home(monthly, annual));
+    expect(screen.queryByText(/Save £/)).not.toBeInTheDocument();
+    if (monthly === null) expect(document.querySelector('a[href="/signup?billing=monthly"]')).toBeNull();
+    if (annual === null) expect(document.querySelector('a[href="/signup?billing=annual"]')).toBeNull();
+    if (monthly === null && annual === null) expect(screen.getAllByRole('button', { name: 'Pricing unavailable' })).toHaveLength(3);
+  },
+);

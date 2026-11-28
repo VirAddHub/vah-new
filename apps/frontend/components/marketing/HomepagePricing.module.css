@@ -1,0 +1,144 @@
+.heroPrices {
+  margin: 25px 0 22px;
+  color: #123d30;
+}
+.heroPrices p {
+  margin: 0;
+}
+.heroPrices .heroMonthly {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  line-height: 1.12;
+}
+.heroMonthly strong {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: clamp(48px, 5vw, 64px);
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+.heroMonthly span {
+  font-size: 16px;
+}
+.heroPrices .heroAnnual {
+  margin-top: 10px;
+  font-size: 16px;
+  color: #43564a;
+}
+.heroAnnual strong {
+  font-weight: 600;
+}
+.heroPrices .billingNote {
+  font-size: 12px;
+  margin-top: 5px;
+  color: #536356;
+}
+.disabled {
+  border: 0;
+  font-family: inherit;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.section {
+  background: #f8f5ed;
+  scroll-margin-top: 100px;
+}
+.intro {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  margin-bottom: 28px;
+}
+.options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid #9eb59a;
+  border-bottom: 1px solid #9eb59a;
+}
+.option {
+  padding: 28px 36px 30px 0;
+  min-width: 0;
+}
+.option + .option {
+  border-left: 1px solid #9eb59a;
+  padding-left: 36px;
+}
+.option h3 {
+  font-size: 18px;
+  font-weight: 500;
+}
+.option p {
+  font-size: 14px;
+  color: #43564a;
+}
+.option .amount {
+  line-height: 1.1;
+  margin: 14px 0 18px;
+  color: #123d30;
+}
+.amount strong {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: clamp(42px, 4.5vw, 58px);
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+.amount span {
+  font-size: 15px;
+}
+.amount .unavailable,
+.heroPrices .unavailable {
+  font-size: 23px;
+  line-height: 1.4;
+}
+.option .saving {
+  font-size: 13px;
+  margin-top: 18px;
+  max-width: 42ch;
+}
+.conditions {
+  font-size: 13px;
+  color: #536356;
+  max-width: 100ch !important;
+  margin-top: 22px;
+}
+.conditions a {
+  text-underline-offset: 4px;
+}
+.section a:focus-visible,
+.heroPrices a:focus-visible {
+  outline: 3px solid #a25e16;
+  outline-offset: 5px;
+}
+@media (max-width: 767px) {
+  .intro {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .options {
+    grid-template-columns: 1fr;
+  }
+  .option {
+    padding: 24px 0;
+  }
+  .option + .option {
+    border-left: 0;
+    border-top: 1px solid #9eb59a;
+    padding-left: 0;
+  }
+  .heroPrices {
+    margin-top: 20px;
+  }
+  .heroMonthly strong {
+    font-size: 48px;
+  }
+  .amount strong {
+    font-size: 46px;
+  }
+  .heroPrices .heroAnnual {
+    font-size: 15px;
+  }
+}

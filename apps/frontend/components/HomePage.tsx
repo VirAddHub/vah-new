@@ -4,36 +4,72 @@ import { usePricing } from '@/hooks/usePlans';
 import { homepageHelp } from '@/lib/marketing';
 import { LondonIllustration } from './marketing/LondonIllustration';
 import s from './marketing/Marketing.module.css';
+import p from './marketing/HomepagePricing.module.css';
 const money = (n: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(n);
 export function HomePage(_props: { onNavigate?: (page: string, data?: any) => void }) {
-  const { monthlyPrice, annualPrice } = usePricing();
+  const { monthlyPrice, annualPrice, loading } = usePricing();
+  const annualSaving =
+    monthlyPrice !== null && annualPrice !== null
+      ? (Math.round(monthlyPrice * 100) * 12 - Math.round(annualPrice * 100)) / 100
+      : 0;
+  const unavailableLabel = loading ? 'Loading pricing…' : 'Pricing unavailable';
   return (
     <div className={s.site}>
       <section className={s.hero}>
         <div className={`${s.wrap} ${s.split}`}>
           <div>
-            <p className={s.kicker}>One London address. More possibilities.</p>
+            <p className={s.kicker}>A London presence. Without the premium price.</p>
             <h1>
               Big ambitions.
               <br />A London business address to match.
             </h1>
             <p className={s.lead}>
-              A virtual office by Tower Bridge, London SE1. Use it as your registered office,
-              director’s service address and business address, with your post scanned the same
-              working day it arrives.
+              A professional business address by Tower Bridge, Central London. Registered office,
+              director’s service address and digital mail management—all in one subscription.
             </p>
+            <div className={p.heroPrices} aria-label="Subscription prices">
+              <p className={p.heroMonthly}>
+                {monthlyPrice !== null ? (
+                  <>
+                    <strong>{money(monthlyPrice)}</strong>
+                    <span> / month</span>
+                  </>
+                ) : (
+                  <span className={p.unavailable}>{unavailableLabel}</span>
+                )}
+              </p>
+              <p className={p.heroAnnual}>
+                {annualPrice !== null ? (
+                  <>
+                    Or <strong>{money(annualPrice)} a year</strong>, billed annually.
+                  </>
+                ) : (
+                  <>Annual pricing {loading ? 'is loading…' : 'is currently unavailable.'}</>
+                )}
+              </p>
+              <p className={p.billingNote}>Same core service with monthly or annual billing.</p>
+            </div>
             <div className={s.actions}>
-              <Link className={s.button} href="/signup">
-                Get your London address <span aria-hidden>↗</span>
-              </Link>
-              <Link className={s.textlink} href="/pricing">
-                Explore plans
+              {monthlyPrice !== null ? (
+                <Link className={s.button} href="/signup?billing=monthly">
+                  Get your London address <span aria-hidden>↗</span>
+                </Link>
+              ) : annualPrice !== null ? (
+                <Link className={s.button} href="/signup?billing=annual">
+                  Choose annual billing <span aria-hidden>↗</span>
+                </Link>
+              ) : (
+                <button className={`${s.button} ${p.disabled}`} disabled>
+                  {unavailableLabel}
+                </button>
+              )}
+              <Link className={s.textlink} href="#pricing">
+                Compare billing options ↓
               </Link>
             </div>
             <p className={s.note}>
-              {monthlyPrice !== null ? `From ${money(monthlyPrice)} a month. ` : ''}Director’s service
-              address included. No letter limits.
+              Address use begins after successful payment, required checks and approval.
             </p>
           </div>
           <div>
@@ -47,36 +83,9 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
           <span>Tower Bridge, London SE1</span>
           <span>Registered office & director’s address</span>
           <span>Same-day mail scanning</span>
-          <span>{monthlyPrice !== null ? `From ${money(monthlyPrice)} a month` : 'Monthly or annual plans'}</span>
+          <span>One straightforward subscription</span>
         </div>
       </div>
-      <section className={s.section}>
-        <div className={`${s.wrap} ${s.split}`}>
-          <div>
-            <p className={s.kicker}>Your business, based your way</p>
-            <h2>
-              A professional address.
-              <br />
-              Without an office lease.
-            </h2>
-          </div>
-          <div>
-            <p className={s.lead}>
-              Work from home, a studio or wherever business takes you. A virtual office gives your
-              company a correspondence address while we handle the post that arrives there.
-            </p>
-            <p>
-              Your home address stays off the public register and off your invoices. Letters are
-              opened and scanned the same working day they arrive, so you can read them online
-              wherever you are, and ask for any original you need. No desks, meeting rooms or extras
-              you don’t use.
-            </p>
-            <Link href="/services" className={s.textlink}>
-              What is a virtual office? →
-            </Link>
-          </div>
-        </div>
-      </section>
       <section className={`${s.section} ${s.sage}`} id="services">
         <div className={s.wrap}>
           <p className={s.kicker}>One subscription, several ways to use it</p>
@@ -126,6 +135,93 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
           </p>
         </div>
       </section>
+      <section
+        className={`${s.section} ${p.section}`}
+        id="pricing"
+        aria-labelledby="home-pricing-title"
+      >
+        <div className={s.wrap}>
+          <div className={p.intro}>
+            <div>
+              <p className={s.kicker}>A professional address. A straightforward price.</p>
+              <h2 id="home-pricing-title">
+                Your London presence.
+                <br />
+                More within reach.
+              </h2>
+            </div>
+            <p className={s.lead}>
+              One subscription for your registered office, director’s service address and digital
+              mail management. Choose your billing rhythm; the core service stays the same.
+            </p>
+          </div>
+          <div className={p.options}>
+            <div className={p.option}>
+              <h3>Monthly</h3>
+              <p className={p.amount}>
+                {monthlyPrice !== null ? (
+                  <>
+                    <strong>{money(monthlyPrice)}</strong>
+                    <span> / month</span>
+                  </>
+                ) : (
+                  <span className={p.unavailable}>{unavailableLabel}</span>
+                )}
+              </p>
+              <p>Billed monthly.</p>
+              {monthlyPrice !== null ? (
+                <Link className={s.button} href="/signup?billing=monthly">
+                  Choose monthly ↗
+                </Link>
+              ) : (
+                <button disabled className={`${s.button} ${p.disabled}`}>
+                  {unavailableLabel}
+                </button>
+              )}
+            </div>
+            <div className={p.option}>
+              <h3>Annual</h3>
+              <p className={p.amount}>
+                {annualPrice !== null ? (
+                  <>
+                    <strong>{money(annualPrice)}</strong>
+                    <span> / year</span>
+                  </>
+                ) : (
+                  <span className={p.unavailable}>{unavailableLabel}</span>
+                )}
+              </p>
+              <p>
+                {annualPrice !== null ? (
+                  <>Equivalent to {money(annualPrice / 12)} a month. Billed annually.</>
+                ) : (
+                  'Annual billing is currently unavailable.'
+                )}
+              </p>
+              {annualPrice !== null ? (
+                <Link className={s.button} href="/signup?billing=annual">
+                  Choose annual ↗
+                </Link>
+              ) : (
+                <button disabled className={`${s.button} ${p.disabled}`}>
+                  {unavailableLabel}
+                </button>
+              )}
+              {annualSaving > 0 && (
+                <p className={p.saving}>
+                  Save {money(annualSaving)} a year compared with 12 monthly payments.
+                </p>
+              )}
+            </div>
+          </div>
+          <p className={p.conditions}>
+            Both options renew on their billing schedule. Eligibility and approval apply. Optional
+            forwarding has separate conditions and charges.{' '}
+            <Link href="/pricing">See full pricing details</Link> and{' '}
+            <Link href="/terms">renewal and cancellation terms</Link>.
+          </p>
+        </div>
+      </section>
       <section className={s.section} id="mail">
         <div className={`${s.wrap} ${s.split}`}>
           <LondonIllustration variant="mail" />
@@ -159,18 +255,34 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
           <h2>
             The essentials, done properly.
             <br />
-            For less than most of London.
+            Without an office lease.
           </h2>
           {[
-            ['A recognised London postcode', 'An address by Tower Bridge in SE1, a short walk from the City, for your company’s public record and your marketing.'],
-            ['Same-day scanning', 'Letters are scanned the working day they arrive, so nothing official sits unread.'],
-            ['One price, everything included', 'Registered office, director’s service address and mail scanning in one plan, with no letter limits. Many London providers charge £20 to £30 a month and add fees for a director’s address.'],
-            ['Every customer checked', 'We verify everyone who uses the address, as anti-money-laundering rules require. That keeps the address respectable for every business on it.'],
+            [
+              'A recognised London postcode',
+              'An address by Tower Bridge in SE1, a short walk from the City, for your company’s public record and your marketing.',
+            ],
+            [
+              'Same-day scanning',
+              'Letters are scanned the working day they arrive, so nothing official sits unread.',
+            ],
+            [
+              'One price, everything included',
+              'Registered office, director’s service address and mail scanning in one plan, with no letter limits. Choose monthly or annual billing to suit your business.',
+            ],
+            [
+              'Every customer checked',
+              'We verify everyone who uses the address, as anti-money-laundering rules require. That keeps the address respectable for every business on it.',
+            ],
           ].map(([h, p], i) => (
             <div className={s.row} key={h}>
               <span className={s.number}>0{i + 1}</span>
-              <div><h3>{h}</h3></div>
-              <div><p>{p}</p></div>
+              <div>
+                <h3>{h}</h3>
+              </div>
+              <div>
+                <p>{p}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -210,29 +322,7 @@ export function HomePage(_props: { onNavigate?: (page: string, data?: any) => vo
           </Link>
         </div>
       </section>
-      <section className={s.section} id="pricing">
-        <div className={`${s.wrap} ${s.split}`}>
-          <div>
-            <p className={s.kicker}>Simple pricing</p>
-            <h2>
-              {monthlyPrice !== null ? `${money(monthlyPrice)} a month.` : 'Pay monthly.'}
-              <br />
-              {annualPrice !== null ? `Or ${money(annualPrice)} a year.` : 'Or save by paying yearly.'}
-            </h2>
-          </div>
-          <div>
-            <p className={s.lead}>
-              The same complete service either way. Paying yearly
-              {monthlyPrice !== null && annualPrice !== null && monthlyPrice * 12 > annualPrice
-                ? ` saves ${money(monthlyPrice * 12 - annualPrice)}.`
-                : ' costs less.'}
-            </p>
-            <Link className={s.textlink} href="/pricing">
-              See what’s included and forwarding prices →
-            </Link>
-          </div>
-        </div>
-      </section>
+
       <section className={s.section}>
         <div className={`${s.wrap} ${s.split}`}>
           <div>

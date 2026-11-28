@@ -9,14 +9,19 @@ import { faqJsonLd, homepageHelp } from '@/lib/marketing';
 export const metadata: Metadata = {
   title: 'London Virtual Office & Business Address | VirtualAddressHub',
   description:
-    'A London SE1 business address by Tower Bridge from £9.99 a month: registered office, director’s service address and same-day mail scanning.',
+    'A Central London business address by Tower Bridge, with registered office, director’s service address and digital mail management. Explore monthly and annual pricing.',
   alternates: { canonical: '/' },
 };
 export default async function Home() {
   const initialPricing = await getServerPricing();
   return (
     <PricingProvider initialPricing={initialPricing}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(faqJsonLd(homepageHelp.map(h => ({ q: h.title, a: h.summary })))) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLdScript(faqJsonLd(homepageHelp.map((h) => ({ q: h.title, a: h.summary })))),
+        }}
+      />
       <MarketingNavigation />
       <main id="main-content">
         <HomePage />
